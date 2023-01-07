@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from tadpole.autodiff.grad import add_grads
+from tadpole.autodiff.grad  import add_grads
+from tadpole.autodiff.graph import differentiable, nondifferentiable
 
 
 @differentiable

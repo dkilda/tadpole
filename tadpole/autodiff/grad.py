@@ -1,7 +1,140 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import abc
+
 import tadpole.autodiff.adjoint_factory as adj
+
+from tadpole.autodiff.util  import cacheable
+from tadpole.autodiff.graph import Graph
+from tadpole.autodiff.node  import make_forward_gate, make_reverse_gate
+
+
+
+###############################################################################
+###                                                                         ###
+###  Specialized differential operators                                     ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Gradient -------------------------------------------------------------- #
+
+@make_nary_op
+def grad(fun, x):  
+    return ReverseDiffOp(fun, x).grad(1)
+
+
+
+
+# --- Derivative ------------------------------------------------------------ #
+
+@make_nary_op
+def deriv(fun, x):
+    return ForwardDiffOp(fun, x).grad(1)
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Differential operators: forward and reverse                            ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Differential operator interface --------------------------------------- #
+
+class DiffOp(abc.ABC):
+
+   @abc.abstractmethod
+   def evaluate(self):
+       pass
+
+   @abc.abstractmethod
+   def grad(self, seed):
+       pass
+
+   @abc.abstractmethod
+   def evaluate_and_grad(self, seed):
+       pass
+
+ 
+
+
+# --- Forward differential operator ----------------------------------------- #
+
+class ForwardDiffOp(DiffOp): 
+
+   def __init__(self, fun, x):
+
+       self._fun  = fun
+       self._x    = x
+
+
+   def _compute(self, seed):
+
+       with Graph(self._fun, self._x) as graph:
+          last_node = graph.build(make_forward_gate(seed))
+
+       return last_node.reduce(), last_node.grad()
+
+
+   def evaluate(self, seed=None):
+
+       if seed is None:
+          seed = 1
+
+       return self._compute(seed)[0]
+
+
+   def grad(self, seed):
+
+       return self._compute(seed)[1]
+
+
+   def evaluate_and_grad(self, seed):
+
+       return self._compute(seed)
+
+
+
+
+# --- Reverse differential operator ----------------------------------------- #
+
+class ReverseDiffOp(DiffOp): 
+
+   def __init__(self, fun, x):
+
+       self._fun = fun
+       self._x   = x
+
+
+   @cacheable
+   def _compute(self):
+
+       with Graph(self._fun, self._x) as graph:
+          last_node = graph.build(make_reverse_gate())
+
+       return last_node.reduce(), Backprop(last_node)
+
+
+   def evaluate(self):
+
+       return self._compute()[0]
+
+
+   def grad(self, seed):
+
+       backprop = self._compute()[1]
+       return backprop(seed)
+
+
+   def evaluate_and_grad(self, seed):
+
+       val, backprop = self._compute()
+       return val, backprop(seed)
+
 
 
 

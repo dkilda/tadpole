@@ -3,6 +3,8 @@
 
 import abc
 
+from tadpole.autodiff.adjoint_factory import JvpFactory, VjpFactory
+
 
 
 ###############################################################################
