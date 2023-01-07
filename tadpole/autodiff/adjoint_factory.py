@@ -2,6 +2,32 @@
 # -*- coding: utf-8 -*-
 
 
+@differentiable
+def sin(x):
+    return np.sin(x)
+
+@differentiable
+def cos(x):
+    return np.cos(x)
+
+@differentiable
+def uneg(x):
+    return -x
+
+@differentiable
+def add(x, y):
+    return x + y
+
+
+def add_grads(net_g, g): # TODO impl and use add() function, with @diffable decorator 
+                         #      (or overload __add__ operator to make it @diffable)
+    if net_g is None:  
+       return g
+
+    return add(net_g, g)
+
+
+
 
 ###############################################################################
 ###                                                                         ###
@@ -47,6 +73,7 @@ def concatenate_adjfuns(*adjfuns, adxs=None):
 ###                                                                         ###
 ###############################################################################
 
+
 # --- Net (concatenated) JVP function --------------------------------------- #
 
 class NetJvpFun:
@@ -58,14 +85,9 @@ class NetJvpFun:
 
    def __call__(self, gs, adxs, out, *args):
 
-       def _sum(net_g, g):    # TODO impl and use add() function, with @diffable decorator 
-           if net_g is None:  #      (or overload __add__ operator to make it @diffable)
-              return g
-           return net_g + g 
-
        jvps = (self._jvpfun(g, adx, out, *args) for g, adx in zip(gs, adxs))
 
-       return reduce(_sum, jvps, None)
+       return reduce(add_grads, jvps, None)
 
 
 
