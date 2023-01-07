@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import abc
+
 from tadpole.autodiff.node import make_node
+
 from tadpole.autodiff.util import cacheable
-
-
+from tadpole.autodiff.util import Stack
 
 
 ###############################################################################
@@ -48,9 +50,20 @@ class Sources:
 
 
 
+# --- Glue interface -------------------------------------------------------- #
+
+class Glue(abc.ABC):
+
+   @abc.abstractmethod
+   def pack(self, fun):
+       pass
+
+
+
+
 # --- Node glue ------------------------------------------------------------- #
 
-class NodeGlue:
+class NodeGlue(Glue):
 
    def __init__(self, sources, gates):
 
@@ -75,7 +88,7 @@ class NodeGlue:
 
 # --- Point glue ------------------------------------------------------------ #
 
-class PointGlue:
+class PointGlue(Glue):
 
    def __init__(self, sources):
 
@@ -91,12 +104,96 @@ class PointGlue:
 
 
 
+###############################################################################
+###                                                                         ###
+###  Node packs: representing multiple nodes by a single argument           ###
+###              for function calls.                                        ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Pack interface -------------------------------------------------------- #
+
+class Pack(abc.ABC):
+
+   @abc.abstractmethod
+   def pluginto(self, fun):
+       pass
 
 
 
 
+# --- Node pack ------------------------------------------------------------- #
+
+class NodePack(Pack):
+
+   def __init__(self, source, inputs, layer):
+
+       self._source = source
+       self._inputs = inputs
+       self._layer  = layer
 
 
+   def pluginto(self, fun): 
+
+       source = self._source.pluginto(fun)
+       gate   = fun.gate(self._inputs)
+
+       return make_node(source, gate, self._layer)
+
+
+
+# --- Point pack ------------------------------------------------------------ #
+
+class PointPack(Pack):
+
+   def __init__(self, source):
+       self._source = source
+
+   def pluginto(self, fun):
+       return self._source.pluginto(fun)
+
+      
+
+
+# --- Empty pack ------------------------------------------------------------ #
+
+class EmptyPack(Pack):
+
+   def __init__(self, funcall):
+       self._funcall = funcall
+
+   def pluginto(self, fun):
+       return self._funcall.execute(fun)
+
+
+
+
+# --- Function call --------------------------------------------------------- #
+
+class FunCall:
+
+   def __init__(self, args=None):
+
+       if args is None:
+          args = Stack()
+
+       self._args = args
+
+
+   def add(self, *args):
+
+       xs = self._args
+
+       for arg in args:
+           xs = xs.push(arg)
+
+       return self.__class__(xs)
+
+
+   def execute(self, fun):
+
+       return fun(*self._args.riter())
 
 
 
