@@ -11,6 +11,63 @@ from tadpole.autodiff.util import Stack
 
 
 
+###############################################################################
+###                                                                         ###
+###  Autodiff function decorators                                           ###
+###  for differentiable and non-differentiable functions                    ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Differentiable function decorator ------------------------------------- #
+
+class Differentiable: 
+
+   def __init__(self, fun):
+
+       self._fun = fun
+
+
+   def __call__(self, *args):
+
+       glue = make_arg_glue(args, lambda x: isinstance(x, Node))
+
+       return glue.pack()
+                  .pluginto(GatedFun(self, self._fun))
+
+
+
+
+# --- Non-differentiable function decorator --------------------------------- #
+
+class NonDifferentiable:
+
+   def __init__(self, fun):
+
+       self._fun = fun
+
+
+   def __call__(self, *args):
+
+       glue = make_arg_glue(args, lambda x: isinstance(x, Point))
+
+       return glue.pack()
+                  .pluginto(self._fun)
+
+
+
+
+# --- Shorthand decorators for autodiff functions --------------------------- #
+
+def differentiable(fun):
+    return Differentiable(fun)
+
+
+def nondifferentiable(fun):
+    return NonDifferentiable(fun)
+
+
+
 
 ###############################################################################
 ###                                                                         ###
