@@ -14,7 +14,7 @@ def cos(x):
     return np.cos(x)
 
 @differentiable
-def uneg(x):
+def neg(x):
     return -x
 
 @differentiable
@@ -24,6 +24,19 @@ def add(x, y):
 @differentiable
 def sub(x, y):
     return x - y
+
+@differentiable
+def mul(x, y):
+    return x * y
+
+
+@nondifferentiable
+def floor(x, n):
+    return x // n
+
+@nondifferentiable
+def equals(x, y):
+    return x == y 
 
 
 
@@ -178,18 +191,45 @@ class VjpFactory:
 
 
 
+###############################################################################
+###                                                                         ###
+###  Some VJPs and JVPs                                                     ###
+###                                                                         ###
+###############################################################################
+
+
+# --- VJPs ------------------------------------------------------------------ #
+
+VjpFactory.add(add, lambda g, out, x, y: g, 
+                    lambda g, out, x, y: g)
+
+VjpFactory.add(sub, lambda g, out, x, y: g, 
+                    lambda g, out, x, y: neg(g))
+
+VjpFactory.add(mul, lambda g, out, x, y: mul(y, g), 
+                    lambda g, out, x, y: mul(x, g))
+
+VjpFactory.add(neg, lambda g, out, x: neg(g))
+VjpFactory.add(sin, lambda g, out, x: mul(g, cos(x)))
+VjpFactory.add(cos, lambda g, out, x: neg(mul(g, sin(x))))
 
 
 
 
+# --- JVPs ------------------------------------------------------------------ #
 
+JvpFactory.add(add, lambda g, out, x, y: g, 
+                    lambda g, out, x, y: g)
 
+JvpFactory.add(sub, lambda g, out, x, y: g, 
+                    lambda g, out, x, y: neg(g))
 
+JvpFactory.add(mul, lambda g, out, x, y: mul(y, g), 
+                    lambda g, out, x, y: mul(x, g))
 
-
-
-
-
+JvpFactory.add(neg, lambda g, out, x: neg(g))
+JvpFactory.add(sin, lambda g, out, x: mul(g, cos(x)))
+JvpFactory.add(cos, lambda g, out, x: neg(mul(g, sin(x))))
 
 
 
