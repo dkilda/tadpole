@@ -19,6 +19,28 @@ from tadpole.autodiff.util import Stack
 ###############################################################################
 
 
+# --- Gated function -------------------------------------------------------- #
+
+class GatedFun:
+
+   def __init__(self, diff_fun, raw_fun):
+
+       self._diff_fun = diff_fun
+       self._raw_fun  = raw_fun
+
+
+   def __call__(self, *args):
+
+       return self._raw_fun(*args)
+
+
+   def gate(self, inputs):
+
+       return inputs.transform(self._diff_fun)
+
+
+
+
 # --- Differentiable function decorator ------------------------------------- #
 
 class Differentiable: 
