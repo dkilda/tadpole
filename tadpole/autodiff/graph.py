@@ -11,6 +11,46 @@ from tadpole.autodiff.util import Stack
 
 
 
+
+###############################################################################
+###                                                                         ###
+###  Autodiff computation graph                                             ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Graph ----------------------------------------------------------------- #
+
+class Graph:
+
+   _layer = -1
+
+
+   def __init__(self, fun, x):
+
+       self._fun = fun
+       self._x   = x
+
+
+   def __enter__(self):
+
+       type(self)._layer += 1
+       return self
+
+
+   def __exit__(self, exception_type, exception_val, trace):
+
+       type(self)._layer -= 1
+
+
+   def build(self, root_gate):
+
+       root_node = make_node(self._x, root_gate, type(self)._layer) 
+       return self._fun(root_node)
+
+
+
+
 ###############################################################################
 ###                                                                         ###
 ###  Autodiff function decorators                                           ###
@@ -125,6 +165,17 @@ class ArgFilter:
 
 
 
+# --- Glue interface -------------------------------------------------------- #
+
+class Glue(abc.ABC):
+
+   @abc.abstractmethod
+   def pack(self, funcall):
+       pass
+
+
+
+
 # --- Argument glue --------------------------------------------------------- #
 
 class ArgGlue(Glue):
@@ -230,16 +281,6 @@ class Sources:
 
       return args
 
-
-
-
-# --- Glue interface -------------------------------------------------------- #
-
-class Glue(abc.ABC):
-
-   @abc.abstractmethod
-   def pack(self, funcall):
-       pass
 
 
 
