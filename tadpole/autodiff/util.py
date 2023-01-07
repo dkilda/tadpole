@@ -164,7 +164,17 @@ class PluralArgProxy(ArgProxy):
 
 
 
+# --- Unary function argument proxy ----------------------------------------- # 
 
+def make_argproxy(adx):
+
+    if adx is None:
+       adx = 0
+
+    if isinstance(adx, int):
+       return SingularArgProxy(adx)
+
+    return PluralArgProxy(adx)
 
 
 
