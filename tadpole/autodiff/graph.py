@@ -20,33 +20,51 @@ from tadpole.autodiff.util import Stack
 ###############################################################################
 
 
+# --- Argument filter ------------------------------------------------------- #
+
+class ArgFilter:
+
+   def __init__(self, mask):
+
+       self._mask = mask
+
+
+   def _execute(self, mask):
+
+       return tuple(arg for arg in args if mask(arg))
+
+
+   def vals(self, args):
+
+       return self._execute(lambda x: not self._mask(x))  
+
+
+   def nodes(self, args):
+
+       return self._execute(lambda x: self._mask(x))  
+
+
+
+
 # --- Argument glue --------------------------------------------------------- #
 
-class ArgGlue:
+class ArgGlue(Glue):
 
-   def __init__(self, args):
+   def __init__(self, args, argfilter):
 
-       self._args = args
-
-
-   def _filter(self, mask):
-
-       return tuple(arg for arg in self._args if mask(arg))
+       self._args   = args
+       self._filter = argfilter
 
 
-   def _vals(self):
+   def pack(self, funcall=None):
 
-       return self._filter(lambda x: not isinstance(x, Node)) 
+       if funcall is None:
+          funcall = FunCall()
 
+       vals  = self._filter.vals(self._args)
+       nodes = self._filter.nodes(self._args)
 
-   def _nodes(self):
-
-       return self._filter(lambda x: isinstance(x, Node)) 
-
-
-   def _packof(self, nodes, funcall):
-
-       funcall = funcall.add(*self._vals())
+       funcall = funcall.add(*vals)
 
        if len(nodes) > 0: 
           return nodes[0].glue(nodes[1:])
@@ -55,36 +73,13 @@ class ArgGlue:
        return EmptyPack(funcall)
 
 
-   def nodepack(self, funcall):
-
-       return self._packof(self._nodes(), funcall)
 
 
-   def pointpack(self, funcall):
+# --- Create argument glue -------------------------------------------------- #
 
-       points = [node.topoint() for node in self._nodes()] 
-       return self._packof(points, funcall)
+def make_arg_glue(args, mask):
 
-
-
-
-# --- Argument pack --------------------------------------------------------- #
-
-class ArgPack:
-
-   def __init__(self, args):
-
-       self._args = args
-
-
-   def nodepack(self): 
-
-       return ArgGlue(self._args).nodepack(FunCall())
-
-
-   def pointpack(self):
-
-       return ArgGlue(self._args).pointpack(FunCall())
+    return ArgGlue(args, ArgFilter(mask))
 
 
 
