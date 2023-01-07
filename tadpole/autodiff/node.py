@@ -44,24 +44,6 @@ class Reverse(abc.ABC):
 
 ###############################################################################
 ###                                                                         ###
-###  Nodes of the autodiff computation graph                                ###
-###                                                                         ###
-###############################################################################
-
-
-# --- Node ------------------------------------------------------------------ #
-
-
-
-
-
-
-
-
-
-
-###############################################################################
-###                                                                         ###
 ###  Gates of the autodiff circuit                                          ###
 ###                                                                         ###
 ###############################################################################
@@ -94,7 +76,7 @@ class ForwardGate(Gate, Forward):
 
    def node(self, x, layer):
 
-       return ForwardNode(x, self, layer)
+       return ForwardNode(UndirectedNode(x, self, layer))
 
 
    def next_input(self, others, adxs, args, source):
@@ -121,7 +103,7 @@ class ReverseGate(Gate, Reverse):
 
    def node(self, x, layer):
 
-       return ReverseNode(x, self, layer)
+       return ReverseNode(UndirectedNode(x, self, layer))
 
 
    def next_input(self, others, adxs, args, source):
@@ -238,7 +220,183 @@ def make_gate_inputs(gates, adxs, args, out):
 
 
 
+###############################################################################
+###                                                                         ###
+###  Nodes of the autodiff computation graph                                ###
+###                                                                         ###
+###############################################################################
 
+
+# --- Node ------------------------------------------------------------------ #
+
+class Node(abc.ABC):
+
+   @abc.abstractmethod
+   def reduce(self):
+       pass
+
+   @abc.abstractmethod
+   def topoint(self):
+       pass
+
+   @abc.abstractmethod
+   def glue(self, *others):
+       pass
+
+
+
+
+# --- Undirected node ------------------------------------------------------- #
+
+class UndirectedNode(Node):
+
+   def __init__(self, source, gate, layer):
+
+       self._source = source
+       self._gate   = gate
+       self._layer  = layer
+
+
+   def reduce(self):
+
+       return self._source
+
+
+   def topoint(self):
+
+       return Point(self._source, self._layer)
+
+
+   def glue(self, *others):
+
+       nodes = (self, *others)
+
+       sources = tuple(node._source for node in nodes) 
+       gates   = tuple(node._gate   for node in nodes)
+       layers  = tuple(node._layer  for node in nodes)
+
+       return NodeGlue(Sources(nodes, sources, layers), gates)
+
+
+   def visit(self, fun):
+
+       return fun(self._gate) 
+
+
+
+
+# --- Forward node ---------------------------------------------------------- #
+
+class ForwardNode(Node, Forward): 
+
+   def __init__(self, core):
+
+       self._core = core
+
+
+   def reduce(self):
+
+       return self._core.reduce()
+
+
+   def topoint(self):
+
+       return self._core.topoint()
+
+
+   def glue(self, *others):
+
+       return self._core.glue(*(other._core for other in others))
+
+
+   def grad(self):
+
+       return self._core.visit(lambda x: x.grad())
+
+
+
+
+# --- Reverse node ---------------------------------------------------------- #
+
+class ReverseNode(Node, Reverse): 
+
+   def __init__(self, core):
+
+       self._core = core
+
+
+   def reduce(self):
+
+       return self._core.reduce()
+
+
+   def topoint(self):
+
+       return self._core.topoint()
+
+
+   def glue(self, *others):
+
+       return self._core.glue(*(other._core for other in others))
+
+
+   def increment_parent_grads(self, grads):
+
+       self._core.visit(lambda x: x.increment_parent_grads(grads))
+       return self
+
+
+   def add_to_childcount(self, childcount):
+
+       self._core.visit(lambda x: x.add_to_childcount(childcount))
+       return self
+
+
+   def add_to_toposort(self, toposort):
+
+       self._core.visit(lambda x: x.add_to_toposort(toposort))
+       return self
+
+
+
+
+# --- Point ----------------------------------------------------------------- #
+
+class Point(Node):
+
+   def __init__(self, source, layer):
+
+       self._source = source
+       self._layer  = layer
+
+
+   def reduce(self):
+
+       return self._source
+
+
+   def topoint(self):
+
+       return self
+
+
+   def glue(self, *others):
+
+       pts = (self, *others)
+
+       sources = tuple(pt._source for pt in pts) 
+       layers  = tuple(pt._layer  for pt in pts)
+
+       return PointGlue(Sources(pts, sources, layers))
+
+
+
+
+# --- Create a node --------------------------------------------------------- #
+
+def make_node(source, gate, layer):
+
+    return gate.node(source, layer)
 
 
 
