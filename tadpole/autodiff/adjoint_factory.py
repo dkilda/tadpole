@@ -109,7 +109,50 @@ class JvpFactory:
 ###############################################################################
 
 
+# --- Net (concatenated) VJP function --------------------------------------- #
 
+class NetVjpFun:
+
+   def __init__(self, vjpfun):
+
+       self._vjpfun = vjpfun
+
+
+   def __call__(self, adxs, out, *args):
+
+       return lambda g: (self._vjpfun(g, adx, out, *args) for adx in adxs)
+
+
+
+
+# --- VJP factory ----------------------------------------------------------- #
+
+class VjpFactory:
+
+   _map = {}
+
+   def __init__(self, fun):
+
+       self._fun = fun
+
+
+   def vjp(self, adxs, out, *args):
+
+       return type(self)._map[self._fun](adxs, out, *args)
+
+
+   @classmethod
+   def add(cls, fun, *vjpfuns, adxs=None):
+
+       cls._map[fun] = NetVjpFun(concatenate_adjfuns(*vjpfuns, adxs=adxs))
+       return cls
+
+
+   @classmethod
+   def add_combo(cls, fun, vjpfun):
+
+       cls._map[fun] = NetVjpFun(vjpfun)
+       return cls
 
 
 
