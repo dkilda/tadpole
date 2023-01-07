@@ -28,7 +28,7 @@ class Forward(abc.ABC):
 class Reverse(abc.ABC):
 
    @abc.abstractmethod
-   def increment_parent_grads(self, grads):
+   def accumulate_parent_grads(self, grads):
        pass
 
    @abc.abstractmethod
@@ -111,12 +111,12 @@ class ReverseGate(Gate, Reverse):
        return ReverseGateInputs((self, *others), adxs, args, source)
 
 
-   def increment_parent_grads(self, grads):
+   def accumulate_parent_grads(self, grads):
 
        parent_grads = self._vjp(grads.pop(self))
 
        for p, parent in enumerate(self._parents): 
-           grads.increment(parent, parent_grads[p])
+           grads.accumulate(parent, parent_grads[p])
 
        return self
 
@@ -340,9 +340,9 @@ class ReverseNode(Node, Reverse):
        return self._core.glue(*(other._core for other in others))
 
 
-   def increment_parent_grads(self, grads):
+   def accumulate_parent_grads(self, grads):
 
-       self._core.visit(lambda x: x.increment_parent_grads(grads))
+       self._core.visit(lambda x: x.accumulate_parent_grads(grads))
        return self
 
 

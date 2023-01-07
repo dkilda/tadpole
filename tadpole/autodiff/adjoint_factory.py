@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from tadpole.autodiff.grad import add_grads
+
 
 @differentiable
 def sin(x):
@@ -18,13 +20,9 @@ def uneg(x):
 def add(x, y):
     return x + y
 
-
-def add_grads(net_g, g): # TODO impl and use add() function, with @diffable decorator 
-                         #      (or overload __add__ operator to make it @diffable)
-    if net_g is None:  
-       return g
-
-    return add(net_g, g)
+@differentiable
+def sub(x, y):
+    return x - y
 
 
 
