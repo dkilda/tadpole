@@ -56,7 +56,7 @@ class Reverse(abc.ABC):
 class Gate(abc.ABC):
 
    @abc.abstractmethod
-   def node(self, x, layer):
+   def node(self, source, layer):
        pass
 
    @abc.abstractmethod
@@ -76,9 +76,9 @@ class ForwardGate(Gate, Forward):
        self._grad    = grad
 
 
-   def node(self, x, layer):
+   def node(self, source, layer):
 
-       return ForwardNode(UndirectedNode(x, self, layer))
+       return ForwardNode(UndirectedNode(source, self, layer))
 
 
    def next_input(self, others, adxs, args, source):
@@ -103,9 +103,9 @@ class ReverseGate(Gate, Reverse):
        self._vjp     = vjp
 
 
-   def node(self, x, layer):
+   def node(self, source, layer):
 
-       return ReverseNode(UndirectedNode(x, self, layer))
+       return ReverseNode(UndirectedNode(source, self, layer))
 
 
    def next_input(self, others, adxs, args, source):
