@@ -253,33 +253,32 @@ class FunCall:
 
 class Sources: 
 
-  def __init__(self, nodes, sources, layers):
+   def __init__(self, nodes, sources, layers):
 
-      self._nodes   = nodes
-      self._sources = sources
-      self._layers  = layers
-
-
-  @cacheable
-  def layer(self):
-      return max(self._layers)
+       self._nodes   = nodes
+       self._sources = sources
+       self._layers  = layers
 
 
-  @cacheable
-  def adxs(self):
-      return tuple(i for i, x in enumerate(self._layers) 
-                                     if x == self.layer())
+   @cacheable
+   def layer(self):
+       return max(self._layers)
 
-  @cacheable
-  def args(self):
 
-      args = list(self._nodes)
+   @cacheable
+   def adxs(self):
+       return tuple(i for i, x in enumerate(self._layers) 
+                                      if x == self.layer())
 
-      for adx in self._adxs():
-          args[adx] = self._sources[adx]
+   @cacheable
+   def args(self):
 
-      return args
+       args = list(self._nodes)
 
+       for adx in self._adxs():
+           args[adx] = self._sources[adx]
+
+       return args
 
 
 
