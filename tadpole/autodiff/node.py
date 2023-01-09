@@ -76,6 +76,16 @@ class ForwardGate(Gate, Forward):
        self._grad    = grad
 
 
+   def __eq__(self, other):
+
+       return self._parents == other._parents
+
+
+   def __hash__(self):
+
+       return id(self)
+
+
    def node(self, source, layer):
 
        return ForwardNode(UndirectedNode(source, self, layer))
@@ -101,6 +111,17 @@ class ReverseGate(Gate, Reverse):
 
        self._parents = parents
        self._vjp     = vjp
+
+
+   def __eq__(self, other):
+
+       return self._parents == other._parents 
+          and self._vjp     == other._vjp
+
+
+   def __hash__(self):
+
+       return id(self)
 
 
    def node(self, source, layer):
@@ -174,6 +195,14 @@ class ForwardGateInputs(GateInputs):
        self._out   = out
 
 
+   def __eq__(self, other):
+
+       return self._gates == other._gates
+          and self._adxs  == other._adxs
+          and self._args  == other._args
+          and self._out   == other._out
+
+
    def transform(self, fun):
 
        parents = tuple(self._gates[adx] for adx in self._adxs)
@@ -200,6 +229,14 @@ class ReverseGateInputs(GateInputs):
        self._adxs  = adxs
        self._args  = args
        self._out   = out
+
+
+   def __eq__(self, other):
+
+       return self._gates == other._gates
+          and self._adxs  == other._adxs
+          and self._args  == other._args
+          and self._out   == other._out
 
 
    def transform(self, fun):
@@ -259,6 +296,18 @@ class UndirectedNode(Node):
        self._layer  = layer
 
 
+   def __eq__(self, other):
+
+       return self._source == other._source
+          and self._gate   == other._gate
+          and self._layer  == other._layer
+
+
+   def __hash__(self):
+
+       return id(self)
+
+
    def reduce(self):
 
        return self._source
@@ -296,6 +345,16 @@ class ForwardNode(Node, Forward):
        self._core = core
 
 
+   def __eq__(self, other):
+
+       return self._core == other._core
+
+
+   def __hash__(self):
+
+       return hash(self._core)
+
+
    def reduce(self):
 
        return self._core.reduce()
@@ -325,6 +384,16 @@ class ReverseNode(Node, Reverse):
    def __init__(self, core):
 
        self._core = core
+
+
+   def __eq__(self, other):
+
+       return self._core == other._core
+
+
+   def __hash__(self):
+
+       return hash(self._core)
 
 
    def reduce(self):
@@ -370,6 +439,17 @@ class Point(Node):
 
        self._source = source
        self._layer  = layer
+
+
+   def __eq__(self, other):
+
+       return self._source == other._source
+          and self._layer  == other._layer
+
+
+   def __hash__(self):
+
+       return id(self)
 
 
    def reduce(self):

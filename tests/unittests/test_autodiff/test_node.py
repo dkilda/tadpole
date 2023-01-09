@@ -13,7 +13,7 @@ class TestForwardGate:
 
    def _parents(nparents):
 
-       return (MockForwardParents(),)*nparents
+       return [MockForwardNode()]*nparents
 
 
    def _source():
@@ -44,7 +44,7 @@ class TestForwardGate:
        others = [self._gate(*elem) for elem in elems]
 
        out = this.next_input(others, adxs, args, self._source)
-       ans = ForwardGateInputs(gates, adxs, args, self._source) 
+       ans = ForwardGateInputs((this, *others), adxs, args, self._source) 
 
        assert out == ans
 
@@ -53,7 +53,7 @@ class TestForwardGate:
 
        gate = self._gate(nparents, grad) 
 
-       assert_close(gate.grad(), grad) # FIXME need to impl equality for objects and assert_allclose for floats
+       assert_close(gate.grad(), grad) 
 
 
 

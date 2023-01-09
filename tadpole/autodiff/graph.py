@@ -31,6 +31,12 @@ class Graph:
        self._x   = x
 
 
+   def __eq__(self, other):
+
+       return self._fun == other._fun
+          and self._x   == other._x
+
+
    def __enter__(self):
 
        type(self)._layer += 1
@@ -68,6 +74,12 @@ class GatedFun:
        self._raw_fun  = raw_fun
 
 
+   def __eq__(self, other):
+
+       return self._diff_fun == other._diff_fun
+          and self._raw_fun  == other._raw_fun
+
+
    def __call__(self, *args):
 
        return self._raw_fun(*args)
@@ -89,6 +101,11 @@ class Differentiable:
        self._fun = fun
 
 
+   def __eq__(self, other):
+
+       return self._fun == other._fun
+
+
    def __call__(self, *args):
 
        glue = make_arg_glue(args, lambda x: isinstance(x, Node))
@@ -106,6 +123,11 @@ class NonDifferentiable:
    def __init__(self, fun):
 
        self._fun = fun
+
+
+   def __eq__(self, other):
+
+       return self._fun == other._fun
 
 
    def __call__(self, *args):
@@ -147,6 +169,11 @@ class ArgFilter:
        self._mask = mask
 
 
+   def __eq__(self, other):
+
+       return self._mask == other._mask
+
+
    def _execute(self, mask):
 
        return tuple(arg for arg in args if mask(arg))
@@ -183,6 +210,12 @@ class ArgGlue(Glue):
 
        self._args   = args
        self._filter = argfilter
+
+
+   def __eq__(self, other):
+
+       return self._args   == other._args
+          and self._filter == other._filter
 
 
    def pack(self, funcall=None):
@@ -225,6 +258,11 @@ class FunCall:
        self._args = args
 
 
+   def __eq__(self, other):
+
+       return self._args == other._args
+
+
    def add(self, *args):
 
        xs = self._args
@@ -260,6 +298,13 @@ class Sources:
        self._layers  = layers
 
 
+   def __eq__(self, other):
+
+       return self._nodes   == other._nodes
+          and self._sources == other._sources
+          and self._layers  == other._layers
+
+
    @cacheable
    def layer(self):
        return max(self._layers)
@@ -293,6 +338,12 @@ class NodeGlue(Glue):
        self._gates   = gates
 
 
+   def __eq__(self, other):
+
+       return self._sources == other._sources
+          and self._gates   == other._gates
+
+
    def pack(self, funcall):
 
        source = ArgGlue(self._sources.args()).nodepack(funcall)
@@ -315,6 +366,11 @@ class PointGlue(Glue):
    def __init__(self, sources):
 
        self._sources = sources
+
+
+   def __eq__(self, other):
+
+       return self._sources == other._sources
 
 
    def pack(self, funcall):
@@ -356,12 +412,20 @@ class NodePack(Pack):
        self._layer  = layer
 
 
+   def __eq__(self, other):
+
+       return self._sources == other._sources
+          and self._inputs  == other._inputs
+          and self._layer   == other._layer
+
+
    def pluginto(self, fun): 
 
        source = self._source.pluginto(fun)
        gate   = fun.gate(self._inputs)
 
        return make_node(source, gate, self._layer)
+
 
 
 
@@ -372,6 +436,11 @@ class PointPack(Pack):
    def __init__(self, source):
 
        self._source = source
+
+
+   def __eq__(self, other):
+
+       return self._source == other._source
 
 
    def pluginto(self, fun):
@@ -388,6 +457,11 @@ class EmptyPack(Pack):
    def __init__(self, funcall):
 
        self._funcall = funcall
+
+
+   def __eq__(self, other):
+
+       return self._funcall == other._funcall
 
 
    def pluginto(self, fun):

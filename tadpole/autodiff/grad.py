@@ -68,8 +68,14 @@ class ForwardDiffOp(DiffOp):
 
    def __init__(self, fun, x):
 
-       self._fun  = fun
-       self._x    = x
+       self._fun = fun
+       self._x   = x
+
+
+   def __eq__(self, other):
+
+       return self._fun == other._fun
+          and self._x   == other._x
 
 
    def _compute(self, seed):
@@ -108,6 +114,12 @@ class ReverseDiffOp(DiffOp):
 
        self._fun = fun
        self._x   = x
+
+
+   def __eq__(self, other):
+
+       return self._fun == other._fun
+          and self._x   == other._x
 
 
    @cacheable
@@ -156,6 +168,13 @@ class ChildCount:
        self._pool      = None
 
 
+   def __eq__(self, other):
+
+       return self._last_node == other._last_node
+          and self._count     == other._count
+          and self._pool      == other._pool
+
+
    def add(self, node, parents):
 
        try:
@@ -197,6 +216,13 @@ class TopoSort:
        self._last_node = last_node
        self._count     = dict(count)
        self._pool      = None
+
+
+   def __eq__(self, other):
+
+       return self._last_node == other._last_node
+          and self._count     == other._count
+          and self._pool      == other._pool
 
 
    def add(self, node):
@@ -255,6 +281,12 @@ class GradAccum:
        self._last = None
 
 
+   def __eq__(self, other):
+
+       return self._map  == other._map
+          and self._last == other._last
+
+
    def result(self):
 
        return self._last
@@ -287,6 +319,11 @@ class Backprop:
    def __init__(self, last_node): 
 
        self._last_node = last_node
+
+
+   def __eq__(self, other):
+
+       return self._last_node == other._last_node
 
 
    def __call__(self, seed):

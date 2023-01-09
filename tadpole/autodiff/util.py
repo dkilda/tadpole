@@ -61,6 +61,12 @@ class Stack:
        self._end = end
 
 
+   def __eq__(self, other):
+
+       return self._xs  == other._xs
+          and self._end == other._end
+
+
    def push(self, x):
 
        self._xs.append(x)
@@ -138,6 +144,11 @@ class SingularArgProxy(ArgProxy):
        self._adx = adx
 
 
+   def __eq__(self, other):
+
+       return self._adx == other._adx
+
+
    def insert(self, args, x):
         
        out            = list(args)
@@ -160,6 +171,11 @@ class PluralArgProxy(ArgProxy):
    def __init__(self, adx):
 
        self._adx = adx
+
+
+   def __eq__(self, other):
+
+       return self._adx == other._adx
 
 
    def insert(self, args, x):
