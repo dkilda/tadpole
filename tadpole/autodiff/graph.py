@@ -31,12 +31,6 @@ class Graph:
        self._x   = x
 
 
-   def __eq__(self, other):
-
-       return self._fun == other._fun
-          and self._x   == other._x
-
-
    def __enter__(self):
 
        type(self)._layer += 1
@@ -74,12 +68,6 @@ class GatedFun:
        self._raw_fun  = raw_fun
 
 
-   def __eq__(self, other):
-
-       return self._diff_fun == other._diff_fun
-          and self._raw_fun  == other._raw_fun
-
-
    def __call__(self, *args):
 
        return self._raw_fun(*args)
@@ -101,11 +89,6 @@ class Differentiable:
        self._fun = fun
 
 
-   def __eq__(self, other):
-
-       return self._fun == other._fun
-
-
    def __call__(self, *args):
 
        glue = make_arg_glue(args, lambda x: isinstance(x, Node))
@@ -123,11 +106,6 @@ class NonDifferentiable:
    def __init__(self, fun):
 
        self._fun = fun
-
-
-   def __eq__(self, other):
-
-       return self._fun == other._fun
 
 
    def __call__(self, *args):
