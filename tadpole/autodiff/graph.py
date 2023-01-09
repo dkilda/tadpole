@@ -147,6 +147,24 @@ class ArgFilter:
        self._mask = mask
 
 
+   def _str(self):
+
+       out = StringRep(self)
+       out = out.with_member("mask", self._mask)
+
+       return out.compile()
+       
+
+   def __str__(self):
+ 
+       return self._str()
+
+
+   def __repr__(self):
+
+       return self._str()
+
+
    def __eq__(self, other):
 
        return self._mask == other._mask
@@ -188,6 +206,25 @@ class ArgGlue(Glue):
 
        self._args   = args
        self._filter = argfilter
+
+
+   def _str(self):
+
+       out = StringRep(self)
+       out = out.with_member("args",   self._args)
+       out = out.with_member("filter", self._filter)
+
+       return out.compile()
+       
+
+   def __str__(self):
+ 
+       return self._str()
+
+
+   def __repr__(self):
+
+       return self._str()
 
 
    def __eq__(self, other):
@@ -236,6 +273,24 @@ class FunCall:
        self._args = args
 
 
+   def _str(self):
+
+       out = StringRep(self)
+       out = out.with_member("args", self._args)
+
+       return out.compile()
+       
+
+   def __str__(self):
+ 
+       return self._str()
+
+
+   def __repr__(self):
+
+       return self._str()
+
+
    def __eq__(self, other):
 
        return self._args == other._args
@@ -274,6 +329,26 @@ class Sources:
        self._nodes   = nodes
        self._sources = sources
        self._layers  = layers
+
+
+   def _str(self):
+
+       out = StringRep(self)
+       out = out.with_data("layers",    self._layers)
+       out = out.with_member("nodes",   self._nodes)
+       out = out.with_member("sources", self._sources)
+
+       return out.compile()
+       
+
+   def __str__(self):
+ 
+       return self._str()
+
+
+   def __repr__(self):
+
+       return self._str()
 
 
    def __eq__(self, other):
@@ -316,6 +391,25 @@ class NodeGlue(Glue):
        self._gates   = gates
 
 
+   def _str(self):
+
+       out = StringRep(self)
+       out = out.with_member("sources", self._sources)
+       out = out.with_member("gates",   self._gates)
+
+       return out.compile()
+       
+
+   def __str__(self):
+ 
+       return self._str()
+
+
+   def __repr__(self):
+
+       return self._str()
+
+
    def __eq__(self, other):
 
        return self._sources == other._sources
@@ -344,6 +438,24 @@ class PointGlue(Glue):
    def __init__(self, sources):
 
        self._sources = sources
+
+
+   def _str(self):
+
+       out = StringRep(self)
+       out = out.with_member("sources", self._sources)
+
+       return out.compile()
+       
+
+   def __str__(self):
+ 
+       return self._str()
+
+
+   def __repr__(self):
+
+       return self._str()
 
 
    def __eq__(self, other):
@@ -390,6 +502,26 @@ class NodePack(Pack):
        self._layer  = layer
 
 
+   def _str(self):
+
+       out = StringRep(self)
+       out = out.with_data("layer",    self._layer)
+       out = out.with_member("source", self._source)
+       out = out.with_member("inputs", self._inputs)
+
+       return out.compile()
+       
+
+   def __str__(self):
+ 
+       return self._str()
+
+
+   def __repr__(self):
+
+       return self._str()
+
+
    def __eq__(self, other):
 
        return self._sources == other._sources
@@ -416,6 +548,24 @@ class PointPack(Pack):
        self._source = source
 
 
+   def _str(self):
+
+       out = StringRep(self)
+       out = out.with_member("source", self._source)
+
+       return out.compile()
+       
+
+   def __str__(self):
+ 
+       return self._str()
+
+
+   def __repr__(self):
+
+       return self._str()
+
+
    def __eq__(self, other):
 
        return self._source == other._source
@@ -435,6 +585,24 @@ class EmptyPack(Pack):
    def __init__(self, funcall):
 
        self._funcall = funcall
+
+
+   def _str(self):
+
+       out = StringRep(self)
+       out = out.with_member("funcall", self._funcall)
+
+       return out.compile()
+       
+
+   def __str__(self):
+ 
+       return self._str()
+
+
+   def __repr__(self):
+
+       return self._str()
 
 
    def __eq__(self, other):

@@ -76,6 +76,25 @@ class ForwardGate(Gate, Forward):
        self._grad    = grad
 
 
+   def _str(self):
+
+       out = StringRep(self)
+       out = out.with_member("parents", self._parents)
+       out = out.with_member("grad",    self._grad)
+
+       return out.compile()
+       
+
+   def __str__(self):
+ 
+       return self._str()
+
+
+   def __repr__(self):
+
+       return self._str()
+
+
    def __eq__(self, other):
 
        return self._parents == other._parents
@@ -111,6 +130,25 @@ class ReverseGate(Gate, Reverse):
 
        self._parents = parents
        self._vjp     = vjp
+
+
+   def _str(self):
+
+       out = StringRep(self)
+       out = out.with_member("parents", self._parents)
+       out = out.with_member("vjp",     self._vjp)
+
+       return out.compile()
+       
+
+   def __str__(self):
+ 
+       return self._str()
+
+
+   def __repr__(self):
+
+       return self._str()
 
 
    def __eq__(self, other):
@@ -195,6 +233,27 @@ class ForwardGateInputs(GateInputs):
        self._out   = out
 
 
+   def _str(self):
+
+       out = StringRep(self)
+       out = out.with_data("adxs",  self._adxs)
+       out = out.with_member("gates", self._gates)
+       out = out.with_member("args",  self._args)
+       out = out.with_member("out",   self._out)
+
+       return out.compile()
+       
+
+   def __str__(self):
+ 
+       return self._str()
+
+
+   def __repr__(self):
+
+       return self._str()
+
+
    def __eq__(self, other):
 
        return self._gates == other._gates
@@ -229,6 +288,27 @@ class ReverseGateInputs(GateInputs):
        self._adxs  = adxs
        self._args  = args
        self._out   = out
+
+
+   def _str(self):
+
+       out = StringRep(self)
+       out = out.with_data("adxs",  self._adxs)
+       out = out.with_member("gates", self._gates)
+       out = out.with_member("args",  self._args)
+       out = out.with_member("out",   self._out)
+
+       return out.compile()
+       
+
+   def __str__(self):
+ 
+       return self._str()
+
+
+   def __repr__(self):
+
+       return self._str()
 
 
    def __eq__(self, other):
@@ -296,6 +376,26 @@ class UndirectedNode(Node):
        self._layer  = layer
 
 
+   def _str(self):
+
+       out = StringRep(self)
+       out = out.with_data("layer",    self._layer)
+       out = out.with_member("source", self._source)
+       out = out.with_member("gate",   self._gate)
+
+       return out.compile()
+       
+
+   def __str__(self):
+ 
+       return self._str()
+
+
+   def __repr__(self):
+
+       return self._str()
+
+
    def __eq__(self, other):
 
        return self._source == other._source
@@ -345,6 +445,16 @@ class ForwardNode(Node, Forward):
        self._core = core
 
 
+   def __str__(self):
+ 
+       return str(self._core) 
+
+
+   def __repr__(self):
+
+       return repr(self._core)
+
+
    def __eq__(self, other):
 
        return self._core == other._core
@@ -384,6 +494,16 @@ class ReverseNode(Node, Reverse):
    def __init__(self, core):
 
        self._core = core
+
+
+   def __str__(self):
+ 
+       return str(self._core) 
+
+
+   def __repr__(self):
+
+       return repr(self._core)
 
 
    def __eq__(self, other):
@@ -439,6 +559,25 @@ class Point(Node):
 
        self._source = source
        self._layer  = layer
+
+
+   def _str(self):
+
+       out = StringRep(self)
+       out = out.with_data("layer",    self._layer)
+       out = out.with_member("source", self._source)
+
+       return out.compile()
+       
+
+   def __str__(self):
+ 
+       return self._str()
+
+
+   def __repr__(self):
+
+       return self._str()
 
 
    def __eq__(self, other):

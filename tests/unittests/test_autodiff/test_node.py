@@ -30,8 +30,8 @@ class TestForwardGate:
     
        gate = self._gate(nparents, grad) 
 
-       out = gate.node(self._source, layer)
-       ans = ForwardNode(UndirectedNode(self._source, gate, layer))
+       out = gate.node(self._source(), layer)
+       ans = ForwardNode(UndirectedNode(self._source(), gate, layer))
 
        assert out == ans
 
@@ -43,8 +43,8 @@ class TestForwardGate:
        this   = self._gate(*next(elems))
        others = [self._gate(*elem) for elem in elems]
 
-       out = this.next_input(others, adxs, args, self._source)
-       ans = ForwardGateInputs((this, *others), adxs, args, self._source) 
+       out = this.next_input(others, adxs, args, self._source())
+       ans = ForwardGateInputs((this, *others), adxs, args, self._source()) 
 
        assert out == ans
 
