@@ -3,6 +3,9 @@
 
 import pytest
 
+from tadpole.tests.common import assert_close
+
+
 
 
 class TestForwardGate:
@@ -50,7 +53,7 @@ class TestForwardGate:
 
        gate = self._gate(nparents, grad) 
 
-       assert gate.grad() == grad # FIXME need to impl equality for objects and assert_allclose for floats
+       assert_close(gate.grad(), grad) # FIXME need to impl equality for objects and assert_allclose for floats
 
 
 
