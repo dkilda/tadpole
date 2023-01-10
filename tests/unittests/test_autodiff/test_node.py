@@ -6,18 +6,9 @@ import pytest
 
 from tests.common import assert_close
 
-from tests.mocks.autodiff.node import MockNode, MockGate, MockGateInputs
-from tests.mocks.autodiff.node import MockPoint
-from tests.mocks.autodiff.node import MockForwardNode, MockReverseNode 
-from tests.mocks.autodiff.node import MockForwardGate, MockReverseGate
+import tests.mocks.autodiff.node as mknode
+import tadpole.autodiff.node     as tdnode
 
-from tadpole.autodiff.node import Node, Gate, GateInputs
-from tadpole.autodiff.node import Point
-from tadpole.autodiff.node import UndirectedNode, ForwardNode, ReverseNode
-from tadpole.autodiff.node import ForwardGate, ReverseGate
-from tadpole.autodiff.node import ForwardGateInputs, ReverseGateInputs
-
-from tadpole.autodiff.node import make_node
 
 
 
@@ -50,7 +41,7 @@ def forward_node():
 
     def wrap(source, gate, layer):
 
-        return ForwardNode(UndirectedNode(source, gate, layer))
+        return tdnode.ForwardNode(tdnode.UndirectedNode(source, gate, layer))
 
     return wrap
 
@@ -62,7 +53,7 @@ def reverse_node():
 
     def wrap(source, gate, layer):
 
-        return ReverseNode(UndirectedNode(source, gate, layer))
+        return tdnode.ReverseNode(tdnode.UndirectedNode(source, gate, layer))
 
     return wrap
 
@@ -93,7 +84,7 @@ def mock_args(node_type, randn_val):
 @pytest.fixture
 def mock_forward_args(randn_val):
 
-    return mock_args(MockForwardNode, randn_val)
+    return mock_args(mknode.MockForwardNode, randn_val)
 
 
 
@@ -101,7 +92,7 @@ def mock_forward_args(randn_val):
 @pytest.fixture
 def mock_reverse_args(randn_val):
 
-    return mock_args(MockReverseNode, randn_val)
+    return mock_args(mknode.MockReverseNode, randn_val)
 
 
 
@@ -116,9 +107,9 @@ def default_forward_gate(randn_val):
         if grad is None:
            grad = randn_val()
 
-        parents = (MockForwardGate(), )*valency
+        parents = (mknode.MockForwardGate(), )*valency
 
-        return ForwardGate(parents, grad)
+        return tdnode.ForwardGate(parents, grad)
 
     return wrap
 
@@ -133,9 +124,9 @@ def default_reverse_gate(randn_val):
         if vjp is None:
            vjp = lambda g: (g * randn_val(i) for i in range(valency)) 
 
-        parents = (MockReverseGate(), )*valency
+        parents = (mknode.MockReverseGate(), )*valency
 
-        return ReverseGate(parents, vjp)
+        return tdnode.ReverseGate(parents, vjp)
 
     return wrap
 
@@ -227,7 +218,7 @@ class TestForwardGate:
    def test_node(self, layer): 
 
        gate   = self._gate()
-       source = MockForwardNode()
+       source = mknode.MockForwardNode()
        layer  = 1
 
        out = gate.node(source, layer)
@@ -244,12 +235,12 @@ class TestForwardGate:
    ])   
    def test_next_input(self, n, adxs, valencies): 
 
-       source = MockForwardNode()
+       source = mknode.MockForwardNode()
        args   = self._mock_args(n, adxs)
        gates  = self._gates(n, valencies)
 
        out = gates[0].next_input(gates[1:], adxs, args, source)
-       ans = ForwardGateInputs(gates, adxs, args, source) 
+       ans = tdnode.ForwardGateInputs(gates, adxs, args, source) 
 
        assert out == ans
 
