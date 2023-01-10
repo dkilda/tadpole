@@ -6,8 +6,6 @@ from tests.mocks.common import mockify, NULL
 
 
 
-
-
 ###############################################################################
 ###                                                                         ###
 ###  JVP factory                                                            ###

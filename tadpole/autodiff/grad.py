@@ -3,11 +3,13 @@
 
 import abc
 
-from tadpole.autodiff.util    import cacheable
-from tadpole.autodiff.node    import make_forward_gate, make_reverse_gate
-from tadpole.autodiff.graph   import Graph
-from tadpole.autodiff.nary_op import make_nary_op
-from tadpole.autodiff.wrapper import add_grads
+import tadpole.autodiff.util    as tdutil
+import tadpole.autodiff.nary_op as tdnary
+import tadpole.autodiff.node    as tdnode
+import tadpole.autodiff.graph   as tdgraph
+import tadpole.autodiff.wrapper as tdwrap
+
+
 
 
 ###############################################################################
@@ -19,7 +21,7 @@ from tadpole.autodiff.wrapper import add_grads
 
 # --- Gradient -------------------------------------------------------------- #
 
-@make_nary_op
+@tdnary.make_nary_op
 def grad(fun, x):  
     return ReverseDiffOp(fun, x).grad(1)
 
@@ -28,7 +30,7 @@ def grad(fun, x):
 
 # --- Derivative ------------------------------------------------------------ #
 
-@make_nary_op
+@tdnary.make_nary_op
 def deriv(fun, x):
     return ForwardDiffOp(fun, x).grad(1)
 
@@ -73,8 +75,8 @@ class ForwardDiffOp(DiffOp):
 
    def _compute(self, seed):
 
-       with Graph(self._fun, self._x) as graph:
-          last_node = graph.build(make_forward_gate(seed))
+       with tdgraph.Graph(self._fun, self._x) as graph:
+          last_node = graph.build(tdnode.make_forward_gate(seed))
 
        return last_node.reduce(), last_node.grad()
 
@@ -109,11 +111,11 @@ class ReverseDiffOp(DiffOp):
        self._x   = x
 
 
-   @cacheable
+   @tdutil.cacheable
    def _compute(self):
 
-       with Graph(self._fun, self._x) as graph:
-          last_node = graph.build(make_reverse_gate())
+       with tdgraph.Graph(self._fun, self._x) as graph:
+          last_node = graph.build(tdnode.make_reverse_gate())
 
        return last_node.reduce(), Backprop(last_node)
 
@@ -264,7 +266,7 @@ class GradAccum:
 
    def accumulate(self, node, grad):
 
-       self._map[node] = add_grads(self._map.get(node), grad)
+       self._map[node] = tdwrap.add_grads(self._map.get(node), grad)
        return self
 
 

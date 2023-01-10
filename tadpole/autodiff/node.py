@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import abc
-import tadpole.autodiff.graph as tdg
 
-from tadpole.autodiff.util            import StringRep
-from tadpole.autodiff.adjoint_factory import JvpFactory, VjpFactory
+import tadpole.autodiff.util  as tdutil           
+import tadpole.autodiff.graph as tdgraph
+
+import tadpole.autodiff.adjoint_factory as tdadj
 
 
 
@@ -81,7 +82,7 @@ class ForwardGate(Gate, Forward):
 
    def _str(self):
 
-       out = StringRep(self)
+       out = tdutil.StringRep(self)
        out = out.with_member("parents", self._parents)
        out = out.with_member("grad",    self._grad)
 
@@ -137,7 +138,7 @@ class ReverseGate(Gate, Reverse):
 
    def _str(self):
 
-       out = StringRep(self)
+       out = tdutil.StringRep(self)
        out = out.with_member("parents", self._parents)
        out = out.with_member("vjp",     self._vjp)
 
@@ -238,7 +239,7 @@ class ForwardGateInputs(GateInputs):
 
    def _str(self):
 
-       out = StringRep(self)
+       out = tdutil.StringRep(self)
        out = out.with_data("adxs",  self._adxs)
        out = out.with_member("gates", self._gates)
        out = out.with_member("args",  self._args)
@@ -269,12 +270,12 @@ class ForwardGateInputs(GateInputs):
 
        parents = tuple(self._gates[adx] for adx in self._adxs)
 
-       jvp = JvpFactory(fun).jvp(
-                                 (p.grad() for p in parents),
-                                 self._adxs, 
-                                 self._out, 
-                                 *self._args
-                                )
+       jvp = tdadj.JvpFactory(fun).jvp(
+                                       (p.grad() for p in parents),
+                                       self._adxs, 
+                                       self._out, 
+                                       *self._args
+                                      )
 
        return ForwardGate(parents, jvp)
 
@@ -295,7 +296,7 @@ class ReverseGateInputs(GateInputs):
 
    def _str(self):
 
-       out = StringRep(self)
+       out = tdutil.StringRep(self)
        out = out.with_data("adxs",  self._adxs)
        out = out.with_member("gates", self._gates)
        out = out.with_member("args",  self._args)
@@ -326,7 +327,7 @@ class ReverseGateInputs(GateInputs):
 
        parents = tuple(self._gates[adx] for adx in self._adxs)
 
-       vjp = VjpFactory(fun).vjp(self._adxs, self._out, *self._args)
+       vjp = tdadj.VjpFactory(fun).vjp(self._adxs, self._out, *self._args)
 
        return ReverseGate(parents, vjp)
 
@@ -381,7 +382,7 @@ class UndirectedNode(Node):
 
    def _str(self):
 
-       out = StringRep(self)
+       out = tdutil.StringRep(self)
        out = out.with_data("layer",    self._layer)
        out = out.with_member("source", self._source)
        out = out.with_member("gate",   self._gate)
@@ -429,7 +430,7 @@ class UndirectedNode(Node):
        gates   = tuple(node._gate   for node in nodes)
        layers  = tuple(node._layer  for node in nodes)
 
-       return tdg.NodeGlue(tdg.Sources(nodes, sources, layers), gates)
+       return tdgraph.NodeGlue(tdgraph.Sources(nodes, sources, layers), gates)
 
 
    def visit(self, fun):
@@ -566,7 +567,7 @@ class Point(Node):
 
    def _str(self):
 
-       out = StringRep(self)
+       out = tdutil.StringRep(self)
        out = out.with_data("layer",    self._layer)
        out = out.with_member("source", self._source)
 
@@ -611,7 +612,7 @@ class Point(Node):
        sources = tuple(pt._source for pt in pts) 
        layers  = tuple(pt._layer  for pt in pts)
 
-       return tdg.PointGlue(tdg.Sources(pts, sources, layers))
+       return tdgraph.PointGlue(tdgraph.Sources(pts, sources, layers))
 
 
 

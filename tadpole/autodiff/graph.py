@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import abc
-import tadpole.autodiff.node as tdn
 
-from tadpole.autodiff.util import cacheable, Stack, StringRep
+import tadpole.autodiff.util as tdutil
+import tadpole.autodiff.node as tdnode
 
 
 
@@ -42,7 +42,7 @@ class Graph:
 
    def build(self, root_gate):
 
-       root_node = tdn.make_node(self._x, root_gate, type(self)._layer) 
+       root_node = tdnode.make_node(self._x, root_gate, type(self)._layer) 
        return self._fun(root_node)
 
 
@@ -149,7 +149,7 @@ class ArgFilter:
 
    def _str(self):
 
-       out = StringRep(self)
+       out = tdutil.StringRep(self)
        out = out.with_member("mask", self._mask)
 
        return out.compile()
@@ -191,7 +191,7 @@ class ArgFilterByNode(ArgFilter):
 
    def __init__(self):
 
-       super().__init__(lambda x: isinstance(x, tdn.Node))
+       super().__init__(lambda x: isinstance(x, tdnode.Node))
 
 
 
@@ -200,7 +200,7 @@ class ArgFilterByPoint(ArgFilter):
 
    def __init__(self):
 
-       super().__init__(lambda x: isinstance(x, tdn.Point))
+       super().__init__(lambda x: isinstance(x, tdnode.Point))
 
 
 
@@ -228,7 +228,7 @@ class ArgGlue(Glue):
 
    def _str(self):
 
-       out = StringRep(self)
+       out = tdutil.StringRep(self)
        out = out.with_member("args",   self._args)
        out = out.with_member("filter", self._filter)
 
@@ -276,14 +276,14 @@ class FunCall:
    def __init__(self, args=None):
 
        if args is None:
-          args = Stack()
+          args = tdutil.Stack()
 
        self._args = args
 
 
    def _str(self):
 
-       out = StringRep(self)
+       out = tdutil.StringRep(self)
        out = out.with_member("args", self._args)
 
        return out.compile()
@@ -341,7 +341,7 @@ class Sources:
 
    def _str(self):
 
-       out = StringRep(self)
+       out = tdutil.StringRep(self)
        out = out.with_data("layers",    self._layers)
        out = out.with_member("nodes",   self._nodes)
        out = out.with_member("sources", self._sources)
@@ -366,17 +366,17 @@ class Sources:
           and self._layers  == other._layers
 
 
-   @cacheable
+   @tdutil.cacheable
    def layer(self):
        return max(self._layers)
 
 
-   @cacheable
+   @tdutil.cacheable
    def adxs(self):
        return tuple(i for i, x in enumerate(self._layers) 
                                       if x == self.layer())
 
-   @cacheable
+   @tdutil.cacheable
    def args(self):
 
        args = list(self._nodes)
@@ -401,7 +401,7 @@ class NodeGlue(Glue):
 
    def _str(self):
 
-       out = StringRep(self)
+       out = tdutil.StringRep(self)
        out = out.with_member("sources", self._sources)
        out = out.with_member("gates",   self._gates)
 
@@ -428,12 +428,12 @@ class NodeGlue(Glue):
 
        glue   = ArgGlue(self._sources.args(), ArgFilterByNode())
        source = glue.pack(funcall)
-       inputs = tdn.make_gate_inputs(
-                                     self._gates, 
-                                     self._sources.adxs(), 
-                                     self._sources.args(), 
-                                     source
-                                    )
+       inputs = tdnode.make_gate_inputs(
+                                        self._gates, 
+                                        self._sources.adxs(), 
+                                        self._sources.args(), 
+                                        source
+                                       )
 
        return NodePack(source, inputs, self._sources.layer())
 
@@ -451,7 +451,7 @@ class PointGlue(Glue):
 
    def _str(self):
 
-       out = StringRep(self)
+       out = tdutil.StringRep(self)
        out = out.with_member("sources", self._sources)
 
        return out.compile()
@@ -514,7 +514,7 @@ class NodePack(Pack):
 
    def _str(self):
 
-       out = StringRep(self)
+       out = tdutil.StringRep(self)
        out = out.with_data("layer",    self._layer)
        out = out.with_member("source", self._source)
        out = out.with_member("inputs", self._inputs)
@@ -544,7 +544,7 @@ class NodePack(Pack):
        source = self._source.pluginto(fun)
        gate   = fun.gate(self._inputs)
 
-       return tdn.make_node(source, gate, self._layer)
+       return tdnode.make_node(source, gate, self._layer)
 
 
 
@@ -560,7 +560,7 @@ class PointPack(Pack):
 
    def _str(self):
 
-       out = StringRep(self)
+       out = tdutil.StringRep(self)
        out = out.with_member("source", self._source)
 
        return out.compile()
@@ -599,7 +599,7 @@ class EmptyPack(Pack):
 
    def _str(self):
 
-       out = StringRep(self)
+       out = tdutil.StringRep(self)
        out = out.with_member("funcall", self._funcall)
 
        return out.compile()
