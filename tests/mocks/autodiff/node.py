@@ -3,6 +3,9 @@
 
 from tadpole.tests.mocks.util import NULL, mockify
 
+from tadpole.autodiff.node import Forward, Reverse
+from tadpole.autodiff.node import Node, Gate, GateInputs
+
 
 
 ###############################################################################

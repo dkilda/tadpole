@@ -1,9 +1,24 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import numpy as np
 import pytest
 
-from tadpole.tests.common import assert_close
+from tests.common import assert_close
+
+from tests.mocks.autodiff.node import MockNode, MockGate, MockGateInputsMock
+from tests.mocks.autodiff.node import MockPoint
+from tests.mocks.autodiff.node import ForwardNode, MockReverseNode 
+from tests.mocks.autodiff.node import MockForwardGate, MockReverseGate
+
+from tadpole.autodiff.node import Node, Gate, GateInputs
+from tadpole.autodiff.node import Point
+from tadpole.autodiff.node import UndirectedNode, ForwardNode, ReverseNode
+from tadpole.autodiff.node import ForwardGate, ReverseGate
+from tadpole.autodiff.node import ForwardGateInputs, ReverseGateInputs
+
+from tadpole.autodiff.node import make_node
+
 
 
 ###############################################################################

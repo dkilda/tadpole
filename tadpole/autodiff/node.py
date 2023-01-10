@@ -3,7 +3,11 @@
 
 import abc
 
+from tadpole.autodiff.util  import StringRep
+from tadpole.autodiff.graph import Glue, NodeGlue, PointGlue, Sources
+
 from tadpole.autodiff.adjoint_factory import JvpFactory, VjpFactory
+
 
 
 

@@ -3,11 +3,9 @@
 
 import abc
 
-from tadpole.autodiff.node import make_node
-from tadpole.autodiff.node import Node, Point
+from tadpole.autodiff.util import cacheable, Stack, StringRep
+from tadpole.autodiff.node import make_node, Node, Point
 
-from tadpole.autodiff.util import cacheable
-from tadpole.autodiff.util import Stack
 
 
 
