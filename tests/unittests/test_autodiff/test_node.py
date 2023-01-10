@@ -6,9 +6,9 @@ import pytest
 
 from tests.common import assert_close
 
-from tests.mocks.autodiff.node import MockNode, MockGate, MockGateInputsMock
+from tests.mocks.autodiff.node import MockNode, MockGate, MockGateInputs
 from tests.mocks.autodiff.node import MockPoint
-from tests.mocks.autodiff.node import ForwardNode, MockReverseNode 
+from tests.mocks.autodiff.node import MockForwardNode, MockReverseNode 
 from tests.mocks.autodiff.node import MockForwardGate, MockReverseGate
 
 from tadpole.autodiff.node import Node, Gate, GateInputs
@@ -154,7 +154,7 @@ def default_gates(default_gate, randn_val):
         if grads is None:
            grads = [randn_val(i+1) for i in range(n)]
 
-        return [default_gate(v, g) for v, g in zip(valencies, grads)]
+        return tuple(default_gate(v, g) for v, g in zip(valencies, grads))
 
     return wrap
 
@@ -257,7 +257,8 @@ class TestForwardGate:
    @pytest.mark.parametrize("seed", [1, 2, 3])
    def test_grad(self, seed): 
 
-       gate = self._gate(grad=self._randn_val(seed))
+       grad = self._randn_val(seed)
+       gate = self._gate(grad=grad)
 
        assert_close(gate.grad(), grad) 
 

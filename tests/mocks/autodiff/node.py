@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from tadpole.tests.mocks.util import NULL, mockify
+from tests.mocks.common import NULL, mockify
 
 from tadpole.autodiff.node import Forward, Reverse
 from tadpole.autodiff.node import Node, Gate, GateInputs

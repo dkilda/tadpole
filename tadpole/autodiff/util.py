@@ -255,10 +255,10 @@ def _format(x):
     return "type = {str(type(x))[8:-2]}, id = {id(x)} "
 
 
-def _str(x):
+def _str(name, x):
 
     if isinstance(x, (list, tuple)):
-       return "\n{name}: [\n{}\n]".format('\n'.join(_format(v) for v in x))
+       return "\n{}: [\n{}\n]".format(name, '\n'.join(_format(v) for v in x))
 
     return f"\n{name}: {_format(x)}"  
 
@@ -281,12 +281,12 @@ class StringRep:
 
    def with_member(self, name, x):
 
-       return self.__class__(self._obj, members=self._members.push(name, x))
+       return self.__class__(self._obj, members=self._members.push((name, x)))
 
 
    def with_data(self, name, x):
 
-       return self.__class__(self._obj, data=self._data.push(name, x))
+       return self.__class__(self._obj, data=self._data.push((name, x)))
 
 
    def _obj_str(self):
