@@ -3,12 +3,11 @@
 
 import abc
 
-import tadpole.autodiff.adjoint_factory as adj
-
-from tadpole.autodiff.util  import cacheable
-from tadpole.autodiff.graph import Graph
-from tadpole.autodiff.node  import make_forward_gate, make_reverse_gate
-
+from tadpole.autodiff.util    import cacheable
+from tadpole.autodiff.node    import make_forward_gate, make_reverse_gate
+from tadpole.autodiff.graph   import Graph
+from tadpole.autodiff.nary_op import make_nary_op
+from tadpole.autodiff.wrapper import add_grads
 
 
 ###############################################################################
@@ -231,21 +230,7 @@ class TopoSort:
 # --- Create a topologically sorted iterator over the computation graph ----- #
 
 def toposort(last_node):
-    return ChildCount(last_node).compute()
-                                .toposort()
-                                .iterate()
-
-
-
-
-# --- Add gradients --------------------------------------------------------- #
-
-def add_grads(net_g, g): # TODO impl and use add() function, with @diffable decorator 
-                         #      (or overload __add__ operator to make it @diffable)
-    if net_g is None:  
-       return g
-
-    return adj.add(net_g, g)
+    return ChildCount(last_node).compute().toposort().iterate()
 
 
 

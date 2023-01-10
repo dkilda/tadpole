@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import abc
+import tadpole.autodiff.node as tdn
 
 from tadpole.autodiff.util import cacheable, Stack, StringRep
-from tadpole.autodiff.node import make_node, Node, Point
 
 
 
@@ -42,7 +42,7 @@ class Graph:
 
    def build(self, root_gate):
 
-       root_node = make_node(self._x, root_gate, type(self)._layer) 
+       root_node = tdn.make_node(self._x, root_gate, type(self)._layer) 
        return self._fun(root_node)
 
 
@@ -89,10 +89,9 @@ class Differentiable:
 
    def __call__(self, *args):
 
-       glue = make_arg_glue(args, lambda x: isinstance(x, Node))
+       glue = ArgGlue(args, ArgFilterByNode())
 
-       return glue.pack()
-                  .pluginto(GatedFun(self, self._fun))
+       return glue.pack().pluginto(GatedFun(self, self._fun))
 
 
 
@@ -108,10 +107,9 @@ class NonDifferentiable:
 
    def __call__(self, *args):
 
-       glue = make_arg_glue(args, lambda x: isinstance(x, Point))
+       glue = ArgGlue(args, ArgFilterByPoint())
 
-       return glue.pack()
-                  .pluginto(self._fun)
+       return glue.pack().pluginto(self._fun)
 
 
 
@@ -119,10 +117,14 @@ class NonDifferentiable:
 # --- Shorthand decorators for autodiff functions --------------------------- #
 
 def differentiable(fun):
+
     return Differentiable(fun)
 
 
+
+
 def nondifferentiable(fun):
+
     return NonDifferentiable(fun)
 
 
@@ -168,19 +170,37 @@ class ArgFilter:
        return self._mask == other._mask
 
 
-   def _execute(self, mask):
+   def _execute(self, args, mask):
 
        return tuple(arg for arg in args if mask(arg))
 
 
    def vals(self, args):
 
-       return self._execute(lambda x: not self._mask(x))  
+       return self._execute(args, lambda x: not self._mask(x))  
 
 
    def nodes(self, args):
 
-       return self._execute(lambda x: self._mask(x))  
+       return self._execute(args, lambda x: self._mask(x))  
+
+
+
+
+class ArgFilterByNode(ArgFilter):
+
+   def __init__(self):
+
+       super().__init__(lambda x: isinstance(x, tdn.Node))
+
+
+
+
+class ArgFilterByPoint(ArgFilter):
+
+   def __init__(self):
+
+       super().__init__(lambda x: isinstance(x, tdn.Point))
 
 
 
@@ -227,7 +247,7 @@ class ArgGlue(Glue):
 
    def __eq__(self, other):
 
-       return self._args   == other._args
+       return self._args   == other._args \
           and self._filter == other._filter
 
 
@@ -242,19 +262,9 @@ class ArgGlue(Glue):
        funcall = funcall.add(*vals)
 
        if len(nodes) > 0: 
-          return nodes[0].glue(nodes[1:])
-                         .pack(funcall)
+          return nodes[0].glue(*nodes[1:]).pack(funcall)
 
        return EmptyPack(funcall)
-
-
-
-
-# --- Create argument glue -------------------------------------------------- #
-
-def make_arg_glue(args, mask):
-
-    return ArgGlue(args, ArgFilter(mask))
 
 
 
@@ -351,8 +361,8 @@ class Sources:
 
    def __eq__(self, other):
 
-       return self._nodes   == other._nodes
-          and self._sources == other._sources
+       return self._nodes   == other._nodes   \
+          and self._sources == other._sources \
           and self._layers  == other._layers
 
 
@@ -371,7 +381,7 @@ class Sources:
 
        args = list(self._nodes)
 
-       for adx in self._adxs():
+       for adx in self.adxs():
            args[adx] = self._sources[adx]
 
        return args
@@ -410,19 +420,20 @@ class NodeGlue(Glue):
 
    def __eq__(self, other):
 
-       return self._sources == other._sources
+       return self._sources == other._sources \
           and self._gates   == other._gates
 
 
    def pack(self, funcall):
 
-       source = ArgGlue(self._sources.args()).nodepack(funcall)
-       inputs = make_gate_inputs(
-                                 self._gates, 
-                                 self._sources.adxs(), 
-                                 self._sources.args(), 
-                                 source
-                                )
+       glue   = ArgGlue(self._sources.args(), ArgFilterByNode())
+       source = glue.pack(funcall)
+       inputs = tdn.make_gate_inputs(
+                                     self._gates, 
+                                     self._sources.adxs(), 
+                                     self._sources.args(), 
+                                     source
+                                    )
 
        return NodePack(source, inputs, self._sources.layer())
 
@@ -463,7 +474,8 @@ class PointGlue(Glue):
 
    def pack(self, funcall):
 
-       source = ArgGlue(self._sources.args()).pointpack(funcall)
+       glue   = ArgGlue(self._sources.args(), ArgFilterByPoint())
+       source = glue.pack(funcall)  
 
        return PointPack(source, self._sources.layer())
 
@@ -522,8 +534,8 @@ class NodePack(Pack):
 
    def __eq__(self, other):
 
-       return self._sources == other._sources
-          and self._inputs  == other._inputs
+       return self._sources == other._sources \
+          and self._inputs  == other._inputs  \
           and self._layer   == other._layer
 
 
@@ -532,7 +544,7 @@ class NodePack(Pack):
        source = self._source.pluginto(fun)
        gate   = fun.gate(self._inputs)
 
-       return make_node(source, gate, self._layer)
+       return tdn.make_node(source, gate, self._layer)
 
 
 

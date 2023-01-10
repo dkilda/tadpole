@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import abc
 
 
 ###############################################################################
@@ -257,7 +258,7 @@ def _format(x):
 def _str(x):
 
     if isinstance(x, (list, tuple)):
-       return f"\n{name}: [\n{'\n'.join(_format(v) for v in x)}\n]" 
+       return "\n{name}: [\n{}\n]".format('\n'.join(_format(v) for v in x))
 
     return f"\n{name}: {_format(x)}"  
 
@@ -305,8 +306,8 @@ class StringRep:
 
    def compile(self):
 
-       return f"{self._obj_str()}"
-              f"{self._data_str()}"
+       return f"{self._obj_str()}"  \
+              f"{self._data_str()}" \
               f"{self._member_str()}\n\n"
 
 

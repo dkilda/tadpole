@@ -1,42 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from tadpole.autodiff.grad  import add_grads
-from tadpole.autodiff.graph import differentiable, nondifferentiable
-
-
-@differentiable
-def sin(x):
-    return np.sin(x)
-
-@differentiable
-def cos(x):
-    return np.cos(x)
-
-@differentiable
-def neg(x):
-    return -x
-
-@differentiable
-def add(x, y):
-    return x + y
-
-@differentiable
-def sub(x, y):
-    return x - y
-
-@differentiable
-def mul(x, y):
-    return x * y
-
-
-@nondifferentiable
-def floor(x, n):
-    return x // n
-
-@nondifferentiable
-def equals(x, y):
-    return x == y 
+import tadpole.autodiff.wrapper as tdw
 
 
 
@@ -47,6 +12,7 @@ def equals(x, y):
 ###  from the input.                                                        ###
 ###                                                                         ###
 ###############################################################################
+
 
 # --- Set up adjoint function ----------------------------------------------- #
 
@@ -99,7 +65,7 @@ class NetJvpFun:
 
        jvps = (self._jvpfun(g, adx, out, *args) for g, adx in zip(gs, adxs))
 
-       return reduce(add_grads, jvps, None)
+       return reduce(tdw.add_grads, jvps, None)
 
 
 
@@ -187,95 +153,6 @@ class VjpFactory:
 
        cls._map[fun] = NetVjpFun(vjpfun)
        return cls
-
-
-
-
-###############################################################################
-###                                                                         ###
-###  Some VJPs and JVPs                                                     ###
-###                                                                         ###
-###############################################################################
-
-
-# --- VJPs ------------------------------------------------------------------ #
-
-VjpFactory.add(add, lambda g, out, x, y: g, 
-                    lambda g, out, x, y: g)
-
-VjpFactory.add(sub, lambda g, out, x, y: g, 
-                    lambda g, out, x, y: neg(g))
-
-VjpFactory.add(mul, lambda g, out, x, y: mul(y, g), 
-                    lambda g, out, x, y: mul(x, g))
-
-VjpFactory.add(neg, lambda g, out, x: neg(g))
-VjpFactory.add(sin, lambda g, out, x: mul(g, cos(x)))
-VjpFactory.add(cos, lambda g, out, x: neg(mul(g, sin(x))))
-
-
-
-
-# --- JVPs ------------------------------------------------------------------ #
-
-JvpFactory.add(add, lambda g, out, x, y: g, 
-                    lambda g, out, x, y: g)
-
-JvpFactory.add(sub, lambda g, out, x, y: g, 
-                    lambda g, out, x, y: neg(g))
-
-JvpFactory.add(mul, lambda g, out, x, y: mul(y, g), 
-                    lambda g, out, x, y: mul(x, g))
-
-JvpFactory.add(neg, lambda g, out, x: neg(g))
-JvpFactory.add(sin, lambda g, out, x: mul(g, cos(x)))
-JvpFactory.add(cos, lambda g, out, x: neg(mul(g, sin(x))))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

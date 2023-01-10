@@ -3,7 +3,7 @@
 
 
 from tadpole.autodiff.grad import grad, deriv
-from tadpole.autodiff.adjoint_factory import (
+from tadpole.autodiff.wrapper import (
    add, 
    sub, 
    mul, 

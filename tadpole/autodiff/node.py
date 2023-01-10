@@ -2,10 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import abc
+import tadpole.autodiff.graph as tdg
 
-from tadpole.autodiff.util  import StringRep
-from tadpole.autodiff.graph import Glue, NodeGlue, PointGlue, Sources
-
+from tadpole.autodiff.util            import StringRep
 from tadpole.autodiff.adjoint_factory import JvpFactory, VjpFactory
 
 
@@ -157,7 +156,7 @@ class ReverseGate(Gate, Reverse):
 
    def __eq__(self, other):
 
-       return self._parents == other._parents 
+       return self._parents == other._parents \
           and self._vjp     == other._vjp
 
 
@@ -260,9 +259,9 @@ class ForwardGateInputs(GateInputs):
 
    def __eq__(self, other):
 
-       return self._gates == other._gates
-          and self._adxs  == other._adxs
-          and self._args  == other._args
+       return self._gates == other._gates \
+          and self._adxs  == other._adxs  \
+          and self._args  == other._args  \
           and self._out   == other._out
 
 
@@ -271,7 +270,7 @@ class ForwardGateInputs(GateInputs):
        parents = tuple(self._gates[adx] for adx in self._adxs)
 
        jvp = JvpFactory(fun).jvp(
-                                 (p.grad() for p in parents)
+                                 (p.grad() for p in parents),
                                  self._adxs, 
                                  self._out, 
                                  *self._args
@@ -317,9 +316,9 @@ class ReverseGateInputs(GateInputs):
 
    def __eq__(self, other):
 
-       return self._gates == other._gates
-          and self._adxs  == other._adxs
-          and self._args  == other._args
+       return self._gates == other._gates \
+          and self._adxs  == other._adxs  \
+          and self._args  == other._args  \
           and self._out   == other._out
 
 
@@ -402,8 +401,8 @@ class UndirectedNode(Node):
 
    def __eq__(self, other):
 
-       return self._source == other._source
-          and self._gate   == other._gate
+       return self._source == other._source \
+          and self._gate   == other._gate   \
           and self._layer  == other._layer
 
 
@@ -430,7 +429,7 @@ class UndirectedNode(Node):
        gates   = tuple(node._gate   for node in nodes)
        layers  = tuple(node._layer  for node in nodes)
 
-       return NodeGlue(Sources(nodes, sources, layers), gates)
+       return tdg.NodeGlue(tdg.Sources(nodes, sources, layers), gates)
 
 
    def visit(self, fun):
@@ -586,7 +585,7 @@ class Point(Node):
 
    def __eq__(self, other):
 
-       return self._source == other._source
+       return self._source == other._source \
           and self._layer  == other._layer
 
 
@@ -612,7 +611,7 @@ class Point(Node):
        sources = tuple(pt._source for pt in pts) 
        layers  = tuple(pt._layer  for pt in pts)
 
-       return PointGlue(Sources(pts, sources, layers))
+       return tdg.PointGlue(tdg.Sources(pts, sources, layers))
 
 
 
@@ -622,111 +621,6 @@ class Point(Node):
 def make_node(source, gate, layer):
 
     return gate.node(source, layer)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
