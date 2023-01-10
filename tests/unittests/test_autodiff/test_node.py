@@ -6,89 +6,249 @@ import pytest
 from tadpole.tests.common import assert_close
 
 
+###############################################################################
+###                                                                         ###
+###  Fixtures                                                               ###
+###                                                                         ###
+###############################################################################
 
+
+# --- Random value ---------------------------------------------------------- #
+
+@pytest.fixture
+def randn_val():
+
+    def wrap(seed=1):
+
+        np.random.seed(seed)    
+        return np.random.randn()
+
+    return wrap
+
+
+
+
+# --- Nodes ----------------------------------------------------------------- #
+
+@pytest.fixture
+def forward_node():
+
+    def wrap(source, gate, layer):
+
+        return ForwardNode(UndirectedNode(source, gate, layer))
+
+    return wrap
+
+
+
+
+@pytest.fixture
+def reverse_node():
+
+    def wrap(source, gate, layer):
+
+        return ReverseNode(UndirectedNode(source, gate, layer))
+
+    return wrap
+
+
+
+
+# --- Mock args ------------------------------------------------------------- #
+
+def mock_args(node_type, randn_val):
+
+    def wrap(n, adxs=None, vals=None):
+
+        if adxs is None:
+           adxs = list(range(n))
+
+        if   vals is None:
+             vals = (randn_val(i+1) for i in range(n))
+        else:
+             vals = iter(vals)
+
+        return [node_type() if i in adxs else next(vals) for i in range(n)]
+
+    return wrap
+
+
+
+
+@pytest.fixture
+def mock_forward_args(randn_val):
+
+    return mock_args(MockForwardNode, randn_val)
+
+
+
+
+@pytest.fixture
+def mock_reverse_args(randn_val):
+
+    return mock_args(MockReverseNode, randn_val)
+
+
+
+
+# --- Default gates --------------------------------------------------------- #
+
+@pytest.fixture
+def default_forward_gate(randn_val):
+
+    def wrap(valency=2, grad=None):
+
+        if grad is None:
+           grad = randn_val()
+
+        parents = (MockForwardGate(), )*valency
+
+        return ForwardGate(parents, grad)
+
+    return wrap
+
+
+
+
+@pytest.fixture
+def default_reverse_gate(randn_val):
+
+    def wrap(valency=2, vjp=None):
+
+        if vjp is None:
+           vjp = lambda g: (g * randn_val(i) for i in range(valency)) 
+
+        parents = (MockReverseGate(), )*valency
+
+        return ReverseGate(parents, vjp)
+
+    return wrap
+
+
+
+
+# --- Iterable of default gates --------------------------------------------- #
+
+def default_gates(default_gate, randn_val):
+
+    def wrap(n, valencies=None, grads=None):
+
+        if valencies is None:
+           valencies = [None]*n
+
+        if grads is None:
+           grads = [randn_val(i+1) for i in range(n)]
+
+        return [default_gate(v, g) for v, g in zip(valencies, grads)]
+
+    return wrap
+
+
+
+
+@pytest.fixture
+def default_forward_gates(default_forward_gate, randn_val):
+
+    return default_gates(default_forward_gate, randn_val)
+
+
+
+
+@pytest.fixture
+def default_reverse_gates(default_reverse_gate, randn_val):
+
+    return default_gates(default_reverse_gate, randn_val)
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Gates of the autodiff circuit                                          ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Test forward gate ----------------------------------------------------- #
 
 class TestForwardGate:
 
 
-   def _parents(nparents):
+   # --- Fixtures --- #
 
-       return [MockForwardNode()]*nparents
+   @pytest.fixture(autouse=True)
+   def request_randn_val(self, randn_val):
 
-
-   def _source():
-
-       return MockForwardNode()
+       self._randn_val = randn_val
 
 
-   def _gate(self, nparents, grad):
+   @pytest.fixture(autouse=True)
+   def request_node(self, forward_node):
 
-       return ForwardGate(self._parents(nparents), grad)
+       self._node = forward_node
 
 
-   def test_node(self, layer, nparents, grad): 
-    
-       gate = self._gate(nparents, grad) 
+   @pytest.fixture(autouse=True)
+   def request_default_gate(self, default_forward_gate):
 
-       out = gate.node(self._source(), layer)
-       ans = ForwardNode(UndirectedNode(self._source(), gate, layer))
+       self._gate = default_forward_gate
+
+
+   @pytest.fixture(autouse=True)
+   def request_default_gates(self, default_forward_gates):
+
+       self._gates = default_forward_gates
+
+
+   @pytest.fixture(autouse=True)
+   def request_mock_args(self, mock_forward_args):
+
+       self._mock_args = mock_forward_args
+
+
+   # --- Tests --- #
+
+   @pytest.mark.parametrize("layer", [1])   
+   def test_node(self, layer): 
+
+       gate   = self._gate()
+       source = MockForwardNode()
+       layer  = 1
+
+       out = gate.node(source, layer)
+       ans = self._node(source, gate, layer) 
 
        assert out == ans
 
 
-   def test_next_input(self, adxs, args, nparents_list, grads): 
+   @pytest.mark.parametrize("n, adxs, valencies",  
+   [   
+   [4, [0,2,3], [2,1,3,0]],   
+   [1, [0],     [2]      ], 
+   [2, [0],     [2]      ],                             
+   ])   
+   def test_next_input(self, n, adxs, valencies): 
 
-       elems = iter(zip(nparents_list, grads))
+       source = MockForwardNode()
+       args   = self._mock_args(n, adxs)
+       gates  = self._gates(n, valencies)
 
-       this   = self._gate(*next(elems))
-       others = [self._gate(*elem) for elem in elems]
-
-       out = this.next_input(others, adxs, args, self._source())
-       ans = ForwardGateInputs((this, *others), adxs, args, self._source()) 
+       out = gates[0].next_input(gates[1:], adxs, args, source)
+       ans = ForwardGateInputs(gates, adxs, args, source) 
 
        assert out == ans
 
 
-   def test_grad(self, nparents, grad):
+   @pytest.mark.parametrize("seed", [1, 2, 3])
+   def test_grad(self, seed): 
 
-       gate = self._gate(nparents, grad) 
+       gate = self._gate(grad=self._randn_val(seed))
 
        assert_close(gate.grad(), grad) 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+       
 
 
 
