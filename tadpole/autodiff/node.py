@@ -3,10 +3,9 @@
 
 import abc
 
-import tadpole.autodiff.util  as tdutil           
-import tadpole.autodiff.graph as tdgraph
-
-import tadpole.autodiff.adjoint_factory as tdadj
+import tadpole.autodiff.util     as tdutil           
+import tadpole.autodiff.graph    as tdgraph
+import tadpole.autodiff.adjoints as tda
 
 
 
@@ -270,12 +269,12 @@ class ForwardGateInputs(GateInputs):
 
        parents = tuple(self._gates[adx] for adx in self._adxs)
 
-       jvp = tdadj.JvpFactory(fun).jvp(
-                                       (p.grad() for p in parents),
-                                       self._adxs, 
-                                       self._out, 
-                                       *self._args
-                                      )
+       jvp = JvpFactory(fun).create(
+                                    (p.grad() for p in parents),
+                                    self._adxs, 
+                                    self._out, 
+                                    *self._args
+                                   )
 
        return ForwardGate(parents, jvp)
 
@@ -327,7 +326,11 @@ class ReverseGateInputs(GateInputs):
 
        parents = tuple(self._gates[adx] for adx in self._adxs) # FIXME make parents = Nodes not Gates
 
-       vjp = tdadj.VjpFactory(fun).vjp(self._adxs, self._out, *self._args)
+       vjp = VjpFactory(fun).create(
+                                    self._adxs, 
+                                    self._out, 
+                                    *self._args
+                                   )
 
        return ReverseGate(parents, vjp)
 
@@ -623,6 +626,118 @@ def make_node(source, gate, layer):
 
     return gate.node(source, layer)
 
+
+
+
+###############################################################################
+###                                                                         ###
+###  Adjoints (JVP and VJP) and their factories                             ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Jvp factory ----------------------------------------------------------- #
+
+class JvpFactory:
+
+   def __init__(self, fun):
+
+       self._fun = fun
+
+
+   def _jvpfun(self, *args, **kwargs):
+
+       return tda.jvpmap.get(self._fun)(*args, **kwargs)
+
+
+   def create(self, parent_gs, adxs, out, *args):
+
+       jvps = self._jvpfun(adxs, out, *args)(parent_gs)
+
+       return Jvp(self._fun, reduce(tdmanip.add_grads, jvps, None))
+
+
+
+
+# --- Vjp factory ----------------------------------------------------------- #
+
+class VjpFactory:
+
+   def __init__(self, fun):
+
+       self._fun = fun
+
+
+   def _vjpfun(self, *args, **kwargs):
+
+       return tda.vjpmap.get(self._fun)(*args, **kwargs)
+
+
+   def create(self, adxs, out, *args):
+
+       vjp = self._vjpfun(adxs, out, *args)
+
+       return Vjp(self._fun, vjp)
+
+
+
+
+# --- JVP ------------------------------------------------------------------- #
+
+class Jvp:
+
+   def __init__(self, fun, jvp):
+
+       self._fun = fun
+       self._jvp = jvp
+
+
+   def __repr__(self):
+      
+       out = tdutil.StringRep(self)
+       out = out.with_member("fun", self._fun)
+
+       return out.compile()
+
+
+   def __eq__(self, other):
+
+       return self._fun == other._fun 
+
+
+   def __call__(self):
+
+       return self._jvp
+
+
+
+
+# --- VJP ------------------------------------------------------------------- #
+
+class Vjp:
+
+   def __init__(self, fun, vjp):
+
+       self._fun = fun
+       self._vjp = vjp
+
+
+   def __repr__(self):
+      
+       out = tdutil.StringRep(self)
+       out = out.with_member("fun", self._fun)
+
+       return out.compile()
+
+
+   def __eq__(self, other):
+
+       return self._fun == other._fun 
+
+
+   def __call__(self, g):
+
+       return self._vjp(g)
 
 
 

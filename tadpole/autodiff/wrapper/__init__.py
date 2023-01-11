@@ -3,7 +3,7 @@
 
 from . import functions
 from . import vjps
-# from . import jvps
+from . import jvps
 
 
   
