@@ -68,6 +68,8 @@ class GatedFun:
 
    def __call__(self, *args):
 
+       print(f"\nGatedFun: {args}, {self._raw_fun}")
+
        return self._raw_fun(*args)
 
 
@@ -85,6 +87,18 @@ class Differentiable:
    def __init__(self, fun):
 
        self._fun = fun
+
+
+   """
+   def __eq__(self, other):
+
+       return self._fun == other._fun
+
+
+   def __hash__(self):
+
+       return hash(self._fun)
+   """
 
 
    def __call__(self, *args):
@@ -393,7 +407,7 @@ class Sources:
 
 class NodeGlue(Glue):
 
-   def __init__(self, sources, gates):
+   def __init__(self, sources, gates): # FIXME pass sources, nodes instead of sources, gates
 
        self._sources = sources
        self._gates   = gates
@@ -429,11 +443,11 @@ class NodeGlue(Glue):
        glue   = ArgGlue(self._sources.args(), ArgFilterByNode())
        source = glue.pack(funcall)
        inputs = tdnode.make_gate_inputs(
-                                        self._gates, 
+                                        self._gates, # FIXME pass Nodes not Gates? 
                                         self._sources.adxs(), 
                                         self._sources.args(), 
-                                        source
-                                       )
+                                        source # FIXME we pass source = Pack object, but inside we use it as out = value in 
+                                       )       # vjp = tdadj.VjpFactory(fun).vjp(self._adxs, self._out, *self._args)
 
        return NodePack(source, inputs, self._sources.layer())
 

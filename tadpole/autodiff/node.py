@@ -176,7 +176,7 @@ class ReverseGate(Gate, Reverse):
        return ReverseGateInputs((self, *others), adxs, args, source)
 
 
-   def accumulate_parent_grads(self, grads):
+   def accumulate_parent_grads(self, grads): # FIXME make parents Nodes, not other Gates!
 
        parent_grads = self._vjp(grads.pop(self))
 
@@ -188,7 +188,7 @@ class ReverseGate(Gate, Reverse):
 
    def add_to_childcount(self, childcount):
 
-       childcount.add(self, self._parents)
+       childcount.add(self, self._parents) # FIXME we must extract the owning node of each parent gate
        return self
 
 
@@ -240,7 +240,7 @@ class ForwardGateInputs(GateInputs):
    def _str(self):
 
        out = tdutil.StringRep(self)
-       out = out.with_data("adxs",  self._adxs)
+       out = out.with_data("adxs",    self._adxs)
        out = out.with_member("gates", self._gates)
        out = out.with_member("args",  self._args)
        out = out.with_member("out",   self._out)
@@ -286,7 +286,7 @@ class ForwardGateInputs(GateInputs):
 
 class ReverseGateInputs(GateInputs):
 
-   def __init__(self, gates, adxs, args, out): 
+   def __init__(self, gates, adxs, args, out): # FIXME pass Nodes not Gates
 
        self._gates = gates
        self._adxs  = adxs
@@ -297,7 +297,7 @@ class ReverseGateInputs(GateInputs):
    def _str(self):
 
        out = tdutil.StringRep(self)
-       out = out.with_data("adxs",  self._adxs)
+       out = out.with_data("adxs",    self._adxs)
        out = out.with_member("gates", self._gates)
        out = out.with_member("args",  self._args)
        out = out.with_member("out",   self._out)
@@ -325,7 +325,7 @@ class ReverseGateInputs(GateInputs):
 
    def transform(self, fun):
 
-       parents = tuple(self._gates[adx] for adx in self._adxs)
+       parents = tuple(self._gates[adx] for adx in self._adxs) # FIXME make parents = Nodes not Gates
 
        vjp = tdadj.VjpFactory(fun).vjp(self._adxs, self._out, *self._args)
 
@@ -373,10 +373,10 @@ class Node(abc.ABC):
 
 class UndirectedNode(Node):
 
-   def __init__(self, source, gate, layer):
-
-       self._source = source
-       self._gate   = gate
+   def __init__(self, source, gate, layer): # FIXME scrap Gate, just keep ReverseNode(UndirectedNode(source, layer), parents, vjp)
+                                            # FIXME though we could also combine {parents, vjp} into a single 
+       self._source = source                # FIXME NB UndirectedNode w/o Gate becomes identical to Point! We don't need Point anymore?
+       self._gate   = gate                  #       (cuz we can merge it with UndirectedNode!)
        self._layer  = layer
 
 
@@ -390,7 +390,7 @@ class UndirectedNode(Node):
        return out.compile()
        
 
-   def __str__(self):
+   def __str__(self): # FIXME scrap str, repr is enough!
  
        return self._str()
 

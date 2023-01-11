@@ -8,7 +8,7 @@ import tadpole as tad
 
 
 def fun(x,y):
-    return tad.sin(tad.cos(x)) * tad.cos(y) + tad.sin(x)
+    return tad.add(x, y) # tad.add(tad.mul(tad.sin(tad.cos(x)), tad.cos(y)), tad.sin(x))
 
 
 x = 2.7

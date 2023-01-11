@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from tadpole.autodiff.wrapper.functions import add_grads 
-
+from . import functions
+from . import vjps
+# from . import jvps
 
 
   

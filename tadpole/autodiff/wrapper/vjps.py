@@ -3,6 +3,17 @@
 
 from tadpole.autodiff.adjoint_factory import VjpFactory
 
+from tadpole.autodiff.wrapper.functions import (
+   add, 
+   sub, 
+   mul, 
+   sin, 
+   cos, 
+   neg, 
+   floor, 
+   equals,
+)
+
 
 
 
@@ -27,7 +38,6 @@ VjpFactory.add(mul, lambda g, out, x, y: mul(y, g),
 VjpFactory.add(neg, lambda g, out, x: neg(g))
 VjpFactory.add(sin, lambda g, out, x: mul(g, cos(x)))
 VjpFactory.add(cos, lambda g, out, x: neg(mul(g, sin(x))))
-
 
 
 

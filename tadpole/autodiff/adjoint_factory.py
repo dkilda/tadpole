@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import tadpole.autodiff.wrapper as tdw
+import itertools
 
 
 
@@ -65,7 +65,7 @@ class NetJvpFun:
 
        jvps = (self._jvpfun(g, adx, out, *args) for g, adx in zip(gs, adxs))
 
-       return reduce(tdw.add_grads, jvps, None)
+       return jvps # reduce(tdmanip.add_grads, jvps, None) # FIXME
 
 
 
@@ -123,6 +123,24 @@ class NetVjpFun:
        return lambda g: (self._vjpfun(g, adx, out, *args) for adx in adxs)
 
 
+"""
+class Vjp:
+
+   def __init__(self, fun, vjpfun, adxs, out, *args):
+
+       self._fun  = fun
+       self._vjpfun = vjpfun
+
+       self._adxs = adxs
+       self._out  = out
+       self._args = args
+
+
+   def __call__(self, grad):
+
+       return self._vjpfun(
+"""
+
 
 
 # --- VJP factory ----------------------------------------------------------- #
@@ -153,6 +171,29 @@ class VjpFactory:
 
        cls._map[fun] = NetVjpFun(vjpfun)
        return cls
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

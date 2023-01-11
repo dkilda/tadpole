@@ -6,8 +6,9 @@ import pytest
 
 from tests.common import assert_close
 
-import tests.mocks.autodiff.node as mknode
-import tadpole.autodiff.node     as tdnode
+import tests.mocks.autodiff.node  as mknode
+import tests.mocks.autodiff.graph as mkgraph
+import tadpole.autodiff.node      as tdnode
 
 
 
@@ -175,7 +176,7 @@ def default_reverse_gates(default_reverse_gate, randn_val):
 ###############################################################################
 
 
-# --- Test forward gate ----------------------------------------------------- #
+# --- Forward gate ---------------------------------------------------------- #
 
 class TestForwardGate:
 
@@ -235,9 +236,9 @@ class TestForwardGate:
    ])   
    def test_next_input(self, n, adxs, valencies): 
 
-       source = mknode.MockForwardNode()
-       args   = self._mock_args(n, adxs)
        gates  = self._gates(n, valencies)
+       args   = self._mock_args(n, adxs)
+       source = mkgraph.MockPack() 
 
        out = gates[0].next_input(gates[1:], adxs, args, source)
        ans = tdnode.ForwardGateInputs(gates, adxs, args, source) 
@@ -255,7 +256,94 @@ class TestForwardGate:
 
 
 
+
+# --- Reverse gate inputs --------------------------------------------------- #
+
+class TestReverseGateInputs:
+
+
+   def test_transform(self):
+
+       n = 1
+
+       parents = self._gates(n)
+       adxs    = tuple(range(n))
+       args    = self._mock_args(n)
+       source  = mkgraph.MockPack({fun: out})
+
+       x   = self._randn_val()
+ 
+       fun = tad.sin
+       vjp = tdadj.VjpFactory(fun).vjp()
+
+       # lambda g: tad.mul(g, tad.cos(x)) # FIXME even so it won't be the same vjp, cuz functions are retrieved by identity!
+
+       # FIXME exclude vjp from comparisons? or use just vjp value?
+     
+
+
+       inputs = tdnode.ReverseGateInputs(parents, adxs, args, source) 
+
+       out = inputs.transform(fun)
+       ans = tdnode.ReverseGate(parents, vjp)
+
+       assert out == ans
+
+
+
+
+
+
+   def test_transform(self, fun, n, adx, valencies):
+
+       gates   = self._gates(n, valencies)
+       args    = self._mock_args(n, [adx])
+       source  = mkgraph.MockPack() 
+
+       fun = tad.sin
+       vjp = lambda g: tad.mul(g, tad.cos(arg)) 
+
+
+       inputs = tdnode.ReverseGateInputs(gates, adxs, args, source) 
+
+       out = inputs.transform(fun)
+       ans = tdnode.ReverseGate(parents, vjp)
+
+       assert out == ans
+
        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

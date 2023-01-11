@@ -37,7 +37,7 @@ class MockGraph:
    @mockify
    def build(self, root_gate):
 
-       return self._build = build
+       return self._build
 
 
 
