@@ -308,19 +308,19 @@ class ReverseGate(Gate, Reverse):
        return ReverseNode(Nodule(source, layer), self)
 
 
-   def accumulate_parent_grads(self, grads): 
+   def accumulate_parent_grads(self, seed, grads): 
 
-       parent_grads = self._vjp(grads.pop(self))
+       parent_grads = self._vjp(seed)
 
-       for p, parent in enumerate(self._parents): 
-           grads.accumulate(parent, parent_grads[p])
+       for parent, grad in zip(self._parents, parent_grads): 
+           grads.accumulate(parent, grad)
 
        return self
 
 
    def add_to_childcount(self, childcount):
 
-       childcount.add(self, self._parents) 
+       childcount.add(self._parents) 
        return self
 
 
@@ -558,11 +558,15 @@ class ReverseNode(Node, Reverse):
 
    def accumulate_parent_grads(self, grads): 
 
-       self._gate.accumulate_parent_grads(grads)
+       seed = grads.pop(self)
+
+       self._gate.accumulate_parent_grads(seed, grads)
        return self
 
 
    def add_to_childcount(self, childcount):
+
+       childcount.visit(self)
 
        self._gate.add_to_childcount(childcount)
        return self

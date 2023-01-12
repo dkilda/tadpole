@@ -78,9 +78,9 @@ class ForwardDiffOp(DiffOp):
    def _compute(self, seed):
 
        with tdgraph.Graph(self._fun, self._x) as graph:
-          last_node = graph.build(tdnode.ForwardRootGate(seed))   
+          top_node = graph.build(tdnode.ForwardRootGate(seed))   
 
-       return last_node.reduce(), last_node.grad()
+       return top_node.reduce(), top_node.grad()
 
 
    def evaluate(self, seed=None):
@@ -117,9 +117,9 @@ class ReverseDiffOp(DiffOp):
    def _compute(self):
 
        with tdgraph.Graph(self._fun, self._x) as graph:
-          last_node = graph.build(tdnode.ReverseRootGate())    
+          top_node = graph.build(tdnode.ReverseRootGate())    
 
-       return last_node.reduce(), Backprop(last_node)
+       return top_node.reduce(), Backprop(top_node)
 
 
    def evaluate(self):
@@ -152,29 +152,37 @@ class ReverseDiffOp(DiffOp):
 
 class ChildCount:
 
-   def __init__(self, last_node):
+   def __init__(self, top_node):
 
-       self._last_node = last_node
-       self._count     = {}
-       self._pool      = None
+       self._top_node = top_node
+       self._count    = {}
+       self._pool     = None
 
+       self._last_visited = None 
+ 
 
-   def add(self, node, parents):
+   def visit(self, node):
 
        try:
            self._count[node] += 1
        except KeyError:
            self._count[node] = 1
 
-       if self._count.get(node) == 1:
-          self._pool.extend(parents)
+       self._last_visited = node
+       return self
 
-       return self  
+
+   def add(self, nodes):
+
+       if self._count.get(self._last_visited) == 1:
+          self._pool.extend(nodes)
+
+       return self
 
 
    def compute(self):
 
-       self._pool = [self._last_node]
+       self._pool = [self._top_node]
 
        while self._pool:
 
@@ -191,7 +199,7 @@ class ChildCount:
 
    def toposort(self):
 
-       return TopoSort(self._count, self._last_node)
+       return TopoSort(self._count, self._top_node)
 
        
 
@@ -200,11 +208,11 @@ class ChildCount:
 
 class TopoSort:
 
-   def __init__(self, count, last_node):
+   def __init__(self, count, top_node):
 
-       self._last_node = last_node
-       self._count     = dict(count)
-       self._pool      = None
+       self._top_node = top_node
+       self._count    = dict(count)
+       self._pool     = None
 
 
    def add(self, node):
@@ -219,7 +227,7 @@ class TopoSort:
 
    def iterate(self):
 
-       self._pool = [self._last_node]
+       self._pool = [self._top_node]
 
        while self._pool:
 
@@ -233,8 +241,12 @@ class TopoSort:
 
 # --- Create a topologically sorted iterator over the computation graph ----- #
 
-def toposort(last_node):
-    return ChildCount(last_node).compute().toposort().iterate()
+def toposort(top_node):
+    return (
+            ChildCount(top_node).compute()
+                                .toposort()
+                                .iterate()
+           )
 
 
 
@@ -284,17 +296,17 @@ class GradAccum:
 
 class Backprop:
 
-   def __init__(self, last_node): 
+   def __init__(self, top_node): 
 
-       self._last_node = last_node
+       self._top_node = top_node
 
 
    def __call__(self, seed):
 
        grads = GradAccum()  
-       grads.push(self._last_node, seed)
+       grads.push(self._top_node, seed)
 
-       for node in toposort(self._last_node): 
+       for node in toposort(self._top_node): 
            node.accumulate_parent_grads(grads)
 
        return grads.result()
