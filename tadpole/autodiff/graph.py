@@ -40,10 +40,11 @@ class Graph:
        type(self)._layer -= 1
 
 
-   def build(self, root_gate):
+   def build(self, gate):
 
-       root_node = tdnode.make_node(self._x, root_gate, type(self)._layer) 
-       return self._fun(root_node)
+       root = tdnode.make_node(self._x, type(self)._layer, gate) 
+
+       return self._fun(root)
 
 
 
@@ -56,9 +57,9 @@ class Graph:
 ###############################################################################
 
 
-# --- Gated function -------------------------------------------------------- #
+# --- Function with gate ---------------------------------------------------- #
 
-class GatedFun:
+class FunWithGate:
 
    def __init__(self, diff_fun, raw_fun):
 
@@ -68,14 +69,12 @@ class GatedFun:
 
    def __call__(self, *args):
 
-       print(f"\nGatedFun: {args}, {self._raw_fun}")
-
        return self._raw_fun(*args)
 
 
-   def gate(self, inputs):
+   def gate(self, logic):
 
-       return inputs.transform(self._diff_fun)
+       return logic.gate(self._diff_fun)
 
 
 
@@ -89,23 +88,11 @@ class Differentiable:
        self._fun = fun
 
 
-   """
-   def __eq__(self, other):
-
-       return self._fun == other._fun
-
-
-   def __hash__(self):
-
-       return hash(self._fun)
-   """
-
-
    def __call__(self, *args):
 
        glue = ArgGlue(args, ArgFilterByNode())
 
-       return glue.pack().pluginto(GatedFun(self, self._fun))
+       return glue.pack().pluginto(FunWithGate(self, self._fun))
 
 
 
@@ -161,22 +148,13 @@ class ArgFilter:
        self._mask = mask
 
 
-   def _str(self):
-
-       out = tdutil.StringRep(self)
-       out = out.with_member("mask", self._mask)
-
-       return out.compile()
-       
-
-   def __str__(self):
- 
-       return self._str()
-
-
    def __repr__(self):
 
-       return self._str()
+       return (
+               tdutil.StringRep(self)
+                     .with_member("mask", self._mask)
+                     .compile()
+              )
 
 
    def __eq__(self, other):
@@ -201,6 +179,33 @@ class ArgFilter:
 
 
 
+# --- Argument filter with a mapping capability ----------------------------- #
+
+class ArgFilterWithMap:
+
+   def __init__(self, argfilter, fun=None):
+
+       if fun is None:
+          def fun(x): return x
+
+       self._filter = argfilter
+       self._fun    = fun
+
+
+   def vals(self, args):
+
+       return self._filter.vals(args)
+
+
+   def nodes(self, args):
+
+       return tuple(self._fun(node) for node in self._filter.nodes(args))
+
+
+
+
+# --- Specialized argument filters: filter by node -------------------------- #
+
 class ArgFilterByNode(ArgFilter):
 
    def __init__(self):
@@ -210,11 +215,13 @@ class ArgFilterByNode(ArgFilter):
 
 
 
-class ArgFilterByPoint(ArgFilter):
+# --- Specialized argument filters: filter by point ------------------------- #
+
+class ArgFilterByPoint(ArgFilterWithMap):
 
    def __init__(self):
 
-       super().__init__(lambda x: isinstance(x, tdnode.Point))
+       super().__init__(ArgFilterByNode(), lambda x: x.disconnect())
 
 
 
@@ -240,29 +247,22 @@ class ArgGlue(Glue):
        self._filter = argfilter
 
 
-   def _str(self):
-
-       out = tdutil.StringRep(self)
-       out = out.with_member("args",   self._args)
-       out = out.with_member("filter", self._filter)
-
-       return out.compile()
-       
-
-   def __str__(self):
- 
-       return self._str()
-
-
    def __repr__(self):
 
-       return self._str()
-
+       return (
+               tdutil.StringRep(self)
+                     .with_member("args",   self._args)
+                     .with_member("filter", self._filter)
+                     .compile()
+              )
+       
 
    def __eq__(self, other):
 
-       return self._args   == other._args \
-          and self._filter == other._filter
+       return all((
+                   self._args   == other._args,
+                   self._filter == other._filter,
+                 ))
 
 
    def pack(self, funcall=None):
@@ -295,23 +295,14 @@ class FunCall:
        self._args = args
 
 
-   def _str(self):
-
-       out = tdutil.StringRep(self)
-       out = out.with_member("args", self._args)
-
-       return out.compile()
-       
-
-   def __str__(self):
- 
-       return self._str()
-
-
    def __repr__(self):
 
-       return self._str()
-
+       return (
+               tdutil.StringRep(self)
+                     .with_member("args", self._args)
+                     .compile()
+              )
+       
 
    def __eq__(self, other):
 
@@ -353,31 +344,24 @@ class Sources:
        self._layers  = layers
 
 
-   def _str(self):
-
-       out = tdutil.StringRep(self)
-       out = out.with_data("layers",    self._layers)
-       out = out.with_member("nodes",   self._nodes)
-       out = out.with_member("sources", self._sources)
-
-       return out.compile()
-       
-
-   def __str__(self):
- 
-       return self._str()
-
-
    def __repr__(self):
 
-       return self._str()
-
+       return (
+               tdutil.StringRep(self)
+                     .with_member("nodes",   self._nodes)
+                     .with_member("sources", self._sources)
+                     .with_data("layers",    self._layers)
+                     .compile()
+              )
+       
 
    def __eq__(self, other):
 
-       return self._nodes   == other._nodes   \
-          and self._sources == other._sources \
-          and self._layers  == other._layers
+       return all((
+                   self._nodes   == other._nodes,
+                   self._sources == other._sources,
+                   self._layers  == other._layers,
+                 ))
 
 
    @tdutil.cacheable
@@ -407,49 +391,43 @@ class Sources:
 
 class NodeGlue(Glue):
 
-   def __init__(self, sources, gates): # FIXME pass sources, nodes instead of sources, gates
+   def __init__(self, nodes, sources): 
 
+       self._nodes   = nodes
        self._sources = sources
-       self._gates   = gates
-
-
-   def _str(self):
-
-       out = tdutil.StringRep(self)
-       out = out.with_member("sources", self._sources)
-       out = out.with_member("gates",   self._gates)
-
-       return out.compile()
-       
-
-   def __str__(self):
- 
-       return self._str()
 
 
    def __repr__(self):
 
-       return self._str()
+       return (
+               tdutil.StringRep(self)
+                     .with_member("nodes",   self._nodes)
+                     .with_member("sources", self._sources)
+                     .compile()
+              )
 
 
    def __eq__(self, other):
 
-       return self._sources == other._sources \
-          and self._gates   == other._gates
+       return all((
+                   self._nodes   == other._nodes,
+                   self._sources == other._sources,
+                 ))
 
 
    def pack(self, funcall):
 
-       glue   = ArgGlue(self._sources.args(), ArgFilterByNode())
-       source = glue.pack(funcall)
-       inputs = tdnode.make_gate_inputs(
-                                        self._gates, # FIXME pass Nodes not Gates? 
-                                        self._sources.adxs(), 
-                                        self._sources.args(), 
-                                        source # FIXME we pass source = Pack object, but inside we use it as out = value in 
-                                       )       # vjp = tdadj.VjpFactory(fun).vjp(self._adxs, self._out, *self._args)
+       glue    = ArgGlue(self._sources.args(), ArgFilterByNode())
+       source  = glue.pack(funcall)
 
-       return NodePack(source, inputs, self._sources.layer())
+       logic = tdnode.make_logic(
+                                 self._nodes,
+                                 self._sources.adxs(), 
+                                 source,
+                                 *self._sources.args(),  
+                                )       
+
+       return NodePack(source, self._sources.layer(), logic)
 
 
 
@@ -463,23 +441,14 @@ class PointGlue(Glue):
        self._sources = sources
 
 
-   def _str(self):
-
-       out = tdutil.StringRep(self)
-       out = out.with_member("sources", self._sources)
-
-       return out.compile()
-       
-
-   def __str__(self):
- 
-       return self._str()
-
-
    def __repr__(self):
 
-       return self._str()
-
+       return (
+               tdutil.StringRep(self)
+                     .with_member("sources", self._sources)
+                     .compile()
+              )
+       
 
    def __eq__(self, other):
 
@@ -519,46 +488,42 @@ class Pack(abc.ABC):
 
 class NodePack(Pack):
 
-   def __init__(self, source, inputs, layer):
+   def __init__(self, source, layer, logic):
 
        self._source = source
-       self._inputs = inputs
        self._layer  = layer
-
-
-   def _str(self):
-
-       out = tdutil.StringRep(self)
-       out = out.with_data("layer",    self._layer)
-       out = out.with_member("source", self._source)
-       out = out.with_member("inputs", self._inputs)
-
-       return out.compile()
-       
-
-   def __str__(self):
- 
-       return self._str()
+       self._logic  = logic
 
 
    def __repr__(self):
 
-       return self._str()
-
+       return (
+               tdutil.StringRep(self)
+                     .with_member("source", self._source)
+                     .with_data("layer",    self._layer)
+                     .with_member("logic",  self._logic)
+                     .compile()
+              )
+       
 
    def __eq__(self, other):
 
-       return self._sources == other._sources \
-          and self._inputs  == other._inputs  \
-          and self._layer   == other._layer
+       return all((
+                   self._source == other._source,
+                   self._layer  == other._layer,
+                   self._logic  == other._logic,
+                 ))
 
 
    def pluginto(self, fun): 
 
        source = self._source.pluginto(fun)
-       gate   = fun.gate(self._inputs)
 
-       return tdnode.make_node(source, gate, self._layer)
+       return tdnode.make_node(
+                               source, 
+                               self._layer, 
+                               fun.gate(self._logic) 
+                              )
 
 
 
@@ -572,23 +537,14 @@ class PointPack(Pack):
        self._source = source
 
 
-   def _str(self):
-
-       out = tdutil.StringRep(self)
-       out = out.with_member("source", self._source)
-
-       return out.compile()
-       
-
-   def __str__(self):
- 
-       return self._str()
-
-
    def __repr__(self):
 
-       return self._str()
-
+       return (
+               tdutil.StringRep(self)
+                     .with_member("source", self._source)
+                     .compile()
+              )
+       
 
    def __eq__(self, other):
 
@@ -611,22 +567,13 @@ class EmptyPack(Pack):
        self._funcall = funcall
 
 
-   def _str(self):
-
-       out = tdutil.StringRep(self)
-       out = out.with_member("funcall", self._funcall)
-
-       return out.compile()
-       
-
-   def __str__(self):
- 
-       return self._str()
-
-
    def __repr__(self):
 
-       return self._str()
+       return (
+               tdutil.StringRep(self)
+                     .with_member("funcall", self._funcall)
+                     .compile()
+              )
 
 
    def __eq__(self, other):

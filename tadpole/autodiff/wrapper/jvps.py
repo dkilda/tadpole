@@ -3,6 +3,17 @@
 
 import tadpole.autodiff.adjoints as tda
 
+from tadpole.autodiff.wrapper.functions import (
+   add, 
+   sub, 
+   mul, 
+   sin, 
+   cos, 
+   neg, 
+   floor, 
+   equals,
+)
+
 
 
 

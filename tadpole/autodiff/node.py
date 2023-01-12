@@ -3,7 +3,8 @@
 
 import abc
 
-import tadpole.autodiff.util     as tdutil           
+import tadpole.autodiff.util     as tdutil   
+import tadpole.autodiff.manip    as tdmanip        
 import tadpole.autodiff.graph    as tdgraph
 import tadpole.autodiff.adjoints as tda
 
@@ -49,6 +50,654 @@ class Reverse(abc.ABC):
 
 ###############################################################################
 ###                                                                         ###
+###  Logic of forward and reverse propagation, creates logic gates.         ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Logic interface ------------------------------------------------------- #
+
+class Logic(abc.ABC):
+
+   @abc.abstractmethod
+   def gate(self, fun):
+       pass
+
+
+
+
+# --- Forward logic --------------------------------------------------------- #
+
+class ForwardLogic(Logic):
+
+   def __init__(self, inputs, adxs, out, *args):
+
+       self._inputs = inputs
+       self._adxs   = adxs
+       self._out    = out
+       self._args   = args
+
+
+   def __repr__(self):
+
+       return (
+               tdutil.StringRep(self)
+                     .with_member("inputs", self._inputs)
+                     .with_data("adxs",     self._adxs)
+                     .with_member("out",    self._out)
+                     .with_member("args",   self._args)
+                     .compile()
+              )
+       
+
+   def __eq__(self, other):
+
+       return all((
+                   self._inputs == other._inputs,
+                   self._adxs   == other._adxs,
+                   self._out    == other._out,  
+                   self._args   == other._args,  
+                 ))
+
+
+   @tdutil.cacheable
+   def _parents(self):
+
+       return tuple(self._inputs[adx] for adxs in self._adxs)
+
+
+   @tdutil.cacheable
+   def _parent_grads(self):
+
+       return tuple(p.grad() for p in self._parents())
+
+
+   def _apply(self, fun):
+
+       return fun(self._adxs, self._out, *self._args)(self._parent_grads())
+
+
+   def gate(self, fun):
+
+       jvps = self._apply(tda.jvpmap.get(fun))
+
+       return ForwardGate(
+                          self._parents(), 
+                          fun, 
+                          reduce(tdmanip.add_grads, jvps, None)
+                         )
+
+
+
+
+# --- Reverse logic --------------------------------------------------------- #
+
+class ReverseLogic(Logic):
+
+   def __init__(self, inputs, adxs, out, *args):
+
+       self._inputs = inputs
+       self._adxs   = adxs
+       self._out    = out
+       self._args   = args
+
+
+   def __repr__(self):
+
+       return (
+               tdutil.StringRep(self)
+                     .with_member("inputs", self._inputs)
+                     .with_data("adxs",     self._adxs)
+                     .with_member("out",    self._out)
+                     .with_member("args",   self._args)
+                     .compile()
+              )
+       
+
+   def __eq__(self, other):
+
+       return all((
+                   self._inputs == other._inputs,
+                   self._adxs   == other._adxs,
+                   self._out    == other._out,  
+                   self._args   == other._args,  
+                 ))
+
+
+   def _parents(self):
+
+       return tuple(self._inputs[adx] for adxs in self._adxs)
+
+
+   def _apply(self, fun):
+
+       return fun(self._adxs, self._out, *self._args)
+
+
+   def gate(self, fun):
+
+       vjp = self._apply(tda.vjpmap.get(fun)) 
+
+       return ReverseGate(
+                          self._parents(), 
+                          fun, 
+                          vjp
+                         )
+
+
+
+
+# --- Create logic ---------------------------------------------------------- #
+
+def make_logic(nodes, adxs, out, *args):
+
+    return nodes[0].logic(nodes[1:], adxs, out, *args)
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Logic gates representing the logic of forward and reverse propagation. ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Gate interface -------------------------------------------------------- #
+
+class Gate(abc.ABC):
+
+   @abc.abstractmethod
+   def integrate_with(self, source, layer):
+       pass
+
+
+
+
+# --- Forward logic gate ---------------------------------------------------- #
+
+class ForwardGate(Gate, Forward):
+
+   def __init__(self, parents, fun, jvp):
+
+       self._parents = parents
+       self._fun     = fun
+       self._jvp     = jvp
+
+
+   def __repr__(self):
+      
+       return (
+               tdutil.StringRep(self)
+                     .with_member("parents", self._parents)
+                     .with_member("fun",     self._fun)
+                     .compile()
+              )
+
+
+   def __eq__(self, other):
+
+       return all((
+                   self._parents == other._parents, 
+                   self._fun     == other._fun,
+                 )) 
+
+
+   def integrate_with(self, source, layer):
+
+       return ForwardNode(source, layer, self)
+
+
+   def grad(self):
+
+       return self._jvp
+
+
+
+
+# --- Reverse logic gate ---------------------------------------------------- #
+
+class ReverseGate(Gate, Reverse):
+
+   def __init__(self, parents, fun, vjp):
+
+       self._parents = parents
+       self._fun     = fun
+       self._vjp     = vjp
+
+
+   def __repr__(self):
+      
+       return (
+               tdutil.StringRep(self)
+                     .with_member("parents", self._parents)
+                     .with_member("fun",     self._fun)
+                     .compile()
+              )
+
+
+   def __eq__(self, other):
+
+       return all((
+                   self._parents == other._parents, 
+                   self._fun     == other._fun,
+                 )) 
+
+
+   def integrate_with(self, source, layer):
+
+       return ReverseNode(source, layer, self)
+
+
+   def accumulate_parent_grads(self, grads): 
+
+       parent_grads = self._vjp(grads.pop(self))
+
+       for p, parent in enumerate(self._parents): 
+           grads.accumulate(parent, parent_grads[p])
+
+       return self
+
+
+   def add_to_childcount(self, childcount):
+
+       childcount.add(self, self._parents) 
+       return self
+
+
+   def add_to_toposort(self, toposort):
+
+       for parent in self._parents:
+           toposort.add(parent)
+
+       return self
+
+
+
+
+# --- Forward root logic gate ----------------------------------------------- #
+
+class ForwardRootGate(ForwardGate):
+
+   def __init__(self, seed):
+
+       super().__init__(tuple(), None, seed)
+
+
+
+
+# --- Reverse root logic gate ----------------------------------------------- #
+
+class ReverseRootGate(Vjp):
+
+   def __init__(self):
+
+       super().__init__(tuple(), None, lambda g: ())
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Nodes of the autodiff computation graph                                ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Node interface -------------------------------------------------------- #
+
+class Node(abc.ABC):
+
+   @abc.abstractmethod
+   def reduce(self):
+       pass
+
+   @abc.abstractmethod
+   def disconnect(self):
+       pass
+
+   @abc.abstractmethod
+   def glue(self, *others):
+       pass
+
+
+
+
+# --- Point (disconnected/isolated Node) ------------------------------------ #
+
+class Point(Node):
+
+   def __init__(self, source, layer):
+
+       self._source = source
+       self._layer  = layer
+
+
+   def __repr__(self):
+
+       return (
+               tdutil.StringRep(self)
+                     .with_member("source", self._source)
+                     .with_data("layer",    self._layer)
+                     .compile()
+              )
+       
+
+   def __eq__(self, other):
+
+       return all((
+                   self._source == other._source,
+                   self._layer  == other._layer,
+                 ))
+
+
+   def __hash__(self):
+
+       return id(self)
+
+
+   def reduce(self):
+
+       return self._source
+
+
+   def disconnect(self):
+
+       return self
+
+
+   def glue(self, *others):
+
+       pts = (self, *others)
+
+       sources = tuple(pt._source for pt in pts) 
+       layers  = tuple(pt._layer  for pt in pts)
+
+       return tdgraph.PointGlue(tdgraph.Sources(pts, sources, layers))
+
+
+
+
+# --- Nodule ---------------------------------------------------------------- #
+
+class Nodule:
+
+   def __init__(self, source, layer): 
+                                            
+       self._source = source              
+       self._layer  = layer                 
+
+
+   def __repr__(self):
+
+       return (
+               tdutil.StringRep(self)
+                     .with_member("source", self._source)
+                     .with_data("layer",    self._layer)
+                     .compile()
+              )
+       
+
+   def __eq__(self, other):
+
+       return all((
+                   self._source == other._source,
+                   self._layer  == other._layer,
+                 ))
+
+
+   def __hash__(self):
+
+       return id(self)
+
+
+   def reduce(self):
+
+       return self._source
+
+
+   def disconnect(self):
+
+       return Point(self._source, self._layer)
+
+
+   def glue(self, adhesive, *others):
+
+       nodules = (self, *others)
+       sources = tuple(x._source for x in nodules) 
+       layers  = tuple(x._layer  for x in nodules)
+
+       return adhesive.glue(sources, layers)
+
+
+
+
+# --- Adhesive -------------------------------------------------------------- #
+
+class Adhesive:
+
+   def __init__(self, nodes):
+
+       self._nodes = nodes
+
+
+   def glue(self, sources, layers):
+
+       return tdgraph.NodeGlue(
+                               nodes, 
+                               tdgraph.Sources(nodes, sources, layers)
+                              )
+
+
+
+
+# --- Forward node ---------------------------------------------------------- #
+
+class ForwardNode(Node, Forward): 
+
+   def __init__(self, nodule, gate):
+
+       self._nodule = nodule
+       self._gate   = gate
+
+
+   def __repr__(self):
+
+       return (
+               tdutil.StringRep(self)
+                     .with_member("nodule", self._nodule)
+                     .with_member("gate",   self._gate)
+                     .compile()
+              )
+
+
+   def __eq__(self, other):
+
+       return all((
+                   self._nodule == other._nodule,
+                   self._gate   == other._gate,
+                 ))
+
+
+   def __hash__(self):
+
+       return hash((self._nodule, self._gate))
+
+
+   def logic(self, others, adxs, source, *args):
+
+       return ForwardLogic((self, *others), adxs, source, *args)
+
+
+   def reduce(self):
+
+       return self._nodule.reduce()
+
+
+   def disconnect(self):
+
+       return self._nodule.disconnect()
+
+
+   def glue(self, *others):
+
+       other_nodules = (other._nodule for other in others)
+       
+       return self._nodule.glue(Adhesive((self, *others)), *other_nodules)  
+
+
+   def grad(self):
+
+       return self._gate.grad()
+
+
+
+
+# --- Reverse node ---------------------------------------------------------- #
+
+class ReverseNode(Node, Reverse): 
+
+   def __init__(self, nodule, gate):
+
+       self._nodule = nodule
+       self._gate   = gate
+
+
+   def __repr__(self):
+
+       return (
+               tdutil.StringRep(self)
+                     .with_member("nodule", self._nodule)
+                     .with_member("gate",   self._gate)
+                     .compile()
+              )
+
+
+   def __eq__(self, other):
+
+       return all((
+                   self._nodule == other._nodule,
+                   self._gate   == other._gate,
+                 ))
+
+
+   def __hash__(self):
+
+       return hash((self._nodule, self._gate))
+
+
+   def logic(self, others, adxs, source, *args):
+
+       return ReverseLogic((self, *others), adxs, source, *args)
+
+
+   def reduce(self):
+
+       return self._nodule.reduce()
+
+
+   def disconnect(self):
+
+       return self._nodule.disconnect()
+
+
+   def glue(self, *others):
+
+       other_nodules = (other._nodule for other in others)
+       
+       return self._nodule.glue(Adhesive((self, *others)), *other_nodules)  
+
+
+   def accumulate_parent_grads(self, grads): 
+
+       self._gate.accumulate_parent_grads(grads)
+       return self
+
+
+   def add_to_childcount(self, childcount):
+
+       self._gate.add_to_childcount(childcount)
+       return self
+
+
+   def add_to_toposort(self, toposort):
+
+       self._gate.add_to_toposort(toposort)
+       return self
+
+
+
+
+# --- Create a node --------------------------------------------------------- #
+
+def make_node(source, layer, gate):
+
+    return gate.integrate_with(source, layer) 
+
+
+
+
+
+
+
+
+
+
+"""
+
+
+# --- Jvp factory ----------------------------------------------------------- #
+
+class JvpFactory:
+
+   def __init__(self, fun):
+
+       self._fun = fun
+
+
+   def _jvpfun(self, *args, **kwargs):
+
+       return tda.jvpmap.get(self._fun)(*args, **kwargs)
+
+
+   def create(self, parent_gs, adxs, out, *args):
+
+       jvps = self._jvpfun(adxs, out, *args)(parent_gs)
+
+       return Jvp(self._fun, reduce(tdmanip.add_grads, jvps, None))
+
+
+
+
+# --- Vjp factory ----------------------------------------------------------- #
+
+class VjpFactory:
+
+   def __init__(self, fun):
+
+       self._fun = fun
+
+
+   def _vjpfun(self, *args, **kwargs):
+
+       return tda.vjpmap.get(self._fun)(*args, **kwargs)
+
+
+   def create(self, adxs, out, *args):
+
+       vjp = self._vjpfun(adxs, out, *args)
+
+       return Vjp(self._fun, vjp)
+
+
+"""
+
+
+
+"""
+
+###############################################################################
+###                                                                         ###
 ###  Gates of the autodiff circuit                                          ###
 ###                                                                         ###
 ###############################################################################
@@ -73,34 +722,25 @@ class Gate(abc.ABC):
 
 class ForwardGate(Gate, Forward): 
 
-   def __init__(self, parents, grad):
+   def __init__(self, parents, jvp):
 
        self._parents = parents
-       self._grad    = grad
-
-
-   def _str(self):
-
-       out = tdutil.StringRep(self)
-       out = out.with_member("parents", self._parents)
-       out = out.with_member("grad",    self._grad)
-
-       return out.compile()
-       
-
-   def __str__(self):
- 
-       return self._str()
+       self._jvp     = jvp
 
 
    def __repr__(self):
 
-       return self._str()
+       out = tdutil.StringRep(self)
+       out = out.with_member("parents", self._parents)
+       out = out.with_member("jvp",     self._jvp)
 
+       return out.compile()
+       
 
    def __eq__(self, other):
 
-       return self._parents == other._parents
+       return self._parents == other._parents \
+          and self._jvp     == other._jvp
 
 
    def __hash__(self):
@@ -113,14 +753,9 @@ class ForwardGate(Gate, Forward):
        return ForwardNode(UndirectedNode(source, self, layer))
 
 
-   def next_input(self, others, adxs, args, source):
-
-       return ForwardGateInputs((self, *others), adxs, args, source)
-
-
    def grad(self):
 
-       return self._grad
+       return self._jvp()
 
 
 
@@ -135,23 +770,13 @@ class ReverseGate(Gate, Reverse):
        self._vjp     = vjp
 
 
-   def _str(self):
+   def __repr__(self):
 
        out = tdutil.StringRep(self)
        out = out.with_member("parents", self._parents)
        out = out.with_member("vjp",     self._vjp)
 
        return out.compile()
-       
-
-   def __str__(self):
- 
-       return self._str()
-
-
-   def __repr__(self):
-
-       return self._str()
 
 
    def __eq__(self, other):
@@ -215,7 +840,7 @@ def make_reverse_gate():
 
 # --- Gate inputs ----------------------------------------------------------- #
 
-class GateInputs(abc.ABC):
+class Inputs(abc.ABC):
 
    @abc.abstractmethod
    def transform(self, fun):
@@ -224,42 +849,32 @@ class GateInputs(abc.ABC):
 
 
 
-# --- Forward gate inputs --------------------------------------------------- #
+# --- Forward node inputs --------------------------------------------------- #
 
-class ForwardGateInputs(GateInputs):
+class ForwardInputs(Inputs):
 
-   def __init__(self, gates, adxs, args, out): 
+   def __init__(self, nodes, adxs, args, out): 
 
-       self._gates = gates
+       self._nodes = nodes
        self._adxs  = adxs
        self._args  = args
        self._out   = out
 
 
-   def _str(self):
+   def __repr__(self):
 
        out = tdutil.StringRep(self)
        out = out.with_data("adxs",    self._adxs)
-       out = out.with_member("gates", self._gates)
+       out = out.with_member("nodes", self._nodes)
        out = out.with_member("args",  self._args)
        out = out.with_member("out",   self._out)
 
        return out.compile()
        
 
-   def __str__(self):
- 
-       return self._str()
-
-
-   def __repr__(self):
-
-       return self._str()
-
-
    def __eq__(self, other):
 
-       return self._gates == other._gates \
+       return self._nodes == other._nodes \
           and self._adxs  == other._adxs  \
           and self._args  == other._args  \
           and self._out   == other._out
@@ -267,7 +882,7 @@ class ForwardGateInputs(GateInputs):
 
    def transform(self, fun):
 
-       parents = tuple(self._gates[adx] for adx in self._adxs)
+       parents = tuple(self._nodes[adx] for adx in self._adxs) 
 
        jvp = JvpFactory(fun).create(
                                     (p.grad() for p in parents),
@@ -281,42 +896,32 @@ class ForwardGateInputs(GateInputs):
 
 
 
-# --- Reverse gate inputs --------------------------------------------------- #
+# --- Reverse node inputs --------------------------------------------------- #
 
-class ReverseGateInputs(GateInputs):
+class ReverseInputs(Inputs):
 
-   def __init__(self, gates, adxs, args, out): # FIXME pass Nodes not Gates
+   def __init__(self, nodes, adxs, args, out):
 
-       self._gates = gates
+       self._nodes = nodes
        self._adxs  = adxs
        self._args  = args
        self._out   = out
 
 
-   def _str(self):
+   def __repr__(self):
 
        out = tdutil.StringRep(self)
        out = out.with_data("adxs",    self._adxs)
-       out = out.with_member("gates", self._gates)
+       out = out.with_member("nodes", self._nodes)
        out = out.with_member("args",  self._args)
        out = out.with_member("out",   self._out)
 
        return out.compile()
        
 
-   def __str__(self):
- 
-       return self._str()
-
-
-   def __repr__(self):
-
-       return self._str()
-
-
    def __eq__(self, other):
 
-       return self._gates == other._gates \
+       return self._nodes == other._nodes \
           and self._adxs  == other._adxs  \
           and self._args  == other._args  \
           and self._out   == other._out
@@ -324,7 +929,7 @@ class ReverseGateInputs(GateInputs):
 
    def transform(self, fun):
 
-       parents = tuple(self._gates[adx] for adx in self._adxs) # FIXME make parents = Nodes not Gates
+       parents = tuple(self._nodes[adx] for adx in self._adxs) 
 
        vjp = VjpFactory(fun).create(
                                     self._adxs, 
@@ -337,409 +942,13 @@ class ReverseGateInputs(GateInputs):
 
 
 
-# --- Create gate inputs ---------------------------------------------------- #
+# --- Create node inputs ---------------------------------------------------- #
 
-def make_gate_inputs(gates, adxs, args, out):
+def make_inputs(nodes, adxs, args, out):
 
-    return gates[0].next_input(gates[1:], adxs, args, out)
+    return nodes[0].next_input(nodes[1:], adxs, args, out)
 
-
-
-
-###############################################################################
-###                                                                         ###
-###  Nodes of the autodiff computation graph                                ###
-###                                                                         ###
-###############################################################################
-
-
-# --- Node ------------------------------------------------------------------ #
-
-class Node(abc.ABC):
-
-   @abc.abstractmethod
-   def reduce(self):
-       pass
-
-   @abc.abstractmethod
-   def topoint(self):
-       pass
-
-   @abc.abstractmethod
-   def glue(self, *others):
-       pass
-
-
-
-
-# --- Undirected node ------------------------------------------------------- #
-
-class UndirectedNode(Node):
-
-   def __init__(self, source, gate, layer): # FIXME scrap Gate, just keep ReverseNode(UndirectedNode(source, layer), parents, vjp)
-                                            # FIXME though we could also combine {parents, vjp} into a single 
-       self._source = source                # FIXME NB UndirectedNode w/o Gate becomes identical to Point! We don't need Point anymore?
-       self._gate   = gate                  #       (cuz we can merge it with UndirectedNode!)
-       self._layer  = layer
-
-
-   def _str(self):
-
-       out = tdutil.StringRep(self)
-       out = out.with_data("layer",    self._layer)
-       out = out.with_member("source", self._source)
-       out = out.with_member("gate",   self._gate)
-
-       return out.compile()
-       
-
-   def __str__(self): # FIXME scrap str, repr is enough!
- 
-       return self._str()
-
-
-   def __repr__(self):
-
-       return self._str()
-
-
-   def __eq__(self, other):
-
-       return self._source == other._source \
-          and self._gate   == other._gate   \
-          and self._layer  == other._layer
-
-
-   def __hash__(self):
-
-       return id(self)
-
-
-   def reduce(self):
-
-       return self._source
-
-
-   def topoint(self):
-
-       return Point(self._source, self._layer)
-
-
-   def glue(self, *others):
-
-       nodes = (self, *others)
-
-       sources = tuple(node._source for node in nodes) 
-       gates   = tuple(node._gate   for node in nodes)
-       layers  = tuple(node._layer  for node in nodes)
-
-       return tdgraph.NodeGlue(tdgraph.Sources(nodes, sources, layers), gates)
-
-
-   def visit(self, fun):
-
-       return fun(self._gate) 
-
-
-
-
-# --- Forward node ---------------------------------------------------------- #
-
-class ForwardNode(Node, Forward): 
-
-   def __init__(self, core):
-
-       self._core = core
-
-
-   def __str__(self):
- 
-       return str(self._core) 
-
-
-   def __repr__(self):
-
-       return repr(self._core)
-
-
-   def __eq__(self, other):
-
-       return self._core == other._core
-
-
-   def __hash__(self):
-
-       return hash(self._core)
-
-
-   def reduce(self):
-
-       return self._core.reduce()
-
-
-   def topoint(self):
-
-       return self._core.topoint()
-
-
-   def glue(self, *others):
-
-       return self._core.glue(*(other._core for other in others))
-
-
-   def grad(self):
-
-       return self._core.visit(lambda x: x.grad())
-
-
-
-
-# --- Reverse node ---------------------------------------------------------- #
-
-class ReverseNode(Node, Reverse): 
-
-   def __init__(self, core):
-
-       self._core = core
-
-
-   def __str__(self):
- 
-       return str(self._core) 
-
-
-   def __repr__(self):
-
-       return repr(self._core)
-
-
-   def __eq__(self, other):
-
-       return self._core == other._core
-
-
-   def __hash__(self):
-
-       return hash(self._core)
-
-
-   def reduce(self):
-
-       return self._core.reduce()
-
-
-   def topoint(self):
-
-       return self._core.topoint()
-
-
-   def glue(self, *others):
-
-       return self._core.glue(*(other._core for other in others))
-
-
-   def accumulate_parent_grads(self, grads):
-
-       self._core.visit(lambda x: x.accumulate_parent_grads(grads))
-       return self
-
-
-   def add_to_childcount(self, childcount):
-
-       self._core.visit(lambda x: x.add_to_childcount(childcount))
-       return self
-
-
-   def add_to_toposort(self, toposort):
-
-       self._core.visit(lambda x: x.add_to_toposort(toposort))
-       return self
-
-
-
-
-# --- Point ----------------------------------------------------------------- #
-
-class Point(Node):
-
-   def __init__(self, source, layer):
-
-       self._source = source
-       self._layer  = layer
-
-
-   def _str(self):
-
-       out = tdutil.StringRep(self)
-       out = out.with_data("layer",    self._layer)
-       out = out.with_member("source", self._source)
-
-       return out.compile()
-       
-
-   def __str__(self):
- 
-       return self._str()
-
-
-   def __repr__(self):
-
-       return self._str()
-
-
-   def __eq__(self, other):
-
-       return self._source == other._source \
-          and self._layer  == other._layer
-
-
-   def __hash__(self):
-
-       return id(self)
-
-
-   def reduce(self):
-
-       return self._source
-
-
-   def topoint(self):
-
-       return self
-
-
-   def glue(self, *others):
-
-       pts = (self, *others)
-
-       sources = tuple(pt._source for pt in pts) 
-       layers  = tuple(pt._layer  for pt in pts)
-
-       return tdgraph.PointGlue(tdgraph.Sources(pts, sources, layers))
-
-
-
-
-# --- Create a node --------------------------------------------------------- #
-
-def make_node(source, gate, layer):
-
-    return gate.node(source, layer)
-
-
-
-
-###############################################################################
-###                                                                         ###
-###  Adjoints (JVP and VJP) and their factories                             ###
-###                                                                         ###
-###############################################################################
-
-
-# --- Jvp factory ----------------------------------------------------------- #
-
-class JvpFactory:
-
-   def __init__(self, fun):
-
-       self._fun = fun
-
-
-   def _jvpfun(self, *args, **kwargs):
-
-       return tda.jvpmap.get(self._fun)(*args, **kwargs)
-
-
-   def create(self, parent_gs, adxs, out, *args):
-
-       jvps = self._jvpfun(adxs, out, *args)(parent_gs)
-
-       return Jvp(self._fun, reduce(tdmanip.add_grads, jvps, None))
-
-
-
-
-# --- Vjp factory ----------------------------------------------------------- #
-
-class VjpFactory:
-
-   def __init__(self, fun):
-
-       self._fun = fun
-
-
-   def _vjpfun(self, *args, **kwargs):
-
-       return tda.vjpmap.get(self._fun)(*args, **kwargs)
-
-
-   def create(self, adxs, out, *args):
-
-       vjp = self._vjpfun(adxs, out, *args)
-
-       return Vjp(self._fun, vjp)
-
-
-
-
-# --- JVP ------------------------------------------------------------------- #
-
-class Jvp:
-
-   def __init__(self, fun, jvp):
-
-       self._fun = fun
-       self._jvp = jvp
-
-
-   def __repr__(self):
-      
-       out = tdutil.StringRep(self)
-       out = out.with_member("fun", self._fun)
-
-       return out.compile()
-
-
-   def __eq__(self, other):
-
-       return self._fun == other._fun 
-
-
-   def __call__(self):
-
-       return self._jvp
-
-
-
-
-# --- VJP ------------------------------------------------------------------- #
-
-class Vjp:
-
-   def __init__(self, fun, vjp):
-
-       self._fun = fun
-       self._vjp = vjp
-
-
-   def __repr__(self):
-      
-       out = tdutil.StringRep(self)
-       out = out.with_member("fun", self._fun)
-
-       return out.compile()
-
-
-   def __eq__(self, other):
-
-       return self._fun == other._fun 
-
-
-   def __call__(self, g):
-
-       return self._vjp(g)
-
-
+"""
 
 
 
