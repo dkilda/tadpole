@@ -66,6 +66,15 @@ class Logic(abc.ABC):
 
 
 
+# --- Helper functions ------------------------------------------------------ #
+
+def _make_parents(inputs, adxs):
+ 
+    return tuple(inputs[adx] for adx in adxs)
+
+
+
+
 # --- Forward logic --------------------------------------------------------- #
 
 class ForwardLogic(Logic):
@@ -103,7 +112,7 @@ class ForwardLogic(Logic):
    @tdutil.cacheable
    def _parents(self):
 
-       return tuple(self._inputs[adx] for adxs in self._adxs)
+       return _make_parents(self._inputs, self._adxs)
 
 
    @tdutil.cacheable
@@ -166,7 +175,7 @@ class ReverseLogic(Logic):
 
    def _parents(self):
 
-       return tuple(self._inputs[adx] for adxs in self._adxs)
+       return _make_parents(self._inputs, self._adxs)
 
 
    def _apply(self, fun):
@@ -243,9 +252,14 @@ class ForwardGate(Gate, Forward):
                  )) 
 
 
+   def __hash__(self):
+
+       return hash((self._parents, self._fun))
+
+
    def integrate_with(self, source, layer):
 
-       return ForwardNode(source, layer, self)
+       return ForwardNode(Nodule(source, layer), self)
 
 
    def grad(self):
@@ -284,9 +298,14 @@ class ReverseGate(Gate, Reverse):
                  )) 
 
 
+   def __hash__(self):
+
+       return hash((self._parents, self._fun))
+
+
    def integrate_with(self, source, layer):
 
-       return ReverseNode(source, layer, self)
+       return ReverseNode(Nodule(source, layer), self)
 
 
    def accumulate_parent_grads(self, grads): 
@@ -328,7 +347,7 @@ class ForwardRootGate(ForwardGate):
 
 # --- Reverse root logic gate ----------------------------------------------- #
 
-class ReverseRootGate(Vjp):
+class ReverseRootGate(ReverseGate):
 
    def __init__(self):
 
@@ -616,7 +635,7 @@ class AdhesivePipeline:
 
        adhesive = Adhesive()
 
-       for nodule in self._nodes:
+       for nodule in self._nodules:
            adhesive = nodule.attach_to(adhesive)
  
        return adhesive.glue(self._nodes)
