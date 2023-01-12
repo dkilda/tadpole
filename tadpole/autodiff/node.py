@@ -418,79 +418,6 @@ class Point(Node):
 
 
 
-# --- Nodule ---------------------------------------------------------------- #
-
-class Nodule:
-
-   def __init__(self, source, layer): 
-                                            
-       self._source = source              
-       self._layer  = layer                 
-
-
-   def __repr__(self):
-
-       return (
-               tdutil.StringRep(self)
-                     .with_member("source", self._source)
-                     .with_data("layer",    self._layer)
-                     .compile()
-              )
-       
-
-   def __eq__(self, other):
-
-       return all((
-                   self._source == other._source,
-                   self._layer  == other._layer,
-                 ))
-
-
-   def __hash__(self):
-
-       return id(self)
-
-
-   def reduce(self):
-
-       return self._source
-
-
-   def disconnect(self):
-
-       return Point(self._source, self._layer)
-
-
-   def glue(self, adhesive, *others):
-
-       nodules = (self, *others)
-       sources = tuple(x._source for x in nodules) 
-       layers  = tuple(x._layer  for x in nodules)
-
-       return adhesive.glue(sources, layers)
-
-
-
-
-# --- Adhesive -------------------------------------------------------------- #
-
-class Adhesive:
-
-   def __init__(self, nodes):
-
-       self._nodes = nodes
-
-
-   def glue(self, sources, layers):
-
-       return tdgraph.NodeGlue(
-                               nodes, 
-                               tdgraph.Sources(nodes, sources, layers)
-                              )
-
-
-
-
 # --- Forward node ---------------------------------------------------------- #
 
 class ForwardNode(Node, Forward): 
@@ -541,9 +468,10 @@ class ForwardNode(Node, Forward):
 
    def glue(self, *others):
 
-       other_nodules = (other._nodule for other in others)
-       
-       return self._nodule.glue(Adhesive((self, *others)), *other_nodules)  
+       nodes   = (self, *others)
+       nodules = tuple(node._nodule for node in nodes)
+
+       return AdhesivePipeline(nodes, nodules).glue()
 
 
    def grad(self):
@@ -603,9 +531,10 @@ class ReverseNode(Node, Reverse):
 
    def glue(self, *others):
 
-       other_nodules = (other._nodule for other in others)
-       
-       return self._nodule.glue(Adhesive((self, *others)), *other_nodules)  
+       nodes   = (self, *others)
+       nodules = tuple(node._nodule for node in nodes)
+
+       return AdhesivePipeline(nodes, nodules).glue() 
 
 
    def accumulate_parent_grads(self, grads): 
@@ -633,6 +562,121 @@ class ReverseNode(Node, Reverse):
 def make_node(source, layer, gate):
 
     return gate.integrate_with(source, layer) 
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Auxiliary code for Node objects.                                       ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Adhesive -------------------------------------------------------------- #
+
+class Adhesive:
+
+   def __init__(self, data=None):
+
+       if data is None:
+          data = tdutil.Stack()
+
+       self._data = data
+
+
+   def attach(self, source, layer):
+ 
+       return self.__class__(self._data.push((source, layer)))
+ 
+
+   def glue(self, nodes):
+
+       sources, layers = zip(*self._data.riter())
+ 
+       return tdgraph.NodeGlue(
+                               nodes, 
+                               tdgraph.Sources(nodes, sources, layers)
+                              )
+
+
+
+
+# --- Adhesive pipeline ----------------------------------------------------- #
+
+class AdhesivePipeline:
+
+   def __init__(self, nodes, nodules):
+
+       self._nodes   = nodes
+       self._nodules = nodules
+
+
+   def glue(self):
+
+       adhesive = Adhesive()
+
+       for nodule in self._nodes:
+           adhesive = nodule.attach_to(adhesive)
+ 
+       return adhesive.glue(self._nodes)
+
+
+
+
+# --- Nodule ---------------------------------------------------------------- #
+
+class Nodule:
+
+   def __init__(self, source, layer): 
+                                            
+       self._source = source              
+       self._layer  = layer                 
+
+
+   def __repr__(self):
+
+       return (
+               tdutil.StringRep(self)
+                     .with_member("source", self._source)
+                     .with_data("layer",    self._layer)
+                     .compile()
+              )
+       
+
+   def __eq__(self, other):
+
+       return all((
+                   self._source == other._source,
+                   self._layer  == other._layer,
+                 ))
+
+
+   def __hash__(self):
+
+       return id(self)
+
+
+   def reduce(self):
+
+       return self._source
+
+
+   def disconnect(self):
+
+       return Point(self._source, self._layer)
+
+
+   def attach_to(self, adhesive):
+
+       return adhesive.attach(self._source, self._layer)
+
+
+
+
+
+
+
 
 
 
@@ -947,6 +991,26 @@ class ReverseInputs(Inputs):
 def make_inputs(nodes, adxs, args, out):
 
     return nodes[0].next_input(nodes[1:], adxs, args, out)
+
+
+
+
+# --- Adhesive -------------------------------------------------------------- #
+
+class Adhesive:
+
+   def __init__(self, nodes):
+
+       self._nodes = nodes
+
+
+   def glue(self, sources, layers):
+
+       return tdgraph.NodeGlue(
+                               nodes, 
+                               tdgraph.Sources(nodes, sources, layers)
+                              )
+
 
 """
 
