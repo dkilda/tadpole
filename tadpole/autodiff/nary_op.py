@@ -25,8 +25,10 @@ class NaryOp:
 
    def __call__(self, *args, **kwargs):
 
-       def unary_fun(x):
+       print(f"\nNaryOp: {args}, {self._fun.__name__}, {self._argproxy}")
 
+       def unary_fun(x):
+           print(f"\nNaryOp -- unary_fun(x): {x}, {args}, {self._fun.__name__}, {self._argproxy}")
            return self._fun(*self._argproxy.insert(args, x), **kwargs)
             
        return self._unary_op(unary_fun, self._argproxy.extract(args))

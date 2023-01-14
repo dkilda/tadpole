@@ -68,7 +68,7 @@ class Logic(abc.ABC):
 
 # --- Helper functions ------------------------------------------------------ #
 
-def _make_parents(inputs, adxs):
+def _make_parents(inputs, adxs): # FIXME rename inputs to nodes (or parents! since now we'll input parents directly)
  
     return tuple(inputs[adx] for adx in adxs)
 
@@ -150,6 +150,8 @@ class ReverseLogic(Logic):
        self._out    = out
        self._args   = args
 
+       print(f"\nReverseLogic: {self._inputs}, {self._adxs}, {self._out}, {self._args}")
+
 
    def __repr__(self):
 
@@ -199,6 +201,8 @@ class ReverseLogic(Logic):
 # --- Create logic ---------------------------------------------------------- #
 
 def make_logic(nodes, adxs, out, *args):
+
+    print(f"\nmake_logic: {nodes}, {adxs}, {out}, {args}")
 
     return nodes[0].logic(nodes[1:], adxs, out, *args)
 
@@ -550,6 +554,8 @@ class ReverseNode(Node, Reverse):
 
    def glue(self, *others):
 
+       print(f"\nReverseNode.glue(): {others}")
+
        nodes   = (self, *others)
        nodules = tuple(node._nodule for node in nodes)
 
@@ -633,6 +639,8 @@ class AdhesivePipeline:
 
        self._nodes   = nodes
        self._nodules = nodules
+
+       print(f"\nAdhesivePipeline: {nodes}, {nodules}")
 
 
    def glue(self):

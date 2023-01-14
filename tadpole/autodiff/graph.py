@@ -273,6 +273,8 @@ class ArgGlue(Glue):
        vals  = self._filter.vals(self._args)
        nodes = self._filter.nodes(self._args)
 
+       print(f"\nArgGlue.pack(): {self._args}, {nodes}, {vals}")
+
        funcall = funcall.add(*vals)
 
        if len(nodes) > 0: 
@@ -293,6 +295,8 @@ class FunCall:
           args = tdutil.Stack()
 
        self._args = args
+
+       print(f"\nFunCall(): {list(self._args.riter())}")
 
 
    def __repr__(self):
@@ -320,6 +324,8 @@ class FunCall:
 
 
    def execute(self, fun):
+
+       print(f"\nFunCall.execute: {fun}, {list(self._args.riter())}")
 
        return fun(*self._args.riter())
 
@@ -424,8 +430,10 @@ class NodeGlue(Glue):
                                  self._nodes,
                                  self._sources.adxs(), 
                                  source,
-                                 *self._sources.args(),  
-                                )       
+                                 *self._sources.args(), # FIXME: args only incl the last unpacked nodes, but not previous vals! 
+                                )                       #        must pass vals here too!
+
+       print(f"\nNodeGlue.pack(): {self._nodes}, {self._sources.adxs()}, {self._sources.args()}")
 
        return NodePack(source, self._sources.layer(), logic)
 

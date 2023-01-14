@@ -23,6 +23,8 @@ import tadpole.autodiff.manip   as tdmanip
 
 @tdnary.make_nary_op
 def grad(fun, x):  
+
+    print(f"\ngrad: {fun}, {x}")
   
     return ReverseDiffOp(fun, x).grad(1)
 
@@ -274,7 +276,7 @@ class GradAccum:
 
    def pop(self, node):
 
-       print(f"\nGradAccum.pop(): node = {node}, map = {self._map}")
+       # FIXME # print(f"\nGradAccum.pop(): node = {node}, map = {self._map}")
 
        self._last = self._map.pop(node)
        return self._last
@@ -282,11 +284,11 @@ class GradAccum:
 
    def accumulate(self, node, grad):
 
-       print(f"\nGradAccum.accumulate(), BEFORE: node = {node}, grad = {grad}, map = {self._map}")
+       # FIXME # print(f"\nGradAccum.accumulate(), BEFORE: node = {node}, grad = {grad}, map = {self._map}")
 
        self._map[node] = tdmanip.add_grads(self._map.get(node), grad)
 
-       print(f"\nGradAccum.accumulate(), AFTER: node = {node}, grad = {grad}, map = {self._map}")
+       # FIXME # print(f"\nGradAccum.accumulate(), AFTER: node = {node}, grad = {grad}, map = {self._map}")
        return self
 
 

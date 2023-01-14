@@ -38,6 +38,9 @@ def concatenate_adjfuns(*adjfuns, adxs=None):
     adjfun_by_adx = dict(zip(adxs, map(make_adjfun, adjfuns)))
 
     def adjfun(g, adx, out, *args):
+
+        print(f"\nadjfun: {g}, {adx}, {out}, {args}")
+
         return adjfun_by_adx[adx](g, out, *args)
 
     return adjfun  
@@ -133,6 +136,8 @@ class NetVjpFun:
 
 
    def __call__(self, adxs, out, *args):
+
+       print(f"\nNetVjpFun: {adxs}, {out}, {args}")
 
        return lambda g: (self._vjpfun(g, adx, out, *args) for adx in adxs)
 
