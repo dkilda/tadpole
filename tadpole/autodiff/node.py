@@ -66,35 +66,26 @@ class Logic(abc.ABC):
 
 
 
-# --- Helper functions ------------------------------------------------------ #
-
-def _make_parents(inputs, adxs): # FIXME rename inputs to nodes (or parents! since now we'll input parents directly)
- 
-    return tuple(inputs[adx] for adx in adxs)
-
-
-
-
 # --- Forward logic --------------------------------------------------------- #
 
 class ForwardLogic(Logic):
 
-   def __init__(self, inputs, adxs, out, *args):
+   def __init__(self, parents, adxs, out, *args):
 
-       self._inputs = inputs
-       self._adxs   = adxs
-       self._out    = out
-       self._args   = args
+       self._parents = parents
+       self._adxs    = adxs
+       self._out     = out
+       self._args    = args
 
 
    def __repr__(self):
 
        return (
                tdutil.StringRep(self)
-                     .with_member("inputs", self._inputs)
-                     .with_data("adxs",     self._adxs)
-                     .with_member("out",    self._out)
-                     .with_member("args",   self._args)
+                     .with_member("parents", self._parents)
+                     .with_data("adxs",      self._adxs)
+                     .with_member("out",     self._out)
+                     .with_member("args",    self._args)
                      .compile()
               )
        
@@ -102,23 +93,16 @@ class ForwardLogic(Logic):
    def __eq__(self, other):
 
        return all((
-                   self._inputs == other._inputs,
-                   self._adxs   == other._adxs,
-                   self._out    == other._out,  
-                   self._args   == other._args,  
+                   self._parents == other._parents,
+                   self._adxs    == other._adxs,
+                   self._out     == other._out,  
+                   self._args    == other._args,  
                  ))
 
 
-   @tdutil.cacheable
-   def _parents(self):
-
-       return _make_parents(self._inputs, self._adxs)
-
-
-   @tdutil.cacheable
    def _parent_grads(self):
 
-       return tuple(p.grad() for p in self._parents())
+       return tuple(p.grad() for p in self._parents)
 
 
    def _apply(self, fun):
@@ -131,7 +115,7 @@ class ForwardLogic(Logic):
        jvps = self._apply(tda.jvpmap.get(fun))
 
        return ForwardGate(
-                          self._parents(), 
+                          self._parents, 
                           fun, 
                           reduce(tdmanip.add_grads, jvps, None)
                          )
@@ -143,24 +127,24 @@ class ForwardLogic(Logic):
 
 class ReverseLogic(Logic):
 
-   def __init__(self, inputs, adxs, out, *args):
+   def __init__(self, parents, adxs, out, args):
 
-       self._inputs = inputs
+       self._parents = parents
        self._adxs   = adxs
        self._out    = out
        self._args   = args
 
-       print(f"\nReverseLogic: {self._inputs}, {self._adxs}, {self._out}, {self._args}")
+       print(f"\nReverseLogic: {self._parents}, {self._adxs}, {self._out}, {self._args}")
 
 
    def __repr__(self):
 
        return (
                tdutil.StringRep(self)
-                     .with_member("inputs", self._inputs)
-                     .with_data("adxs",     self._adxs)
-                     .with_member("out",    self._out)
-                     .with_member("args",   self._args)
+                     .with_member("parents", self._parents)
+                     .with_data("adxs",      self._adxs)
+                     .with_member("out",     self._out)
+                     .with_member("args",    self._args)
                      .compile()
               )
        
@@ -168,16 +152,16 @@ class ReverseLogic(Logic):
    def __eq__(self, other):
 
        return all((
-                   self._inputs == other._inputs,
-                   self._adxs   == other._adxs,
-                   self._out    == other._out,  
-                   self._args   == other._args,  
+                   self._parents == other._parents,
+                   self._adxs    == other._adxs,
+                   self._out     == other._out,  
+                   self._args    == other._args,  
                  ))
 
 
    def _parents(self):
 
-       return _make_parents(self._inputs, self._adxs)
+       return _make_parents(self._parents, self._adxs)
 
 
    def _apply(self, fun):
@@ -190,7 +174,7 @@ class ReverseLogic(Logic):
        vjp = self._apply(tda.vjpmap.get(fun)) 
 
        return ReverseGate(
-                          self._parents(), 
+                          self._parents, 
                           fun, 
                           vjp
                          )
@@ -200,11 +184,11 @@ class ReverseLogic(Logic):
 
 # --- Create logic ---------------------------------------------------------- #
 
-def make_logic(nodes, adxs, out, *args):
+def make_logic(parents, adxs, out, args):
 
-    print(f"\nmake_logic: {nodes}, {adxs}, {out}, {args}")
+    print(f"\nmake_logic: {parents}, {adxs}, {out}, {args}")
 
-    return nodes[0].logic(nodes[1:], adxs, out, *args)
+    return parents[0].logic(parents[1:], adxs, out, args)
 
 
 
@@ -376,24 +360,20 @@ class Node(abc.ABC):
        pass
 
    @abc.abstractmethod
-   def disconnect(self):
-       pass
-
-   @abc.abstractmethod
-   def glue(self, *others):
+   def attach(self, train):
        pass
 
 
 
 
-# --- Point (disconnected/isolated Node) ------------------------------------ #
+# --- Point (a disconnected node, only carries a value and no logic) -------- #
 
 class Point(Node):
 
-   def __init__(self, source, layer):
+   def __init__(self, source):
 
        self._source = source
-       self._layer  = layer
+       self._layer  = -1
 
 
    def __repr__(self):
@@ -424,19 +404,17 @@ class Point(Node):
        return self._source
 
 
-   def disconnect(self):
+   def attach(self, train):
 
-       return self
+       return (
+               train.with_node(self)
+                    .with_meta(self._source, self._layer)
+              )
 
 
-   def glue(self, *others):
+   def pluginto(self, funcall):
 
-       pts = (self, *others)
-
-       sources = tuple(pt._source for pt in pts) 
-       layers  = tuple(pt._layer  for pt in pts)
-
-       return tdgraph.PointGlue(tdgraph.Sources(pts, sources, layers))
+       return funcall.with_arg(self._source)
 
 
 
@@ -474,9 +452,9 @@ class ForwardNode(Node, Forward):
        return hash((self._nodule, self._gate))
 
 
-   def logic(self, others, adxs, source, *args):
+   def logic(self, others, adxs, source, args):
 
-       return ForwardLogic((self, *others), adxs, source, *args)
+       return ForwardLogic((self, *others), adxs, source, args)
 
 
    def reduce(self):
@@ -484,17 +462,9 @@ class ForwardNode(Node, Forward):
        return self._nodule.reduce()
 
 
-   def disconnect(self):
+   def attach(self, train):
 
-       return self._nodule.disconnect()
-
-
-   def glue(self, *others):
-
-       nodes   = (self, *others)
-       nodules = tuple(node._nodule for node in nodes)
-
-       return AdhesivePipeline(nodes, nodules).glue()
+       return self._nodule.attach(train.with_node(self))
 
 
    def grad(self):
@@ -537,9 +507,9 @@ class ReverseNode(Node, Reverse):
        return hash((self._nodule, self._gate))
 
 
-   def logic(self, others, adxs, source, *args):
+   def logic(self, others, adxs, source, args):
 
-       return ReverseLogic((self, *others), adxs, source, *args)
+       return ReverseLogic((self, *others), adxs, source, args)
 
 
    def reduce(self):
@@ -547,19 +517,9 @@ class ReverseNode(Node, Reverse):
        return self._nodule.reduce()
 
 
-   def disconnect(self):
+   def attach(self, train):
 
-       return self._nodule.disconnect()
-
-
-   def glue(self, *others):
-
-       print(f"\nReverseNode.glue(): {others}")
-
-       nodes   = (self, *others)
-       nodules = tuple(node._nodule for node in nodes)
-
-       return AdhesivePipeline(nodes, nodules).glue() 
+       return self._nodule.attach(train.with_node(self))
 
 
    def accumulate_parent_grads(self, grads): 
@@ -591,66 +551,6 @@ class ReverseNode(Node, Reverse):
 def make_node(source, layer, gate):
 
     return gate.integrate_with(source, layer) 
-
-
-
-
-###############################################################################
-###                                                                         ###
-###  Auxiliary code for Node objects.                                       ###
-###                                                                         ###
-###############################################################################
-
-
-# --- Adhesive -------------------------------------------------------------- #
-
-class Adhesive:
-
-   def __init__(self, data=None):
-
-       if data is None:
-          data = tdutil.Stack()
-
-       self._data = data
-
-
-   def attach(self, source, layer):
- 
-       return self.__class__(self._data.push((source, layer)))
- 
-
-   def glue(self, nodes):
-
-       sources, layers = zip(*self._data.riter())
- 
-       return tdgraph.NodeGlue(
-                               nodes, 
-                               tdgraph.Sources(nodes, sources, layers)
-                              )
-
-
-
-
-# --- Adhesive pipeline ----------------------------------------------------- #
-
-class AdhesivePipeline:
-
-   def __init__(self, nodes, nodules):
-
-       self._nodes   = nodes
-       self._nodules = nodules
-
-       print(f"\nAdhesivePipeline: {nodes}, {nodules}")
-
-
-   def glue(self):
-
-       adhesive = Adhesive()
-
-       for nodule in self._nodules:
-           adhesive = nodule.attach_to(adhesive)
- 
-       return adhesive.glue(self._nodes)
 
 
 
@@ -693,14 +593,9 @@ class Nodule:
        return self._source
 
 
-   def disconnect(self):
+   def attach(self, train):
 
-       return Point(self._source, self._layer)
-
-
-   def attach_to(self, adhesive):
-
-       return adhesive.attach(self._source, self._layer)
+       return train.with_meta(self._source, self._layer)
 
 
 
@@ -913,7 +808,7 @@ def make_reverse_gate():
 
 
 
-# --- Gate inputs ----------------------------------------------------------- #
+# --- Gate parents ----------------------------------------------------------- #
 
 class Inputs(abc.ABC):
 
@@ -924,7 +819,7 @@ class Inputs(abc.ABC):
 
 
 
-# --- Forward node inputs --------------------------------------------------- #
+# --- Forward node parents --------------------------------------------------- #
 
 class ForwardInputs(Inputs):
 
@@ -971,7 +866,7 @@ class ForwardInputs(Inputs):
 
 
 
-# --- Reverse node inputs --------------------------------------------------- #
+# --- Reverse node parents --------------------------------------------------- #
 
 class ReverseInputs(Inputs):
 
@@ -1017,9 +912,9 @@ class ReverseInputs(Inputs):
 
 
 
-# --- Create node inputs ---------------------------------------------------- #
+# --- Create node parents ---------------------------------------------------- #
 
-def make_inputs(nodes, adxs, args, out):
+def make_parents(nodes, adxs, args, out):
 
     return nodes[0].next_input(nodes[1:], adxs, args, out)
 
@@ -1046,6 +941,66 @@ class Adhesive:
 """
 
 
+
+
+"""
+###############################################################################
+###                                                                         ###
+###  Auxiliary code for Node objects.                                       ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Adhesive -------------------------------------------------------------- #
+
+class Adhesive:
+
+   def __init__(self, data=None):
+
+       if data is None:
+          data = tdutil.Stack()
+
+       self._data = data
+
+
+   def attach(self, source, layer):
+ 
+       return self.__class__(self._data.push((source, layer)))
+ 
+
+   def glue(self, nodes):
+
+       sources, layers = zip(*self._data.riter())
+ 
+       return tdgraph.NodeGlue(
+                               nodes, 
+                               tdgraph.Sources(nodes, sources, layers)
+                              )
+
+
+
+
+# --- Adhesive pipeline ----------------------------------------------------- #
+
+class AdhesivePipeline:
+
+   def __init__(self, nodes, nodules):
+
+       self._nodes   = nodes
+       self._nodules = nodules
+
+       print(f"\nAdhesivePipeline: {nodes}, {nodules}")
+
+
+   def glue(self):
+
+       adhesive = Adhesive()
+
+       for nodule in self._nodules:
+           adhesive = nodule.attach_to(adhesive)
+ 
+       return adhesive.glue(self._nodes)
+"""
 
 
 
