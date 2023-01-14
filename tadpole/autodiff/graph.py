@@ -93,11 +93,17 @@ class Differentiable:
        fun  = FunWithGate(self, self._fun)
        glue = Active(Glue(args)) 
 
+       pack = glue.pack()
+       out  = pack.pluginto(fun)
+
+       return out
+
+       """
        return (
                glue.pack()
                    .pluginto(fun) 
               )
-
+       """
 
 
 
@@ -165,22 +171,22 @@ class Composite(abc.ABC):
 
 class Adhesive(abc.ABC):
 
-   @abs.abstractmethod
+   @abc.abstractmethod
    def layer(self):
        pass
 
 
-   @abs.abstractmethod
+   @abc.abstractmethod
    def adxs(self):
        pass
 
 
-   @abs.abstractmethod
+   @abc.abstractmethod
    def args(self):
        pass
 
 
-   @abs.abstractmethod
+   @abc.abstractmethod
    def parents(self):
        pass
 
@@ -190,7 +196,7 @@ class Adhesive(abc.ABC):
 
 class Packable(abc.ABC):
 
-   @abs.abstractmethod
+   @abc.abstractmethod
    def pack(self):
        pass
 
@@ -217,7 +223,7 @@ class NodeTrain:
 
    def with_meta(self, source, layer): 
  
-       return self.__class__(self._nodes, self._meta.push((source, layer))
+       return self.__class__(self._nodes, self._meta.push((source, layer)))
 
        
    def concatenate(self):
@@ -240,13 +246,13 @@ class GlueEngine(Adhesive):
        self._layers  = layers
 
 
-   @tdutil.cacheable
+   #@tdutil.cacheable
    def layer(self):
 
        return max(self._layers)
 
 
-   @tdutil.cacheable
+   #@tdutil.cacheable
    def adxs(self):
 
        if self.layer() == -1:
@@ -255,7 +261,7 @@ class GlueEngine(Adhesive):
        return tuple(i for i, x in enumerate(self._layers) 
                                            if x == self.layer())
 
-   @tdutil.cacheable
+   #@tdutil.cacheable
    def args(self):
 
        args = list(self._nodes)
@@ -266,7 +272,7 @@ class GlueEngine(Adhesive):
        return tuple(args)
 
 
-   @tdutil.cacheable
+   #@tdutil.cacheable
    def parents(self):
 
        return tuple(self._nodes[adx] for adx in self.adxs())
@@ -278,15 +284,15 @@ class GlueEngine(Adhesive):
 
 def _nodify(x):
 
-    if isinstance(x, Node):
+    if isinstance(x, tdnode.Node):
        return x
 
-    return Point(x)
+    return tdnode.Point(x)
 
 
 
 
-# --- Glue (without packing capability) ------------------------------------- #
+# --- Glue (without packing capability) ------------------------------------- #    @tdutil.cacheable  
 
 class Glue(Composite, Adhesive):
 
@@ -296,18 +302,17 @@ class Glue(Composite, Adhesive):
 
 
    @property
-   @tdutil.cacheable  
-   def _order(self):
+   def _engine(self):
 
-       concat = NodeTrain()
+       train = NodeTrain()
 
        for arg in self.iter():
            train = arg.attach(train)
 
-       return train.order()
+       return train.concatenate()
 
 
-   @tdutil.cacheable
+   # @tdutil.cacheable
    def iter(self):
 
        return iter(map(_nodify, self._args))
@@ -320,22 +325,22 @@ class Glue(Composite, Adhesive):
 
    def layer(self):
 
-       return self._order.layer()
+       return self._engine.layer()
 
 
    def adxs(self):
 
-       return self._order.adxs()
+       return self._engine.adxs()
 
 
    def args(self):
 
-       return self._order.args()
+       return self._engine.args()
 
 
    def parents(self):
 
-       return self._order.parents()
+       return self._engine.parents()
 
 
 
@@ -344,39 +349,39 @@ class Glue(Composite, Adhesive):
 
 class PackingGlue(Composite, Adhesive, Packable):
 
-   def __init__(self, inputs):
+   def __init__(self, glue):
 
-       self._inputs = inputs
+       self._glue = glue
 
 
    def iter(self):
 
-       return self._inputs.iter()
+       return self._glue.iter()
 
 
    def reduced(self):
 
-       return self.__class__(self.args()) 
+       return self.__class__(self._glue.reduced()) 
 
 
    def layer(self):
 
-       return self._inputs.layer()
+       return self._glue.layer()
 
 
    def adxs(self):
 
-       return self._inputs.adxs()
+       return self._glue.adxs()
 
 
    def args(self):
 
-       return self._inputs.args()
+       return self._glue.args()
 
 
    def parents(self):
 
-       return self._inputs.parents()
+       return self._glue.parents()
 
 
 
@@ -388,8 +393,8 @@ def default_pack(fun):
     def wrap(self, *args, **kwargs):
 
         if not self.adxs():
-           return PointPack(self.args())
-
+           return PointPack(self.args()) # FIXME could add Point sources to PointPack directly!
+                                         # So that PointPack consists of sources and not Points
         source = self.reduced().pack()
 
         return fun(self, source)
@@ -530,7 +535,7 @@ class FunCall:
 
    def execute(self):
 
-       return self._fun(*self._args)
+       return self._fun(*self._args.riter())
 
 
 

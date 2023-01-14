@@ -23,8 +23,6 @@ import tadpole.autodiff.manip   as tdmanip
 
 @tdnary.make_nary_op
 def grad(fun, x):  
-
-    print(f"\ngrad: {fun}, {x}")
   
     return ReverseDiffOp(fun, x).grad(1)
 
@@ -115,11 +113,11 @@ class ReverseDiffOp(DiffOp):
        self._x   = x
 
 
-   @tdutil.cacheable
+   # @tdutil.cacheable
    def _compute(self):
 
        with tdgraph.Graph(self._fun, self._x) as graph:
-          top_node = graph.build(tdnode.ReverseRootGate())    
+          top_node = graph.build(tdnode.ReverseRootGate())  
 
        return top_node.reduce(), Backprop(top_node)
 
@@ -219,10 +217,10 @@ class TopoSort:
 
    def add(self, node):
 
-       self._count[parent] -= 1 
+       self._count[node] -= 1 
 
-       if self._count[parent] == 0:
-          self._pool.append(parent) 
+       if self._count[node] == 0:
+          self._pool.append(node) 
 
        return self
 
@@ -276,19 +274,13 @@ class GradAccum:
 
    def pop(self, node):
 
-       # FIXME # print(f"\nGradAccum.pop(): node = {node}, map = {self._map}")
-
        self._last = self._map.pop(node)
        return self._last
 
 
    def accumulate(self, node, grad):
 
-       # FIXME # print(f"\nGradAccum.accumulate(), BEFORE: node = {node}, grad = {grad}, map = {self._map}")
-
        self._map[node] = tdmanip.add_grads(self._map.get(node), grad)
-
-       # FIXME # print(f"\nGradAccum.accumulate(), AFTER: node = {node}, grad = {grad}, map = {self._map}")
        return self
 
 

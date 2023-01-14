@@ -28,6 +28,8 @@ class CacheFun:
        return self._x
 
 
+
+
 # --- Decorator for cacheable methods -------------------------------------- #
 
 def cacheable(fun):
@@ -51,7 +53,7 @@ def cacheable(fun):
 
 # --- Stack ----------------------------------------------------------------- #
 
-class Stack:
+class Stack: # TODO: rename to Sequence, swap iter() and riter()
 
    def __init__(self, xs=None, end=0):
 

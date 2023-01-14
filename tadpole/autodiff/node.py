@@ -134,8 +134,6 @@ class ReverseLogic(Logic):
        self._out    = out
        self._args   = args
 
-       print(f"\nReverseLogic: {self._parents}, {self._adxs}, {self._out}, {self._args}")
-
 
    def __repr__(self):
 
@@ -185,8 +183,6 @@ class ReverseLogic(Logic):
 # --- Create logic ---------------------------------------------------------- #
 
 def make_logic(parents, adxs, out, args):
-
-    print(f"\nmake_logic: {parents}, {adxs}, {out}, {args}")
 
     return parents[0].logic(parents[1:], adxs, out, args)
 

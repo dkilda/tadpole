@@ -13,7 +13,7 @@ def add_grads(net_g, g): # TODO impl and use add() function, with @diffable deco
     if net_g is None:  
        return g
 
-    return tdwrap.add(net_g, g)
+    return tdwrap.functions.add(net_g, g)
 
 
 
