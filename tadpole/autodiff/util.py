@@ -11,35 +11,23 @@ import abc
 ###############################################################################
 
 
-# --- Cache for methods with one-time evaluation ---------------------------- # 
-
-class CacheFun:
-
-   def __init__(self):
-
-       self._x = None
-
-
-   def __call__(self, fun, *args, **kwargs):
-
-       if self._x is None:
-          self._x = fun(*args, **kwargs)
-
-       return self._x
-
-
-
-
 # --- Decorator for cacheable methods -------------------------------------- #
 
 def cacheable(fun):
 
-    cachefun = CacheFun()
+    name = f"_{fun.__name__}_cached"
 
-    def funwrap(*args, **kwargs):
-        return cachefun(fun, *args, **kwargs)
+    def wrap(self):
 
-    return funwrap
+        try:
+           return getattr(self, name) 
+
+        except AttributeError:
+           out = fun(self)
+           setattr(self, name, out)
+           return out
+
+    return wrap
 
 
 

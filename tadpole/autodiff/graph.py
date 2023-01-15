@@ -246,13 +246,13 @@ class GlueEngine(Adhesive):
        self._layers  = layers
 
 
-   #@tdutil.cacheable
+   @tdutil.cacheable
    def layer(self):
 
        return max(self._layers)
 
 
-   #@tdutil.cacheable
+   @tdutil.cacheable
    def adxs(self):
 
        if self.layer() == -1:
@@ -261,7 +261,7 @@ class GlueEngine(Adhesive):
        return tuple(i for i, x in enumerate(self._layers) 
                                            if x == self.layer())
 
-   #@tdutil.cacheable
+   @tdutil.cacheable
    def args(self):
 
        args = list(self._nodes)
@@ -272,7 +272,7 @@ class GlueEngine(Adhesive):
        return tuple(args)
 
 
-   #@tdutil.cacheable
+   @tdutil.cacheable
    def parents(self):
 
        return tuple(self._nodes[adx] for adx in self.adxs())
@@ -292,7 +292,7 @@ def _nodify(x):
 
 
 
-# --- Glue (without packing capability) ------------------------------------- #    @tdutil.cacheable  
+# --- Glue (without packing capability) ------------------------------------- #      
 
 class Glue(Composite, Adhesive):
 
@@ -302,6 +302,7 @@ class Glue(Composite, Adhesive):
 
 
    @property
+   @tdutil.cacheable
    def _engine(self):
 
        train = NodeTrain()
@@ -312,7 +313,7 @@ class Glue(Composite, Adhesive):
        return train.concatenate()
 
 
-   # @tdutil.cacheable
+   @tdutil.cacheable
    def iter(self):
 
        return iter(map(_nodify, self._args))

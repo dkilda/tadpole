@@ -113,7 +113,7 @@ class ReverseDiffOp(DiffOp):
        self._x   = x
 
 
-   # @tdutil.cacheable
+   @tdutil.cacheable
    def _compute(self):
 
        with tdgraph.Graph(self._fun, self._x) as graph:
