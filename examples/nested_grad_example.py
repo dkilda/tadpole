@@ -6,6 +6,9 @@ sys.path.insert(0, '..')
 
 import tadpole as tad
 
+"""
+
+# val = 5.0, g = 1.0
 
 def fun(x):
    def funY(y):
@@ -13,19 +16,28 @@ def fun(x):
    return tad.grad(funY)(x)
 
 
+"""
 
 
-x = 2.7
-y = 5.1
+# val = 30.0, g = 6.0 
 
-val = fun(x, y)
+def fun(x, x0=3.0):
+  def funY(y):
+      return tad.mul(x, tad.mul(y, y)) 
+  return tad.grad(funY)(x0)
+
+
+
+
+x = 5.0
+
+val = fun(x)
 print(f"\nValue: {val}")
 
-g = tad.grad(fun, 0)(x, y)
+g = tad.grad(fun)(x)
 print(f"\nGradient wrt 0: {g}")
 
-g = tad.grad(fun, 1)(x, y)
-print(f"\nGradient wrt 1: {g}")
+
 
 
 
