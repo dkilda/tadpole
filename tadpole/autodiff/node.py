@@ -3,6 +3,8 @@
 
 import abc
 
+from functools import reduce
+
 import tadpole.autodiff.util     as tdutil   
 import tadpole.autodiff.manip    as tdmanip        
 import tadpole.autodiff.graph    as tdgraph
@@ -70,7 +72,7 @@ class Logic(abc.ABC):
 
 class ForwardLogic(Logic):
 
-   def __init__(self, parents, adxs, out, *args):
+   def __init__(self, parents, adxs, out, args):
 
        self._parents = parents
        self._adxs    = adxs

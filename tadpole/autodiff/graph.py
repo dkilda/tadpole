@@ -93,17 +93,11 @@ class Differentiable:
        fun  = FunWithGate(self, self._fun)
        glue = Active(Glue(args)) 
 
-       pack = glue.pack()
-       out  = pack.pluginto(fun)
-
-       return out
-
-       """
        return (
                glue.pack()
                    .pluginto(fun) 
               )
-       """
+
 
 
 
