@@ -34,14 +34,14 @@ def cacheable(fun):
 
 ###############################################################################
 ###                                                                         ###
-###  A quasi-immutable stack data structure                                 ###
+### Sequence data structure (quasi-immutable)                               ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- Stack ----------------------------------------------------------------- #
+# --- Sequence ----------------------------------------------------------------- #
 
-class Stack: # TODO: rename to Sequence, swap iter() and riter()
+class Sequence: 
 
    def __init__(self, xs=None, end=0):
 
@@ -68,22 +68,6 @@ class Stack: # TODO: rename to Sequence, swap iter() and riter()
        return self._xs[self._end - 1] 
 
 
-   def tolist(self):
-
-       return list(self.riter())
-
-
-   def iter(self):
-
-       return reversed(self.riter())
-
-
-   def riter(self):
-
-       for i in range(self.size()):
-           yield self._xs[i]
-
-
    def size(self):
 
        return self._end
@@ -92,6 +76,37 @@ class Stack: # TODO: rename to Sequence, swap iter() and riter()
    def empty(self):
 
        return self.size() == 0
+
+
+   def contains(self, x):
+
+       return x in self._xs[:self._end]
+
+
+   def iterate(self):
+
+       for i in range(self.size()):
+           yield self._xs[i]
+
+
+   def __len__(self):
+
+       return self.size()
+
+
+   def __contains__(self, x):
+
+       return self.contains(x)
+
+
+   def __iter__(self):
+
+       return self.iterate()
+
+
+   def __reversed__(self):
+
+      return reversed(self.iterate())
 
 
 
@@ -261,8 +276,8 @@ class StringRep:
 
    def __init__(self, obj, members=None, data=None):
 
-       if members is None: members = Stack()
-       if data    is None: data    = Stack()
+       if members is None: members = Sequence()
+       if data    is None: data    = Sequence()
 
        self._obj     = obj
        self._members = members
@@ -294,12 +309,12 @@ class StringRep:
 
    def _member_str(self):
 
-       return "".join(_str(name, x) for name, x in self._members.riter())
+       return "".join(_str(name, x) for name, x in self._members)
 
 
    def _data_str(self):
 
-       return "".join(f"\n{name}: {x}" for name, x in self._data.riter())
+       return "".join(f"\n{name}: {x}" for name, x in self._data)
 
 
    def compile(self):

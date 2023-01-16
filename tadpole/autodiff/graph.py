@@ -212,8 +212,8 @@ class NodeTrain:
 
    def __init__(self, nodes=None, meta=None):
 
-       if nodes is None: nodes = tdutil.Stack()       
-       if meta  is None: meta  = tdutil.Stack()
+       if nodes is None: nodes = tdutil.Sequence()       
+       if meta  is None: meta  = tdutil.Sequence()
 
        self._nodes = nodes
        self._meta  = meta
@@ -231,9 +231,9 @@ class NodeTrain:
        
    def concatenate(self):
 
-       sources, layers = zip(*self._meta.riter())
+       sources, layers = zip(*self._meta)
 
-       return GlueEngine(self._nodes.tolist(), sources, layers)
+       return GlueEngine(list(self._nodes), sources, layers)
 
 
 
