@@ -463,7 +463,11 @@ class ReverseNode(ActiveNode):
 
 # --- Point (a disconnected node, only carries a value and no logic) -------- #
 
-class Point(Node):
+# TODO Future sol: let Array impl Node interface and act as a Point instead!
+# i.e. we'll replace Point with Array. Then Array.tovalue() will return self.
+
+
+class Point(Node): 
 
    def __init__(self, source):
 

@@ -503,7 +503,11 @@ class PassivePack(Pack):
 
 # --- Point pack ------------------------------------------------------------ #
 
-class PointPack(Pack):
+# TODO Future sol: let Array impl Node interface and act as a Point instead!
+# i.e. we'll replace Point with Array. Then Array.tovalue() will return self.
+
+
+class PointPack(Pack): 
 
    def __init__(self, nodes):
 
