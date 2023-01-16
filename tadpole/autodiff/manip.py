@@ -8,8 +8,8 @@ import tadpole.autodiff.wrapper as tdwrap
 
 # --- Wrapper for gradient addition ----------------------------------------- #
 
-def add_grads(net_g, g): # TODO impl and use add() function, with @diffable decorator 
-                         #      (or overload __add__ operator to make it @diffable)
+def add_grads(net_g, g): # TODO impl and use add() function, with @differentiable decorator 
+                         #      (or overload __add__ operator to make it @differentiable)
     if net_g is None:  
        return g
 

@@ -19,7 +19,7 @@ import tadpole.autodiff.adjoints as tda
 ###                                                                         ###
 ###############################################################################
 
-
+"""
 # --- Forward propagation interface ----------------------------------------- #
 
 class Forward(abc.ABC):
@@ -46,7 +46,7 @@ class Reverse(abc.ABC):
    @abc.abstractmethod
    def add_to_toposort(self, toposort):
        pass
-
+"""
 
 
 
@@ -211,7 +211,7 @@ class Gate(abc.ABC):
 
 # --- Forward logic gate ---------------------------------------------------- #
 
-class ForwardGate(Gate, Forward):
+class ForwardGate(Gate):
 
    def __init__(self, parents, fun, jvp):
 
@@ -257,7 +257,7 @@ class ForwardGate(Gate, Forward):
 
 # --- Reverse logic gate ---------------------------------------------------- #
 
-class ReverseGate(Gate, Reverse):
+class ReverseGate(Gate):
 
    def __init__(self, parents, fun, vjp):
 
@@ -417,9 +417,9 @@ class Point(Node):
 
 
 
-# --- Forward node ---------------------------------------------------------- #
+# --- Active node ----------------------------------------------------------- #
 
-class ForwardNode(Node, Forward): 
+class ActiveNode(Node):
 
    def __init__(self, nodule, gate):
 
@@ -450,11 +450,6 @@ class ForwardNode(Node, Forward):
        return hash((self._nodule, self._gate))
 
 
-   def logic(self, others, adxs, source, args):
-
-       return ForwardLogic((self, *others), adxs, source, args)
-
-
    def tovalue(self):
 
        return self._nodule.tovalue()
@@ -463,6 +458,17 @@ class ForwardNode(Node, Forward):
    def attach(self, train):
 
        return self._nodule.attach(train.with_node(self))
+
+
+
+
+# --- Forward node ---------------------------------------------------------- #
+
+class ForwardNode(ActiveNode): 
+
+   def logic(self, others, adxs, source, args):
+
+       return ForwardLogic((self, *others), adxs, source, args)
 
 
    def grad(self):
@@ -474,50 +480,11 @@ class ForwardNode(Node, Forward):
 
 # --- Reverse node ---------------------------------------------------------- #
 
-class ReverseNode(Node, Reverse): 
-
-   def __init__(self, nodule, gate):
-
-       self._nodule = nodule
-       self._gate   = gate
-
-
-   def __repr__(self):
-
-       return (
-               tdutil.StringRep(self)
-                     .with_member("nodule", self._nodule)
-                     .with_member("gate",   self._gate)
-                     .compile()
-              )
-
-
-   def __eq__(self, other):
-
-       return all((
-                   self._nodule == other._nodule,
-                   self._gate   == other._gate,
-                 ))
-
-
-   def __hash__(self):
-
-       return hash((self._nodule, self._gate))
-
+class ReverseNode(ActiveNode): 
 
    def logic(self, others, adxs, source, args):
 
        return ReverseLogic((self, *others), adxs, source, args)
-
-
-   def tovalue(self):
-
-       return self._nodule.tovalue()
-
-
-   def attach(self, train):
-
-       return self._nodule.attach(train.with_node(self))
 
 
    def accumulate_parent_grads(self, grads): 
@@ -546,9 +513,19 @@ class ReverseNode(Node, Reverse):
 
 # --- Create a node --------------------------------------------------------- #
 
+def nodify(x):
+
+    if isinstance(x, Node):
+       return x
+
+    return Point(x)
+
+
+
+
 def make_node(source, layer, gate):
 
-    nodule = Nodule(tdgraph._nodify(source), layer)
+    nodule = Nodule(nodify(source), layer)
 
     return gate.nodify(nodule) 
 

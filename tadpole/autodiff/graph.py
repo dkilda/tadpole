@@ -272,7 +272,7 @@ class GlueEngine(Adhesive):
        return tuple(self._nodes[adx] for adx in self.adxs())
 
 
-
+"""
 
 # --- Helper methods for glue ----------------------------------------------- #
 
@@ -282,6 +282,7 @@ def _nodify(x):
        return x
 
     return tdnode.Point(x)
+"""
 
 
 
@@ -310,7 +311,7 @@ class Glue(Composite, Adhesive):
    @tdutil.cacheable
    def iter(self):
 
-       return iter(map(_nodify, self._args))
+       return iter(map(tdnode.nodify, self._args))
 
 
    def reduced(self):
