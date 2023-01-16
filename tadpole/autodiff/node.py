@@ -15,43 +15,6 @@ import tadpole.autodiff.adjoints as tda
 
 ###############################################################################
 ###                                                                         ###
-###  Common code for nodes and gates                                        ###
-###                                                                         ###
-###############################################################################
-
-"""
-# --- Forward propagation interface ----------------------------------------- #
-
-class Forward(abc.ABC):
-
-   @abc.abstractmethod
-   def grad(self):
-       pass
-
-
-
-
-# --- Reverse propagation interface ----------------------------------------- #
-
-class Reverse(abc.ABC):
-
-   @abc.abstractmethod
-   def accumulate_parent_grads(self, grads):
-       pass
-
-   @abc.abstractmethod
-   def add_to_childcount(self, childcount):
-       pass
-
-   @abc.abstractmethod
-   def add_to_toposort(self, toposort):
-       pass
-"""
-
-
-
-###############################################################################
-###                                                                         ###
 ###  Logic of forward and reverse propagation, creates logic gates.         ###
 ###                                                                         ###
 ###############################################################################
@@ -157,11 +120,6 @@ class ReverseLogic(Logic):
                    self._out     == other._out,  
                    self._args    == other._args,  
                  ))
-
-
-   def _parents(self):
-
-       return _make_parents(self._parents, self._adxs)
 
 
    def _apply(self, fun):
@@ -344,34 +302,19 @@ class ReverseRootGate(ReverseGate):
 
 ###############################################################################
 ###                                                                         ###
-###  Nodes of the autodiff computation graph                                ###
+###  Nodule: a node kernel                                                  ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- Node interface -------------------------------------------------------- #
+# --- Nodule ---------------------------------------------------------------- #
 
-class Node(abc.ABC):
+class Nodule:
 
-   @abc.abstractmethod
-   def tovalue(self):
-       pass
-
-   @abc.abstractmethod
-   def attach(self, train):
-       pass
-
-
-
-
-# --- Point (a disconnected node, only carries a value and no logic) -------- #
-
-class Point(Node):
-
-   def __init__(self, source):
-
-       self._source = source
-       self._layer  = -1
+   def __init__(self, source, layer): 
+                                            
+       self._source = source              
+       self._layer  = layer                 
 
 
    def __repr__(self):
@@ -399,20 +342,34 @@ class Point(Node):
 
    def tovalue(self):
 
-       return self._source
+       return self._source.tovalue()
 
 
    def attach(self, train):
 
-       return (
-               train.with_node(self)
-                    .with_meta(self._source, self._layer)
-              )
+       return train.with_meta(self._source, self._layer)
 
 
-   def pluginto(self, funcall):
 
-       return funcall.with_arg(self._source)
+
+###############################################################################
+###                                                                         ###
+###  Nodes of the autodiff computation graph                                ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Node interface -------------------------------------------------------- #
+
+class Node(abc.ABC):
+
+   @abc.abstractmethod
+   def tovalue(self):
+       pass
+
+   @abc.abstractmethod
+   def attach(self, train):
+       pass
 
 
 
@@ -511,35 +468,14 @@ class ReverseNode(ActiveNode):
 
 
 
-# --- Create a node --------------------------------------------------------- #
+# --- Point (a disconnected node, only carries a value and no logic) -------- #
 
-def nodify(x):
+class Point(Node):
 
-    if isinstance(x, Node):
-       return x
+   def __init__(self, source):
 
-    return Point(x)
-
-
-
-
-def make_node(source, layer, gate):
-
-    nodule = Nodule(nodify(source), layer)
-
-    return gate.nodify(nodule) 
-
-
-
-
-# --- Nodule ---------------------------------------------------------------- #
-
-class Nodule:
-
-   def __init__(self, source, layer): 
-                                            
-       self._source = source              
-       self._layer  = layer                 
+       self._source = source
+       self._layer  = -1
 
 
    def __repr__(self):
@@ -567,12 +503,43 @@ class Nodule:
 
    def tovalue(self):
 
-       return self._source.tovalue()
+       return self._source
 
 
    def attach(self, train):
 
-       return train.with_meta(self._source, self._layer)
+       return (
+               train.with_node(self)
+                    .with_meta(self._source, self._layer)
+              )
+
+
+   def pluginto(self, funcall):
+
+       return funcall.with_arg(self._source)
+
+
+
+
+# --- Create a node --------------------------------------------------------- #
+
+def nodify(x):
+
+    if isinstance(x, Node):
+       return x
+
+    return Point(x)
+
+
+
+
+def make_node(source, layer, gate):
+
+    nodule = Nodule(nodify(source), layer)
+
+    return gate.nodify(nodule) 
+
+
 
 
 
