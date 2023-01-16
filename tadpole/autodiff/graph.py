@@ -20,7 +20,7 @@ import tadpole.autodiff.node as tdnode
 
 class Graph:
 
-   _layer = -1
+   _layer = -1 # FIXME put this constant in one place! MIN_LAYER = -1 --> e.g. MinLayer() class, with toint() method
 
 
    def __init__(self, fun, x):
@@ -420,7 +420,7 @@ class Active(PackingGlue):
 
 # --- Passive glue (a specific type of packing glue) ------------------------ #
 
-class PassiveGlue(PackingGlue):
+class Passive(PackingGlue):
 
    @default_pack
    def pack(self, source):

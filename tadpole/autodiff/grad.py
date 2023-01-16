@@ -80,7 +80,7 @@ class ForwardDiffOp(DiffOp):
        with tdgraph.Graph(self._fun, self._x) as graph:
           top_node = graph.build(tdnode.ForwardRootGate(seed))   
 
-       return top_node.reduce(), top_node.grad()
+       return top_node.tovalue(), top_node.grad()
 
 
    def evaluate(self, seed=None):
@@ -119,7 +119,7 @@ class ReverseDiffOp(DiffOp):
        with tdgraph.Graph(self._fun, self._x) as graph:
           top_node = graph.build(tdnode.ReverseRootGate())  
 
-       return top_node.reduce(), Backprop(top_node)
+       return top_node.tovalue(), Backprop(top_node)
 
 
    def evaluate(self):

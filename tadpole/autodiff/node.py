@@ -203,7 +203,7 @@ def make_logic(parents, adxs, out, args):
 class Gate(abc.ABC):
 
    @abc.abstractmethod
-   def integrate_with(self, source, layer):
+   def nodify(self, nodule):
        pass
 
 
@@ -243,9 +243,9 @@ class ForwardGate(Gate, Forward):
        return hash((self._parents, self._fun))
 
 
-   def integrate_with(self, source, layer):
+   def nodify(self, nodule):
 
-       return ForwardNode(Nodule(source, layer), self)
+       return ForwardNode(nodule, self)
 
 
    def grad(self):
@@ -289,9 +289,9 @@ class ReverseGate(Gate, Reverse):
        return hash((self._parents, self._fun))
 
 
-   def integrate_with(self, source, layer):
+   def nodify(self, nodule):
 
-       return ReverseNode(Nodule(source, layer), self)
+       return ReverseNode(nodule, self)
 
 
    def accumulate_parent_grads(self, seed, grads): 
@@ -354,7 +354,7 @@ class ReverseRootGate(ReverseGate):
 class Node(abc.ABC):
 
    @abc.abstractmethod
-   def reduce(self):
+   def tovalue(self):
        pass
 
    @abc.abstractmethod
@@ -397,7 +397,7 @@ class Point(Node):
        return id(self)
 
 
-   def reduce(self):
+   def tovalue(self):
 
        return self._source
 
@@ -455,9 +455,9 @@ class ForwardNode(Node, Forward):
        return ForwardLogic((self, *others), adxs, source, args)
 
 
-   def reduce(self):
+   def tovalue(self):
 
-       return self._nodule.reduce()
+       return self._nodule.tovalue()
 
 
    def attach(self, train):
@@ -510,9 +510,9 @@ class ReverseNode(Node, Reverse):
        return ReverseLogic((self, *others), adxs, source, args)
 
 
-   def reduce(self):
+   def tovalue(self):
 
-       return self._nodule.reduce()
+       return self._nodule.tovalue()
 
 
    def attach(self, train):
@@ -548,7 +548,9 @@ class ReverseNode(Node, Reverse):
 
 def make_node(source, layer, gate):
 
-    return gate.integrate_with(source, layer) 
+    nodule = Nodule(tdgraph._nodify(source), layer)
+
+    return gate.nodify(nodule) 
 
 
 
@@ -586,9 +588,9 @@ class Nodule:
        return id(self)
 
 
-   def reduce(self):
+   def tovalue(self):
 
-       return self._source
+       return self._source.tovalue()
 
 
    def attach(self, train):
