@@ -99,12 +99,12 @@ class Differentiable:
 
    def __call__(self, *args):
 
-       fun  = FunWithGate(self, self._fun)
-       glue = Active(Glue(args)) 
+       fun         = FunWithGate(self, self._fun)
+       concat_args = Active(ConcatArgs(args)) 
 
        return (
-               glue.pack()
-                   .pluginto(fun) 
+               concat_args.pack()
+                          .pluginto(fun) 
               )
 
 
@@ -121,11 +121,11 @@ class NonDifferentiable:
 
    def __call__(self, *args):
 
-       glue = Passive(Glue(args))
+       concat_args = Passive(ConcatArgs(args))
 
        return (
-               glue.pack()
-                   .pluginto(self._fun)
+               concat_args.pack()
+                          .pluginto(self._fun)
               )
 
 
@@ -152,58 +152,6 @@ def nondifferentiable(fun):
 ###  Node glue: code for glueing the input nodes together                   ###
 ###                                                                         ###
 ###############################################################################
-
-
-# --- Composite interface --------------------------------------------------- #
-
-class Composite(abc.ABC):  
-
-   @abc.abstractmethod
-   def iter(self):
-       pass
-
-
-   @abc.abstractmethod
-   def reduced(self):
-       pass
-
-
-
-
-# --- Adhesive interface ---------------------------------------------------- #
-
-class Adhesive(abc.ABC):
-
-   @abc.abstractmethod
-   def layer(self):
-       pass
-
-
-   @abc.abstractmethod
-   def adxs(self):
-       pass
-
-
-   @abc.abstractmethod
-   def args(self):
-       pass
-
-
-   @abc.abstractmethod
-   def parents(self):
-       pass
-
-
-
-# --- Packable interface ---------------------------------------------------- #
-
-class Packable(abc.ABC):
-
-   @abc.abstractmethod
-   def pack(self):
-       pass
-
-
 
 
 # --- Node train ------------------------------------------------------------ #
@@ -233,14 +181,89 @@ class NodeTrain:
 
        sources, layers = zip(*self._meta)
 
-       return GlueEngine(list(self._nodes), sources, layers)
+       return ConcatArgsKernel(tuple(self._nodes), sources, layers)
 
 
 
 
-# --- Glue engine ----------------------------------------------------------- #
+# --- Node glue ------------------------------------------------------------- #
 
-class GlueEngine(Adhesive): 
+class NodeGlue:
+
+   def __init__(self, args):
+
+       self._args = args
+
+
+   def iterate(self):
+
+       return iter(map(tdnode.nodify, self._args))
+
+
+   def concatenate(self):
+
+       train = NodeTrain()
+
+       for arg in self.iterate():
+           train = arg.attach(train)
+
+       return train.concatenate()
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Concatenated arguments                                                 ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Cohesive interface ---------------------------------------------------- #
+
+class Cohesive(abc.ABC):
+
+   @abc.abstractmethod
+   def layer(self):
+       pass
+
+
+   @abc.abstractmethod
+   def adxs(self):
+       pass
+
+
+   @abc.abstractmethod
+   def parents(self):
+       pass
+
+
+   @abc.abstractmethod
+   def deshell(self):
+       pass
+
+
+   @abc.abstractmethod
+   def deshelled(self):
+       pass
+
+
+
+
+# --- Packable interface ---------------------------------------------------- #
+
+class Packable(abc.ABC):
+
+   @abc.abstractmethod
+   def pack(self):
+       pass
+
+
+
+
+# --- Concatenated arguments kernel ----------------------------------------- #
+
+class ConcatArgsKernel(Cohesive): 
 
    def __init__(self, nodes, sources, layers):
 
@@ -265,7 +288,13 @@ class GlueEngine(Adhesive):
                                            if x == self.layer())
 
    @tdutil.cacheable
-   def args(self):
+   def parents(self):
+
+       return tuple(self._nodes[adx] for adx in self.adxs())
+
+
+   @tdutil.cacheable
+   def deshell(self):
 
        args = list(self._nodes)
 
@@ -276,12 +305,158 @@ class GlueEngine(Adhesive):
 
 
    @tdutil.cacheable
+   def deshelled(self):
+
+       glue = NodeGlue(self.deshell())
+
+       return glue.concatenate()
+
+
+
+
+# --- Concatenated arguments ------------------------------------------------ #
+
+class ConcatArgs(Cohesive):
+
+   def __init__(self, args):
+
+       self._args = args
+
+
+   @property
+   @tdutil.cacheable
+   def _kernel(self):
+
+       return NodeGlue(self._args).concatenate()
+
+
+   def layer(self):
+
+       return self._kernel.layer()
+
+
+   def adxs(self):
+
+       return self._kernel.adxs()
+
+
    def parents(self):
 
-       return tuple(self._nodes[adx] for adx in self.adxs())
+       return self._kernel.parents()
+
+
+   def deshell(self):
+
+       return self._kernel.deshell()
+
+
+   def deshelled(self):
+
+       return self.__class__(self._kernel.deshell())
 
 
 
+
+# --- Packable concatenated arguments --------------------------------------- #
+
+class PackableConcatArgs(Cohesive, Packable):
+
+   def __init__(self, args):
+
+       self._args = args
+
+
+   def layer(self):
+
+       return self._args.layer()
+
+
+   def adxs(self):
+
+       return self._args.adxs()
+
+
+   def parents(self):
+
+       return self._args.parents()
+
+
+   def deshell(self):
+
+       return self._args.deshell()
+
+
+   def deshelled(self):
+
+       return self.__class__(self._args.deshelled())
+
+
+
+
+# --- Decorator with the default packing behavior --------------------------- #
+
+def default_pack(fun):
+
+    def wrap(self, *args, **kwargs):
+
+        if not self.adxs():
+           return PointPack(self.deshell()) 
+                                         
+        source = self.deshelled().pack()
+
+        return fun(self, source)
+
+    return wrap
+
+
+
+
+# --- Active concatenated arguments ----------------------------------------- #
+
+class Active(PackableConcatArgs):
+
+   @default_pack
+   def pack(self, source):
+
+       logic = tdnode.make_logic(
+                                 self.parents(),
+                                 self.adxs(), 
+                                 source,
+                                 self.deshell() 
+                                )  
+ 
+       return ActivePack(source, self.layer(), logic)
+
+
+
+
+# --- Passive concatenated arguments ---------------------------------------- #
+
+class Passive(PackableConcatArgs):
+
+   @default_pack
+   def pack(self, source):
+    
+       return PassivePack(source)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"""
 
 # --- Glue (without packing capability) ------------------------------------- #      
 
@@ -424,7 +599,7 @@ class Passive(PackingGlue):
     
        return PassivePack(source)
 
-
+"""
 
 
 ###############################################################################
