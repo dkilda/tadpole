@@ -272,19 +272,6 @@ class GlueEngine(Adhesive):
        return tuple(self._nodes[adx] for adx in self.adxs())
 
 
-"""
-
-# --- Helper methods for glue ----------------------------------------------- #
-
-def _nodify(x):
-
-    if isinstance(x, tdnode.Node):
-       return x
-
-    return tdnode.Point(x)
-"""
-
-
 
 
 # --- Glue (without packing capability) ------------------------------------- #      
@@ -501,37 +488,7 @@ class PointPack(Pack):
 
    def pluginto(self, fun):
 
-       funcall = FunCall(fun)
-
-       for node in self._nodes:
-           funcall = node.pluginto(funcall)
-
-       return funcall.execute() 
-
-
-
-
-# --- Function call, operating on Point objects ----------------------------- #
-
-class FunCall:
-
-   def __init__(self, fun, args=None):
-
-       if args is None:
-          args = tdutil.Stack()
-
-       self._fun  = fun
-       self._args = args
-
-
-   def with_arg(self, arg):
-
-       return self.__class__(self._fun, self._args.push(arg))
-
-
-   def execute(self):
-
-       return self._fun(*self._args.riter())
+       return fun(*(node.tovalue() for node in self._nodes))
 
 
 

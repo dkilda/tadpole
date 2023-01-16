@@ -302,14 +302,29 @@ class ReverseRootGate(ReverseGate):
 
 ###############################################################################
 ###                                                                         ###
-###  Nodule: a node kernel                                                  ###
+###  Nodes of the autodiff computation graph                                ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- Nodule ---------------------------------------------------------------- #
+# --- Node interface -------------------------------------------------------- #
 
-class Nodule:
+class Node(abc.ABC):
+
+   @abc.abstractmethod
+   def tovalue(self):
+       pass
+
+   @abc.abstractmethod
+   def attach(self, train):
+       pass
+
+
+
+
+# --- Nodule: a node kernel ------------------------------------------------- #
+
+class Nodule(Node):
 
    def __init__(self, source, layer): 
                                             
@@ -348,28 +363,6 @@ class Nodule:
    def attach(self, train):
 
        return train.with_meta(self._source, self._layer)
-
-
-
-
-###############################################################################
-###                                                                         ###
-###  Nodes of the autodiff computation graph                                ###
-###                                                                         ###
-###############################################################################
-
-
-# --- Node interface -------------------------------------------------------- #
-
-class Node(abc.ABC):
-
-   @abc.abstractmethod
-   def tovalue(self):
-       pass
-
-   @abc.abstractmethod
-   def attach(self, train):
-       pass
 
 
 
@@ -512,11 +505,6 @@ class Point(Node):
                train.with_node(self)
                     .with_meta(self._source, self._layer)
               )
-
-
-   def pluginto(self, funcall):
-
-       return funcall.with_arg(self._source)
 
 
 
