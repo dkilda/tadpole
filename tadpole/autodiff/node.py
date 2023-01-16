@@ -468,7 +468,7 @@ class Point(Node):
    def __init__(self, source):
 
        self._source = source
-       self._layer  = -1
+       self._layer  = tdgraph.minlayer()
 
 
    def __repr__(self):

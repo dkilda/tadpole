@@ -16,11 +16,20 @@ import tadpole.autodiff.node as tdnode
 ###############################################################################
 
 
+# --- Define the minimum node layer ----------------------------------------- #
+
+def minlayer():
+
+    return -1
+
+
+
+
 # --- Graph ----------------------------------------------------------------- #
 
 class Graph:
 
-   _layer = -1 # FIXME put this constant in one place! MIN_LAYER = -1 --> e.g. MinLayer() class, with toint() method
+   _layer = minlayer() 
 
 
    def __init__(self, fun, x):
@@ -249,7 +258,7 @@ class GlueEngine(Adhesive):
    @tdutil.cacheable
    def adxs(self):
 
-       if self.layer() == -1:
+       if self.layer() == minlayer():
           return tuple()
 
        return tuple(i for i, x in enumerate(self._layers) 
