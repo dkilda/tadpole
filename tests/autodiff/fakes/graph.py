@@ -3,7 +3,7 @@
 
 import tadpole.autodiff.node as tdnode
 
-from tests.mocks.common import NULL, mockify
+from tests.common.fakes import NULL, fakeit
 
 
 
@@ -25,19 +25,19 @@ class NodeTrain:
        self._concatenate = concatenate 
 
 
-   @mockify
+   @fakeit
    def with_node(self, node):
 
        return self._with_node
 
 
-   @mockify
+   @fakeit
    def with_meta(self, source, layer):
 
        return self._with_node
 
 
-   @mockify
+   @fakeit
    def concatenate(self):
 
        return self._concatenate 

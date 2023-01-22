@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import pytest
-
-from tests.mocks.common import NULL, mockify
+from tests.common.fakes import NULL
 
 
 

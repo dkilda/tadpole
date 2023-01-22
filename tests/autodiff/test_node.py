@@ -2,36 +2,15 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-
-import tests.mocks           as mock
-import tests.fixtures        as fixt
 import tadpole.autodiff.node as tdnode
+import tests.autodiff.fakes  as fake
 
-from tests.tests.common import value_eq
-
-"""
-from tests.fixtures.autodiff import (
-                            randn,
-                            jvpfun_args,
-                            forward_logic,
-                            forward_gate,
-                            forward_node,
-                           )
-"""
-
-
-from tests.fixtures.autodiff.misc import (
-                                    randn,
-                                    jvpfun_args,
-                                   )
-from tests.fixtures.autodiff.node import (
-                                    forward_logic,
-                                    forward_gate,
-                                    forward_node,
-                                   )
+from tests.autodiff.common import value_eq
 
 
 
+
+# --- Forward gate ---------------------------------------------------------- #
 
 class TestForwardGate:
 
@@ -59,12 +38,12 @@ class TestForwardGate:
 
    def test_nodify(self):
  
-       nodule = mock.Nodule()
+       nodule = fake.Nodule()
 
        gate = self.gate()
        ans  = self.node(nodule, gate)
 
-       assert gate.nodify(nodule) == ans # Equality by id's / or compare repr # TODO: impl _signature(), use it for repr and equality  
+       assert gate.nodify(nodule) == ans  
 
 
    @pytest.mark.parametrize("rndseed", [1]) 
@@ -79,7 +58,9 @@ class TestForwardGate:
 
 
 
-class TestForwardNode: # FIXME rename mocks to fakes
+# --- Forward node ---------------------------------------------------------- #
+
+class TestForwardNode: 
 
    # --- Fixtures --- #
 
@@ -119,18 +100,18 @@ class TestForwardNode: # FIXME rename mocks to fakes
    def test_tovalue(self, rndseed):
 
        ans  = self.randn(rndseed)
-       node = self.node(mock.Nodule(tovalue=ans))
+       node = self.node(fake.Nodule(tovalue=ans))
 
        assert node.tovalue() == ans 
 
  
    def test_attach(self): 
 
-       ans    = mock.NodeTrain()               
-       train1 = mock.NodeTrain(with_meta=ans)  
-       train2 = mock.NodeTrain(with_node=train1) 
+       ans    = fake.NodeTrain()               
+       train1 = fake.NodeTrain(with_meta=ans)  
+       train2 = fake.NodeTrain(with_node=train1) 
 
-       node = self.node(mock.Nodule(attach={train1: ans}))
+       node = self.node(fake.Nodule(attach={train1: ans}))
 
        assert node.attach(train2) == ans
 
@@ -139,7 +120,7 @@ class TestForwardNode: # FIXME rename mocks to fakes
    def test_logic(self, valency):
 
        adxs, out, args = self.args(valency)
-       others          = tuple([mock.ForwardNode()]*(valency-1))
+       others          = tuple([fake.ForwardNode()]*(valency-1))
 
        node = self.node()
        ans  = self.logic((node, *others), valency, adxs, out, args)
@@ -151,7 +132,7 @@ class TestForwardNode: # FIXME rename mocks to fakes
    def test_grad(self, rndseed):
 
        grad = self.randn(rndseed)
-       node = self.node(gate=mock.ForwardGate(grad=grad))
+       node = self.node(gate=fake.ForwardGate(grad=grad))
 
        assert value_eq(node.grad(), grad)
 

@@ -2,13 +2,14 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-import tests.mocks as mock
 import tadpole.autodiff.node as tdnode
+import tests.autodiff.fakes  as fake
 
-from tests.fixtures.autodiff.misc import (
-                                    randn,
-                                    jvpfun_args,
-                                   )
+from tests.autodiff.fixtures.misc import (
+   randn,
+   jvpfun_args,
+   vjpfun_args,
+)
 
 
 
@@ -27,12 +28,10 @@ def forward_logic(jvpfun_args):
 
     def wrap(parents=None, valency=2, adxs=None, out=None, args=None):
 
-        print("VALENCY: ", valency)
-
         adxs, out, args = jvpfun_args(valency, adxs, out, args)
 
         if parents is None:
-           parents = tuple([mock.ForwardNode()]*valency)
+           parents = tuple([fake.ForwardNode()]*valency)
 
         return tdnode.ForwardLogic(parents, adxs, out, args)
 
@@ -44,12 +43,14 @@ def forward_logic(jvpfun_args):
 # --- Reverse logic --------------------------------------------------------- #
 
 @pytest.fixture
-def reverse_logic():
+def reverse_logic(vjpfun_args):
 
-    def wrap(valency=2, adxs=None, out=None, args=None):
+    def wrap(parents=None, valency=2, adxs=None, out=None, args=None):
 
         adxs, out, args = vjpfun_args(valency, adxs, out, args)
-        parents         = tuple([mock.ReverseNode()]*valency)
+
+        if parents is None:
+           parents = tuple([fake.ReverseNode()]*valency)
 
         return tdnode.ReverseLogic(parents, adxs, out, args)
 
@@ -76,9 +77,9 @@ def forward_gate(randn):
            grad = randn()
 
         if fun is None:
-           fun = mock.Fun()
+           fun = fake.Fun()
 
-        parents = tuple([mock.ForwardNode()]*valency)
+        parents = tuple([fake.ForwardNode()]*valency)
 
         return tdnode.ForwardGate(parents, fun, grad)
 
@@ -95,12 +96,12 @@ def reverse_gate():
     def wrap(valency=2, fun=None, vjp=None):
 
         if vjp is None:
-           vjp = mock.Fun(valency=valency)
+           vjp = fake.Fun(valency=valency)
 
         if fun is None:
-           fun = mock.Fun()
+           fun = fake.Fun()
 
-        parents = tuple([mock.ReverseNode()]*valency)
+        parents = tuple([fake.ReverseNode()]*valency)
 
         return tdnode.ReverseGate(parents, fun, vjp)
 
@@ -124,10 +125,10 @@ def nodule():
     def wrap(source=None, layer=0):
 
         if source is None and layer == 0:
-           source = mock.Point()
+           source = fake.Point()
 
         if source is None and layer > 0:
-           source = mock.ActiveNode()
+           source = fake.ActiveNode()
 
         return tdnode.Nodule(source, layer) 
 
@@ -144,10 +145,10 @@ def forward_node():
     def wrap(nodule=None, gate=None):
 
         if nodule is None:
-           nodule = mock.Nodule()
+           nodule = fake.Nodule()
 
         if gate is None:
-           gate = mock.ForwardGate()
+           gate = fake.ForwardGate()
 
         return tdnode.ForwardNode(nodule, gate) 
                                   
@@ -164,10 +165,10 @@ def reverse_node():
     def wrap(nodule=None, gate=None):
 
         if nodule is None:
-           nodule = mock.Nodule()
+           nodule = fake.Nodule()
 
         if gate is None:
-           gate = mock.ReverseGate()
+           gate = fake.ReverseGate()
 
         return tdnode.ReverseNode(nodule, gate) 
                                   
@@ -184,7 +185,7 @@ def point():
     def wrap(source=None):
 
         if source is None:
-           source = mock.Point()
+           source = fake.Point()
 
         return tdnode.Point(source)
                                   

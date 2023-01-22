@@ -3,7 +3,7 @@
 
 import tadpole.autodiff.node as tdnode
 
-from tests.mocks.common import NULL, mockify
+from tests.common.fakes import NULL, fakeit
 
 
 
@@ -24,7 +24,7 @@ class Logic(tdnode.Logic):
        self._gate = gate
 
 
-   @mockify
+   @fakeit
    def gate(self, fun):
 
        return self._gate
@@ -64,7 +64,7 @@ class Gate(tdnode.Gate):
        self._nodify = nodify
 
 
-   @mockify   
+   @fakeit   
    def nodify(self, nodule):
 
        return self._nodify[nodule]
@@ -82,7 +82,7 @@ class ForwardGate(Gate):
        self._grad = grad
 
 
-   @mockify
+   @fakeit
    def grad(self):
 
        return self._grad
@@ -101,7 +101,7 @@ class ReverseGate(Gate):
        self._grads   = grads
 
 
-   @mockify
+   @fakeit
    def accumulate_parent_grads(self, seed, grads):
 
        for parent, grad in zip(self._parents, self._grads):
@@ -110,7 +110,7 @@ class ReverseGate(Gate):
        return self
 
 
-   @mockify
+   @fakeit
    def add_to_childcount(self, childcount):
 
        childcount.add(self._parents)
@@ -118,7 +118,7 @@ class ReverseGate(Gate):
        return self          
     
 
-   @mockify
+   @fakeit
    def add_to_toposort(self, toposort):
 
        for parent in self._parents:
@@ -146,13 +146,13 @@ class Node(tdnode.Node):
        self._attach  = attach
 
 
-   @mockify
+   @fakeit
    def tovalue(self):
 
        return self._tovalue
 
 
-   @mockify
+   @fakeit
    def attach(self, train):
 
        return self._attach[train]
@@ -180,13 +180,13 @@ class ForwardNode(Node):
        self._gate  = gate
 
 
-   @mockify
+   @fakeit
    def logic(self, others, adxs, source, args):
 
        return self._logic
 
 
-   @mockify
+   @fakeit
    def grad(self):
 
        return self._gate.grad()
@@ -206,13 +206,13 @@ class ReverseNode(Node):
        self._gate  = gate
 
 
-   @mockify
+   @fakeit
    def logic(self, others, adxs, source, args):
 
        return self._logic
 
 
-   @mockify
+   @fakeit
    def accumulate_parent_grads(self, grads):
 
        seed = grads.pop(self)
@@ -220,7 +220,7 @@ class ReverseNode(Node):
        return self
 
 
-   @mockify
+   @fakeit
    def add_to_childcount(self, childcount):
 
        childcount.visit(self)
@@ -228,7 +228,7 @@ class ReverseNode(Node):
        return self          
     
 
-   @mockify
+   @fakeit
    def add_to_toposort(self, toposort):
 
        self._gate.add_to_toposort(toposort)

@@ -3,7 +3,7 @@
 
 import pytest
 import numpy as np
-import tests.mocks as mock
+import tests.autodiff.fakes as fake
 
 
 
@@ -35,7 +35,7 @@ def adjfun_args(nodetype):
            out = nodetype()
 
         if args is None:
-           args = tuple([mock.Node()]*max(adxs))
+           args = tuple([fake.Node()]*max(adxs))
 
         return adxs, out, args
 
@@ -51,7 +51,7 @@ def jvpfun_args():
 
     def wrap(valency=2, adxs=None, out=None, args=None):
 
-        return adjfun_args(mock.ForwardNode)(valency, adxs, out, args)
+        return adjfun_args(fake.ForwardNode)(valency, adxs, out, args)
 
     return wrap
 
@@ -65,7 +65,7 @@ def vjpfun_args():
 
     def wrap(valency=2, adxs=None, out=None, args=None):
 
-        return adjfun_args(mock.ReverseNode)(valency, adxs, out, args)
+        return adjfun_args(fake.ReverseNode)(valency, adxs, out, args)
 
     return wrap
 

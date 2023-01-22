@@ -3,9 +3,10 @@
 
 
 
+
 ###############################################################################
 ###                                                                         ###
-###  General utility for mocks                                              ###
+###  General utility for fakes                                              ###
 ###                                                                         ###
 ###############################################################################
 
@@ -20,9 +21,9 @@ NULL = NullType()
 
 
 
-# --- Undefined mock error -------------------------------------------------- #
+# --- Undefined fake error -------------------------------------------------- #
 
-class UndefinedMockError(Exception):
+class UndefinedFakeError(Exception):
 
    def __init__(self, value):
        self.value = value
@@ -33,25 +34,31 @@ class UndefinedMockError(Exception):
 
 
 
-# --- Decorator for mock methods -------------------------------------------- #
+# --- Decorator for fake methods -------------------------------------------- #
 
-def mockify(fun):
+def fakeit(fun):
 
     def wrap(*args, **kwargs):
 
-        msg = f"\nThe behavior of mock method {fun.__name__} is undefined."
+        msg = f"\nThe behavior of fake method {fun.__name__} is undefined."
 
         try:
            out = fun(*args, **kwargs)
         except TypeError:
-           raise UndefinedMockError(msg)
+           raise UndefinedFakeError(msg)
 
         if out is NULL:
-           raise UndefinedMockError(msg)
+           raise UndefinedFakeError(msg)
 
         return out
 
     return wrap
+
+
+
+
+
+
 
 
 

@@ -541,8 +541,8 @@ def logic_eq(x, y):
                 type(x)    == type(y),
                 x._parents == y._parents,
                 x._adxs    == y._adxs,
-                x._out     == y._out,
-                x._args    == y._args,
+                x._out     == y._out,   # FIXME make sure PointPack returns a Point!
+                x._args    == y._args,  # FIXME make sure all args are Nodes!
               ))
 
 
