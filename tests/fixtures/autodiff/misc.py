@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-
-import mocks as mock
+import numpy as np
+import tests.mocks as mock
 
 
 

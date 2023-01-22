@@ -9,6 +9,26 @@ import tadpole.autodiff.node as tdnode
 
 from tests.tests.common import value_eq
 
+"""
+from tests.fixtures.autodiff import (
+                            randn,
+                            jvpfun_args,
+                            forward_logic,
+                            forward_gate,
+                            forward_node,
+                           )
+"""
+
+
+from tests.fixtures.autodiff.misc import (
+                                    randn,
+                                    jvpfun_args,
+                                   )
+from tests.fixtures.autodiff.node import (
+                                    forward_logic,
+                                    forward_gate,
+                                    forward_node,
+                                   )
 
 
 
@@ -51,9 +71,9 @@ class TestForwardGate:
    def test_grad(self, rndseed):
 
        grad = self.randn(rndseed)
-       node = self.gate(grad=grad)
+       gate = self.gate(grad=grad)
 
-       assert_close(gate.grad(), grad)
+       assert value_eq(gate.grad(), grad)
        
 
 
@@ -122,9 +142,9 @@ class TestForwardNode: # FIXME rename mocks to fakes
        others          = tuple([mock.ForwardNode()]*(valency-1))
 
        node = self.node()
-       ans  = self.logic((node, *others), adxs, out, args)
+       ans  = self.logic((node, *others), valency, adxs, out, args)
 
-       assert node.logic(others, adxs, source, args) == ans
+       assert node.logic(others, adxs, out, args) == ans
 
     
    @pytest.mark.parametrize("rndseed", [1])  

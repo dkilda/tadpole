@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import pytest
 import tadpole.autodiff.node as tdnode
 
 from tests.mocks.common import NULL, mockify
@@ -197,7 +196,7 @@ class ForwardNode(Node):
 
 # --- Reverse node ---------------------------------------------------------- #
 
-class ReverseNode(tdnode.Node):
+class ReverseNode(Node):
 
    def __init__(self, tovalue=NULL, attach=NULL, logic=NULL, gate=NULL):
 

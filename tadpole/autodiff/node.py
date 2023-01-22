@@ -526,16 +526,23 @@ def make_node(source, layer, gate):
 ###############################################################################
 
 
+def ids(x):
+
+    return tuple(map(id, x._args))
+
+
+
+
 # --- Logic equality -------------------------------------------------------- #
 
 def logic_eq(x, y):
 
     return all((
-                type(x)      == type(y),
-                x._parents   == y._parents,
-                x._adxs      == y._adxs,
-                id(x._out)   == id(y._out),
-                ids(x._args) == ids(y._args),
+                type(x)    == type(y),
+                x._parents == y._parents,
+                x._adxs    == y._adxs,
+                x._out     == y._out,
+                x._args    == y._args,
               ))
 
 

@@ -2,9 +2,13 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-
-import mocks as mock
+import tests.mocks as mock
 import tadpole.autodiff.node as tdnode
+
+from tests.fixtures.autodiff.misc import (
+                                    randn,
+                                    jvpfun_args,
+                                   )
 
 
 
@@ -21,10 +25,14 @@ import tadpole.autodiff.node as tdnode
 @pytest.fixture
 def forward_logic(jvpfun_args):
 
-    def wrap(valency=2, adxs=None, out=None, args=None):
+    def wrap(parents=None, valency=2, adxs=None, out=None, args=None):
+
+        print("VALENCY: ", valency)
 
         adxs, out, args = jvpfun_args(valency, adxs, out, args)
-        parents         = tuple([mock.ForwardNode()]*valency)
+
+        if parents is None:
+           parents = tuple([mock.ForwardNode()]*valency)
 
         return tdnode.ForwardLogic(parents, adxs, out, args)
 
@@ -60,12 +68,12 @@ def reverse_logic():
 # --- Forward logic gate ---------------------------------------------------- #
 
 @pytest.fixture
-def forward_gate(randn_val):
+def forward_gate(randn):
 
     def wrap(valency=2, fun=None, grad=None):
 
         if grad is None:
-           grad = randn_val()
+           grad = randn()
 
         if fun is None:
            fun = mock.Fun()
