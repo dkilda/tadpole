@@ -7,7 +7,7 @@ import tests.mocks           as mock
 import tests.fixtures        as fixt
 import tadpole.autodiff.node as tdnode
 
-from tests.tests.common import assert_close
+from tests.tests.common import value_eq
 
 
 
@@ -133,7 +133,7 @@ class TestForwardNode: # FIXME rename mocks to fakes
        grad = self.randn(rndseed)
        node = self.node(gate=mock.ForwardGate(grad=grad))
 
-       assert_close(node.grad(), grad)
+       assert value_eq(node.grad(), grad)
 
 
 
