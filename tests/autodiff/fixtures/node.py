@@ -26,12 +26,12 @@ from tests.autodiff.fixtures.misc import (
 @pytest.fixture
 def forward_logic(jvpfun_args):
 
-    def wrap(parents=None, valency=2, adxs=None, out=None, args=None):
+    def wrap(parents=2, adxs=None, out=None, args=None):
 
-        adxs, out, args = jvpfun_args(valency, adxs, out, args)
+        if isinstance(parents, int):
+           parents = tuple([fake.ForwardNode()]*parents)
 
-        if parents is None:
-           parents = tuple([fake.ForwardNode()]*valency)
+        adxs, out, args = jvpfun_args(len(parents), adxs, out, args)
 
         return tdnode.ForwardLogic(parents, adxs, out, args)
 
@@ -45,12 +45,12 @@ def forward_logic(jvpfun_args):
 @pytest.fixture
 def reverse_logic(vjpfun_args):
 
-    def wrap(parents=None, valency=2, adxs=None, out=None, args=None):
+    def wrap(parents=2, adxs=None, out=None, args=None):
 
-        adxs, out, args = vjpfun_args(valency, adxs, out, args)
+        if isinstance(parents, int):
+           parents = tuple([fake.ReverseNode()]*parents)
 
-        if parents is None:
-           parents = tuple([fake.ReverseNode()]*valency)
+        adxs, out, args = vjpfun_args(len(parents), adxs, out, args)
 
         return tdnode.ReverseLogic(parents, adxs, out, args)
 
@@ -71,15 +71,16 @@ def reverse_logic(vjpfun_args):
 @pytest.fixture
 def forward_gate(randn):
 
-    def wrap(valency=2, fun=None, grad=None):
+    def wrap(parents=2, fun=None, grad=None):
+
+        if isinstance(parents, int):
+           parents = tuple([fake.ForwardNode()]*parents)
 
         if grad is None:
            grad = randn()
 
         if fun is None:
            fun = fake.Fun()
-
-        parents = tuple([fake.ForwardNode()]*valency)
 
         return tdnode.ForwardGate(parents, fun, grad)
 
@@ -93,15 +94,16 @@ def forward_gate(randn):
 @pytest.fixture
 def reverse_gate():
 
-    def wrap(valency=2, fun=None, vjp=None):
+    def wrap(parents=2, fun=None, vjp=None):
+
+        if isinstance(parents, int):
+           parents = tuple([fake.ReverseNode()]*parents)
 
         if vjp is None:
-           vjp = fake.Fun(valency=valency)
+           vjp = fake.Fun(valency)
 
         if fun is None:
            fun = fake.Fun()
-
-        parents = tuple([fake.ReverseNode()]*valency)
 
         return tdnode.ReverseGate(parents, fun, vjp)
 

@@ -1,7 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import numpy as np
 from tests.common.fakes import NULL
+
+
+
+def randn(seed=1):
+
+    np.random.seed(seed)    
+    return np.random.randn()
 
 
 

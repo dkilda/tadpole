@@ -35,7 +35,7 @@ def adjfun_args(nodetype):
            out = nodetype()
 
         if args is None:
-           args = tuple([fake.Node()]*max(adxs))
+           args = tuple([fake.Node()]*(max(adxs)+1))
 
         return adxs, out, args
 

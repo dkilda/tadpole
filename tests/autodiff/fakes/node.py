@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import tadpole.autodiff.node as tdnode
+import tadpole.autodiff.node     as tdnode
+import tests.autodiff.fakes.misc as misc
 
 from tests.common.fakes import NULL, fakeit
 
@@ -78,8 +79,11 @@ class ForwardGate(Gate):
 
    def __init__(self, nodify=NULL, grad=NULL):
 
-       super().__init__(nodify)
+       if grad is NULL:
+          grad = misc.randn()
+
        self._grad = grad
+       super().__init__(nodify)
 
 
    @fakeit
@@ -174,10 +178,13 @@ class ForwardNode(Node):
 
    def __init__(self, tovalue=NULL, attach=NULL, logic=NULL, gate=NULL):
 
-       super().__init__(tovalue, attach)
+       if gate is NULL:
+          gate = ForwardGate()
 
        self._logic = logic
        self._gate  = gate
+
+       super().__init__(tovalue, attach)
 
 
    @fakeit
@@ -200,10 +207,13 @@ class ReverseNode(Node):
 
    def __init__(self, tovalue=NULL, attach=NULL, logic=NULL, gate=NULL):
 
-       super().__init__(tovalue, attach)
+       if gate is NULL:
+          gate = ReverseGate()
 
        self._logic = logic
        self._gate  = gate
+
+       super().__init__(tovalue, attach)
 
 
    @fakeit
