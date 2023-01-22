@@ -5,6 +5,10 @@ import pytest
 import numpy as np
 import tests.autodiff.fakes as fake
 
+from tests.common import (
+   make_tuple,
+)
+
 
 
 # --- Random value ---------------------------------------------------------- #
@@ -35,7 +39,7 @@ def adjfun_args(nodetype):
            out = nodetype()
 
         if args is None:
-           args = tuple([fake.Node()]*(max(adxs)+1))
+           args = make_tuple(fake.Node, max(adxs)+1) 
 
         return adxs, out, args
 

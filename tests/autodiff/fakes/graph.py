@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import tadpole.autodiff.node as tdnode
+import tadpole.autodiff.node  as tdnode
+import tadpole.autodiff.graph as tdgraph
 
 from tests.common.fakes import NULL, fakeit
 
@@ -34,7 +35,7 @@ class NodeTrain:
    @fakeit
    def with_meta(self, source, layer):
 
-       return self._with_node
+       return self._with_meta
 
 
    @fakeit

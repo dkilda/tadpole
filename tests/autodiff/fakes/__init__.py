@@ -22,6 +22,13 @@ from .graph import (
 )
 
 
+from .grad import (
+   ChildCount,
+   TopoSort,
+   GradAccum,
+)
+
+
 from .misc import (
    Fun,
    FunReturn,

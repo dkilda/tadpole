@@ -3,7 +3,7 @@
 
 import numpy as np
 from tests.common.fakes import NULL
-
+from tests.common       import make_tuple
 
 
 def randn(seed=1):
@@ -24,8 +24,15 @@ def randn(seed=1):
 # --- Function return ------------------------------------------------------- #
 
 class FunReturn:
+  
+   def __add__(self, other):
 
-   pass
+       return self 
+
+
+   def __mul__(self, other):
+
+       return self 
 
 
 
@@ -34,17 +41,21 @@ class FunReturn:
 
 class Fun:
 
-   def __init__(self, valency=0):
+   def __init__(self, out=0):
 
-       self._valency = valency    
+       self._out = out    
 
 
    def __call__(self, *args):
 
-       if self._valency is NULL:
+       if self._out == 0:
           return FunReturn()
 
-       return tuple([FunReturn()]*self._valency)
+       if isinstance(self._out, int):
+          return make_tuple(FunReturn, self._out) 
+
+       return self._out[args]
+
 
 
 
