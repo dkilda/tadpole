@@ -1,64 +1,86 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import pytest
+import tadpole.autodiff.node as tdnode
+
 from tests.mocks.common import NULL, mockify
 
-from tadpole.autodiff.node import Forward, Reverse
-from tadpole.autodiff.node import Node, Gate, GateInputs
 
 
 
 ###############################################################################
 ###                                                                         ###
-###  Gates of the autodiff circuit                                          ###
+###  Logic of forward and reverse propagation, creates logic gates.         ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Logic ----------------------------------------------------------------- #
+
+class Logic(tdnode.Logic):
+
+   def __init__(self, gate=NULL):
+
+       self._gate = gate
+
+
+   @mockify
+   def gate(self, fun):
+
+       return self._gate
+
+
+
+
+# --- Forward logic --------------------------------------------------------- #
+
+class ForwardLogic(Logic):
+   pass
+
+
+
+
+# --- Reverse logic --------------------------------------------------------- #
+
+class ReverseLogic(Logic):
+   pass
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Logic gates representing the logic of forward and reverse propagation. ###
 ###                                                                         ###
 ###############################################################################
 
 
 # --- Gate ------------------------------------------------------------------ #
 
-class MockGate(Gate):
+class Gate(tdnode.Gate):
 
-   def __init__(self, node=NULL, next_input=NULL):
+   def __init__(self, nodify=NULL):
 
-       self._node       = node
-       self._next_input = next_input
-
-
-   @mockify
-   def node(self, source, layer):
-
-       return self._node
+       self._nodify = nodify
 
 
-   @mockify
-   def next_input(self, others, adxs, args, source):
+   @mockify   
+   def nodify(self, nodule):
 
-       return self._next_input
+       return self._nodify[nodule]
 
 
 
 
-# --- Forward gate ---------------------------------------------------------- #
+# --- Forward logic gate ---------------------------------------------------- #
 
-class MockForwardGate(Gate, Forward): 
+class ForwardGate(Gate):
 
-   def __init__(self, core=NULL, grad=NULL):
+   def __init__(self, nodify=NULL, grad=NULL):
 
-       self._core = core
+       super().__init__(nodify)
        self._grad = grad
-
-
-   @mockify
-   def node(self, source, layer):
-
-       return self._core.node(source, layer)
-
-
-   @mockify
-   def next_input(self, others, adxs, args, source):
-
-       return self._core.next_input(others, adxs, args, source)
 
 
    @mockify
@@ -66,69 +88,44 @@ class MockForwardGate(Gate, Forward):
 
        return self._grad
 
+       
 
 
+# --- Reverse logic gate ---------------------------------------------------- #
 
-# --- Reverse gate ---------------------------------------------------------- #
+class ReverseGate(Gate):
 
-class MockReverseGate(Gate, Reverse): 
+   def __init__(self, nodify=NULL, parents=NULL, grads=NULL):
 
-   def __init__(self, core=NULL, parents=NULL, grads=NULL): 
-
-       self._core    = core
+       super().__init__(nodify)
        self._parents = parents
        self._grads   = grads
 
 
    @mockify
-   def node(self, source, layer):
-
-       return self._core.node(source, layer)
-
-
-   @mockify
-   def next_input(self, others, adxs, args, source):
-
-       return self._core.next_input(others, adxs, args, source)
-
-
-   @mockify
-   def accumulate_parent_grads(self, grads):
+   def accumulate_parent_grads(self, seed, grads):
 
        for parent, grad in zip(self._parents, self._grads):
            grads.accumulate(parent, grad) 
+
        return self
 
 
    @mockify
    def add_to_childcount(self, childcount):
- 
-       childcount.add(self, self._parents)
-       return self
 
+       childcount.add(self._parents)
+
+       return self          
+    
 
    @mockify
    def add_to_toposort(self, toposort):
- 
-       toposort.add(self)
+
+       for parent in self._parents:
+           toposort.add(parent)
+
        return self
-
-
-
-
-# --- Gate inputs ----------------------------------------------------------- #
-
-class MockGateInputs(GateInputs):
-
-   def __init__(self, transform=NULL):
-
-       self._transform = transform
-
-
-   @mockify
-   def transform(self, fun):
-
-       return self._transform[fun]
 
 
 
@@ -142,202 +139,109 @@ class MockGateInputs(GateInputs):
 
 # --- Node ------------------------------------------------------------------ #
 
-class MockNode(Node):
+class Node(tdnode.Node):
 
-   def __init__(self, reduce_=NULL, topoint_=NULL, glue_=NULL):
- 
-       self._reduce  = reduce_
-       self._topoint = topoint_
-       self._glue    = glue_
+   def __init__(self, tovalue=NULL, attach=NULL):
 
-
-   @mockify
-   def reduce(self):
-
-       return self._reduce
+       self._tovalue = tovalue
+       self._attach  = attach
 
 
    @mockify
-   def topoint(self):
+   def tovalue(self):
 
-       return self._topoint
+       return self._tovalue
 
 
    @mockify
-   def glue(self, *others):
+   def attach(self, train):
 
-       return self._glue
+       return self._attach[train]
 
+
+
+
+# --- Nodule: a node kernel ------------------------------------------------- #
+
+class Nodule(Node):
+   pass
+  
 
 
 
 # --- Forward node ---------------------------------------------------------- #
 
-class MockForwardNode(Node, Forward):
+class ForwardNode(Node):
 
-   def __init__(self, core=NULL, grad=NULL):
+   def __init__(self, tovalue=NULL, attach=NULL, logic=NULL, gate=NULL):
 
-       self._core = core
-       self._grad = grad
- 
+       super().__init__(tovalue, attach)
 
-   @mockify
-   def reduce(self):
-
-       return self._core.reduce()
+       self._logic = logic
+       self._gate  = gate
 
 
    @mockify
-   def topoint(self):
+   def logic(self, others, adxs, source, args):
 
-       return self._core.topoint()
-
-
-   @mockify
-   def glue(self, *others):
-
-       return self._core.glue()
+       return self._logic
 
 
    @mockify
    def grad(self):
 
-       return self._grad
+       return self._gate.grad()
 
 
 
 
 # --- Reverse node ---------------------------------------------------------- #
 
-class MockReverseNode(Node, Reverse):
+class ReverseNode(tdnode.Node):
 
-   def __init__(self, core=NULL, grads=NULL, parents=NULL):  
- 
-       self._core    = core
-       self._parents = parents
-       self._grads   = grads
+   def __init__(self, tovalue=NULL, attach=NULL, logic=NULL, gate=NULL):
 
+       super().__init__(tovalue, attach)
 
-   @mockify
-   def reduce(self):
-
-       return self._core.reduce()
+       self._logic = logic
+       self._gate  = gate
 
 
    @mockify
-   def topoint(self):
+   def logic(self, others, adxs, source, args):
 
-       return self._core.topoint()
-
-
-   @mockify
-   def glue(self, *others):
-
-       return self._core.glue()
+       return self._logic
 
 
    @mockify
    def accumulate_parent_grads(self, grads):
 
-       for parent, grad in zip(self._parents, self._grads):
-           grads.accumulate(parent, grad) 
+       seed = grads.pop(self)
+       self._gate.accumulate_parent_grads(seed, grads)
        return self
 
 
    @mockify
    def add_to_childcount(self, childcount):
- 
-       childcount.add(self, self._parents)
-       return self
 
+       childcount.visit(self)
+       self._gate.add_to_childcount(childcount)
+       return self          
+    
 
    @mockify
    def add_to_toposort(self, toposort):
- 
-       toposort.add(self)
+
+       self._gate.add_to_toposort(toposort)
        return self
 
 
 
 
-# --- Point ----------------------------------------------------------------- #
+# --- Point (a disconnected node, only carries a value and no logic) -------- #
 
-class MockPoint(Node):
-
-   def __init__(self, reduce_=NULL, glue_=NULL):
-
-       self._reduce = reduce_
-       self._glue   = glue_
-
-
-   @mockify
-   def reduce(self):
-
-       return self._reduce
-
-
-   @mockify
-   def topoint(self):
-
-       return self
-
-
-   @mockify
-   def glue(self, *others):
-
-       return self._glue
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+class Point(Node):
+   pass
 
 
 

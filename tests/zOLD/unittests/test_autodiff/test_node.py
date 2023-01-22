@@ -12,6 +12,302 @@ import tadpole.autodiff.node      as tdnode
 
 
 
+"""
+
+Make a mock and a fixture for each class
+
+-- mocks create mock objects that are not being tested but are needed as placeholders
+
+-- fixtures create real objects that we actually want to test
+
+"""
+
+
+
+
+# --- Default gates --------------------------------------------------------- #
+
+@pytest.fixture
+def mock_forward_gate(randn_val):
+
+    def wrap(valency=2, grad=None):
+
+        if grad is None:
+           grad = randn_val()
+
+        parents = (mknode.MockForwardGate(), )*valency
+
+        return tdnode.ForwardGate(parents, grad)
+
+    return wrap
+
+
+
+
+@pytest.fixture
+def mock_reverse_gate(randn_val):
+
+    def wrap(valency=2, vjp=None):
+
+        if vjp is None:
+           vjp = lambda g: (g * randn_val(i) for i in range(valency)) 
+
+        parents = (mknode.MockReverseGate(), )*valency
+
+        return tdnode.ReverseGate(parents, vjp)
+
+    return wrap
+
+
+
+
+# --- Iterable of default gates --------------------------------------------- #
+
+def mock_gates(default_gate, randn_val):
+
+    def wrap(n, valencies=None, grads=None):
+
+        if valencies is None:
+           valencies = [None]*n
+
+        if grads is None:
+           grads = [randn_val(i+1) for i in range(n)]
+
+        return tuple(default_gate(v, g) for v, g in zip(valencies, grads))
+
+    return wrap
+
+
+
+
+@pytest.fixture
+def mock_forward_gates(default_forward_gate, randn_val):
+
+    return default_gates(default_forward_gate, randn_val)
+
+
+
+
+@pytest.fixture
+def mock_reverse_gates(default_reverse_gate, randn_val):
+
+    return default_gates(default_reverse_gate, randn_val)
+
+
+###############################################################################
+###############################################################################
+###############################################################################
+
+
+# --- Forward logic --------------------------------------------------------- #
+
+@pytest.fixture
+def forward_logic():
+
+    def wrap(valency=2, adxs=None, out=None, args=None):
+
+        if adxs is None:
+           adxs = list(range(valency))
+
+        if out is None:
+           out = mock.ForwardNode()
+
+        if args is None:
+           args = tuple([mock.Node()]*max(adxs))
+
+        parents = tuple([mock.ForwardNode()]*valency)
+
+        return tdnode.ForwardLogic(parents, adxs, out, args)
+
+    return wrap
+
+
+
+
+# --- Reverse logic --------------------------------------------------------- #
+
+@pytest.fixture
+def reverse_logic():
+
+    def wrap(valency=2, adxs=None, out=None, args=None):
+
+        if adxs is None:
+           adxs = list(range(valency))
+
+        if out is None:
+           out = mock.ReverseNode()
+
+        if args is None:
+           args = tuple([mock.Node()]*max(adxs))
+
+        parents = tuple([mock.ReverseNode()]*valency)
+
+        return tdnode.ReverseLogic(parents, adxs, out, args)
+
+    return wrap
+
+
+
+
+# --- Forward logic gate ---------------------------------------------------- #
+
+@pytest.fixture
+def forward_gate(randn_val):
+
+    def wrap(valency=2, fun=None, grad=None):
+
+        if grad is None:
+           grad = randn_val()
+
+        if fun is None:
+           fun = mock.Fun()
+
+        parents = tuple([mock.ForwardNode()]*valency)
+
+        return tdnode.ForwardGate(parents, fun, grad)
+
+    return wrap 
+
+
+
+
+# --- Reverse logic gate ---------------------------------------------------- #
+
+@pytest.fixture
+def reverse_gate():
+
+    def wrap(valency=2, fun=None, vjp=None):
+
+        if vjp is None:
+           vjp = mock.Fun(valency=valency)
+
+        if fun is None:
+           fun = mock.Fun()
+
+        parents = tuple([mock.ReverseNode()]*valency)
+
+        return tdnode.ReverseGate(parents, fun, vjp)
+
+    return wrap 
+
+
+
+
+# --- Nodule: a node kernel ------------------------------------------------- #
+
+@pytest.fixture
+def nodule():
+
+    def wrap(source=None, layer=0):
+
+        if source is None and layer == 0:
+           source = mock.Point()
+
+        if source is None and layer > 0:
+           source = mock.ActiveNode()
+
+        return tdnode.Nodule(source, layer) 
+
+    return wrap
+
+
+
+
+# --- Forward node ---------------------------------------------------------- #
+
+@pytest.fixture
+def forward_node():
+
+    def wrap(nodule=None, gate=None):
+
+        if nodule is None:
+           nodule = mock.Nodule()
+
+        if gate is None:
+           gate = mock.ForwardGate()
+
+        return tdnode.ForwardNode(nodule, gate) 
+                                  
+    return wrap
+
+
+
+
+# --- Reverse node ---------------------------------------------------------- #
+
+@pytest.fixture
+def reverse_node():
+
+    def wrap(nodule=None, gate=None):
+
+        if nodule is None:
+           nodule = mock.Nodule()
+
+        if gate is None:
+           gate = mock.ReverseGate()
+
+        return tdnode.ReverseNode(nodule, gate) 
+                                  
+    return wrap
+
+
+
+
+# --- Point (a disconnected node, only carries a value and no logic) -------- #
+
+@pytest.fixture
+def point():
+
+    def wrap(source=None):
+
+        if source is None:
+           source = mock.Point()
+
+        return tdnode.Point(source)
+                                  
+    return wrap
+
+
+
+
+###############################################################################
+###############################################################################
+###############################################################################
+
+
+
+
+
+
+
+class TestForwardGate:
+
+
+   def test_nodify(self):
+ 
+       nodule = MockNodule()
+
+       x   = ForwardGate(MockForwardNodes(), MockFun(), MockJvp())
+       out = x.nodify(nodule)
+       ans = ForwardNode(nodule, x)
+
+       assert out == ans
+
+
+   def test_grad(self):
+
+       x = ForwardGate(MockForwardGates(), MockFun(), grad)
+       assert_close(x.grad(), grad)
+
+
+
+
+
+
+
+
+
+
 
 ###############################################################################
 ###                                                                         ###

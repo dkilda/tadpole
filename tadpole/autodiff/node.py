@@ -57,12 +57,12 @@ class ForwardLogic(Logic):
 
    def __eq__(self, other):
 
-       return all((
-                   self._parents == other._parents,
-                   self._adxs    == other._adxs,
-                   self._out     == other._out,  
-                   self._args    == other._args,  
-                 ))
+       return logic_eq(self, other)
+
+
+   def __hash__(self):
+
+       return id(self)
 
 
    def _parent_grads(self):
@@ -110,17 +110,17 @@ class ReverseLogic(Logic):
                      .with_member("args",    self._args)
                      .compile()
               )
-       
+
 
    def __eq__(self, other):
 
-       return all((
-                   self._parents == other._parents,
-                   self._adxs    == other._adxs,
-                   self._out     == other._out,  
-                   self._args    == other._args,  
-                 ))
+       return logic_eq(self, other)
 
+
+   def __hash__(self):
+
+       return id(self)
+       
 
    def _apply(self, fun):
 
@@ -190,15 +190,12 @@ class ForwardGate(Gate):
 
    def __eq__(self, other):
 
-       return all((
-                   self._parents == other._parents, 
-                   self._fun     == other._fun,
-                 )) 
+       return gate_eq(self, other)
 
 
    def __hash__(self):
 
-       return hash((self._parents, self._fun))
+       return id(self)
 
 
    def nodify(self, nodule):
@@ -236,15 +233,12 @@ class ReverseGate(Gate):
 
    def __eq__(self, other):
 
-       return all((
-                   self._parents == other._parents, 
-                   self._fun     == other._fun,
-                 )) 
+       return gate_eq(self, other)
 
 
    def __hash__(self):
 
-       return hash((self._parents, self._fun))
+       return id(self)
 
 
    def nodify(self, nodule):
@@ -340,14 +334,11 @@ class Nodule(Node):
                      .with_data("layer",    self._layer)
                      .compile()
               )
-       
+
 
    def __eq__(self, other):
 
-       return all((
-                   self._source == other._source,
-                   self._layer  == other._layer,
-                 ))
+       return nodule_eq(self, other)
 
 
    def __hash__(self):
@@ -389,15 +380,12 @@ class ActiveNode(Node):
 
    def __eq__(self, other):
 
-       return all((
-                   self._nodule == other._nodule,
-                   self._gate   == other._gate,
-                 ))
+       return node_eq(self, other)
 
 
    def __hash__(self):
 
-       return hash((self._nodule, self._gate))
+       return id(self)
 
 
    def tovalue(self):
@@ -483,14 +471,11 @@ class Point(Node):
                      .with_data("layer",    self._layer)
                      .compile()
               )
-       
+
 
    def __eq__(self, other):
 
-       return all((
-                   self._source == other._source,
-                   self._layer  == other._layer,
-                 ))
+       return point_eq(self, other)
 
 
    def __hash__(self):
@@ -530,6 +515,88 @@ def make_node(source, layer, gate):
     nodule = Nodule(nodify(source), layer)
 
     return gate.nodify(nodule) 
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Equality comparisons (treated as 'friends' of the actual objects)      ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Logic equality -------------------------------------------------------- #
+
+def logic_eq(x, y):
+
+    return all((
+                type(x)      == type(y),
+                x._parents   == y._parents,
+                x._adxs      == y._adxs,
+                id(x._out)   == id(y._out),
+                ids(x._args) == ids(y._args),
+              ))
+
+
+
+
+# --- Gate equality --------------------------------------------------------- #
+
+def gate_eq(x, y):
+
+    return all((
+                type(x)    == type(y),
+                x._parents == y._parents,
+                x._fun     == y._fun,
+              ))
+
+
+
+
+# --- Node equality --------------------------------------------------------- #
+
+def node_eq(x, y):
+
+    return all((
+                type(x)   == type(y), 
+                x._nodule == y._nodule,
+                x._gate   == y._gate,               
+              ))
+
+
+
+
+# --- Nodule equality ------------------------------------------------------- #
+
+def nodule_eq(x, y):
+
+    return all((
+                type(x)   == type(y),
+                x._source == y._source,
+                x._layer  == y._layer,
+              ))
+
+
+
+
+# --- Point equality -------------------------------------------------------- #
+
+def point_eq(x, y):
+
+    return all((
+                type(x)       == type(y),
+                id(x._source) == id(y._source),
+                x._layer      == y._layer,
+              ))
+
+
+
+
+
+
+
+
 
 
 
