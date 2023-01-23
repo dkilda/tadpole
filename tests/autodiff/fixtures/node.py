@@ -191,7 +191,7 @@ def point():
     def wrap(source=None):
 
         if source is None:
-           source = fake.Point()
+           source = fake.FunReturn()
 
         return tdnode.Point(source)
                                   

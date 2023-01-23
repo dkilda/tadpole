@@ -32,6 +32,7 @@ from .grad import (
 from .misc import (
    Fun,
    FunReturn,
+   Map,
 )
 
 

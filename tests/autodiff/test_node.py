@@ -46,6 +46,18 @@ class TestForward:
        self.node = forward_node
 
 
+   @pytest.fixture(autouse=True)
+   def request_nodule(self, nodule):
+
+       self.nodule = nodule
+
+
+   @pytest.fixture(autouse=True)
+   def request_point(self, point):
+
+       self.point = point
+
+
 
 
 # --- Boilerplate for testing reverse objects ------------------------------- #
@@ -74,6 +86,18 @@ class TestReverse:
    def request_node(self, reverse_node):
 
        self.node = reverse_node
+
+
+   @pytest.fixture(autouse=True)
+   def request_nodule(self, nodule):
+
+       self.nodule = nodule
+
+
+   @pytest.fixture(autouse=True)
+   def request_point(self, point):
+
+       self.point = point
 
 
 
@@ -125,7 +149,7 @@ class TestReverseLogic(TestReverse):
    def test_gate(self, valency):
 
        fun     = fake.Fun(valency)
-       vjpfuns = make_tuple(fake.Fun, valency) # [fake.Fun()]*valency
+       vjpfuns = make_tuple(fake.Fun, valency) 
 
        tda.vjpmap.add(fun, *vjpfuns) # FIXME having to do this is an argument for keeping vjp/jvp 
                                      #       info in Fun classes instead of using global adjoint maps!
@@ -249,9 +273,32 @@ class TestReverseGate(TestReverse):
 class TestNodule:
 
    @pytest.fixture(autouse=True)
-   def request_args(self, nodule):
+   def request_nodule(self, nodule):
 
        self.nodule = nodule
+
+
+   @pytest.mark.parametrize("source", [
+                                       fake.ForwardNode(), 
+                                       fake.ReverseNode(), 
+                                       fake.Point(), 
+                                       fake.FunReturn(),
+                                      ])
+   @pytest.mark.parametrize("layer",  [0, 1, 2])
+   def test_eq(self, source, layer):
+
+       nodeA  = self.nodule(source, layer)
+       nodeB  = self.nodule(source, layer)
+
+       assert nodeA == nodeB
+
+
+   def test_ne(self):
+
+       nodeA = self.nodule()
+       nodeB = self.nodule()
+
+       assert nodeA != nodeB
 
   
    def test_tovalue(self):
@@ -277,7 +324,53 @@ class TestNodule:
 # --- Forward node ---------------------------------------------------------- #
 
 class TestForwardNode(TestForward): 
+
+   def test_eq(self):
+
+       nodule = fake.Nodule()
+       gate   = fake.ForwardGate()
+       nodeA  = self.node(nodule, gate)
+       nodeB  = self.node(nodule, gate)
+
+       assert nodeA == nodeB
+
+
+   def test_ne(self):
+
+       nodeA = self.node()
+       nodeB = self.node()
+
+       assert nodeA != nodeB
+
+
+   @pytest.mark.parametrize("x", [
+                                  fake.ForwardNode(), 
+                                  fake.Point(), 
+                                  fake.FunReturn(),
+                                 ])
+   def test_nodify(self, x):
+
+       ans = x
+       if isinstance(ans, fake.FunReturn):
+          ans = self.point(ans)
+       
+       assert tdnode.nodify(x) == ans 
+       
+
+   @pytest.mark.parametrize("source", [
+                                       fake.ForwardNode(), 
+                                       fake.Point(), 
+                                       fake.FunReturn(),
+                                      ])
+   @pytest.mark.parametrize("layer",  [0, 1, 2])
+   def test_make_node(self, source, layer):
+
+       node = fake.ForwardNode()
+       gate = fake.ForwardGate(nodify=fake.Map(node))
+
+       assert tdnode.make_node(source, layer, gate) == node
   
+
    def test_tovalue(self):
 
        ans  = fake.FunReturn()
@@ -322,6 +415,52 @@ class TestForwardNode(TestForward):
 # --- Reverse node ---------------------------------------------------------- #
 
 class TestReverseNode(TestReverse): 
+
+   def test_eq(self):
+
+       nodule = fake.Nodule()
+       gate   = fake.ReverseGate()
+       nodeA  = self.node(nodule, gate)
+       nodeB  = self.node(nodule, gate)
+
+       assert nodeA == nodeB
+
+
+   def test_ne(self):
+
+       nodeA = self.node()
+       nodeB = self.node()
+
+       assert nodeA != nodeB
+
+
+   @pytest.mark.parametrize("x", [
+                                  fake.ReverseNode(), 
+                                  fake.Point(), 
+                                  fake.FunReturn(),
+                                 ])
+   def test_nodify(self, x):
+
+       ans = x
+       if isinstance(ans, fake.FunReturn):
+          ans = self.point(ans)
+       
+       assert tdnode.nodify(x) == ans 
+       
+
+   @pytest.mark.parametrize("source", [
+                                       fake.ReverseNode(), 
+                                       fake.Point(), 
+                                       fake.FunReturn(),
+                                      ])
+   @pytest.mark.parametrize("layer",  [0, 1, 2])
+   def test_make_node(self, source, layer):
+
+       node = fake.ReverseNode()
+       gate = fake.ReverseGate(nodify=fake.Map(node))
+
+       assert tdnode.make_node(source, layer, gate) == node
+
   
    def test_tovalue(self):
 
@@ -395,6 +534,54 @@ class TestReverseNode(TestReverse):
        node.add_to_toposort(toposort)
 
        assert map_tuple(toposort.added, valency) == parents  
+
+
+
+
+# --- Point (a disconnected node, only carries a value and no logic) -------- #
+
+class TestPoint:
+
+   @pytest.fixture(autouse=True)
+   def request_point(self, point):
+
+       self.point = point
+
+
+   def test_eq(self):
+
+       source = fake.FunReturn()
+       nodeA  = self.point(source)
+       nodeB  = self.point(source)
+
+       assert nodeA == nodeB
+
+
+   def test_ne(self):
+
+       nodeA  = self.point()
+       nodeB  = self.point()
+
+       assert nodeA != nodeB
+
+  
+   def test_tovalue(self):
+
+       ans  = fake.FunReturn()
+       node = self.point(source=ans)
+
+       assert node.tovalue() == ans 
+
+
+   def test_attach(self): 
+
+       ans    = fake.NodeTrain()               
+       train1 = fake.NodeTrain(with_meta=ans)  
+       train2 = fake.NodeTrain(with_node=train1) 
+
+       node = self.point()
+
+       assert node.attach(train2) == ans
 
 
 
