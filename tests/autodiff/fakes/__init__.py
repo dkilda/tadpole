@@ -2,6 +2,11 @@
 # -*- coding: utf-8 -*-
 
 
+from .util import (
+   Sequence,
+)
+
+
 from .node import (
    Logic,
    ForwardLogic,
@@ -18,7 +23,18 @@ from .node import (
 
 
 from .graph import (
+   Graph,
+   FunWithGate,
+   Differentiable,
+   NonDifferentiable,
    NodeTrain,
+   NodeGlue,
+   ConcatArgs,
+   Active,
+   Passive,
+   ActivePack,
+   PassivePack,
+   PointPack,
 )
 
 
@@ -33,6 +49,7 @@ from .misc import (
    Fun,
    FunReturn,
    Map,
+   TrivMap,
 )
 
 

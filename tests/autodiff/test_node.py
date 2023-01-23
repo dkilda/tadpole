@@ -453,11 +453,12 @@ class TestForwardNode(TestForward):
    @pytest.mark.parametrize("layer",  [0, 1, 2])
    def test_make_node(self, source, layer):
 
-       node = fake.ForwardNode()
-       gate = fake.ForwardGate(nodify=fake.Map(node))
+       nodule = self.nodule(tdnode.nodify(source), layer)
+       node   = fake.ForwardNode()
+       gate   = fake.ForwardGate(nodify=fake.Map({nodule: node}))
 
        assert tdnode.make_node(source, layer, gate) == node
-  
+
 
    def test_tovalue(self):
 
@@ -545,8 +546,9 @@ class TestReverseNode(TestReverse):
    @pytest.mark.parametrize("layer",  [0, 1, 2])
    def test_make_node(self, source, layer):
 
-       node = fake.ReverseNode()
-       gate = fake.ReverseGate(nodify=fake.Map(node))
+       nodule = self.nodule(tdnode.nodify(source), layer)
+       node   = fake.ReverseNode()
+       gate   = fake.ReverseGate(nodify=fake.Map({nodule: node}))
 
        assert tdnode.make_node(source, layer, gate) == node
 

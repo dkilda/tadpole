@@ -39,7 +39,7 @@ def cacheable(fun):
 ###############################################################################
 
 
-# --- Sequence ----------------------------------------------------------------- #
+# --- Sequence -------------------------------------------------------------- #
 
 class Sequence: 
 
@@ -50,6 +50,17 @@ class Sequence:
 
        self._xs  = xs
        self._end = end
+
+
+   def __eq__(self, other):
+
+       if self._end != other._end:
+          return False
+
+       if self._end > 0:
+          return self._xs[:self._end] == other._xs[other._end]
+
+       return True
 
 
    def push(self, x):

@@ -15,6 +15,23 @@ def randn(seed=1):
 
 
 
+
+# --- Trivial map ----------------------------------------------------------- #
+
+class TrivMap:
+
+   def __init__(self, out):
+
+       self._out = out
+
+
+   def __getitem__(self, key):
+
+       return self._out
+
+
+
+
 # --- Generic map ----------------------------------------------------------- #
 
 class Map:
@@ -26,7 +43,13 @@ class Map:
 
    def __getitem__(self, key):
 
-       return self._out
+       try:
+          return self._out[key]
+
+       except KeyError:
+
+          keys = list(self._out.keys())
+          return self._out[keys[keys.index(key)]]
 
 
 

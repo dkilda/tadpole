@@ -167,6 +167,14 @@ class NodeTrain:
        self._meta  = meta
 
 
+   def __eq__(self, other):
+
+       return all((
+                   self._nodes == other._nodes,  
+                   self._meta  == other._meta,
+                 ))
+
+
    def with_node(self, node):
 
        return self.__class__(self._nodes.push(node), self._meta)
