@@ -4,11 +4,9 @@
 import pytest
 import tadpole.autodiff.node as tdnode
 import tests.autodiff.fakes  as fake
-
-import tests.common.ntuple as tpl
+import tests.common.ntuple   as tpl
 
 from tests.autodiff.fixtures.misc import (
-   randn,
    jvpfun_args,
    vjpfun_args,
 )
@@ -71,7 +69,7 @@ def reverse_logic(vjpfun_args):
 # --- Forward logic gate ---------------------------------------------------- #
 
 @pytest.fixture
-def forward_gate(randn):
+def forward_gate():
 
     def wrap(parents=2, fun=None, grad=None):
 
@@ -79,7 +77,7 @@ def forward_gate(randn):
            parents = tpl.repeat(fake.ForwardNode, parents) 
 
         if grad is None:
-           grad = randn()
+           grad = fake.FunReturn()
 
         if fun is None:
            fun = fake.Fun()
@@ -102,7 +100,7 @@ def reverse_gate():
            parents = tpl.repeat(fake.ReverseNode, parents) 
 
         if vjp is None:
-           vjp = fake.Fun(parents)
+           vjp = fake.Fun(len(parents))
 
         if fun is None:
            fun = fake.Fun()

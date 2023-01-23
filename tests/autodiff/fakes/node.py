@@ -3,8 +3,10 @@
 
 import tadpole.autodiff.node     as tdnode
 import tests.autodiff.fakes.misc as misc
+import tests.common.ntuple       as tpl
 
-from tests.common.fakes import NULL, fakeit
+from tests.common.fakes        import NULL, fakeit
+from tests.autodiff.fakes.misc import Fun, FunReturn, Map
 
 
 
@@ -35,16 +37,14 @@ class Logic(tdnode.Logic):
 
 # --- Forward logic --------------------------------------------------------- #
 
-class ForwardLogic(Logic):
-   pass
+ForwardLogic = Logic
 
 
 
 
 # --- Reverse logic --------------------------------------------------------- #
 
-class ReverseLogic(Logic):
-   pass
+ReverseLogic = Logic
 
 
 

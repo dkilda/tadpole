@@ -3,12 +3,70 @@
 
 import tadpole.autodiff.node  as tdnode
 import tadpole.autodiff.graph as tdgraph
+import tadpole.autodiff.grad  as tdgrad
 
-from tests.common.fakes import NULL, fakeit
+from tests.common.fakes        import NULL, fakeit
+from tests.autodiff.fakes.misc import Fun, FunReturn, Map
 
 
 
 
+###############################################################################
+###                                                                         ###
+###  Differential operators: forward and reverse                            ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Differential operator ------------------------------------------------- #
+
+class DiffOp(tdgrad.DiffOp):
+
+   def __init__(self, evaluate=NULL, grad=NULL):
+
+       if evaluate is NULL: evaluate = FunReturn()
+       if grad     is NULL: grad     = Map(FunReturn())
+
+       self._evaluate = evaluate
+       self._grad     = grad
+
+
+   @fakeit
+   def evaluate(self):
+
+       return self._evaluate
+
+
+   @fakeit
+   def grad(self, seed):
+
+       return self._grad[seed]
+
+
+
+
+# --- Forward differential operator ----------------------------------------- #
+
+ForwardDiffOp = DiffOp
+
+
+
+
+# --- Reverse differential operator ----------------------------------------- #
+
+ReverseDiffOp = DiffOp
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Backpropagation through the computation graph.                         ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Child-node counter ---------------------------------------------------- #
 
 class ChildCount:
 
@@ -34,7 +92,7 @@ class ChildCount:
 
    def computed(self):
 
-       return self._computed()
+       return self._computed
 
 
    @fakeit
@@ -72,6 +130,8 @@ class ChildCount:
 
 
 
+# --- Topological sort ------------------------------------------------------ #
+
 class TopoSort:
 
    def __init__(self, iterate=NULL):
@@ -100,6 +160,7 @@ class TopoSort:
 
 
 
+# --- Gradient accumulation ------------------------------------------------- #
 
 class GradAccum:
 
@@ -150,55 +211,9 @@ class GradAccum:
 
 
 
+# --- Backpropagation ------------------------------------------------------- # 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+Backprop = Fun
 
 
 

@@ -4,8 +4,7 @@
 import pytest
 import numpy as np
 import tests.autodiff.fakes as fake
-
-import tests.common.ntuple as tpl
+import tests.common.ntuple  as tpl
 
 
 
@@ -21,6 +20,36 @@ def randn():
         return np.random.randn()
 
     return wrap
+
+
+
+
+# --- Node arguments -------------------------------------------------------- #
+
+def node_args(args=None):
+
+    if args is None:
+       args = 2
+
+    if isinstance(args, int):
+       return tpl.repeat(fake.Node, args)
+
+    return args
+
+
+
+
+# --- Operator arguments ---------------------------------------------------- #
+
+def op_args(fun=None, x=None):
+
+    if fun is None:
+       fun = fake.Fun() 
+
+    if x is None:
+       x = fake.FunReturn()
+
+    return fun, x
 
 
 
