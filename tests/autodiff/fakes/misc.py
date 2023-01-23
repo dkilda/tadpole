@@ -2,8 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+import tests.common.ntuple as tpl
+
 from tests.common.fakes import NULL
-from tests.common       import make_tuple
+
 
 
 def randn(seed=1):
@@ -67,7 +69,7 @@ class Fun:
           return FunReturn()
 
        if isinstance(self._out, int):
-          return make_tuple(FunReturn, self._out) 
+          return tpl.repeat(FunReturn, self._out) 
 
        return self._out[args]
 

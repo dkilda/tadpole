@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 
 from .common import (
-   make_tuple,
-   map_tuple,
    value_eq,
 )
+
+
+from . import ntuple

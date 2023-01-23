@@ -6,7 +6,7 @@ import tadpole.autodiff.adjoints as tda
 import tadpole.autodiff.node     as tdnode
 import tests.autodiff.fakes      as fake
 
-from tests.common import make_tuple, map_tuple, value_eq
+import tests.common.ntuple as tpl
 
 
 
@@ -113,15 +113,36 @@ class TestReverse:
 
 class TestForwardLogic(TestForward):
 
+
+   @pytest.mark.parametrize("valency",  [1,2,3])
+   def test_eq(self, valency):
+
+       adxs, out, args = self.args(valency)
+       parents         = tpl.repeat(fake.ForwardNode, valency)
+
+       logicA  = self.logic(parents, adxs, out, args)
+       logicB  = self.logic(parents, adxs, out, args)
+
+       assert logicA == logicB
+
+
+   def test_ne(self):
+
+       logicA = self.logic()
+       logicB = self.logic()
+
+       assert logicA != logicB
+
+
    @pytest.mark.parametrize("valency", [1,2,3]) 
    def test_gate(self, valency):
 
        fun     = fake.Fun()
-       jvpfuns = make_tuple(fake.Fun, valency) 
+       jvpfuns = tpl.repeat(fake.Fun, valency) 
 
        tda.jvpmap.add(fun, *jvpfuns) # FIXME having to do this is an argument for keeping vjp/jvp 
                                      #       info in Fun classes instead of using global adjoint maps!
-       parents = make_tuple(fake.ForwardNode, valency)  
+       parents = tpl.repeat(fake.ForwardNode, valency)  
        logic   = self.logic(parents)
        ans     = self.gate(parents, fun)
 
@@ -132,7 +153,7 @@ class TestForwardLogic(TestForward):
    def test_make_logic(self, valency):
 
        ans     = fake.ForwardLogic()
-       parents = make_tuple(lambda: fake.ForwardNode(logic=ans), valency)   
+       parents = tpl.repeat(lambda: fake.ForwardNode(logic=ans), valency)   
 
        adxs, out, args = self.args(valency)
 
@@ -145,16 +166,37 @@ class TestForwardLogic(TestForward):
 
 class TestReverseLogic(TestReverse):
 
+
+   @pytest.mark.parametrize("valency",  [1,2,3])
+   def test_eq(self, valency):
+
+       adxs, out, args = self.args(valency)
+       parents         = tpl.repeat(fake.ReverseNode, valency)
+
+       logicA  = self.logic(parents, adxs, out, args)
+       logicB  = self.logic(parents, adxs, out, args)
+
+       assert logicA == logicB
+
+
+   def test_ne(self):
+
+       logicA = self.logic()
+       logicB = self.logic()
+
+       assert logicA != logicB
+
+
    @pytest.mark.parametrize("valency", [1,2,3]) 
    def test_gate(self, valency):
 
        fun     = fake.Fun(valency)
-       vjpfuns = make_tuple(fake.Fun, valency) 
+       vjpfuns = tpl.repeat(fake.Fun, valency) 
 
        tda.vjpmap.add(fun, *vjpfuns) # FIXME having to do this is an argument for keeping vjp/jvp 
                                      #       info in Fun classes instead of using global adjoint maps!
 
-       parents = make_tuple(fake.ReverseNode, valency)  
+       parents = tpl.repeat(fake.ReverseNode, valency)  
        logic   = self.logic(parents)
        ans     = self.gate(parents, fun, tda.vjpmap.get(fun)) # FIXME in the future we should also test vjp/jvp equality!
 
@@ -165,7 +207,7 @@ class TestReverseLogic(TestReverse):
    def test_make_logic(self, valency):
 
        ans     = fake.ReverseLogic()
-       parents = make_tuple(lambda: fake.ReverseNode(logic=ans), valency)  
+       parents = tpl.repeat(lambda: fake.ReverseNode(logic=ans), valency)  
 
        adxs, out, args = self.args(valency)
 
@@ -184,6 +226,28 @@ class TestReverseLogic(TestReverse):
 # --- Forward gate ---------------------------------------------------------- #
 
 class TestForwardGate(TestForward):
+
+
+   @pytest.mark.parametrize("valency", [1,2,3])
+   def test_eq(self, valency):
+
+       parents = tpl.repeat(fake.ForwardNode, valency)
+       fun     = fake.Fun()
+       grad    = fake.Fun()
+
+       gateA  = self.gate(parents, fun, grad)
+       gateB  = self.gate(parents, fun, grad)
+
+       assert gateA == gateB
+
+
+   def test_ne(self):
+
+       gateA = self.gate()
+       gateB = self.gate()
+
+       assert gateA != gateB
+
 
    def test_nodify(self):
  
@@ -209,6 +273,28 @@ class TestForwardGate(TestForward):
 
 class TestReverseGate(TestReverse):
 
+
+   @pytest.mark.parametrize("valency", [1,2,3])
+   def test_eq(self, valency):
+
+       parents = tpl.repeat(fake.ReverseNode, valency)
+       fun     = fake.Fun()
+       vjp     = fake.Fun()
+
+       gateA  = self.gate(parents, fun, vjp)
+       gateB  = self.gate(parents, fun, vjp)
+
+       assert gateA == gateB
+
+
+   def test_ne(self):
+
+       gateA = self.gate()
+       gateB = self.gate()
+
+       assert gateA != gateB
+
+
    def test_nodify(self):
  
        nodule = fake.Nodule()
@@ -222,8 +308,8 @@ class TestReverseGate(TestReverse):
    @pytest.mark.parametrize("valency", [1,2,3]) 
    def test_accumulate_parent_grads(self, valency):
 
-       parents = make_tuple(fake.ReverseNode, valency)
-       grads   = make_tuple(fake.FunReturn,   valency) 
+       parents = tpl.repeat(fake.ReverseNode, valency)
+       grads   = tpl.repeat(fake.FunReturn,   valency) 
 
        seed  = fake.FunReturn()
        vjp   = fake.Fun({(seed,): grads})
@@ -232,13 +318,13 @@ class TestReverseGate(TestReverse):
        accum = fake.GradAccum()
        gate.accumulate_parent_grads(seed, accum)
        
-       assert tuple(map(accum.accumulated, parents)) == grads 
+       assert tpl.amap(accum.accumulated, parents) == grads 
 
 
    @pytest.mark.parametrize("valency", [1,2,3]) 
    def test_add_to_childcount(self, valency):
 
-       parents = make_tuple(fake.ReverseNode, valency)
+       parents = tpl.repeat(fake.ReverseNode, valency)
        gate    = self.gate(parents)
 
        childcount = fake.ChildCount()
@@ -250,13 +336,13 @@ class TestReverseGate(TestReverse):
    @pytest.mark.parametrize("valency", [1,2,3]) 
    def test_add_to_toposort(self, valency):
 
-       parents = make_tuple(fake.ReverseNode, valency)
+       parents = tpl.repeat(fake.ReverseNode, valency)
        gate    = self.gate(parents)
 
        toposort = fake.TopoSort()
        gate.add_to_toposort(toposort)
 
-       assert map_tuple(toposort.added, valency) == parents
+       assert tpl.link(toposort.added, valency) == parents
 
 
 
@@ -271,6 +357,7 @@ class TestReverseGate(TestReverse):
 # --- Nodule: a node kernel ------------------------------------------------- #
 
 class TestNodule:
+
 
    @pytest.fixture(autouse=True)
    def request_nodule(self, nodule):
@@ -324,6 +411,7 @@ class TestNodule:
 # --- Forward node ---------------------------------------------------------- #
 
 class TestForwardNode(TestForward): 
+
 
    def test_eq(self):
 
@@ -395,7 +483,7 @@ class TestForwardNode(TestForward):
 
        adxs, out, args = self.args(valency)
 
-       others = make_tuple(fake.ForwardNode, valency-1) 
+       others = tpl.repeat(fake.ForwardNode, valency-1) 
        node   = self.node()
        ans    = self.logic((node, *others), adxs, out, args)
 
@@ -415,6 +503,7 @@ class TestForwardNode(TestForward):
 # --- Reverse node ---------------------------------------------------------- #
 
 class TestReverseNode(TestReverse): 
+
 
    def test_eq(self):
 
@@ -486,7 +575,7 @@ class TestReverseNode(TestReverse):
 
        adxs, out, args = self.args(valency)
 
-       others = make_tuple(fake.ReverseNode, valency-1) 
+       others = tpl.repeat(fake.ReverseNode, valency-1) 
        node   = self.node()
        ans    = self.logic((node, *others), adxs, out, args)
 
@@ -496,8 +585,8 @@ class TestReverseNode(TestReverse):
    @pytest.mark.parametrize("valency", [1,2,3]) 
    def test_accumulate_parent_grads(self, valency):
 
-       parents = make_tuple(fake.ReverseNode, valency)
-       grads   = make_tuple(fake.FunReturn,   valency) 
+       parents = tpl.repeat(fake.ReverseNode, valency)
+       grads   = tpl.repeat(fake.FunReturn,   valency) 
 
        seed = fake.FunReturn()
        vjp  = fake.Fun({(seed,): grads})
@@ -506,13 +595,13 @@ class TestReverseNode(TestReverse):
        accum = fake.GradAccum(pop={node: seed})
        node.accumulate_parent_grads(accum)
        
-       assert tuple(map(accum.accumulated, parents)) == grads 
+       assert tpl.amap(accum.accumulated, parents) == grads 
 
 
    @pytest.mark.parametrize("valency", [1,2,3]) 
    def test_add_to_childcount(self, valency):
 
-       parents = make_tuple(fake.ReverseNode, valency)
+       parents = tpl.repeat(fake.ReverseNode, valency)
        node    = self.node(gate=self.gate(parents))
 
        childcount = fake.ChildCount()
@@ -527,13 +616,13 @@ class TestReverseNode(TestReverse):
    @pytest.mark.parametrize("valency", [1,2,3]) 
    def test_add_to_toposort(self, valency):
 
-       parents = make_tuple(fake.ReverseNode, valency)
+       parents = tpl.repeat(fake.ReverseNode, valency)
        node    = self.node(gate=self.gate(parents))
 
        toposort = fake.TopoSort()
        node.add_to_toposort(toposort)
 
-       assert map_tuple(toposort.added, valency) == parents  
+       assert tpl.link(toposort.added, valency) == parents  
 
 
 
@@ -541,6 +630,7 @@ class TestReverseNode(TestReverse):
 # --- Point (a disconnected node, only carries a value and no logic) -------- #
 
 class TestPoint:
+
 
    @pytest.fixture(autouse=True)
    def request_point(self, point):

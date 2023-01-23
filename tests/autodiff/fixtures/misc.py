@@ -5,9 +5,8 @@ import pytest
 import numpy as np
 import tests.autodiff.fakes as fake
 
-from tests.common import (
-   make_tuple,
-)
+import tests.common.ntuple as tpl
+
 
 
 
@@ -39,7 +38,7 @@ def adjfun_args(nodetype):
            out = nodetype()
 
         if args is None:
-           args = make_tuple(fake.Node, max(adxs)+1) 
+           args = tpl.repeat(fake.Node, max(adxs)+1) 
 
         return adxs, out, args
 

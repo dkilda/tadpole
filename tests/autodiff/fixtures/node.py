@@ -5,9 +5,7 @@ import pytest
 import tadpole.autodiff.node as tdnode
 import tests.autodiff.fakes  as fake
 
-from tests.common import (
-   make_tuple,
-)
+import tests.common.ntuple as tpl
 
 from tests.autodiff.fixtures.misc import (
    randn,
@@ -33,7 +31,7 @@ def forward_logic(jvpfun_args):
     def wrap(parents=2, adxs=None, out=None, args=None):
 
         if isinstance(parents, int):
-           parents = make_tuple(fake.ForwardNode, parents)  
+           parents = tpl.repeat(fake.ForwardNode, parents)  
 
         adxs, out, args = jvpfun_args(len(parents), adxs, out, args)
 
@@ -52,7 +50,7 @@ def reverse_logic(vjpfun_args):
     def wrap(parents=2, adxs=None, out=None, args=None):
 
         if isinstance(parents, int):
-           parents = make_tuple(fake.ReverseNode, parents)  
+           parents = tpl.repeat(fake.ReverseNode, parents)  
 
         adxs, out, args = vjpfun_args(len(parents), adxs, out, args)
 
@@ -78,7 +76,7 @@ def forward_gate(randn):
     def wrap(parents=2, fun=None, grad=None):
 
         if isinstance(parents, int):
-           parents = make_tuple(fake.ForwardNode, parents) 
+           parents = tpl.repeat(fake.ForwardNode, parents) 
 
         if grad is None:
            grad = randn()
@@ -101,7 +99,7 @@ def reverse_gate():
     def wrap(parents=2, fun=None, vjp=None):
 
         if isinstance(parents, int):
-           parents = make_tuple(fake.ReverseNode, parents) 
+           parents = tpl.repeat(fake.ReverseNode, parents) 
 
         if vjp is None:
            vjp = fake.Fun(parents)

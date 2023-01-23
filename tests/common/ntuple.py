@@ -1,0 +1,106 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+
+
+
+# --- Tuple creators -------------------------------------------------------- #
+
+def repeat(creator, n): 
+
+    return tuple(creator() for _ in range(n))
+
+
+
+
+def link(creator, n):
+
+    return tuple(map(creator, range(n)))
+
+
+
+
+def amap(creator, xs): 
+
+    return tuple(map(creator, xs))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
