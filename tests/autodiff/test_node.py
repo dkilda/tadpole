@@ -366,11 +366,11 @@ class TestNodule:
 
 
    @pytest.mark.parametrize("source", [
-                                       fake.ForwardNode(), 
-                                       fake.ReverseNode(), 
-                                       fake.Point(), 
-                                       fake.FunReturn(),
-                                      ])
+      fake.ForwardNode(), 
+      fake.ReverseNode(), 
+      fake.Point(), 
+      fake.FunReturn(),
+   ])
    @pytest.mark.parametrize("layer",  [0, 1, 2])
    def test_eq(self, source, layer):
 
@@ -432,10 +432,10 @@ class TestForwardNode(TestForward):
 
 
    @pytest.mark.parametrize("x", [
-                                  fake.ForwardNode(), 
-                                  fake.Point(), 
-                                  fake.FunReturn(),
-                                 ])
+      fake.ForwardNode(), 
+      fake.Point(), 
+      fake.FunReturn(),
+   ])
    def test_nodify(self, x):
 
        ans = x
@@ -446,10 +446,10 @@ class TestForwardNode(TestForward):
        
 
    @pytest.mark.parametrize("source", [
-                                       fake.ForwardNode(), 
-                                       fake.Point(), 
-                                       fake.FunReturn(),
-                                      ])
+      fake.ForwardNode(), 
+      fake.Point(), 
+      fake.FunReturn(),
+   ])
    @pytest.mark.parametrize("layer",  [0, 1, 2])
    def test_make_node(self, source, layer):
 
@@ -525,10 +525,10 @@ class TestReverseNode(TestReverse):
 
 
    @pytest.mark.parametrize("x", [
-                                  fake.ReverseNode(), 
-                                  fake.Point(), 
-                                  fake.FunReturn(),
-                                 ])
+      fake.ReverseNode(), 
+      fake.Point(), 
+      fake.FunReturn(),
+   ])
    def test_nodify(self, x):
 
        ans = x
@@ -539,10 +539,10 @@ class TestReverseNode(TestReverse):
        
 
    @pytest.mark.parametrize("source", [
-                                       fake.ReverseNode(), 
-                                       fake.Point(), 
-                                       fake.FunReturn(),
-                                      ])
+      fake.ReverseNode(), 
+      fake.Point(), 
+      fake.FunReturn(),
+   ])
    @pytest.mark.parametrize("layer",  [0, 1, 2])
    def test_make_node(self, source, layer):
 

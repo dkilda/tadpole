@@ -74,10 +74,10 @@ class TestGraph:
    # --- Tests: build --- #
 
    @pytest.mark.parametrize("x", [
-                                  fake.ForwardNode(), 
-                                  fake.Point(), 
-                                  fake.FunReturn(),
-                                 ])   
+      fake.ForwardNode(), 
+      fake.Point(), 
+      fake.FunReturn(),
+   ])   
    def test_build_forward(self, x): 
 
        fun, gate, ans = self._setup_forward(x, -1)  
@@ -87,10 +87,10 @@ class TestGraph:
 
 
    @pytest.mark.parametrize("x", [
-                                  fake.ReverseNode(), 
-                                  fake.Point(), 
-                                  fake.FunReturn(),
-                                 ])   
+      fake.ReverseNode(), 
+      fake.Point(), 
+      fake.FunReturn(),
+   ])   
    def test_build_reverse(self, x):      # FIXME make_node() should be more testable: 
                                          # the internally created and never returned Nodule 
                                          # makes it impossible to test using fakes alone
@@ -103,10 +103,10 @@ class TestGraph:
    # --- Tests: enter --- #
 
    @pytest.mark.parametrize("x", [
-                                  fake.ReverseNode(), 
-                                  fake.Point(), 
-                                  fake.FunReturn(),
-                                 ])  
+      fake.ReverseNode(), 
+      fake.Point(), 
+      fake.FunReturn(),
+   ])   
    def test_enter(self, x):
 
        fun, gate, ans = self._setup_reverse(x, 0) 
@@ -116,10 +116,10 @@ class TestGraph:
 
 
    @pytest.mark.parametrize("x", [
-                                  fake.ReverseNode(), 
-                                  fake.Point(), 
-                                  fake.FunReturn(),
-                                 ])  
+      fake.ReverseNode(), 
+      fake.Point(), 
+      fake.FunReturn(),
+   ]) 
    def test_nested_enter(self, x):
 
        fun, gate, ans = self._setup_reverse(x, 1) 
@@ -130,10 +130,10 @@ class TestGraph:
 
 
    @pytest.mark.parametrize("x", [
-                                  fake.ReverseNode(), 
-                                  fake.Point(), 
-                                  fake.FunReturn(),
-                                 ])  
+      fake.ReverseNode(), 
+      fake.Point(), 
+      fake.FunReturn(),
+   ])  
    def test_extra_nested_enter(self, x):
 
        fun, gate, ans = self._setup_reverse(x, 2) 
@@ -147,10 +147,10 @@ class TestGraph:
    # --- Tests: exit --- #
 
    @pytest.mark.parametrize("x", [
-                                  fake.ReverseNode(), 
-                                  fake.Point(), 
-                                  fake.FunReturn(),
-                                 ])  
+      fake.ReverseNode(), 
+      fake.Point(), 
+      fake.FunReturn(),
+   ])  
    def test_nested_exit(self, x):
 
        fun, gate, ans = self._setup_reverse(x, 0) 
@@ -162,10 +162,10 @@ class TestGraph:
 
 
    @pytest.mark.parametrize("x", [
-                                  fake.ReverseNode(), 
-                                  fake.Point(), 
-                                  fake.FunReturn(),
-                                 ])  
+      fake.ReverseNode(), 
+      fake.Point(), 
+      fake.FunReturn(),
+   ])  
    def test_extra_nested_exit(self, x):
 
        fun, gate, ans = self._setup_reverse(x, 0) 
@@ -286,10 +286,10 @@ class TestNodeTrain:
 
 
    @pytest.mark.parametrize("node", [
-                                     fake.ForwardNode(), 
-                                     fake.ReverseNode(), 
-                                     fake.Point(),
-                                    ])   
+      fake.ForwardNode(), 
+      fake.ReverseNode(), 
+      fake.Point(),
+   ])   
    def test_with_node(self, node):
 
        ans   = fake.Sequence()
@@ -301,14 +301,45 @@ class TestNodeTrain:
        assert train.with_node(node) == train1
 
 
-"""
-   def test_with_meta(self):
+   @pytest.mark.parametrize("source", [
+      fake.ForwardNode(), 
+      fake.ReverseNode(), 
+      fake.Point(),
+   ])  
+   @pytest.mark.parametrize("layer", [0,1,2]) 
+   def test_with_meta(self, source, layer):
+
+       ans  = fake.Sequence()
+       meta = fake.Sequence(push={(source, layer): ans})
+
+       train  = self.node_train(meta=meta)
+       train1 = self.node_train(meta=ans)
+
+       assert train.with_meta(source, layer) == train1
 
 
+   @pytest.mark.parametrize("nodes, sources, layers", [
+      [
+       (fake.ReverseNode(), ),
+       (fake.Point(),       ),
+       (1,                  ),
+      ],
+      [
+       (fake.ReverseNode(), fake.Point(), fake.ReverseNode()),
+       (fake.Point(),       fake.Point(), fake.ReverseNode()), 
+       (0,1,1)
+      ],
+   ])
+   def test_concatenate(self, nodes, sources, layers):
 
-   def test_concatenate(self):
-"""
+       ans = tdgraph.ConcatArgsKernel(nodes, sources, layers)
 
+       size  = len(nodes)
+       nodes = fake.Sequence(iterate=iter(nodes),                size=size)
+       meta  = fake.Sequence(iterate=iter(zip(sources, layers)), size=size)
+       train = self.node_train(nodes, meta)
+
+       return train.concatenate() == ans
 
 
 

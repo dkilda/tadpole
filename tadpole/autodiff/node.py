@@ -492,7 +492,7 @@ class Point(Node):
 
        return (
                train.with_node(self)
-                    .with_meta(self._source, self._layer)
+                    .with_meta(self, self._layer)
               )
 
 
