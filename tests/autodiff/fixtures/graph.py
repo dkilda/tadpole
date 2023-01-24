@@ -180,7 +180,11 @@ def concat_args():
 def active():
 
     def wrap(args=None):
-        return tdgraph.Active(node_args(args))
+
+        if args is None:
+           args = fake.ConcatArgs()
+
+        return tdgraph.Active(args)
 
     return wrap
 
@@ -193,7 +197,11 @@ def active():
 def passive():
 
     def wrap(args=None):
-        return tdgraph.Passive(node_args(args))
+
+        if args is None:
+           args = fake.ConcatArgs()
+
+        return tdgraph.Passive(args)
 
     return wrap
 

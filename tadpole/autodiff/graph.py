@@ -175,6 +175,11 @@ class NodeTrain:
                  ))
 
 
+   def __hash__(self):
+
+       return id(self)
+
+
    def with_node(self, node):
 
        return self.__class__(self._nodes.push(node), self._meta)
@@ -292,6 +297,11 @@ class ConcatArgsKernel(Cohesive):
                  ))
 
 
+   def __hash__(self):
+
+       return id(self)
+
+
    @tdutil.cacheable
    def layer(self):
 
@@ -348,6 +358,11 @@ class ConcatArgs(Cohesive):
        return self._args == other._args
 
 
+   def __hash__(self):
+
+       return id(self)
+
+
    @property
    @tdutil.cacheable
    def _kernel(self):
@@ -389,6 +404,16 @@ class PackableConcatArgs(Cohesive, Packable):
    def __init__(self, args):
 
        self._args = args
+
+
+   def __eq__(self, other):
+
+       return self._args == other._args
+
+
+   def __hash__(self):
+
+       return id(self)
 
 
    def layer(self):
@@ -497,6 +522,20 @@ class ActivePack(Pack):
        self._logic  = logic
 
 
+   def __eq__(self, other):
+
+       return all((
+                   self._source == other._source,
+                   self._layer  == other._layer,
+                   self._logic  == other._logic,
+                 ))
+
+
+   def __hash__(self):
+
+       return id(self)
+
+
    def pluginto(self, fun): 
 
        source = self._source.pluginto(fun)
@@ -519,6 +558,16 @@ class PassivePack(Pack):
        self._source = source
 
 
+   def __eq__(self, other):
+
+       return self._source == other._source
+
+
+   def __hash__(self):
+
+       return id(self)
+
+
    def pluginto(self, fun): 
 
        return self._source.pluginto(fun)
@@ -537,6 +586,16 @@ class PointPack(Pack):
    def __init__(self, nodes):
 
        self._nodes = nodes
+
+
+   def __eq__(self, other):
+
+       return self._nodes == other._nodes
+
+
+   def __hash__(self):
+
+       return id(self)
 
 
    def pluginto(self, fun):

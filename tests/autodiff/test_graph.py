@@ -530,7 +530,7 @@ class TestConcatArgsKernel:
 class TestConcatArgs:
 
    @pytest.fixture(autouse=True)
-   def request_concat_args_kernel(self, concat_args):
+   def request_concat_args(self, concat_args):
 
        self.concat_args = concat_args
 
@@ -607,31 +607,266 @@ class TestConcatArgs:
 
 
 
+# --- Active concatenated arguments ----------------------------------------- #
+
+class TestActive:
+
+   @pytest.fixture(autouse=True)
+   def request_active(self, active):
+
+       self.active = active
+
+
+   @pytest.fixture(autouse=True)
+   def request_active_pack(self, active_pack):
+
+       self.active_pack = active_pack
+
+
+   @pytest.fixture(autouse=True)
+   def request_point_pack(self, point_pack):
+
+       self.point_pack = point_pack
+
+
+   @pytest.mark.parametrize("valency, layer, adxs, parents", [
+      [2, 0, (0,1), 2], 
+      [1, 1, (0,),  1], 
+      [3, 1, (2,),  1], 
+      [3, 2, (1,),  1], 
+      [3, 0, (0,2), 2],
+   ])
+   def test_pack(self, valency, layer, adxs, parents):
+
+       logic   = fake.ReverseLogic()
+       parents = tpl.repeat(lambda: fake.ReverseNode(logic=logic), parents) 
+       deshell = tpl.repeat(fake.Node, valency)
+   
+       nodes     = tpl.repeat(fake.Node, valency) 
+       source    = self.point_pack(nodes) # FIXME difficult to test cuz PointPack is created internally and never returned directly
+       deshelled = fake.Active(adxs=tuple(), deshell=nodes, pack=source)
+
+       args = self.active(fake.ConcatArgs(layer, adxs, 
+                                          parents, deshell, deshelled))
+       ans  = self.active_pack(source, layer, logic) 
+
+       assert args.pack() == ans
+
+
+   @pytest.mark.parametrize("valency, layer, adxs, parents", [
+      [2, 0, (0,1), 2], 
+      [1, 1, (0,),  1], 
+      [3, 1, (2,),  1], 
+      [3, 2, (1,),  1], 
+      [3, 0, (0,2), 2],
+   ])
+   def test_default_pack(self, valency, layer, adxs, parents):
+
+       parents = tpl.repeat(fake.ReverseNode, parents) 
+       deshell = tpl.repeat(fake.Node, valency)
+
+       nodes     = tpl.repeat(fake.Node, valency) 
+       source    = fake.ActivePack(nodes) 
+       deshelled = fake.Active(adxs=tuple(), deshell=nodes, pack=source)
+
+       args = fake.Active(layer, adxs, parents, deshell, deshelled)
+       ans  = fake.FunReturn()
+       fun  = fake.Fun(out={(args, source): ans}) # TODO replace with fake.Fun.call(args1, source1), register .called = (args1, source1)
+                                                  #      then fun.verify_call(args, source): assert (args, source) == (args1, source1)
+       assert tdgraph.default_pack(fun)(args) == ans
 
 
 
 
+# --- Passive concatenated arguments ---------------------------------------- #
+
+class TestPassive:
+
+   @pytest.fixture(autouse=True)
+   def request_passive(self, passive):
+
+       self.passive = passive
+
+
+   @pytest.fixture(autouse=True)
+   def request_passive_pack(self, passive_pack):
+
+       self.passive_pack = passive_pack
+
+
+   @pytest.fixture(autouse=True)
+   def request_point_pack(self, point_pack):
+
+       self.point_pack = point_pack
+
+
+   @pytest.mark.parametrize("valency, layer, adxs, parents", [
+      [2, 0, (0,1), 2], 
+      [1, 1, (0,),  1], 
+      [3, 1, (2,),  1], 
+      [3, 2, (1,),  1], 
+      [3, 0, (0,2), 2],
+   ])
+   def test_pack(self, valency, layer, adxs, parents):
+
+       parents = tpl.repeat(fake.ReverseNode, parents) 
+       deshell = tpl.repeat(fake.Node, valency)
+   
+       nodes     = tpl.repeat(fake.Node, valency) 
+       source    = self.point_pack(nodes) # FIXME difficult to test cuz PointPack is created internally and never returned directly
+       deshelled = fake.Passive(adxs=tuple(), deshell=nodes, pack=source)
+
+       args = self.passive(fake.ConcatArgs(layer, adxs, 
+                                           parents, deshell, deshelled))
+       ans  = self.passive_pack(source) 
+
+       assert args.pack() == ans
+
+
+   @pytest.mark.parametrize("valency, layer, adxs, parents", [
+      [2, 0, (0,1), 2], 
+      [1, 1, (0,),  1], 
+      [3, 1, (2,),  1], 
+      [3, 2, (1,),  1], 
+      [3, 0, (0,2), 2],
+   ])
+   def test_default_pack(self, valency, layer, adxs, parents):
+
+       parents = tpl.repeat(fake.ReverseNode, parents) 
+       deshell = tpl.repeat(fake.Node, valency)
+
+       nodes     = tpl.repeat(fake.Node, valency) 
+       source    = fake.PassivePack(nodes) 
+       deshelled = fake.Passive(adxs=tuple(), deshell=nodes, pack=source)
+
+       args = fake.Passive(layer, adxs, parents, deshell, deshelled)
+       ans  = fake.FunReturn()
+       fun  = fake.Fun(out={(args, source): ans}) # TODO replace with fake.Fun.call(args1, source1), register .called = (args1, source1)
+                                                  #      then fun.verify_call(args, source): assert (args, source) == (args1, source1)
+       assert tdgraph.default_pack(fun)(args) == ans
 
 
 
 
+###############################################################################
+###                                                                         ###
+###  Node packs: representing multiple nodes by a single argument           ###
+###              for function calls.                                        ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Active pack ----------------------------------------------------------- #
+
+class TestActivePack:
+
+   @pytest.fixture(autouse=True)
+   def request_pack(self, active_pack):
+
+       self.pack = active_pack
+
+
+   @pytest.fixture(autouse=True)
+   def request_nodule(self, nodule):
+
+       self.nodule = nodule
+
+
+   @pytest.fixture(autouse=True)
+   def request_reverse_node(self, reverse_node):
+
+       self.reverse_node = reverse_node
+
+
+   @pytest.fixture(autouse=True)
+   def request_forward_node(self, forward_node):
+
+       self.forward_node = forward_node
+
+
+   @pytest.mark.parametrize("srctype", [fake.ActivePack, fake.PointPack])
+   @pytest.mark.parametrize("layer",   [0, 1])
+   def test_reverse_pluginto(self, srctype, layer):
+
+       ans    = fake.Node()   
+       nodule = self.nodule(ans, layer)
+       gate   = fake.ReverseGate(nodify=fake.Map({nodule: ans}))  
+
+       logic = fake.ReverseLogic()
+       fun   = fake.FunWithGate(gate={logic: gate})
+       pack  = self.pack(
+                         srctype(pluginto={fun: ans}), # FIXME there's a tight coupling between ActivePack.pluginto()
+                         layer,                        # and tdnode.make_node(), cuz we've to mock out the impl of make_node()
+                         logic                         # to test pluginto() -- i.e. the output of pluginto() is strongly coupled
+                        )                              # to that of make_node(). Ideally, we would just pass a fake mock_node() to
+                                                       # ActivePack instead! Try to fix it!
+       assert pack.pluginto(fun) == ans
+
+
+   @pytest.mark.parametrize("srctype", [fake.ActivePack, fake.PointPack])
+   @pytest.mark.parametrize("layer", [0,1])
+   def test_forward_pluginto(self, srctype, layer):
+
+       ans    = fake.Node()
+       nodule = self.nodule(ans, layer)
+       gate   = fake.ForwardGate(nodify=fake.Map({nodule: ans}))   
+
+       logic = fake.ForwardLogic()
+       fun   = fake.FunWithGate(gate={logic: gate})
+       pack  = self.pack(
+                         srctype(pluginto={fun: ans}), 
+                         layer, 
+                         logic
+                        )
+
+       assert pack.pluginto(fun) == ans
 
 
 
 
+# --- Passive pack ---------------------------------------------------------- #
+
+class TestPassivePack:
+
+   @pytest.fixture(autouse=True)
+   def request_pack(self, passive_pack):
+
+       self.pack = passive_pack
+
+
+   @pytest.mark.parametrize("srctype", [fake.PassivePack, fake.PointPack])
+   def test_pluginto(self, srctype):
+
+       ans  = fake.Node()
+       fun  = fake.Fun()
+       pack = self.pack(srctype(pluginto={fun: ans}))
+
+       assert pack.pluginto(fun) == ans
 
 
 
 
+# --- Point pack ------------------------------------------------------------ #
+
+class TestPointPack:
+
+   @pytest.fixture(autouse=True)
+   def request_pack(self, point_pack):
+
+       self.pack = point_pack
 
 
+   @pytest.mark.parametrize("valence", [0,1,2])
+   def test_reverse_pluginto(self, valence):
 
+       vals  = tpl.repeat(fake.FunReturn, valence)
+       nodes = tpl.amap(lambda x: fake.Node(tovalue=x), vals)
 
+       ans  = fake.FunReturn()
+       fun  = fake.Fun(out={vals: ans})
+       pack = self.pack(nodes)  
 
-
-
-
-
+       assert pack.pluginto(fun) == ans
 
 
 
