@@ -320,6 +320,11 @@ class TestNodeTrain:
 
    @pytest.mark.parametrize("nodes, sources, layers", [
       [
+       tuple(), 
+       tuple(), 
+       tuple(),
+      ],
+      [
        (fake.ReverseNode(), ),
        (fake.Point(),       ),
        (1,                  ),
@@ -327,7 +332,7 @@ class TestNodeTrain:
       [
        (fake.ReverseNode(), fake.Point(), fake.ReverseNode()),
        (fake.Point(),       fake.Point(), fake.ReverseNode()), 
-       (0,1,1)
+       (0,1,1),
       ],
    ])
    def test_concatenate(self, nodes, sources, layers):
@@ -339,7 +344,303 @@ class TestNodeTrain:
        meta  = fake.Sequence(iterate=iter(zip(sources, layers)), size=size)
        train = self.node_train(nodes, meta)
 
-       return train.concatenate() == ans
+       assert train.concatenate() == ans
+
+
+
+
+# --- Node glue ------------------------------------------------------------- #
+
+class TestNodeGlue:
+
+   @pytest.fixture(autouse=True)
+   def request_node_glue(self, node_glue):
+
+       self.node_glue = node_glue
+
+
+   @pytest.fixture(autouse=True)
+   def request_concat_args_kernel(self, concat_args_kernel):
+
+       self.concat_args_kernel = concat_args_kernel
+
+
+   @pytest.mark.parametrize("args", [
+      tuple(),
+      (fake.Node(),                                        ),
+      (fake.Node(),        fake.Node()                     ),
+      (fake.FunReturn(),   fake.FunReturn()                ),
+      (fake.ReverseNode(), fake.ReverseNode(), fake.Point()),
+      (fake.ReverseNode(), fake.FunReturn(),   fake.Point()),
+   ])  
+   def test_iterate(self, args):
+
+       ans  = [tdnode.Point(x) if isinstance(x, fake.FunReturn) 
+                               else x for x in args]
+       glue = self.node_glue(args)
+
+       assert list(glue.iterate()) == ans
+
+
+   @pytest.mark.parametrize("valency", [0,1,2])
+   def test_concatenate(self, valency):
+
+       ans   = fake.ConcatArgs()  
+       train = fake.NodeTrain(concatenate=ans) 
+       args  = tpl.repeat(lambda: fake.ReverseNode(
+                                     attach=fake.TrivMap(train)), valency)
+
+       glue = self.node_glue(args) # FIXME testability is worse cuz 
+                                   #       we create NodeTrain inside instead of injecting it!
+       if   valency == 0:
+            assert glue.concatenate() == self.concat_args_kernel(0)
+       else:
+            assert glue.concatenate() == ans
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Concatenated arguments                                                 ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Concatenated arguments kernel ----------------------------------------- #
+
+def parametrize_concat_args_kernel():
+
+    labels = iter(range(5))
+
+    return pytest.mark.parametrize("label, nodes, sources, layers", [
+      [
+       next(labels),
+       tpl.repeat(fake.Node, 2),
+       tpl.repeat(fake.Node, 2),
+       (0,0),
+      ],
+      [
+       next(labels),
+       (fake.ReverseNode(), ),
+       (fake.Point(),       ),
+       (1,                  ),
+      ],
+      [
+       next(labels),
+       (fake.ReverseNode(), fake.Point(), fake.ReverseNode()),
+       (fake.ReverseNode(), fake.Point(), fake.Point()), 
+       (0,-1,1),
+      ],
+      [
+       next(labels),
+       (fake.ReverseNode(), fake.ReverseNode(), fake.Point()),
+       (fake.ReverseNode(), fake.Point(),       fake.Point()), 
+       (1,2,-1),
+      ],
+      [
+       next(labels),
+       (fake.ReverseNode(), fake.Point(), fake.ReverseNode()),
+       (fake.Point(),       fake.Point(), fake.ReverseNode()), 
+       (0,-1,0),
+      ],
+   ])
+
+
+
+
+class TestConcatArgsKernel:
+
+   @pytest.fixture(autouse=True)
+   def request_concat_args_kernel(self, concat_args_kernel):
+
+       self.concat_args_kernel = concat_args_kernel
+
+
+   @parametrize_concat_args_kernel()
+   def test_layer(self, label, nodes, sources, layers):
+
+       ans  = (0, 1, 1, 2, 0)[label]
+       args = self.concat_args_kernel(nodes, sources, layers)
+       assert args.layer() == ans
+
+
+   @parametrize_concat_args_kernel() 
+   def test_adxs(self, label, nodes, sources, layers):
+
+       ans  = ((0,1), (0,), (2,), (1,), (0,2))[label]
+       args = self.concat_args_kernel(nodes, sources, layers)
+       assert args.adxs() == ans
+
+
+   @parametrize_concat_args_kernel() 
+   def test_parents(self, label, nodes, sources, layers):
+
+       ans = (
+              lambda: (nodes[0], nodes[1]),
+              lambda: (nodes[0],         ),
+              lambda: (nodes[2],         ),
+              lambda: (nodes[1],         ),
+              lambda: (nodes[0], nodes[2]),
+             )[label]()
+       args = self.concat_args_kernel(nodes, sources, layers)
+       assert args.parents() == ans
+
+
+   @parametrize_concat_args_kernel() 
+   def test_deshell(self, label, nodes, sources, layers):
+
+       ans = (
+              lambda: (sources[0], sources[1]            ),
+              lambda: (sources[0],                       ),
+              lambda: (nodes[0],   nodes[1],   sources[2]),
+              lambda: (nodes[0],   sources[1], nodes[2]  ),
+              lambda: (sources[0], nodes[1],   sources[2]),
+             )[label]()
+       args = self.concat_args_kernel(nodes, sources, layers)
+       assert args.deshell() == ans
+
+
+   def test_deshelled(self):
+
+       ans   = fake.ConcatArgs()  
+       train = fake.NodeTrain(concatenate=ans) 
+
+       nA = fake.ReverseNode()
+       nB = fake.Point(attach=fake.TrivMap(train))
+       nC = fake.ReverseNode()
+
+       sA = fake.Point(attach=fake.TrivMap(train))
+       sB = fake.Point()
+       sC = fake.ReverseNode(attach=fake.TrivMap(train))
+
+       args = self.concat_args_kernel(
+                                      (nA, nB, nC), 
+                                      (sA, sB, sC), 
+                                      (1, -1,  1)
+                                     )
+
+       assert args.deshelled() == ans                                     
+
+
+
+
+# --- Concatenated arguments ------------------------------------------------ #
+
+class TestConcatArgs:
+
+   @pytest.fixture(autouse=True)
+   def request_concat_args_kernel(self, concat_args):
+
+       self.concat_args = concat_args
+
+
+   def _setup(self, valency, *args, **kwargs):
+
+       ans   = fake.ConcatArgs(*args, **kwargs)  
+       train = fake.NodeTrain(concatenate=ans) 
+       args  = tpl.repeat(lambda: fake.Node(
+                                  attach=fake.TrivMap(train)), valency) # FIXME put this in the fixture?
+
+       return self.concat_args(args)
+
+
+   @pytest.mark.parametrize("valency, layer", [
+      [2, 0], 
+      [1, 1], 
+      [3, 1], 
+      [3, 2], 
+      [3, 0],
+   ])
+   def test_layer(self, valency, layer):
+
+       args = self._setup(valency, layer)
+
+       assert args.layer() == layer
+
+
+   @pytest.mark.parametrize("valency, adxs", [
+      [2, (0,1)], 
+      [1, (0,) ], 
+      [3, (2,) ], 
+      [3, (1,) ], 
+      [3, (0,2)],
+   ])
+   def test_adxs(self, valency, adxs):
+
+       args = self._setup(valency, adxs=adxs)
+
+       assert args.adxs() == adxs
+
+
+   @pytest.mark.parametrize("valency, parents", [
+      [2, (fake.Node(), fake.Node())], 
+      [1, (fake.Node(),            )], 
+      [3, (fake.Node(),            )], 
+      [3, (fake.Node(),            )], 
+      [3, (fake.Node(), fake.Node())],
+   ])
+   def test_parents(self, valency, parents):
+
+       args = self._setup(valency, parents=parents)
+
+       assert args.parents() == parents
+
+
+   @pytest.mark.parametrize("valency", [2,1,3,3,3])
+   def test_deshell(self, valency):
+
+       deshell = tpl.repeat(fake.Node, valency)
+       args    = self._setup(valency, deshell=deshell)
+
+       assert args.deshell() == deshell
+
+
+   @pytest.mark.parametrize("valency", [2,1,3,3,3])
+   def test_deshelled(self, valency):
+
+       deshell = tpl.repeat(fake.Node, valency)
+       args    = self._setup(valency, deshell=deshell)
+
+       assert args.deshelled() == self.concat_args(deshell)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

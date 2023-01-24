@@ -187,7 +187,10 @@ class NodeTrain:
        
    def concatenate(self):
 
-       sources, layers = zip(*self._meta)
+       try:
+          sources, layers = zip(*self._meta)
+       except ValueError:
+          sources, layers = tuple(), tuple()
 
        return ConcatArgsKernel(tuple(self._nodes), sources, layers)
 
@@ -280,6 +283,15 @@ class ConcatArgsKernel(Cohesive):
        self._layers  = layers
 
 
+   def __eq__(self, other):
+
+       return all((
+                   self._nodes   == other._nodes,  
+                   self._sources == other._sources, 
+                   self._layers  == other._layers, 
+                 ))
+
+
    @tdutil.cacheable
    def layer(self):
 
@@ -329,6 +341,11 @@ class ConcatArgs(Cohesive):
    def __init__(self, args):
 
        self._args = args
+
+
+   def __eq__(self, other):
+
+       return self._args == other._args
 
 
    @property
