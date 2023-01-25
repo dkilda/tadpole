@@ -212,10 +212,13 @@ class TopoSort:
 
        self._top_node = top_node
        self._count    = dict(count)
-       self._pool     = None
+       self._pool     = []
 
 
    def add(self, node):
+
+       if self._count[node] == 0:
+          return self
 
        self._count[node] -= 1 
 
@@ -227,7 +230,7 @@ class TopoSort:
 
    def iterate(self):
 
-       self._pool = [self._top_node]
+       self.add(self._top_node)
 
        while self._pool:
 

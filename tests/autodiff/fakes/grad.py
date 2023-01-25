@@ -43,6 +43,12 @@ class DiffOp(tdgrad.DiffOp):
        return self._grad[seed]
 
 
+   @fakeit
+   def evaluate_and_grad(self, seed):
+
+       return self._evaluate, self._grad[seed]
+
+
 
 
 # --- Forward differential operator ----------------------------------------- #
