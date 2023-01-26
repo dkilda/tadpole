@@ -400,6 +400,167 @@ class TestTopoSort:
        assert tuple(toposort.iterate()) == ans 
 
 
+   @pytest.mark.parametrize("max_valency", [3]) 
+   def test_iterate(self, max_valency): 
+
+       parents = tpl.repeat(self._node, max_valency)
+
+       nodeA = self._node((parents[0], parents[1])) 
+       nodeB = self._node((parents[0], parents[2]))    
+       nodeC = self._node((nodeA,))  
+       nodeD = self._node((nodeB, parents[1]))
+       nodeE = self._node((nodeC, parents[1], nodeD))  
+
+       ans = (nodeE, nodeD, nodeB, parents[2], nodeC, 
+              nodeA, parents[1], parents[0])
+
+       assert tuple(tdgrad.toposort(nodeE)) == ans 
+
+
+
+
+# --- Gradient accumulation ------------------------------------------------- #
+
+class TestGradAccum:
+
+   @pytest.fixture(autouse=True)
+   def request_gradaccum(self, gradaccum):
+
+       self.gradaccum = gradaccum
+
+
+   def test_push(self): # FIXME cannot test .push() in isolation from .pop()
+
+       node = fake.ReverseNode()
+       grad = fake.FunReturn()
+
+       gradaccum = self.gradaccum()
+       assert gradaccum.push(node, grad) == gradaccum
+
+ 
+   def test_pop(self): # FIXME cannot test .push() in isolation from .pop()
+
+       node = fake.ReverseNode()
+       grad = fake.FunReturn()
+
+       gradaccum = self.gradaccum()
+       gradaccum.push(node, grad) 
+      
+       assert gradaccum.pop(node) == grad
+
+
+   def test_result(self): # FIXME cannot test .result() in isolation from .push() and .pop()
+
+       node = fake.ReverseNode()
+       grad = fake.FunReturn()
+
+       gradaccum = self.gradaccum()
+       gradaccum.push(node, grad) 
+
+       out = gradaccum.pop(node)
+      
+       assert gradaccum.result() == out
+
+
+   def test_result_simple(self): # FIXME cannot test .result() in isolation from .push() and .pop()
+
+       node = fake.ReverseNode()
+       grad = fake.FunReturn()
+
+       gradaccum = self.gradaccum()      
+       assert gradaccum.result() == None # FIXME should not return None! return a zero grad instead!
+
+
+   def test_accumulate(self):
+
+       nodeA, gradA = fake.ReverseNode(), fake.CumFunReturn()
+       nodeB, gradB = fake.ReverseNode(), fake.CumFunReturn()
+       nodeC, gradC = fake.ReverseNode(), fake.CumFunReturn()
+
+       gradaccum = self.gradaccum()   
+       gradaccum.accumulate(nodeA, gradA)
+       gradaccum.accumulate(nodeB, gradB)
+       gradaccum.accumulate(nodeA, gradB)
+       gradaccum.accumulate(nodeC, gradC)
+       gradaccum.accumulate(nodeB, gradA)
+       gradaccum.accumulate(nodeB, gradC)       
+
+       assert gradaccum.pop(nodeA) == (gradA + gradB)
+       assert gradaccum.pop(nodeB) == (gradB + gradA + gradC)
+       assert gradaccum.pop(nodeC) == gradC
+
+
+   @pytest.mark.parametrize("valency", [0,1,2,3])
+   def test_accumulate_simple(self, valency):
+
+       nodes = tpl.repeat(fake.ReverseNode, valency)
+       grads = tpl.repeat(fake.FunReturn, valency)
+
+       gradaccum = self.gradaccum()
+       for node, grad in zip(nodes, grads):
+           gradaccum.accumulate(node, grad)
+
+       assert tpl.amap(gradaccum.pop, nodes) == grads 
+       
+       
+       
+
+# --- Backpropagation ------------------------------------------------------- #
+
+class TestBackprop:
+
+   @pytest.fixture(autouse=True)
+   def request_backprop(self, backprop):
+
+       self.backprop = backprop
+
+
+   def _node(self, parents=tuple(), grads=tuple(), which=tuple()):
+
+       grads = tuple(grads[i] for i in which)
+       gate  = fake.ReverseGate(parents=parents, grads=grads)
+       return fake.ReverseNode(gate=gate)
+   
+    
+   def _grads(self, *parents):
+
+       return {parent: fake.CumFunReturn() for parent in parents}
+
+
+   def test_call(self):
+
+       gradsA = self._grads(0,1)
+       gradsB = self._grads(0,2)
+       gradsC = self._grads("A")
+       gradsD = self._grads("B",1)
+       gradsE = self._grads("C","D",1)
+
+       leaf0 = self._node()
+       leaf1 = self._node()
+       leaf2 = self._node()
+       nodeA = self._node((leaf0, leaf1),        gradsA, (0,   1))
+       nodeB = self._node((leaf0, leaf2),        gradsB, (0,   2))
+       nodeC = self._node((nodeA,      ),        gradsC, ("A",  ))
+       nodeD = self._node((nodeB, leaf1),        gradsD, ("B", 1))
+       nodeE = self._node((nodeC, leaf1, nodeD), gradsE, ("C", 1, "D"))
+
+       backprop = self.backprop(nodeE)
+
+       assert backprop(fake.CumFunReturn()) == (gradsA[0] + gradsB[0])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

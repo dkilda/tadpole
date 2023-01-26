@@ -48,6 +48,7 @@ from .grad import (
 from .misc import (
    Fun,
    FunReturn,
+   CumFunReturn,
    Map,
    TrivMap,
 )

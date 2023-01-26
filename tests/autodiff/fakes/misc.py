@@ -61,6 +61,43 @@ class Map:
 ###############################################################################
 
 
+# --- Cumulative Function return -------------------------------------------- #
+
+class CumFunReturn:
+
+   def __init__(self, val=NULL):
+
+       if val is NULL:
+          val = {FunReturn()} 
+
+       self._val = val
+
+
+   def __eq__(self, other):
+
+       return self._val == other._val
+
+
+   def __hash__(self):
+
+       return hash(self._val)
+
+  
+   def __add__(self, other):
+
+       if isinstance(other, FunReturn):
+          return self.__class__(self._val | {other})  
+
+       return self.__class__(self._val | other._val) 
+
+
+   def __mul__(self, other):
+
+       return self 
+
+
+
+
 # --- Function return ------------------------------------------------------- #
 
 class FunReturn:
