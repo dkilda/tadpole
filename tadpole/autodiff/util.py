@@ -58,7 +58,7 @@ class Sequence:
           return False
 
        if self._end > 0:
-          return self._xs[:self._end] == other._xs[other._end]
+          return self._xs[:self._end] == other._xs[:other._end]
 
        return True
 
