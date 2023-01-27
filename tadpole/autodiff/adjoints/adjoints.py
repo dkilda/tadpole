@@ -33,9 +33,9 @@ def make_adjfun(adjfun):
 def concatenate_adjfuns(*adjfuns, adxs=None):
 
     if adxs is None:
-       adxs = itertools.count() 
+       adxs = (adx for adx in range(len(adjfuns)))  
 
-    adjfun_by_adx = dict(zip(adxs, map(make_adjfun, adjfuns)))
+    adjfun_by_adx = {adx: make_adjfun(adjfuns[adx]) for adx in adxs}
 
     def adjfun(g, adx, out, *args):
         return adjfun_by_adx[adx](g, out, *args)
