@@ -203,21 +203,122 @@ class TestSequence:
 
 # --- Singular argument proxy (represents a single variable in args) -------- #
 
+class TestSingularArgProxy:
+
+   def _setup(self, args, adx, x):
+
+       if len(args) == 0:
+          return [x]
+
+       ans = {
+              0: lambda: [x,       args[1], args[2], args[3]],
+              1: lambda: [args[0], x,       args[2], args[3]],
+              2: lambda: [args[0], args[1], x,       args[3]],
+              3: lambda: [args[0], args[1], args[2], x],
+             }[adx]()
+
+       return ans
+
+
+   @pytest.mark.parametrize("args, adx, x", [
+      [tpl.repeat(fake.FunReturn, 4), 0, fake.FunReturn()],
+      [tpl.repeat(fake.FunReturn, 4), 1, fake.FunReturn()],
+      [tpl.repeat(fake.FunReturn, 4), 2, fake.FunReturn()],
+      [tpl.repeat(fake.FunReturn, 4), 3, fake.FunReturn()],
+   ])  
+   def test_insert(self, args, adx, x):
+
+       ans      = self._setup(args, adx, x)
+       argproxy = tdutil.SingularArgProxy(adx)
+
+       assert argproxy.insert(args, x) == ans
+
+
+   @pytest.mark.parametrize("args, adx, x", [
+      [tuple(),                       0, fake.FunReturn()],
+      [tpl.repeat(fake.FunReturn, 4), 0, fake.FunReturn()],
+      [tpl.repeat(fake.FunReturn, 4), 1, fake.FunReturn()],
+      [tpl.repeat(fake.FunReturn, 4), 2, fake.FunReturn()],
+      [tpl.repeat(fake.FunReturn, 4), 3, fake.FunReturn()],
+   ])  
+   def test_extract(self, args, adx, x):
+
+       args     = self._setup(args, adx, x)
+       argproxy = tdutil.SingularArgProxy(adx)
+
+       assert argproxy.extract(args) == x
+
+
+   @pytest.mark.parametrize("adx", [None,0,1,2])
+   def test_make_argproxy(self, adx):
+
+       if   adx is None:
+            ans = tdutil.SingularArgProxy(0)
+       else:
+            ans = tdutil.SingularArgProxy(adx)
+
+       assert tdutil.make_argproxy(adx) == ans
 
 
 
 
 # --- Plural argument proxy (represents an ntuple variable in args) --------- #
 
+class TestPluralArgProxy:
+
+   def _setup(self, args, adx, x):
+
+       if len(args) == 0:
+          return x
+
+       ans = {
+              (1,):    lambda: [args[0], x[0],    args[2], args[3]],
+              (0,1):   lambda: [x[0],    x[1],    args[2], args[3]],
+              (1,3):   lambda: [args[0], x[0],    args[2], x[1]],
+              (0,2,3): lambda: [x[0],    args[1], x[1],    x[2]],
+              (0,3):   lambda: [x[0],    args[1], args[2], x[1]],
+             }[adx]()
+
+       return ans
 
 
-# --- Unary function argument proxy ----------------------------------------- #
+   @pytest.mark.parametrize("args, adx, x", [
+      [tpl.repeat(fake.FunReturn, 4), (1,),    tpl.repeat(fake.FunReturn, 1)],
+      [tpl.repeat(fake.FunReturn, 4), (0,1),   tpl.repeat(fake.FunReturn, 2)],
+      [tpl.repeat(fake.FunReturn, 4), (1,3),   tpl.repeat(fake.FunReturn, 2)],
+      [tpl.repeat(fake.FunReturn, 4), (0,2,3), tpl.repeat(fake.FunReturn, 3)],
+      [tpl.repeat(fake.FunReturn, 4), (0,3),   tpl.repeat(fake.FunReturn, 2)],
+   ])  
+   def test_insert(self, args, adx, x):
+
+       ans      = self._setup(args, adx, x)
+       argproxy = tdutil.PluralArgProxy(adx)
+
+       assert argproxy.insert(args, x) == ans
 
 
+   @pytest.mark.parametrize("args, adx, x", [
+      [tuple(),                       (0,1),   tpl.repeat(fake.FunReturn, 2)],
+      [tpl.repeat(fake.FunReturn, 4), (1,),    tpl.repeat(fake.FunReturn, 1)],
+      [tpl.repeat(fake.FunReturn, 4), (0,1),   tpl.repeat(fake.FunReturn, 2)],
+      [tpl.repeat(fake.FunReturn, 4), (1,3),   tpl.repeat(fake.FunReturn, 2)],
+      [tpl.repeat(fake.FunReturn, 4), (0,2,3), tpl.repeat(fake.FunReturn, 3)],
+      [tpl.repeat(fake.FunReturn, 4), (0,3),   tpl.repeat(fake.FunReturn, 2)],
+   ])  
+   def test_extract(self, args, adx, x):
+
+       args     = self._setup(args, adx, x)
+       argproxy = tdutil.PluralArgProxy(adx)
+
+       assert argproxy.extract(args) == x
 
 
+   @pytest.mark.parametrize("adx", [(0,1), (1,), (0,2,3)])
+   def test_make_argproxy(self, adx):
 
+       ans = tdutil.SingularArgProxy(adx)
 
+       assert tdutil.make_argproxy(adx) == ans
 
 
 
