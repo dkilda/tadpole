@@ -50,6 +50,9 @@ from tests.autodiff.fixtures.grad import (
 )
 
 
+from tests.autodiff.fixtures.nary_op import (
+   nary_op,
+)
 
 
 

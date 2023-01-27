@@ -98,16 +98,34 @@ class Sequence:
 
 
 
+###############################################################################
+###                                                                         ###
+###  Argument proxy: represents a variable in an argument list at a given   ###
+###                  argument index. Performs insertion and extraction of   ###
+###                  this variable to/from the argument list.               ###
+###                                                                         ###
+###############################################################################
+
+# --- Argument proxy -------------------------------------------------------- #
+
+class ArgProxy(tdutil.ArgProxy):
+
+   def __init__(self, insert=NULL, extract=NULL):
+
+       self._insert  = insert
+       self._extract = extract
 
 
+   @fakeit
+   def insert(self, args, x):
+
+       return self._insert[(args, x)]
 
 
+   @fakeit
+   def extract(self, args):
 
-
-
-
-
-
+       return self._extract[args]
 
 
 

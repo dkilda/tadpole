@@ -23,6 +23,15 @@ class NaryOp:
        self._argproxy = argproxy
 
 
+   def __eq__(self, other):
+
+       return all((
+                   self._unary_op == other._unary_op, 
+                   self._fun      == other._fun, 
+                   self._argproxy == other._argproxy,
+                 ))
+
+
    def __call__(self, *args, **kwargs):
 
        def unary_fun(x):

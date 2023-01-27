@@ -4,6 +4,7 @@
 
 from .util import (
    Sequence,
+   ArgProxy,
 )
 
 
@@ -46,6 +47,7 @@ from .grad import (
 
 
 from .misc import (
+   Op,
    Fun,
    FunReturn,
    CumFunReturn,

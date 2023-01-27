@@ -137,7 +137,25 @@ class Fun:
 
 
 
+# --- General operator ------------------------------------------------------ #
 
+class Op:
+
+   def __init__(self, args=NULL, transform=NULL):
+
+       self._args      = args
+       self._transform = transform
+
+
+   def __call__(self, fun, *args):
+
+       if self._transform is not NULL:
+          args = self._transform[args]
+
+       if self._args is not NULL:
+          args = {self._args: self._args}[args]
+ 
+       return fun(*args)
 
 
 
