@@ -8,6 +8,32 @@ from tests.autodiff.fakes.misc import Fun, FunReturn, Map
 
 
 
+###############################################################################
+###                                                                         ###
+###  Cache for methods with one-time evaluation                             ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Fake class with a cacheable method ------------------------------------ #
+
+class CacheMe:
+
+   def __init__(self):
+
+       self._sentinel = 0
+
+
+   def sentinel(self):
+
+       return self._sentinel
+
+
+   def compute(self):
+
+       self._sentinel += 1
+       return FunReturn()
+
 
 
 
@@ -105,6 +131,7 @@ class Sequence:
 ###                  this variable to/from the argument list.               ###
 ###                                                                         ###
 ###############################################################################
+
 
 # --- Argument proxy -------------------------------------------------------- #
 

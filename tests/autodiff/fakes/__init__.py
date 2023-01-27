@@ -3,6 +3,7 @@
 
 
 from .util import (
+   CacheMe,
    Sequence,
    ArgProxy,
 )

@@ -11,7 +11,7 @@ import abc
 ###############################################################################
 
 
-# --- Decorator for cacheable methods -------------------------------------- #
+# --- Decorator for cacheable methods --------------------------------------- #
 
 def cacheable(fun):
 
