@@ -108,7 +108,7 @@ class ReverseGate(Gate):
    @fakeit
    def accumulate_parent_grads(self, seed, grads):
 
-       for parent, grad in zip(self._parents, self._grads):
+       for parent, grad in zip(self._parents, self._grads(seed)):
            grads.accumulate(parent, grad) 
 
        return self

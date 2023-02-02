@@ -16,14 +16,26 @@ import tests.common.ntuple as tpl
 
 # TODO probs we should just use factories for fakes, and ctors/fixtures for real objects?
 
-class ReverseGateFactory:
 
-   def __init__(self, parents=tuple()):
+class ReverseGateFactory: # TODO could also make SeededReverseGateFactory decorator...
+
+   def __init__(self, parents=tuple(), seed=None):
 
        if isinstance(parents, int):
           parents = tpl.repeat(fake.ReverseNode, parents)
 
        self._parents = parents
+       self._seed    = seed
+
+
+   @property
+   @tdutil.cacheable
+   def gradfun(self):
+
+       if self._seed is None:
+          return lambda seed: self.grads
+
+       return lambda seed: {self._seed: self.grads}[seed]
 
 
    @property
@@ -51,7 +63,13 @@ class ReverseGateFactory:
    @tdutil.cacheable
    def gate(self):
 
-       return fake.ReverseGate(parents=self.parents, grads=self.grads)  
+       return fake.ReverseGate(
+                               parents=self.parents, 
+                               grads=self.gradfun
+                              )  
+
+
+
 
 
 

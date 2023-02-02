@@ -13,7 +13,74 @@ import tests.common.ntuple as tpl
 
 
 
+# TODO probs we should just use factories for fakes, and ctors/fixtures for real objects?
 
+class ReverseGateFactory: # TODO could also make SeededReverseGateFactory decorator...
+
+   def __init__(self, parents=tuple(), seed=None):
+
+       if isinstance(parents, int):
+          parents = tpl.repeat(fake.ReverseNode, parents)
+
+       self._parents = parents
+       self._seed    = seed
+
+
+   @property
+   @tdutil.cacheable
+   def gradfun(self):
+
+       if self._seed is None:
+          return lambda seed: self.grads
+
+       return lambda seed: {self._seed: self.grads}[seed]
+
+
+   @property
+   @tdutil.cacheable
+   def parents(self):
+
+       return self._parents
+
+
+   @property
+   @tdutil.cacheable
+   def grads(self):
+
+       return tpl.repeat(fake.CumFunReturn, self.valency)
+
+
+   @property
+   @tdutil.cacheable
+   def valency(self):
+
+       return len(self._parents)
+
+
+   @property
+   @tdutil.cacheable
+   def gate(self):
+
+       return fake.ReverseGate(
+                               parents=self.parents, 
+                               grads=self.gradfun
+                              )  
+
+
+
+
+@pytest.fixture
+def reverse_gate_factory():
+
+    def wrap(*args, **kwargs):
+        return ReverseGateFactory(*args, **kwargs)
+
+    return wrap
+
+
+
+
+"""
 class ReverseGateFactory:
 
    def __init__(self, valency=2):
@@ -133,7 +200,7 @@ def reverse_node_factory(reverse_gate_factory):
         return ReverseNodeFactory(gatefactory, *args, **kwargs)
 
     return wrap
-
+"""
 
 
 
@@ -639,12 +706,6 @@ class TestReverseNode(TestReverse):
        self.gate_factory = reverse_gate_factory
 
 
-   @pytest.fixture(autouse=True)
-   def request_node_factory(self, reverse_node_factory):
-
-       self.node_factory = reverse_node_factory
-
-
    def test_eq(self):
 
        nodule = fake.Nodule()
@@ -762,11 +823,12 @@ class TestReverseNode(TestReverse):
    @pytest.mark.parametrize("valency", [1,2,3]) 
    def test_accumulate_parent_grads(self, valency):
 
-       x    = self.gate_factory(valency) # TODO how to chain factories?
+       seed = fake.CumFunReturn()
+       x    = self.gate_factory(valency, seed) 
        node = self.node(gate=x.gate)
        
        accum = tdgrad.GradAccum()
-       accum.push(node, x.seed)
+       accum.push(node, seed)
        node.accumulate_parent_grads(accum) 
 
        assert tpl.amap(accum.pop, x.parents) == x.grads 
