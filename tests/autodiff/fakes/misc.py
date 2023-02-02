@@ -68,7 +68,7 @@ class CumFunReturn:
    def __init__(self, val=NULL):
 
        if val is NULL:
-          val = {FunReturn()} 
+          val = frozenset([FunReturn()]) 
 
        self._val = val
 

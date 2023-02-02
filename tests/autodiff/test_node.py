@@ -3,10 +3,138 @@
 
 import pytest
 import tadpole.autodiff.adjoints as tda
+import tadpole.autodiff.util     as tdutil
 import tadpole.autodiff.node     as tdnode
+import tadpole.autodiff.graph    as tdgraph
+import tadpole.autodiff.grad     as tdgrad
 import tests.autodiff.fakes      as fake
 
 import tests.common.ntuple as tpl
+
+
+
+
+class ReverseGateFactory:
+
+   def __init__(self, valency=2):
+
+       self._valency = valency
+
+
+   @property
+   @tdutil.cacheable
+   def parents(self):
+
+       return tpl.repeat(fake.FunReturn, self._valency)
+
+
+   @property
+   @tdutil.cacheable
+   def grads(self):
+
+       return tpl.repeat(fake.FunReturn, self._valency)
+
+
+   @property
+   @tdutil.cacheable
+   def seed(self):
+
+       return fake.FunReturn()
+
+
+   @property
+   @tdutil.cacheable
+   def fun(self):
+
+       return fake.Fun()
+
+
+   @property
+   @tdutil.cacheable
+   def vjp(self):
+
+       return fake.Fun({(self.seed,): self.grads})
+
+
+   @property
+   @tdutil.cacheable
+   def gate(self):
+
+       return tdnode.ReverseGate(self.parents, self.fun, self.vjp)  
+
+
+
+
+class ReverseNodeFactory:
+
+   def __init__(self, gatefactory, source=None, layer=None):
+
+       if source is None: source = fake.FunReturn()
+       if layer  is None: layer  = fake.FunReturn()
+
+       self._gatefactory = gatefactory
+       self._source      = source
+       self._layer       = layer
+
+
+   @property
+   @tdutil.cacheable   
+   def source(self):
+
+       return self._source  
+
+
+   @property
+   @tdutil.cacheable   
+   def layer(self):
+
+       return self._layer  
+
+
+   @property
+   @tdutil.cacheable   
+   def nodule(self):
+
+       return Nodule(self.source, self.layer)
+   
+
+   @property
+   @tdutil.cacheable   
+   def gate(self):
+
+       return self.gate_factory.gate()  
+
+ 
+   @property
+   @tdutil.cacheable
+   def node(self):
+
+       return tdnode.ReverseNode(self.nodule, self.gate)  
+
+
+
+@pytest.fixture
+def reverse_gate_factory():
+
+    def wrap(*args, **kwargs):
+        return ReverseGateFactory(*args, **kwargs)
+
+    return wrap
+
+
+
+@pytest.fixture
+def reverse_node_factory(reverse_gate_factory):
+
+    def wrap(*args, **kwargs):
+
+        gatefactory = reverse_gate_factory(kwargs.get("valency"))
+
+        return ReverseNodeFactory(gatefactory, *args, **kwargs)
+
+    return wrap
+
+
 
 
 
@@ -505,6 +633,17 @@ class TestForwardNode(TestForward):
 
 class TestReverseNode(TestReverse): 
 
+   @pytest.fixture(autouse=True)
+   def request_gate_factory(self, reverse_gate_factory):
+
+       self.gate_factory = reverse_gate_factory
+
+
+   @pytest.fixture(autouse=True)
+   def request_node_factory(self, reverse_node_factory):
+
+       self.node_factory = reverse_node_factory
+
 
    def test_eq(self):
 
@@ -561,6 +700,7 @@ class TestReverseNode(TestReverse):
        assert node.tovalue() == ans 
 
  
+   """
    def test_attach(self): 
 
        ans    = fake.NodeTrain()               
@@ -570,6 +710,23 @@ class TestReverseNode(TestReverse):
        node = self.node(fake.Nodule(attach={train1: ans}))
 
        assert node.attach(train2) == ans
+   """
+
+   @pytest.mark.parametrize("source, layer", [
+      [fake.FunReturn(), fake.FunReturn()]
+   ]) 
+   def test_attach(self, source, layer):
+
+       node = self.node(tdnode.Nodule(source, layer))
+
+       train  = tdgraph.NodeTrain() # TODO make factory for NodeTrain to automate this
+       train1 = tdgraph.NodeTrain(
+                                  tdutil.Sequence([node], end=1), 
+                                  tdutil.Sequence([(source, layer)], end=1) # FIXME Sequence should have auto-init of _end
+                                 )                                          # i.e. we shouldn't be able to pass contradictory data
+
+       assert node.attach(train) == train1 
+
 
 
    @pytest.mark.parametrize("valency", [1,2,3]) 
@@ -583,7 +740,8 @@ class TestReverseNode(TestReverse):
 
        assert node.logic(others, adxs, out, args) == ans
 
-    
+       
+   """    
    @pytest.mark.parametrize("valency", [1,2,3]) 
    def test_accumulate_parent_grads(self, valency):
 
@@ -598,6 +756,20 @@ class TestReverseNode(TestReverse):
        node.accumulate_parent_grads(accum)
        
        assert tpl.amap(accum.accumulated, parents) == grads 
+   """
+
+
+   @pytest.mark.parametrize("valency", [1,2,3]) 
+   def test_accumulate_parent_grads(self, valency):
+
+       x    = self.gate_factory(valency) # TODO how to chain factories?
+       node = self.node(gate=x.gate)
+       
+       accum = tdgrad.GradAccum()
+       accum.push(node, x.seed)
+       node.accumulate_parent_grads(accum) 
+
+       assert tpl.amap(accum.pop, x.parents) == x.grads 
 
 
    @pytest.mark.parametrize("valency", [1,2,3]) 

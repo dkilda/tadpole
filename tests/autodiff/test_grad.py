@@ -3,12 +3,306 @@
 
 import pytest
 import tadpole.autodiff.adjoints as tda
+import tadpole.autodiff.util     as tdutil
 import tadpole.autodiff.node     as tdnode
 import tadpole.autodiff.graph    as tdgraph
 import tadpole.autodiff.grad     as tdgrad
 import tests.autodiff.fakes      as fake
 
 import tests.common.ntuple as tpl
+
+
+
+
+# TODO probs we should just use factories for fakes, and ctors/fixtures for real objects?
+
+class ReverseGateFactory:
+
+   def __init__(self, parents=tuple()):
+
+       if isinstance(parents, int):
+          parents = tpl.repeat(fake.ReverseNode, parents)
+
+       self._parents = parents
+
+
+   @property
+   @tdutil.cacheable
+   def parents(self):
+
+       return self._parents
+
+
+   @property
+   @tdutil.cacheable
+   def grads(self):
+
+       return tpl.repeat(fake.CumFunReturn, self.valency)
+
+
+   @property
+   @tdutil.cacheable
+   def valency(self):
+
+       return len(self._parents)
+
+
+   @property
+   @tdutil.cacheable
+   def gate(self):
+
+       return fake.ReverseGate(parents=self.parents, grads=self.grads)  
+
+
+
+
+class ReverseNodeFactory:
+
+   def __init__(self, gatefactory):
+
+       self._gatefactory = gatefactory
+
+
+   @property
+   @tdutil.cacheable
+   def parents(self):
+
+       return self._gatefactory.parents
+
+
+   @property
+   @tdutil.cacheable
+   def grads(self):
+
+       return self._gatefactory.grads
+
+
+   @property
+   @tdutil.cacheable
+   def valency(self):
+
+       return self._gatefactory.valency
+
+
+   @property
+   @tdutil.cacheable
+   def gate(self):
+
+       return self._gatefactory.gate
+
+
+   @property
+   @tdutil.cacheable
+   def node(self):  
+
+       return fake.ReverseNode(gate=self.gate)
+
+
+
+
+@pytest.fixture
+def reverse_gate_factory():
+
+    def wrap(*args, **kwargs):
+        return ReverseGateFactory(*args, **kwargs)
+
+    return wrap
+
+
+
+
+@pytest.fixture
+def reverse_node_factory(reverse_gate_factory):
+
+    def wrap(*args, **kwargs):
+
+        gatefactory = reverse_gate_factory(*args, **kwargs)
+
+        return ReverseNodeFactory(gatefactory)
+
+    return wrap
+
+
+
+
+
+
+
+
+
+
+
+
+
+"""
+
+class ReverseGateFactory:
+
+   def __init__(self, parents=None, seed=None):
+
+       if parents is None: parents = 2
+       if seed    is None: seed    = fake.FunReturn()
+
+       self._parents = parents
+       self._seed    = seed
+
+
+   def with_seed(self, seed):
+
+       return self.__class__(self._parents, seed)
+
+
+   @property
+   @tdutil.cacheable
+   def valency(self):
+
+       return len(self.parents)
+
+
+   @property
+   @tdutil.cacheable
+   def parents(self):
+
+       if isinstance(self._parents, int):
+          return tpl.repeat(fake.FunReturn, self._parents) # FIXME: parents can be int, list of FunReturn, list of Nodes
+
+       return self._parents
+
+
+   @property
+   @tdutil.cacheable
+   def grads(self):
+
+       return tpl.repeat(fake.FunReturn, self.valency)
+
+
+   @property
+   @tdutil.cacheable
+   def seed(self):
+
+       return self._seed
+
+
+   @property
+   @tdutil.cacheable
+   def fun(self):
+
+       return fake.Fun()
+
+
+   @property
+   @tdutil.cacheable
+   def vjp(self):
+
+       return fake.Fun({(self.seed,): self.grads})
+
+
+   @property
+   @tdutil.cacheable
+   def gate(self):
+
+       return tdnode.ReverseGate(self.parents, self.fun, self.vjp)  
+
+
+
+
+class ReverseNodeFactory:
+
+   def __init__(self, gatefactory, source=None, layer=None):
+
+       if source is None: source = fake.FunReturn()
+       if layer  is None: layer  = fake.FunReturn()
+
+       self._gatefactory = gatefactory
+       self._source      = source
+       self._layer       = layer
+
+
+   def with_seed(self, seed):
+
+       return self.__class__(self._gatefactory.with_seed(seed), source, layer)
+
+
+   @property
+   @tdutil.cacheable   
+   def source(self):
+
+       return self._source  
+
+
+   @property
+   @tdutil.cacheable   
+   def layer(self):
+
+       return self._layer  
+
+
+   @property
+   @tdutil.cacheable   
+   def nodule(self):
+
+       return tdnode.Nodule(self.source, self.layer)
+
+
+   @property
+   @tdutil.cacheable
+   def valency(self):
+
+       return self._gatefactory.valency
+
+
+   @property
+   @tdutil.cacheable
+   def parents(self):
+
+       return self._gatefactory.parents
+
+
+   @property
+   @tdutil.cacheable
+   def grads(self):
+
+       return self._gatefactory.grads 
+
+
+   @property
+   @tdutil.cacheable   
+   def gate(self):
+
+       return self._gatefactory.gate 
+
+ 
+   @property
+   @tdutil.cacheable
+   def node(self):
+
+       return tdnode.ReverseNode(self.nodule, self.gate)  
+
+
+
+
+@pytest.fixture
+def reverse_gate_factory():
+
+    def wrap(*args, **kwargs):
+        return ReverseGateFactory(*args, **kwargs)
+
+    return wrap
+
+
+
+
+@pytest.fixture
+def reverse_node_factory(reverse_gate_factory):
+
+    def wrap(parents=None, source=None, layer=None):
+
+        gatefactory = reverse_gate_factory(parents)
+
+        return ReverseNodeFactory(gatefactory, source, layer)
+
+    return wrap
+"""
 
 
 
@@ -515,6 +809,32 @@ class TestBackprop:
        self.backprop = backprop
 
 
+   @pytest.fixture(autouse=True)
+   def request_nodefactory(self, reverse_node_factory):
+
+       self.nodefactory = reverse_node_factory
+
+
+   def test_call(self):
+
+       x0 = self.nodefactory()
+       x1 = self.nodefactory()
+       x2 = self.nodefactory()
+
+       xA = self.nodefactory((x0.node, x1.node))
+       xB = self.nodefactory((x0.node, x2.node))
+       xC = self.nodefactory((xA.node,        ))
+       xD = self.nodefactory((xB.node, x1.node))
+       xE = self.nodefactory((xC.node, x1.node, xD.node))
+
+       backprop = self.backprop(xE.node)
+
+       assert backprop(fake.CumFunReturn()) == (xA.grads[0] + xB.grads[0])
+ 
+
+
+   """
+
    def _node(self, parents=tuple(), grads=tuple(), which=tuple()):
 
        grads = tuple(grads[i] for i in which)
@@ -547,7 +867,7 @@ class TestBackprop:
        backprop = self.backprop(nodeE)
 
        assert backprop(fake.CumFunReturn()) == (gradsA[0] + gradsB[0])
-
+   """
 
 
 
