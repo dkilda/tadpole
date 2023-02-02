@@ -12,7 +12,306 @@ import tests.autodiff.fakes      as fake
 import tests.common.ntuple as tpl
 
 
+"""
+a) -- Make a cls that sets up all the fake data
 
+b) -- Then wrap it with a cls that generates the actual object
+
+c) -- So we can take cls from (a) and generate grads and parents 
+
+d) -- Then we can define a seed (for another gate) using those grads
+
+e) -- Create a real/fake gate with grads, parents, seed
+
+
+class ReverseGateSetup:
+
+   def with_seed(self, seed):
+
+   def with_grads(self, grads):
+
+   def with_parents(self, parents):
+
+
+   def seed(self):
+    
+   def grads(self):
+
+   def parents(self):
+
+
+gradsA = gateA.grads()
+gradsB = gateB.grads()
+
+seed = gradsA[0] + gradsB[0]
+   
+gateC = gateC.with_seed(seed)
+gateA = gateA.with_parents(gateC)
+
+"""
+
+"""
+Altway: 
+
+--- create separate classes for Parents, Grads
+
+--- can set: grads = grads.with_seed(seed) 
+
+--- pass'em to ReverseNode(gate=ReverseGate(parents, grads)) to create a new object
+
+E.g.
+
+class ReverseGate(Gate):
+
+   @fakeit
+   def accumulate_parent_grads(self, seed, grads):
+
+       for parent, grad in zip(self._parents, self._grads.vjp(seed)): # NB Parents cls impls 
+           grads.accumulate(parent, grad) 
+
+       return self
+
+
+--- Use a factory as follows:
+
+grads = Grads()
+
+... do some calcs to get seed ...
+
+grads = grads.with_seed(seed)
+setup = ReverseNodeSetup(ReverseGateSetup(parents, grads))
+node  = setup.node()
+
+which looks same as before, but parents/grads are Parents/Grads objects instead!
+which we can setup before creating gate/node factory!
+
+
+--- Let Setup/Factory cls take care of defaults... 
+
+
+--- How to automate the above?
+
+    def node_setup(..., parents, grads):
+     
+        return ReverseNodeSetup(ReverseGateSetup(parents, grads))
+
+    takes care of defaults and sets it up in one go. The whole process becomes:
+
+    grads = Grads()
+
+    ... do some calcs to get seed ...
+
+    grads = grads.with_seed(seed)
+    setup = node_setup(..., parents, grads) 
+    node  = setup.node()
+
+    Much like before, but because grads = Grads obj, we can set seed on the same object
+    plus keep grads-and-seed together.
+
+
+SO THE MAIN CHANGES ARE:
+
+--- Use Grads, ReverseParents, ForwardParents, Args, etc classes to manipulate groups of related objects
+
+
+--- Use ReverseNodeSetup, ReverseGateSetup, etc factories as before, but their ctor arguments are 
+    Grads, ReverseParents, etc objects instead of raw tuples/collections. Let these factories take care
+    of generating defaults (e.g. parents/grads if they're not set).
+
+
+--- For more specific test scenarios, we may wanna chain factories together, e.g. do
+    ReverseNodeSetup(ReverseGateSetup(parents, grads)) in one go.
+
+    The specific non-default args may vary from one test to another. But what we could do is define
+    a factory function    
+
+    def node_setup(parents, grads):
+
+        return ReverseNodeSetup(ReverseGateSetup(parents, grads))
+ 
+    or equivalently
+
+    class ReverseNodeSetupEnvelope(ReverseNodeSetup):
+
+       def __init__(self, parents, grads):
+
+           super.__init__(ReverseGateSetup(parents, grads))
+      
+    to create a special setup for certain test cases (say, we could create multiple versions 
+    of ReverseNodeSetupEnvelope for different test cases, like ReverseNodeSetupEnvelopeA, ReverseNodeSetupEnvelopeB, etc 
+    which can take parents + grads, or source + layer, or source + parents depending on the test case).
+
+
+--- The whole process looks like:
+
+    grads = Grads()
+
+    ... do some calcs to get seed ...
+
+    grads = grads.with_seed(seed)
+    setup = node_setup(..., parents, grads) / or / ReverseNodeSetupEnvelope(parents, grads)
+    node  = setup.node()
+
+
+--- We can probs abandon fixtures for all cases that return wrap(args) functions!
+
+
+"""
+
+
+
+class ReverseGateSetup:
+
+   def __init__(self, parents=None, grads=None, seed=None):
+
+       self._parents = parents
+       self._grads   = grads
+       self._seed    = seed
+
+
+   @property
+   @tdutil.cacheable
+   def parents(self):
+
+       if self._parents is None:
+          return tuple()
+
+       if isinstance(self._parents, int):
+          return tpl.repeat(fake.ReverseNode, self._parents)
+
+       return self._parents
+
+
+   @property
+   @tdutil.cacheable
+   def grads(self):
+
+       if self._grads is None:
+          return tpl.repeat(fake.CumFunReturn, self.valency)
+
+       return self._grads
+
+
+   @property
+   @tdutil.cacheable
+   def valency(self):
+
+       return len(self.parents)
+
+
+   @property
+   @tdutil.cacheable
+   def seed(self):
+
+       if self._seed is None:
+          return fake.CumFunReturn()
+
+       return self._seed
+
+
+   @property
+   @tdutil.cacheable
+   def fake(self):
+
+       grads = fake.Fun({(self.seed,): self.grads})
+
+       return fake.ReverseGate(
+                               parents=self.parents, 
+                               grads=grads
+                              )  
+
+   @property
+   @tdutil.cacheable
+   def real(self):
+ 
+       fun = fake.Fun()
+       vjp = fake.Fun({(self.seed,): self.grads})
+
+       return tdnode.ReverseGate(self.parents, fun, vjp)
+
+
+
+
+@pytest.fixture
+def reverse_gate_factory(): # FIXME could let fixtures take care of setting defaults
+
+    def wrap(*args, **kwargs):
+        return ReverseGateSetup(*args, **kwargs)
+
+    return wrap
+
+
+
+
+class ReverseNodeSetup:
+
+   def __init__(self, gate_setup, source=None, layer=None):
+
+       self._gate_setup = gate_setup
+       self._source     = source
+       self._layer      = seed
+
+
+   @property
+   @tdutil.cacheable
+   def source(self):
+
+       return self._source
+
+
+   @property
+   @tdutil.cacheable
+   def layer(self):
+
+       return self._layer
+
+
+   @property
+   @tdutil.cacheable
+   def nodule(self):
+
+       return tdnode.Nodule(self.source, self.layer)
+
+
+   @property
+   @tdutil.cacheable
+   def gate(self):
+
+       return self._gate_setup.fake
+
+
+   @property
+   @tdutil.cacheable
+   def fake(self):
+
+       return fake.ReverseNode(gate=self.gate)
+
+
+   @property
+   @tdutil.cacheable
+   def fake(self):
+
+       return tdnode.ReverseNode(self.nodule, self.gate)
+
+
+
+
+@pytest.fixture
+def reverse_node_factory():
+
+    def wrap(*args, **kwargs):
+
+        gate_setup = ReverseGateSetup(*args, **kwargs)
+
+        return ReverseNodeSetup(gate_setup) 
+
+    return wrap
+
+
+
+
+
+"""
 # TODO probs we should just use factories for fakes, and ctors/fixtures for real objects?
 
 class ReverseGateFactory: # TODO could also make SeededReverseGateFactory decorator...
@@ -76,132 +375,7 @@ def reverse_gate_factory():
         return ReverseGateFactory(*args, **kwargs)
 
     return wrap
-
-
-
-
 """
-class ReverseGateFactory:
-
-   def __init__(self, valency=2):
-
-       self._valency = valency
-
-
-   @property
-   @tdutil.cacheable
-   def parents(self):
-
-       return tpl.repeat(fake.FunReturn, self._valency)
-
-
-   @property
-   @tdutil.cacheable
-   def grads(self):
-
-       return tpl.repeat(fake.FunReturn, self._valency)
-
-
-   @property
-   @tdutil.cacheable
-   def seed(self):
-
-       return fake.FunReturn()
-
-
-   @property
-   @tdutil.cacheable
-   def fun(self):
-
-       return fake.Fun()
-
-
-   @property
-   @tdutil.cacheable
-   def vjp(self):
-
-       return fake.Fun({(self.seed,): self.grads})
-
-
-   @property
-   @tdutil.cacheable
-   def gate(self):
-
-       return tdnode.ReverseGate(self.parents, self.fun, self.vjp)  
-
-
-
-
-class ReverseNodeFactory:
-
-   def __init__(self, gatefactory, source=None, layer=None):
-
-       if source is None: source = fake.FunReturn()
-       if layer  is None: layer  = fake.FunReturn()
-
-       self._gatefactory = gatefactory
-       self._source      = source
-       self._layer       = layer
-
-
-   @property
-   @tdutil.cacheable   
-   def source(self):
-
-       return self._source  
-
-
-   @property
-   @tdutil.cacheable   
-   def layer(self):
-
-       return self._layer  
-
-
-   @property
-   @tdutil.cacheable   
-   def nodule(self):
-
-       return Nodule(self.source, self.layer)
-   
-
-   @property
-   @tdutil.cacheable   
-   def gate(self):
-
-       return self.gate_factory.gate()  
-
- 
-   @property
-   @tdutil.cacheable
-   def node(self):
-
-       return tdnode.ReverseNode(self.nodule, self.gate)  
-
-
-
-@pytest.fixture
-def reverse_gate_factory():
-
-    def wrap(*args, **kwargs):
-        return ReverseGateFactory(*args, **kwargs)
-
-    return wrap
-
-
-
-@pytest.fixture
-def reverse_node_factory(reverse_gate_factory):
-
-    def wrap(*args, **kwargs):
-
-        gatefactory = reverse_gate_factory(kwargs.get("valency"))
-
-        return ReverseNodeFactory(gatefactory, *args, **kwargs)
-
-    return wrap
-"""
-
 
 
 
@@ -607,7 +781,6 @@ class TestNodule:
 
 class TestForwardNode(TestForward): 
 
-
    def test_eq(self):
 
        nodule = fake.Nodule()
@@ -823,12 +996,12 @@ class TestReverseNode(TestReverse):
    @pytest.mark.parametrize("valency", [1,2,3]) 
    def test_accumulate_parent_grads(self, valency):
 
-       seed = fake.CumFunReturn()
-       x    = self.gate_factory(valency, seed) 
-       node = self.node(gate=x.gate)
+       x    = self.gate_factory(valency) 
+       node = self.node(gate=x.fake)
        
        accum = tdgrad.GradAccum()
-       accum.push(node, seed)
+       accum.push(node, x.seed)
+
        node.accumulate_parent_grads(accum) 
 
        assert tpl.amap(accum.pop, x.parents) == x.grads 
@@ -866,7 +1039,6 @@ class TestReverseNode(TestReverse):
 # --- Point (a disconnected node, only carries a value and no logic) -------- #
 
 class TestPoint:
-
 
    @pytest.fixture(autouse=True)
    def request_point(self, point):

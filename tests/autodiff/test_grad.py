@@ -14,6 +14,7 @@ import tests.common.ntuple as tpl
 
 
 
+
 # TODO probs we should just use factories for fakes, and ctors/fixtures for real objects?
 
 
@@ -849,6 +850,7 @@ class TestBackprop:
 
        assert backprop(fake.CumFunReturn()) == (xA.grads[0] + xB.grads[0])
  
+
 
 
    """
