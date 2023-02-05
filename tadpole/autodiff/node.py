@@ -1592,6 +1592,8 @@ class Node(NodeLike):
        self._gate   = gate
 
 
+
+   """
    def _signature(self):
 
        return Signature().type(self)
@@ -1599,19 +1601,53 @@ class Node(NodeLike):
                          .ids(self._source, self._gate)
 
 
+
    def __eq__(self, other):
+
+       log = LogicalChain()
+
+       log(type(self)  == type(other))
+       log(self._layer == other._layer)
+
+       log(id(self._source) == id(other._source))
+       log(id(self._gate)   == id(other._gate))
+
+       return bool(log)
+   """
+
+
+
+   def __eq__(self, other):
+
+       log = LogicalChain()
+
+       log.typ(self, other) 
+       log.ref(self._source, other._source)
+       log.ref(self._gate,   other._gate)
+       log.val(self._layer,  other._layer)
+
+       return bool(log)
+
+
+   """
+   def __eq__(self, other):
+
+       if type(self)  == type(other)  and
+          self._layer == other._layer and
+          id(self._source) == id(other._source)
+          id(self._gate)   == id(other._gate)
 
        return all((
 
-       type(self) == type(other),
+          type(self) == type(other),
         
-       self._layer == other._layer,
+          self._layer == other._layer,
 
-       id(self._source) == id(other._source),
-       id(self._gate)   == id(other._gate),
+          id(self._source) == id(other._source),
+          id(self._gate)   == id(other._gate),
        ))
 
-
+      
 
 
        # return self._signature() == other._signature()
@@ -1619,7 +1655,7 @@ class Node(NodeLike):
           type(self) == type(other)
           id(self._source) ==  
 
-       """
+
        return all((
                    type(self)       == type(other),
                    self._layer      == other._layer,

@@ -348,6 +348,171 @@ class ConcatArgsKernel(Cohesive):
        return glue.concatenate()
 
 
+###############################################################################
+###############################################################################
+###############################################################################
+
+
+class Differentiable: 
+
+   def __init__(self, fun):
+
+       self._fun = fun
+
+
+   def __call__(self, *args):
+
+       fun  = AdjointableFun(self, self._fun)
+       pack = ActivePack(ConcatArgs(args)) # FIXME hidden dependency
+
+       return pack.pluginto(fun) 
+              
+
+
+
+class NonDifferentiable:
+
+   def __init__(self, fun):
+
+       self._fun = fun
+
+
+   def __call__(self, *args):
+
+       pack = PassivePack(ConcatArgs(args)) # FIXME hidden dependency
+
+       return pack.pluginto(self._fun)
+              
+
+
+
+class NodeGlue:
+
+   def __init__(self, args):
+
+       self._args = args
+
+
+   def iterate(self):
+
+       return iter(map(tdnode.nodify, self._args))
+
+
+   def concatenate(self, train):
+
+       for arg in self.iterate():
+           train = arg.attach(train)
+
+       return train.concatenate()
+
+
+
+train = NodeTrain()
+args  = NodeGlue(args).concatenate(train)
+
+
+
+class ActivePack:
+
+   def __init__(self, args):
+
+       self._args = args
+
+
+   def layer(self):
+
+       return self._args.layer()
+
+
+   def adxs(self):
+
+       return self._args.adxs()
+
+
+   def parents(self):
+
+       return self._args.parents()
+
+
+   def deshell(self):
+
+       return self._args.deshell()
+
+
+   def deshelled(self):
+
+       return self.__class__(self._args.deshelled())
+
+
+   def pluginto(self, fun):
+
+       if not self.adxs():
+
+          args = self.deshell()
+          out  = fun(*(arg.tovalue() for arg in args))
+
+          return Point(out)
+
+       source = self.deshelled().pluginto(fun) # FIXME hidden dependency
+
+       op   = AdjointOp(fun, self.adxs(), source, *self.deshell())
+       gate = tdnode.make_gate(self.parents(), op) 
+
+       return tdnode.Node(source, self.layer(), gate)
+       
+
+
+class PassivePack:
+
+   def __init__(self, args):
+
+       self._args = args
+
+
+   def layer(self):
+
+       return self._args.layer()
+
+
+   def adxs(self):
+
+       return self._args.adxs()
+
+
+   def parents(self):
+
+       return self._args.parents()
+
+
+   def deshell(self):
+
+       return self._args.deshell()
+
+
+   def deshelled(self):
+
+       return self.__class__(self._args.deshelled())
+
+
+   def pluginto(self, fun):
+
+       if not self.adxs():
+
+          args = self.deshell()
+          out  = fun(*(arg.tovalue() for arg in args))
+
+          return Point(out)
+
+       return self.deshelled().pluginto(fun) # FIXME hidden dependency
+
+
+
+
+
+
+###############################################################################
+###############################################################################
+###############################################################################
 
 
 # --- Concatenated arguments ------------------------------------------------ #
