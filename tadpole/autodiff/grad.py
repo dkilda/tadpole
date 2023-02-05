@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import abc
+import collections
 
 import tadpole.autodiff.util    as tdutil
 import tadpole.autodiff.nary_op as tdnary
@@ -148,108 +149,159 @@ class ReverseDiffOp(DiffOp):
 ###############################################################################
 
 
-# --- Child-node counter ---------------------------------------------------- #
+# --- Traceable interface --------------------------------------------------- #
 
-class ChildCount:
+class Traceable(abc.ABC):
 
-   def __init__(self, top_node):
+   @abc.abstractmethod
+   def record(self, node, parents):
+       pass
 
-       self._top_node = top_node
-       self._count    = {}
-       self._pool     = None
 
-       self._last_visited = None 
- 
 
-   def visit(self, node):
+
+# --- Child count ----------------------------------------------------------- #
+
+class ChildCount(Traceable):
+
+   def __init__(self, parents=None, count=None):
+
+       if parents is None: parents = {}
+       if count   is None: count   = {}
+
+       self._parents = parents
+       self._count   = count
+
+
+   def record(self, node, parents):
+
+       self._parents[node] = parents
+       return self
+
+
+   def collect(self, node): 
+
+       node.trace(self) 
+       return self._parents[node]
+
+
+   def increase(self, node):
 
        try:
-           self._count[node] += 1
+           self._count[node] +=1
+           return tuple()
+
        except KeyError:
+
            self._count[node] = 1
-
-       self._last_visited = node
-       return self
+           return self._parents[node]
 
 
-   def add(self, nodes):
+   def decrease(self, node):
 
-       if self._count.get(self._last_visited) == 1:
-          self._pool.extend(nodes)
+       def fun(x):
 
-       return self
+           if self._count[x] == 0:
+              return tuple()
 
+           self._count[x] -= 1 
 
-   def compute(self):
+           if self._count[x] == 0:
+              return (x,)
 
-       self._pool = [self._top_node]
+           return tuple()
 
-       while self._pool:
-
-          node = self._pool.pop()
-          node.add_to_childcount(self)
-
-       return self
+       return sum(map(fun, self._parents[node]), tuple())
 
 
-   def iterate(self):
-
-       return iter(self._count.items())
 
 
-   def toposort(self):
+# --- Traversal ------------------------------------------------------------- #
 
-       return TopoSort(self._count, self._top_node)
+class Traversal:
 
-       
+   def __init__(self, end):
+
+       self._end = end
+
+
+   def sweep(self, step): 
+
+       pool = [self._end]
+
+       while pool:
+
+          node = pool.pop()
+          yield node
+          pool.extend(step(node))
+
+
+   def apply(self, step):
+
+       collections.deque(self.sweep(step), maxlen=0)
+       return self   
+
+
 
 
 # --- Topological sort ------------------------------------------------------ #
 
 class TopoSort:
 
-   def __init__(self, count, top_node):
+   def __init__(self, traversal, count):
 
-       self._top_node = top_node
-       self._count    = dict(count)
-       self._pool     = []
-
-
-   def add(self, node):
-
-       if self._count[node] == 0:
-          return self
-
-       self._count[node] -= 1 
-
-       if self._count[node] == 0:
-          self._pool.append(node) 
-
-       return self
+       self._traversal = traversal
+       self._count     = count
 
 
-   def iterate(self):
+   @tdutil.cacheable
+   def traverse(self):
 
-       self.add(self._top_node)
+       self._traversal.apply(self._count.collect)
+       self._traversal.apply(self._count.increase)
 
-       while self._pool:
-
-          node = self._pool.pop()
-          yield node
-
-          node.add_to_toposort(self)
+       return self._traversal.sweep(self._count.decrease)
 
 
+   def __iter__(self):
 
+       return self.traverse()
+       
+
+        
 
 # --- Create a topologically sorted iterator over the computation graph ----- #
 
-def toposort(top_node):
-    return (
-            ChildCount(top_node).compute()
-                                .toposort()
-                                .iterate()
-           )
+def toposort(end):
+
+    return TopoSort(Traversal(end), ChildCount())
+
+
+
+
+# --- Gradient summation ---------------------------------------------------- #
+
+class GradSum:
+
+   def __init__(self, **grads):
+
+       self._grads = grads
+
+
+   def add(self, node, grads):
+
+       self._grads[node] = reduce(tdmanip.add_grads, grads, None)
+       return self
+
+
+   def pop(self, node):
+
+       return self._grads.pop(node)
+
+
+   def get(self, node):
+
+       return self._grads.get(node)
 
 
 
@@ -258,33 +310,30 @@ def toposort(top_node):
 
 class GradAccum:
 
-   def __init__(self):
+   def __init__(self, **grads):
 
-       self._map  = {}
-       self._last = None
-
-
-   def result(self):
-
-       return self._last
+       self._grads = grads
 
 
-   def push(self, node, grad):
+   def add(self, nodes, grads):
 
-       self._map[node] = grad
+       for node, grad in zip(nodes, grads):
+           self._grads[node] = tdmanip.add_grads(self.get(node), grad)
+
        return self
 
 
-   def pop(self, node):
+   def pop(self, node): 
+ 
+       grad = self._grads.pop(node)
 
-       self._last = self._map.pop(node)
-       return self._last
+       self._grads[None] = grad
+       return grad
 
 
-   def accumulate(self, node, grad):
+   def get(self, node=None):
 
-       self._map[node] = tdmanip.add_grads(self._map.get(node), grad)
-       return self
+       return self._grads.get(node)
 
 
 
@@ -293,20 +342,19 @@ class GradAccum:
 
 class Backprop:
 
-   def __init__(self, top_node): 
+   def __init__(self, end): 
 
-       self._top_node = top_node
+       self._end = end
 
 
    def __call__(self, seed):
 
-       grads = GradAccum()  
-       grads.push(self._top_node, seed)
+       grads = GradAccum(**{self._end: seed})  
 
-       for node in toposort(self._top_node): 
-           node.accumulate_parent_grads(grads)
+       for node in toposort(self._end): 
+           grads = node.grads(grads)
 
-       return grads.result()
+       return grads.get()
 
 
 

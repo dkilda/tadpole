@@ -3,8 +3,9 @@
 
 import abc
 
-import tadpole.autodiff.util as tdutil
-import tadpole.autodiff.node as tdnode
+import tadpole.autodiff.adjoint as tda
+import tadpole.autodiff.util    as tdutil
+import tadpole.autodiff.node    as tdnode
 
 
 
@@ -66,9 +67,9 @@ class Graph:
 ###############################################################################
 
 
-# --- Function with gate ---------------------------------------------------- #
+# --- Adjointable Function -------------------------------------------------- #
 
-class FunWithGate:
+class AdjointableFun:
 
    def __init__(self, diff_fun, raw_fun):
 
@@ -80,10 +81,15 @@ class FunWithGate:
 
        return self._raw_fun(*args)
 
+  
+   def vjp(self, *args, **kwargs): 
 
-   def gate(self, logic):
+       return tda.vjpmap.get(self._diff_fun)(*args, **kwargs)
 
-       return logic.gate(self._diff_fun)
+
+   def jvp(self, *args, **kwargs): 
+
+       return tda.jvpmap.get(self._diff_fun)(*args, **kwargs)
 
 
 
@@ -99,7 +105,7 @@ class Differentiable:
 
    def __call__(self, *args):
 
-       fun         = FunWithGate(self, self._fun)
+       fun         = AdjointableFun(self, self._fun)
        concat_args = Active(ConcatArgs(args)) 
 
        return (
