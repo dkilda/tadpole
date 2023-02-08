@@ -1490,14 +1490,23 @@ class AdjointOp:
        return id(self)
 
 
-   def vjp(self):
+   def _apply(self, fun):
 
-       return self._fun.vjp(self._adxs, self._out, *self._args)
+       return fun(self._adxs, self._out, *self._args)
 
 
-   def jvp(self):
+   def vjp(self, seed):
 
-       return self._fun.jvp(self._adxs, self._out, *self._args)
+       vjpfun = tda.vjpmap.get(self._fun)
+
+       return self._apply(vjpfun)(seed)
+
+
+   def jvp(self, seed):
+
+       jvpfun = tda.jvpmap.get(self._fun)
+
+       return self._apply(jvpfun)(seed)
 
 
 

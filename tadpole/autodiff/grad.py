@@ -117,7 +117,7 @@ class ReverseDiffOp(DiffOp):
    @tdutil.cacheable
    def _compute(self):
 
-       with tdgraph.Graph(self._fun, self._x) as graph:
+       with tdgraph.Graph(self._fun, self._x) as graph: # FIXME input Graph instead!
           top_node = graph.build(tdnode.ReverseRootGate())  
 
        return top_node.tovalue(), Backprop(top_node)

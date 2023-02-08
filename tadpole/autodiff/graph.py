@@ -10,6 +10,397 @@ import tadpole.autodiff.node    as tdnode
 
 
 
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Concatenated arguments                                                 ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Cohesive interface ---------------------------------------------------- #
+
+class Cohesive(abc.ABC):
+
+   @abc.abstractmethod
+   def layer(self):
+       pass
+
+
+   @abc.abstractmethod
+   def adxs(self):
+       pass
+
+
+   @abc.abstractmethod
+   def parents(self):
+       pass
+
+
+   @abc.abstractmethod
+   def deshell(self):
+       pass
+
+
+   @abc.abstractmethod
+   def deshelled(self):
+       pass
+
+
+
+
+# --- Concatenated arguments kernel ----------------------------------------- #
+
+class ConcatArgs(Cohesive): 
+
+   def __init__(self, nodes=None, sources=None, layers=None):
+
+       if nodes   is None: nodes   = tdutil.Sequence()
+       if sources is None: sources = tdutil.Sequence()
+       if layers  is None: layers  = tdutil.Sequence()
+
+       self._nodes   = nodes
+       self._sources = sources
+       self._layers  = layers
+
+
+   def __eq__(self, other):
+
+       log = LogicalChain()
+
+       log.typ(self, other) 
+       log.val(self._nodes,   other._nodes)
+       log.val(self._sources, other._sources)
+       log.val(self._layers,  other._layers)
+
+       return bool(log)
+
+
+   def __hash__(self):
+
+       return id(self)
+
+
+   def add(self, node, source, layer):
+
+       return self.__class__(
+                             self._nodes.push(node), 
+                             self._sources.push(source), 
+                             self._layers.push(layer)
+                            )
+
+   @tdutil.cacheable
+   def layer(self):
+
+       return max(self._layers)
+
+
+   @tdutil.cacheable
+   def adxs(self):
+
+       if self.layer() == minlayer():
+          return tuple()
+
+       return tuple(i for i, x in enumerate(self._layers) 
+                                           if x == self.layer())
+
+   @tdutil.cacheable
+   def parents(self):
+
+       nodes = [self._nodes[adx] for adx in self.adxs()]
+       return tdnode.Parents(*nodes)
+
+
+   @tdutil.cacheable
+   def deshell(self):
+
+       args = list(self._nodes)
+
+       for adx in self.adxs():
+           args[adx] = self._sources[adx]
+
+       return tuple(args)
+
+
+   @tdutil.cacheable
+   def deshelled(self):
+
+       return Concat(self.deshell())
+
+
+
+
+# --- Concatenation --------------------------------------------------------- #
+
+class Concat(Cohesive):
+
+   def __init__(self, args):
+
+       self._args = args
+
+
+   @tdutil.cacheable
+   def execute(self):
+
+       train = ConcatArgs() # FIXME rename ConcatArgs -> Args?
+
+       for arg in self._args:
+           train = arg.attach(train)
+
+       return train
+
+
+   def layer(self):
+
+       return self.execute().layer()
+
+
+   def adxs(self):
+
+       return self.execute().adxs()
+
+
+   def parents(self):
+
+       return self.execute().parents()
+
+
+   def deshell(self):
+
+       return self.execute().deshell()
+
+
+   def deshelled(self):
+
+       return self.__class__(self.execute().deshell())
+
+
+
+
+
+class Packable(abc.ABC):
+
+   @abc.abstractmethod
+   def apply(self, fun, out):
+       pass
+
+
+
+
+
+class Pack(Cohesive):
+
+   def __init__(self, args):
+
+       self._args = args
+
+  
+   def layer(self):
+
+       return self._args.layer()
+
+
+   def adxs(self):
+
+       return self._args.adxs()
+
+
+   def parents(self):
+
+       return self._args.parents()
+
+
+   def deshell(self):
+
+       return self._args.deshell()
+
+
+   def deshelled(self):
+
+       return self.__class__(self._args.deshelled())
+
+       
+   def apply(self, fun, out): # FIXME input fun to ctor?
+
+       if self.layer() == minlayer():
+          return tdnode.Point(out)
+
+       op   = tdnode.AdjointOp(fun, self.adxs(), out, self.deshell())
+       gate = tdnode.make_gate(self.parents(), op) # FIXME should make_gate() be responsibility of Pack?
+
+       return tdnode.Node(out, self.layer(), gate)
+
+
+
+
+class NullPack(Cohesive):
+
+   def __init__(self, args):
+
+       self._args = args
+
+  
+   def layer(self):
+
+       return self._args.layer()
+
+
+   def adxs(self):
+
+       return self._args.adxs()
+
+
+   def parents(self):
+
+       return self._args.parents()
+
+
+   def deshell(self):
+
+       return self._args.deshell()
+
+
+   def deshelled(self):
+
+       return self.__class__(self._args.deshelled())
+
+
+   def apply(self, fun, out):
+
+       if self.layer() == minlayer():
+          return tdnode.Point(out)
+
+       return out
+
+
+
+
+def generate(first_, next_, stop_):
+
+    x = first_
+
+    for _ in itertools.count():
+
+        yield x
+        x = next_(x)
+
+        if stop_(x):
+           break  
+
+
+
+
+class Envelope: # FIXME rename to Packs?
+
+   def __init__(self, args, make_pack): 
+
+       self._args      = args
+       self._make_pack = make_pack
+
+
+   def _generate(self):
+
+       start = self._make_pack(self._args)
+
+       return tdutil.generate(
+                 start, lambda x: x.deshelled(), lambda x: x.adxs()))
+
+
+   @tdutil.cacheable
+   def _list(self):
+
+       return list(self._generate())
+
+
+   def others(self): 
+
+       return iter(reversed(self._list()))
+
+
+   def first(self, fun):
+
+       args = self._list()[0].deshell()  
+       out  = fun(*(arg.tovalue() for arg in args))
+
+       return tdnode.Point(out)
+           
+           
+        
+
+
+
+
+
+
+
+
+class Fun:
+
+   def __init__(self, fun, envelope):
+
+       self._fun      = fun
+       self._envelope = envelope
+
+
+   def __call__(self, *args):
+
+       envelope = self._envelope(args)
+       out      = envelope.first(self._fun)
+
+       for pack in envelope.others(): # FIXME rename to Packs impl Packs.__iter__?
+           out = pack.apply(self, out)
+
+       return out
+
+
+
+
+def make_envelope(args, make_pack):
+
+    return Envelope(Concat(args), make_pack)
+
+
+
+
+def differentiable(fun):
+
+    return Fun(fun, make_envelope(args, lambda x: Pack(x)))
+
+
+
+
+def nondifferentiable(fun):
+
+    return Fun(fun, make_envelope(args, lambda x: NullPack(x)))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+###############################################################################
+###############################################################################
+###############################################################################
+
+
+
+
 ###############################################################################
 ###                                                                         ###
 ###  Autodiff computation graph                                             ###
@@ -52,12 +443,12 @@ class Graph:
 
    def build(self, gate):
 
-       root = tdnode.make_node(self._x, type(self)._layer, gate) 
+       start = tdnode.Node(self._x, type(self)._layer, gate) 
 
-       return self._fun(root)
+       return self._fun(start)
 
 
-
+"""
 
 ###############################################################################
 ###                                                                         ###
@@ -351,6 +742,25 @@ class ConcatArgsKernel(Cohesive):
 ###############################################################################
 ###############################################################################
 ###############################################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class Differentiable: 
@@ -774,5 +1184,5 @@ class PointPack(Pack):
        return fun(*(node.tovalue() for node in self._nodes))
 
 
-
+"""
 
