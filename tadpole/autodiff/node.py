@@ -1377,10 +1377,10 @@ class NullGate(GateLike):
 
 class ForwardGate(GateLike):
 
-   def __init__(self, parents, op):
+   def __init__(self, parents=None, op=None):
 
-       self._parents = parents
-       self._op      = op
+       if parents is None: parents = tuple()
+       if op      is None: op      = NullAdjointOp()
 
 
    def __eq__(self, other):
@@ -1412,7 +1412,10 @@ class ForwardGate(GateLike):
 
    def grads(self, node, grads): 
 
-       seed = tuple(map(grads.pop, self._parents))
+       for parent in self._parents:
+           grads = parent.grads(grads)
+
+       seed = map(grads.pop, self._parents)
 
        return grads.add(node, self._op.jvp(seed))
 
@@ -1423,7 +1426,10 @@ class ForwardGate(GateLike):
 
 class ReverseGate(GateLike):
 
-   def __init__(self, parents, op):
+   def __init__(self, parents=None, op=None):
+
+       if parents is None: parents = tuple()
+       if op      is None: op      = NullAdjointOp()
 
        self._parents = parents
        self._op      = op
@@ -1511,6 +1517,20 @@ class AdjointOp:
 
 
 
+class NullAdjointOp:
+
+   def vjp(self, seed):
+
+       return tuple()
+
+
+   def jvp(self, seed):
+
+       return seed
+
+
+
+
 # --- Flow: defines the direction of propagation through AD graph ----------- # 
 
 class Flow:
@@ -1539,7 +1559,16 @@ class Flow:
        return f"Flow: {self._name}"
 
 
-   def make_gate(self, parents, op):
+   def __add__(self, other):
+
+       if self == other:
+          return self
+
+       raise ValueError(
+          f"Flow.__add__: cannot add unequal flows {self}, {other}")
+
+
+   def gate(self, parents, op):
 
        return self._fun(parents, op)
 

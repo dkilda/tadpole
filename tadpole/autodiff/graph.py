@@ -10,6 +10,50 @@ import tadpole.autodiff.node    as tdnode
 
 
 
+###############################################################################
+###                                                                         ###
+###  Autodiff computation graph                                             ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Define the minimum node layer ----------------------------------------- #
+
+def minlayer():
+
+    return -1
+
+
+
+
+# --- Graph ----------------------------------------------------------------- #
+
+class Graph:
+
+   _layer = minlayer() 
+
+
+   def __init__(self, root):
+
+       self._root = root
+
+
+   def __enter__(self):
+
+       type(self)._layer += 1
+       return self
+
+
+   def __exit__(self, exception_type, exception_val, trace):
+
+       type(self)._layer -= 1
+
+
+   def build(self, fun, x):
+
+       start = tdnode.Node(x, type(self)._layer, self._root) 
+
+       return fun(start)
 
 
 
@@ -19,6 +63,348 @@ import tadpole.autodiff.node    as tdnode
 ###  Concatenated arguments                                                 ###
 ###                                                                         ###
 ###############################################################################
+
+
+class Iterable:
+
+   def __init__(self, xs):
+
+       self._xs = xs
+
+
+   def __len__(self):
+
+       return len(self._xs)
+
+
+   def __contains__(self, x):
+
+       return x in self._xs
+
+
+   def __iter__(self):
+
+       return iter(self._xs)
+
+
+   def __getitem__(self, idx):
+
+       return self._xs[idx]
+
+
+
+class Parents(Iterable):
+
+   @property
+   def _nodes(self): 
+
+       return self._xs
+
+
+   def next(self, source, layer, op):
+
+       flow = sum(parent.flow() for parent in self)
+       return tdnode.Node(source, layer, flow.gate(self, op))
+
+
+       
+
+
+
+
+
+
+
+class Args(Iterable):
+
+   @property
+   def _args(self): 
+
+       return self._xs
+
+
+   def concatenate(self):
+
+       train = ConcatArgs() # FIXME rename ConcatArgs -> Args?
+       args  = map(tdnode.nodify, self._args)
+
+       for arg in args:
+           train = arg.attach(train)
+
+       return train
+
+ 
+   def pack(self):
+
+       cargs = self.concatenate()
+
+       return cargs.pack()
+
+
+
+
+class ConcatArgs:
+
+   def __init__(self, nodes=None, sources=None, layers=None):
+
+       if nodes   is None: nodes   = tdutil.Sequence()
+       if sources is None: sources = tdutil.Sequence()
+       if layers  is None: layers  = tdutil.Sequence()
+
+       self._nodes   = nodes
+       self._sources = sources
+       self._layers  = layers
+
+
+   def __eq__(self, other):
+
+       log = LogicalChain()
+
+       log.typ(self, other) 
+       log.val(self._nodes,   other._nodes)
+       log.val(self._sources, other._sources)
+       log.val(self._layers,  other._layers)
+
+       return bool(log)
+
+
+   def __hash__(self):
+
+       return id(self)
+
+
+   def add(self, node, source, layer):
+
+       return self.__class__(
+                             self._nodes.push(node), 
+                             self._sources.push(source), 
+                             self._layers.push(layer)
+                            )
+
+   @tdutil.cacheable
+   def layer(self):
+
+       return max(self._layers)
+
+
+   @tdutil.cacheable
+   def adxs(self):
+
+       if self.layer() == minlayer():
+          return tuple()
+
+       return tuple(i for i, x in enumerate(self._layers) 
+                                           if x == self.layer())
+
+   @tdutil.cacheable
+   def parents(self):
+
+       nodes = list(self._nodes)
+       nodes = [nodes[adx] for adx in self.adxs()] 
+       return tdnode.Parents(nodes)
+
+
+   @tdutil.cacheable
+   def args(self):
+
+       args    = list(self._nodes)
+       sources = list(self._sources)
+
+       for adx in self.adxs():
+           args[adx] = sources[adx] 
+
+       return Args(args)
+
+
+   def pack(self):
+
+       return Pack(self.layer(), self.adxs(), self.args(), self.parents())
+
+
+
+
+class Pack:
+
+   def __init__(self, layer, adxs, args, parents):
+
+       self._layer   = layer
+       self._adxs    = adxs
+       self._args    = args
+       self._parents = parents
+
+
+   def innermost(self):
+
+       return self._layer == minlayer()
+
+
+   def deshelled(self):
+
+       return self.__class__(self._args.pack())
+
+       
+   def apply(self, fun, out): 
+
+       if self.innermost(): 
+          return tdnode.Point(out)
+
+       op = tdnode.AdjointOp(fun, self._adxs, out, self._args)
+       return self._parents.next(out, self._layer, op) 
+
+
+
+
+
+
+
+class Envelope:
+
+   def __init__(self, args):
+
+       self._args = args
+
+ 
+   def packs(self):
+
+       return tdutil.Loop(
+                          self._args.pack(),  
+                          lambda x: x.deshelled(), 
+                          lambda x: x.innermost()
+                         )
+
+
+   def apply(self, fun):
+
+       args = self.packs().last().args()
+       out  = fun(*(arg.tovalue() for arg in args))
+
+       return tdnode.Point(out)     
+
+       
+   def applywrap(self, funwrap, fun):
+
+       out = self.apply(fun)
+
+       for pack in reversed(self.packs()):
+           out = pack.apply(funwrap, out) 
+
+       return out
+
+
+
+
+
+
+
+class Differentiable:
+
+   def __init__(self, fun, make_envelope):
+
+       self._fun      = fun
+       self._envelope = make_envelope
+
+
+   def __call__(self, *args):
+
+       return self._envelope(args).applywrap(self, self._fun)
+
+
+
+
+class NonDifferentiable:
+
+   def __init__(self, fun, make_envelope):
+
+       self._fun      = fun
+       self._envelope = make_envelope
+
+
+   def __call__(self, *args):
+
+       return self._envelope(args).apply(self._fun)
+
+
+
+def differentiable(fun):
+
+    return Differentiable(fun, lambda x: Envelope(x))
+
+
+
+def nondifferentiable(fun):
+
+    return NonDifferentiable(fun, lambda x: Envelope(x))
+
+
+
+
+
+
+
+
+
+
+class Loop:
+
+   def __init__(self, first, next, stop):
+
+       self._first = first
+       self._next  = next
+       self._stop  = stop
+
+
+   def _run(self):
+
+       x = self._first
+
+       for _ in itertools.count():
+
+           yield x
+           x = self._next(x)
+
+           if self._stop(x):
+              break
+
+
+   @tdutil.cacheable
+   def _list(self):
+
+       return list(self._run())
+
+       
+   def __iter__(self):
+
+       return self._run()
+
+
+   def __reversed__(self):
+
+       return iter(reversed(self._list()))
+
+
+   def last(self):
+
+       return next(reversed(self)) 
+
+
+
+
+def loop(first, next, stop):
+
+    return tdutil.Loop(first, next, stop)
+
+
+
+def packloop(args):
+
+    start = Pack(Concat(args))
+    return tdutil.Loop(start, lambda x: x.deshelled(), lambda x: x.adxs())) 
+
+
+
+
+
+
 
 
 # --- Cohesive interface ---------------------------------------------------- #
@@ -48,6 +434,54 @@ class Cohesive(abc.ABC):
    @abc.abstractmethod
    def deshelled(self):
        pass
+
+
+
+"""
+
+Refactoring ConcatArgs (too many responsibilities?):
+
+1) train = concat(args)
+   cargs = ConcatArgs(train)
+   layer = cargs.layer()
+
+
+Train()
+.add(node, src, layer)
+.nodes()  { iter(nodes) }
+.srcs()   { iter(srcs)  }
+.layers() { iter(layers) }
+
+could also let e.g.
+
+.nodes(fun=None) { iter(map(fun, nodes)) }
+
+
+2) train = Train()
+   cargs = ConcatArgs(train) // has ctor(train=None) by default
+
+   .add(node, src, layer) { 
+                           train = self._train.add(node, src, layer)  
+                           return self.__class__(train)
+                          } // delegates to ._train! but creates an extra layer of immutable transforms... no good!
+
+
+
+3) Since CArgs are only used to inject into Pack, we could just precalculate 
+   (layer, adxs, args, parents) and inject them into Pack.
+
+   Behavior like .deshell()/.deshelled() will be impl'ed by Pack.
+
+   This way, CArgs would simply be a Pack factory. We could rename CArgs -> Concat, Pack -> CArgs?
+
+
+Likewise, we can apply this to the Loop-Fun dilemma: make a factory which creates loop and 
+diff/nondiff fun.
+
+
+
+
+"""
 
 
 
@@ -110,8 +544,15 @@ class ConcatArgs(Cohesive):
    @tdutil.cacheable
    def parents(self):
 
-       nodes = [self._nodes[adx] for adx in self.adxs()]
+       nodes = [self._nodes[adx] for adx in self.adxs()] # FIXME idx-access wont work with nodes = Sequence, use filter instead
        return tdnode.Parents(*nodes)
+
+
+   @tdutil.cacheable
+   def flow(self):
+
+       flow, = set([parent.flow() for parent in self.parents()])
+       return flow
 
 
    @tdutil.cacheable
@@ -120,7 +561,7 @@ class ConcatArgs(Cohesive):
        args = list(self._nodes)
 
        for adx in self.adxs():
-           args[adx] = self._sources[adx]
+           args[adx] = self._sources[adx] # FIXME idx-access wont work with sources = Sequence
 
        return tuple(args)
 
@@ -146,8 +587,9 @@ class Concat(Cohesive):
    def execute(self):
 
        train = ConcatArgs() # FIXME rename ConcatArgs -> Args?
+       args  = map(tdnode.nodify, self._args)
 
-       for arg in self._args:
+       for arg in args:
            train = arg.attach(train)
 
        return train
@@ -166,6 +608,11 @@ class Concat(Cohesive):
    def parents(self):
 
        return self.execute().parents()
+
+
+   def flow(self):
+
+       return self.execute().flow()
 
 
    def deshell(self):
@@ -213,6 +660,11 @@ class Pack(Cohesive):
        return self._args.parents()
 
 
+   def flow(self):
+
+       return self._args.flow()
+
+
    def deshell(self):
 
        return self._args.deshell()
@@ -229,7 +681,7 @@ class Pack(Cohesive):
           return tdnode.Point(out)
 
        op   = tdnode.AdjointOp(fun, self.adxs(), out, self.deshell())
-       gate = tdnode.make_gate(self.parents(), op) # FIXME should make_gate() be responsibility of Pack?
+       gate = self.flow().gate(self.parents(), op)
 
        return tdnode.Node(out, self.layer(), gate)
 
@@ -278,8 +730,8 @@ class NullPack(Cohesive):
 
 
 
-def generate(first_, next_, stop_):
-
+def generate(first_, next_, stop_): # FIXME could make class Generate, which also saves the endpt? 
+                                    # Generate impls .__iter__(), .__reversed__(), and .end()
     x = first_
 
     for _ in itertools.count():
@@ -315,6 +767,12 @@ class Envelope: # FIXME rename to Packs?
        return list(self._generate())
 
 
+   @tdutil.cacheable
+   def _first(self):
+
+       return self._list()[0]
+
+
    def others(self): 
 
        return iter(reversed(self._list()))
@@ -322,20 +780,13 @@ class Envelope: # FIXME rename to Packs?
 
    def first(self, fun):
 
-       args = self._list()[0].deshell()  
+       args = self._first().deshell()  
        out  = fun(*(arg.tovalue() for arg in args))
 
        return tdnode.Point(out)
            
            
         
-
-
-
-
-
-
-
 
 class Fun:
 
@@ -354,6 +805,229 @@ class Fun:
            out = pack.apply(self, out)
 
        return out
+
+
+
+
+
+
+
+
+
+
+
+
+class Loop:
+
+   def __init__(self, first, next, stop):
+
+       self._first = first
+       self._next  = next
+       self._stop  = stop
+
+
+   def _run(self):
+
+       x = self._first
+
+       for _ in itertools.count():
+
+           yield x
+           x = self._next(x)
+
+           if self._stop(x):
+              break
+
+
+   @tdutil.cacheable
+   def _list(self):
+
+       return list(self._run())
+
+       
+   def __iter__(self):
+
+       return self._run()
+
+
+   def __reversed__(self):
+
+       return iter(reversed(self._list()))
+
+
+   def last(self):
+
+       return next(reversed(self)) 
+
+
+
+
+def loop(first, next, stop):
+
+    return tdutil.Loop(first, next, stop)
+
+
+
+def packloop(args):
+
+    start = Pack(Concat(args))
+    return tdutil.Loop(start, lambda x: x.deshelled(), lambda x: x.adxs())) 
+
+
+       
+
+
+
+"""
+def generate(first_, next_, stop_): # FIXME could make class Generate, which also saves the endpt? 
+                                    # Generate impls .__iter__(), .__reversed__(), and .end()
+    x = first_
+
+    for _ in itertools.count():
+
+        yield x
+        x = next_(x)
+
+        if stop_(x):
+           break  
+"""
+
+
+
+
+
+
+
+class Glue:
+
+   def __init__(self, args):
+
+       self._args = args
+
+
+   def packs(self):
+
+       start = Pack(Concat(self._args))
+       return tdutil.Loop(start, lambda x: x.deshelled(), lambda x: x.adxs())) 
+
+
+   def last(self):
+
+       return self.packs().last()
+
+
+   def pluginto(self, fun):
+
+       args = self.packs().last().deshell()
+       out  = fun(*(arg.tovalue() for arg in args))
+
+       return tdnode.Point(out)
+
+
+
+class Differentiable:
+
+   def __init__(self, fun):
+
+       self._fun = fun
+
+
+   def __call__(self, *args):
+
+       glue = Glue(args) # FIXME hidden dep! Should inject glue instead.
+
+       out = glue.pluginto(self._fun)
+
+       for pack in reversed(glue.packs()):
+           out = pack.apply(self, out)
+ 
+       return out
+
+
+
+class NonDifferentiable:
+
+   def __init__(self, fun):
+
+       self._fun = fun
+
+
+   def __call__(self, *args):
+
+       glue = Glue(args) # FIXME hidden dep! Should inject glue instead.
+
+       return glue.pluginto(self._fun)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Fun:
+
+   def __init__(self, fun):
+
+       self._fun = fun
+
+
+   def shells(self, *args):
+
+       start = Pack(Concat(args))
+       return tdutil.Loop(start, lambda x: x.deshelled(), lambda x: x.adxs())) 
+
+
+   def __call__(self, *args):
+
+       args = self.shells(*args).last().deshell()
+       out  = self._fun(*(arg.tovalue() for arg in args))
+
+       return tdnode.Point(out)     
+        
+
+
+
+class NonDifferentiable:
+
+   def __init__(self, fun):
+
+       self._fun = fun
+
+
+   def __call__(self, *args):
+
+       return self._fun(*args)
+
+
+
+        
+class Differentiable:
+
+   def __init__(self, fun):
+
+       self._fun = fun
+
+
+   def __call__(self, *args):
+
+       out = self._fun(*args)
+
+       for shell in reversed(self._fun.shells(*args)):
+           shell.apply(self, out)
+
+       return out
+
+
+
+
 
 
 
@@ -400,52 +1074,6 @@ def nondifferentiable(fun):
 
 
 
-
-###############################################################################
-###                                                                         ###
-###  Autodiff computation graph                                             ###
-###                                                                         ###
-###############################################################################
-
-
-# --- Define the minimum node layer ----------------------------------------- #
-
-def minlayer():
-
-    return -1
-
-
-
-
-# --- Graph ----------------------------------------------------------------- #
-
-class Graph:
-
-   _layer = minlayer() 
-
-
-   def __init__(self, fun, x):
-
-       self._fun = fun
-       self._x   = x
-
-
-   def __enter__(self):
-
-       type(self)._layer += 1
-       return self
-
-
-   def __exit__(self, exception_type, exception_val, trace):
-
-       type(self)._layer -= 1
-
-
-   def build(self, gate):
-
-       start = tdnode.Node(self._x, type(self)._layer, gate) 
-
-       return self._fun(start)
 
 
 """
