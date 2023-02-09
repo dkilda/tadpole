@@ -93,7 +93,7 @@ class Iterable:
 
 
 
-class Parents(Iterable):
+class Parents(tdutil.Iterable):
 
    @property
    def _nodes(self): 
@@ -115,7 +115,7 @@ class Parents(Iterable):
 
 
 
-class Args(Iterable):
+class Args(tdutil.Iterable):
 
    @property
    def _args(self): 
@@ -125,25 +125,32 @@ class Args(Iterable):
 
    def concatenate(self):
 
-       train = ConcatArgs() # FIXME rename ConcatArgs -> Args?
-       args  = map(tdnode.nodify, self._args)
+       concat = Concatenation() 
+       args   = map(tdnode.nodify, self._args)
 
        for arg in args:
-           train = arg.attach(train)
+           concat = arg.attach(concat)
 
-       return train
+       return concat
 
  
    def pack(self):
 
-       cargs = self.concatenate()
-
-       return cargs.pack()
+       return Pack(self.concatenate())
 
 
 
 
-class ConcatArgs:
+
+class Concatenable(abc.ABC):
+
+   @abc.abstractmethod
+   def add(self, node, source, layer):
+       pass
+
+
+
+class Concatenation(Concatenable):
 
    def __init__(self, nodes=None, sources=None, layers=None):
 
@@ -196,13 +203,6 @@ class ConcatArgs:
        return tuple(i for i, x in enumerate(self._layers) 
                                            if x == self.layer())
 
-   @tdutil.cacheable
-   def parents(self):
-
-       nodes = list(self._nodes)
-       nodes = [nodes[adx] for adx in self.adxs()] 
-       return tdnode.Parents(nodes)
-
 
    @tdutil.cacheable
    def args(self):
@@ -216,21 +216,47 @@ class ConcatArgs:
        return Args(args)
 
 
-   def pack(self):
+   @tdutil.cacheable
+   def parents(self):
 
-       return Pack(self.layer(), self.adxs(), self.args(), self.parents())
+       nodes = list(self._nodes)
+       nodes = [nodes[adx] for adx in self.adxs()] 
+       return tdnode.Parents(nodes)
+
+
 
 
 
 
 class Pack:
 
-   def __init__(self, layer, adxs, args, parents):
+   def __init__(self, concat): 
 
-       self._layer   = layer
-       self._adxs    = adxs
-       self._args    = args
-       self._parents = parents
+       self._concat = concat
+
+
+   @property
+   def _layer(self):
+
+       return self._concat.layer()
+
+
+   @property
+   def _adxs(self):
+
+       return self._concat.adxs()
+
+
+   @property
+   def _args(self):
+
+       return self._concat.args()
+
+
+   @property
+   def _parents(self):
+
+       return self._concat.parents()
 
 
    def innermost(self):
@@ -387,6 +413,14 @@ class Loop:
        return next(reversed(self)) 
 
 
+
+
+
+########################################################################################
+########################################################################################
+########################################################################################
+########################################################################################
+########################################################################################
 
 
 def loop(first, next, stop):
