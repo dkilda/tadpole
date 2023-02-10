@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import abc
+import itertools
 
 
 ###############################################################################
@@ -60,7 +61,7 @@ class Sequence:
 
    def __repr__(self):
 
-       rep = tdutil.ReprChain()
+       rep = ReprChain()
 
        rep.typ(self)
        rep.ref("items", self._sequence)
@@ -96,7 +97,7 @@ class Sequence:
 
    def __iter__(self):
 
-       for i in range(self.size()):
+       for i in range(len(self)):
            yield self._xs[i]
 
 
@@ -209,14 +210,14 @@ class Loop:
 
        for _ in itertools.count():
 
-           yield x
-           x = self._next(x)
-
            if self._stop(x):
               break
 
+           yield x
+           x = self._next(x)
 
-   @tdutil.cacheable
+
+   @cacheable
    def _list(self):
 
        return list(self._run())
@@ -233,9 +234,11 @@ class Loop:
 
 
    def last(self):
-
-       return next(reversed(self)) 
-
+ 
+       try:
+          return next(reversed(self)) 
+       except StopIteration:
+          return self._first
 
 
 
@@ -455,7 +458,7 @@ def format_type(x):
 
 def format_obj(x):
 
-    return f"{format_type(x)}, id = {id(x)}, contains:"
+    return f"{format_type(x)}, id = {id(x)}:"
 
 
 def format_val(name, x):

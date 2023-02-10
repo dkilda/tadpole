@@ -3,9 +3,8 @@
 
 import abc
 
-import tadpole.autodiff.adjoint as tda
-import tadpole.autodiff.util    as tdutil
-import tadpole.autodiff.node    as tdnode
+import tadpole.autodiff.util as tdutil
+import tadpole.autodiff.node as tdnode
 
 
 
@@ -275,6 +274,8 @@ class Concatenation(Concatenable, Cohesive):
 
    def attach(self, node, source, layer):
 
+       print(f"ATTACH: {node}, {source}, {layer}")
+
        return self.__class__(
                              self._nodes.push(node), 
                              self._sources.push(source), 
@@ -310,8 +311,12 @@ class Concatenation(Concatenable, Cohesive):
        args    = list(self._nodes)
        sources = list(self._sources)
 
+       print(f"DESHELL: {args}, {sources}")
+
        for adx in self.adxs():
            args[adx] = sources[adx] 
+
+       print(f"DESHELL-1: {args}, {sources}")
 
        return Args(args)
 
@@ -335,6 +340,10 @@ class Packed(abc.ABC):
        pass
 
    @abc.abstractmethod
+   def deshell(self):
+       pass
+
+   @abc.abstractmethod
    def deshelled(self):
        pass
 
@@ -349,7 +358,7 @@ class Packed(abc.ABC):
 
 class Pack(Packed):
 
-   def __init__(self, concat): 
+   def __init__(self, concat):
 
        self._concat = concat
 
@@ -408,9 +417,14 @@ class Pack(Packed):
        return self._layer == minlayer()
 
 
+   def deshell(self):
+
+       return self._concat.deshell()
+
+
    def deshelled(self):
 
-       return self.__class__(self._args.pack())
+       return self._args.pack()
 
        
    def fold(self, funwrap, out): 
@@ -453,6 +467,9 @@ class Envelope(Enveloped):
 
    def __init__(self, args):
 
+       if not isinstance(args, Args):
+          args = Args(args)
+
        self._args = args
 
 
@@ -491,18 +508,29 @@ class Envelope(Enveloped):
 
    def apply(self, fun):
 
-       args = self.packs().last().args()
+       args = self.packs().last().deshell()
+
+       print(f"\nARGS: {args}")
+
+       for arg in args:
+           print(f"\nARG: {arg}, {arg.tovalue()}")
+
        out  = fun(*(arg.tovalue() for arg in args))
 
-       return tdnode.Point(out)     
+       return out # tdnode.Point(out)     
 
        
    def applywrap(self, funwrap, fun):
 
        out = self.apply(fun)
 
+       print(f"\nAPPLYWRAP-0: {out}")
+
        for pack in reversed(self.packs()):
+           print(f"\nAPPLYWRAP-1: {out}")
            out = pack.fold(funwrap, out) 
+
+       print(f"\nAPPLYWRAP-2: {out}")
 
        return out
 

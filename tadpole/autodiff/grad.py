@@ -4,6 +4,8 @@
 import abc
 import collections
 
+from functools import reduce
+
 import tadpole.autodiff.util    as tdutil
 import tadpole.autodiff.nary_op as tdnary
 import tadpole.autodiff.node    as tdnode
@@ -64,11 +66,11 @@ class Differential(abc.ABC):
        pass
 
    @abc.abstractmethod
-   def accum(self):
+   def accum(self, seed):
        pass
 
    @abc.abstractmethod
-   def grad(self):
+   def grad(self, seed):
        pass
 
 
@@ -115,7 +117,7 @@ class ForwardDifferentialOp(Differential):
 
    def accum(self, seed):
 
-       return GradSum({self._x: seed}) 
+       return GradSum(seed) 
 
 
    def grad(self, seed):
@@ -239,7 +241,7 @@ class GraphOp(Graphable):
 
    def graph(self):
 
-       return Graph(self._root)
+       return tdgraph.Graph(self._root)
 
 
    @tdutil.cacheable
@@ -489,12 +491,9 @@ class Cumulative(abc.ABC):
 
 class GradSum(Cumulative):
 
-   def __init__(self, grads=None):
+   def __init__(self, seed):
 
-       if grads is None:
-          grads = {}
-
-       self._grads = grads
+       self._grads = {None: (seed,)}
 
 
    def __repr__(self):
@@ -510,13 +509,21 @@ class GradSum(Cumulative):
 
    def add(self, node, grads):
 
+       #print(f"\nGradSum-1: {node}")
+       #print(f"\nGradSum-2: {tuple(grads)}")
+
        self._grads[node] = reduce(tdmanip.add_grads, grads, None)
        return self
 
 
-   def pop(self, node):
+   def pop(self, nodes):
 
-       return self._grads.pop(node)
+       #print(f"\nGradSum-POP: {nodes}, {self._grads}")
+
+       if not nodes:
+          return self._grads[None]    
+
+       return tuple(map(self._grads.pop, nodes))
 
 
    def result(self, node):
@@ -552,7 +559,7 @@ class GradAccum(Cumulative):
    def add(self, nodes, grads):
 
        for node, grad in zip(nodes, grads):
-           self._grads[node] = tdmanip.add_grads(self.get(node), grad)
+           self._grads[node] = tdmanip.add_grads(self.result(node), grad)
 
        return self
 

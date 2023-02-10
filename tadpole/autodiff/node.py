@@ -3,8 +3,6 @@
 
 import abc
 
-from functools import reduce
-
 import tadpole.autodiff.util     as tdutil   
 import tadpole.autodiff.manip    as tdmanip        
 import tadpole.autodiff.graph    as tdgraph
@@ -238,11 +236,34 @@ class ForwardGate(GateLike):
        for parent in self._parents:
            grads = parent.grads(grads)
 
-       seed = map(grads.pop, self._parents)
+       print(f"\nPARENTS: {self._parents}")
+
+       seed = grads.pop(self._parents)
+
+       #print(f"\nGRADS: {self._parents}, {tuple(seed)}, {self._op}, {tuple(self._op.jvp(seed))}")
 
        return grads.add(node, self._op.jvp(seed))
 
 
+"""
+New solution for sharing code:
+
+class ReverseGate:
+
+   def _traits(self):
+
+       return GateTraits
+
+
+   def __getattr__(self, attr):
+
+       return getattr(self._traits, attr)
+
+
+---> doesn't really work w/o creating a new GateTraits object...
+
+
+"""
 
 
 # --- Reverse logic gate ---------------------------------------------------- #
@@ -344,11 +365,19 @@ class Flow:
 
    def __add__(self, other):
 
+       if not other:
+          return self
+
        if self == other:
           return self
 
        raise ValueError((f"Flow.__add__: cannot add flows "
                          f"with different directions {self}, {other}"))
+
+
+   def __radd__(self, other):
+
+       return self.__add__(other)
 
 
    def gate(self, parents, op):
@@ -378,7 +407,7 @@ class NodeLike(abc.ABC):
        pass
 
    @abc.abstractmethod
-   def attach(self, train):
+   def concat(self, concatenable):
        pass
 
    @abc.abstractmethod
@@ -397,6 +426,9 @@ class NodeLike(abc.ABC):
 class Node(NodeLike):
 
    def __init__(self, source, layer, gate): 
+
+       if not isinstance(source, NodeLike):
+          source = Point(source)
                                             
        self._source = source              
        self._layer  = layer 
@@ -511,7 +543,7 @@ class Point(NodeLike):
 
    def concat(self, concatenable):
 
-       return concatenable.attach(self, self._source, self._layer)
+       return concatenable.attach(self, self, self._layer)
 
 
    def trace(self, traceable): 
@@ -543,8 +575,13 @@ class Parents(tdutil.Tuple):
 
    def next(self, source, layer, op):
 
+       print("---NEXT---")
+       for parent in self:
+           print(parent, parent.flow())
+       print("---")
+
        flow = sum(parent.flow() for parent in self)
-       return tdnode.Node(source, layer, flow.gate(self, op))
+       return Node(source, layer, flow.gate(self, op))
 
 
        
