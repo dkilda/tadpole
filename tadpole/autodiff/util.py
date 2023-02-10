@@ -163,7 +163,7 @@ class Tuple:
 
 ###############################################################################
 ###                                                                         ###
-### Cutom loop iterator.                                                    ###
+### Customized loop iterator.                                               ###
 ### Defined by the first item and the next and stop functions, instead of   ###
 ### a range. Can be traversed in forward and reverse directions, keeps      ###
 ### track of the last item of the loop.                                     ###
@@ -430,53 +430,6 @@ class StringRep:
        return f"{self._obj_str()}"  \
               f"{self._data_str()}" \
               f"{self._member_str()}\n\n"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
