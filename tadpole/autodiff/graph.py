@@ -60,62 +60,101 @@ class Graph:
 
 ###############################################################################
 ###                                                                         ###
-###  Concatenated arguments                                                 ###
+###  Autodiff function wrappers                                             ###
+###  for differentiable and non-differentiable functions                    ###
 ###                                                                         ###
 ###############################################################################
 
 
-class Iterable:
+# --- Differentiable function wrap ------------------------------------------ #
 
-   def __init__(self, xs):
+class Differentiable:
 
-       self._xs = xs
+   def __init__(self, fun, make_envelope):
 
-
-   def __len__(self):
-
-       return len(self._xs)
+       self._fun      = fun
+       self._envelope = make_envelope
 
 
-   def __contains__(self, x):
+   def __call__(self, *args):
 
-       return x in self._xs
-
-
-   def __iter__(self):
-
-       return iter(self._xs)
-
-
-   def __getitem__(self, idx):
-
-       return self._xs[idx]
-
-
-
-class Parents(tdutil.Iterable):
-
-   @property
-   def _nodes(self): 
-
-       return self._xs
-
-
-   def next(self, source, layer, op):
-
-       flow = sum(parent.flow() for parent in self)
-       return tdnode.Node(source, layer, flow.gate(self, op))
-
-
-       
+       return self._envelope(args).applywrap(self, self._fun)
 
 
 
 
+# --- Non-differentiable function wrap -------------------------------------- #
+
+class NonDifferentiable:
+
+   def __init__(self, fun, make_envelope):
+
+       self._fun      = fun
+       self._envelope = make_envelope
+
+
+   def __call__(self, *args):
+
+       return self._envelope(args).apply(self._fun)
 
 
 
-class Args(tdutil.Iterable):
+
+# --- Shorthand for a differentiable function wrap -------------------------- #
+
+def differentiable(fun):
+
+    return Differentiable(fun, lambda x: Envelope(x))
+
+
+
+
+# --- Shorthand for a non-differentiable function wrap ---------------------- #
+
+def nondifferentiable(fun):
+
+    return NonDifferentiable(fun, lambda x: Envelope(x))
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Function arguments and their concatenation                             ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Compound interface ---------------------------------------------------- #
+
+class Compound(abc.ABC):
+
+   @abc.abstractmethod
+   def concatenate(self):
+       pass
+
+   @abc.abstractmethod
+   def pack(self):
+       pass
+
+
+
+
+# --- Helpers for Args ------------------------------------------------------- #
+
+def nodify(x):
+
+    if isinstance(x, tdnode.NodeLike):
+       return x
+
+    return tdnode.Point(x)
+
+
+
+
+# --- Function arguments ---------------------------------------------------- #
+
+class Args(tdutil.Tuple):
 
    @property
    def _args(self): 
@@ -123,34 +162,61 @@ class Args(tdutil.Iterable):
        return self._xs
 
 
-   def concatenate(self):
+   def concat(self):
 
        concat = Concatenation() 
-       args   = map(tdnode.nodify, self._args)
+       args   = map(nodify, self._args)
 
        for arg in args:
-           concat = arg.attach(concat)
+           concat = arg.concat(concat)
 
        return concat
 
  
    def pack(self):
 
-       return Pack(self.concatenate())
+       return Pack(self.concat())
 
 
 
 
+# --- Concatenable interface ------------------------------------------------ #
 
 class Concatenable(abc.ABC):
 
    @abc.abstractmethod
-   def add(self, node, source, layer):
+   def attach(self, node, source, layer):
        pass
 
 
 
-class Concatenation(Concatenable):
+
+# --- Cohesive interface ---------------------------------------------------- #
+
+class Cohesive(abc.ABC):
+
+   @abc.abstractmethod
+   def layer(self):
+       pass
+
+   @abc.abstractmethod
+   def adxs(self):
+       pass
+
+   @abc.abstractmethod
+   def parents(self):
+       pass
+
+   @abc.abstractmethod
+   def deshell(self):
+       pass
+
+
+
+
+# --- Concatenation of nodes ------------------------------------------------ #
+
+class Concatenation(Concatenable, Cohesive):
 
    def __init__(self, nodes=None, sources=None, layers=None):
 
@@ -180,7 +246,7 @@ class Concatenation(Concatenable):
        return id(self)
 
 
-   def add(self, node, source, layer):
+   def attach(self, node, source, layer):
 
        return self.__class__(
                              self._nodes.push(node), 
@@ -203,9 +269,16 @@ class Concatenation(Concatenable):
        return tuple(i for i, x in enumerate(self._layers) 
                                            if x == self.layer())
 
+   @tdutil.cacheable
+   def parents(self):
+
+       nodes = list(self._nodes)
+       nodes = [nodes[adx] for adx in self.adxs()] 
+       return tdnode.Parents(nodes)
+
 
    @tdutil.cacheable
-   def args(self):
+   def deshell(self):
 
        args    = list(self._nodes)
        sources = list(self._sources)
@@ -216,19 +289,38 @@ class Concatenation(Concatenable):
        return Args(args)
 
 
-   @tdutil.cacheable
-   def parents(self):
-
-       nodes = list(self._nodes)
-       nodes = [nodes[adx] for adx in self.adxs()] 
-       return tdnode.Parents(nodes)
 
 
+###############################################################################
+###                                                                         ###
+###  Argument pack and envelope, which enable us to operate on all          ###
+###  arguments as one unit.                                                 ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Packed interface ------------------------------------------------------ #
+
+class Packed(abc.ABC):
+
+   @abc.abstractmethod
+   def innermost(self):
+       pass
+
+   @abc.abstractmethod
+   def deshelled(self):
+       pass
+
+   @abc.abstractmethod
+   def fold(self, funwrap, out):
+       pass
 
 
 
 
-class Pack:
+# --- Argument pack (of concatenated nodes) --------------------------------- #
+
+class Pack(Packed):
 
    def __init__(self, concat): 
 
@@ -250,7 +342,7 @@ class Pack:
    @property
    def _args(self):
 
-       return self._concat.args()
+       return self._concat.deshell()
 
 
    @property
@@ -269,21 +361,43 @@ class Pack:
        return self.__class__(self._args.pack())
 
        
-   def apply(self, fun, out): 
+   def fold(self, funwrap, out): 
 
        if self.innermost(): 
           return tdnode.Point(out)
 
-       op = tdnode.AdjointOp(fun, self._adxs, out, self._args)
+       op = tdnode.AdjointOp(funwrap, self._adxs, out, self._args)
        return self._parents.next(out, self._layer, op) 
 
 
 
 
+# --- Enveloped interface --------------------------------------------------- #
+
+class Enveloped(abc.ABC):
+
+   @abc.abstractmethod
+   def packs(self):
+       pass
+
+   @abc.abstractmethod
+   def apply(self, fun):
+       pass
+
+   @abc.abstractmethod
+   def applywrap(self, funwrap, out):
+       pass
 
 
 
-class Envelope:
+
+# --- Argument envelope ----------------------------------------------------- #
+
+# TODO Future sol: let Array impl Node interface and act as a Point instead!
+# i.e. we'll replace Point with Array. Then Array.tovalue() will return self.
+
+
+class Envelope(Enveloped):
 
    def __init__(self, args):
 
@@ -312,7 +426,7 @@ class Envelope:
        out = self.apply(fun)
 
        for pack in reversed(self.packs()):
-           out = pack.apply(funwrap, out) 
+           out = pack.fold(funwrap, out) 
 
        return out
 
@@ -322,95 +436,11 @@ class Envelope:
 
 
 
-class Differentiable:
-
-   def __init__(self, fun, make_envelope):
-
-       self._fun      = fun
-       self._envelope = make_envelope
-
-
-   def __call__(self, *args):
-
-       return self._envelope(args).applywrap(self, self._fun)
-
-
-
-
-class NonDifferentiable:
-
-   def __init__(self, fun, make_envelope):
-
-       self._fun      = fun
-       self._envelope = make_envelope
-
-
-   def __call__(self, *args):
-
-       return self._envelope(args).apply(self._fun)
-
-
-
-def differentiable(fun):
-
-    return Differentiable(fun, lambda x: Envelope(x))
-
-
-
-def nondifferentiable(fun):
-
-    return NonDifferentiable(fun, lambda x: Envelope(x))
 
 
 
 
 
-
-
-
-
-
-class Loop:
-
-   def __init__(self, first, next, stop):
-
-       self._first = first
-       self._next  = next
-       self._stop  = stop
-
-
-   def _run(self):
-
-       x = self._first
-
-       for _ in itertools.count():
-
-           yield x
-           x = self._next(x)
-
-           if self._stop(x):
-              break
-
-
-   @tdutil.cacheable
-   def _list(self):
-
-       return list(self._run())
-
-       
-   def __iter__(self):
-
-       return self._run()
-
-
-   def __reversed__(self):
-
-       return iter(reversed(self._list()))
-
-
-   def last(self):
-
-       return next(reversed(self)) 
 
 
 

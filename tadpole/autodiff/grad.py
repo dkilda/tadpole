@@ -47,9 +47,36 @@ def deriv(fun, x):
 ###############################################################################
 
 
+# --- Differential interface ------------------------------------------------ #
+
+class Differential(abc.ABC):
+
+   @abc.abstractmethod
+   def graphop(self):
+       pass
+
+   @abc.abstractmethod
+   def end(self):
+       pass
+
+   @abc.abstractmethod
+   def evaluate(self):
+       pass
+
+   @abc.abstractmethod
+   def accum(self):
+       pass
+
+   @abc.abstractmethod
+   def grad(self):
+       pass
+
+
+
+
 # --- Forward differential operator ----------------------------------------- #
 
-class ForwardDifferentialOp:
+class ForwardDifferentialOp(Differential):
 
    def __init__(self, fun, x):
 
@@ -85,14 +112,14 @@ class ForwardDifferentialOp:
        grads = self.accum(seed)
        grads = self.end().grads(grads)
 
-       return grads.get()
+       return grads.result(self.end())
 
 
 
 
 # --- Reverse differential operator ----------------------------------------- #
 
-class ReverseDifferentialOp:
+class ReverseDifferentialOp(Differential):
 
    def __init__(self, fun, x):
 
@@ -130,14 +157,33 @@ class ReverseDifferentialOp:
        for node in toposort(self.end()): 
            grads = node.grads(grads)
 
-       return grads.get()
+       return grads.result()
+
+
+
+
+# --- Graphable interface --------------------------------------------------- #
+
+class Graphable(abc.ABC):
+
+   @abc.abstractmethod
+   def graph(self):
+       pass
+
+   @abc.abstractmethod
+   def end(self):
+       pass
+
+   @abc.abstractmethod
+   def evaluate(self):
+       pass
 
 
 
 
 # --- Graph operator -------------------------------------------------------- #
 
-class GraphOp:
+class GraphOp(Graphable):
 
    def __init__(self, root, fun, x):
 
@@ -242,9 +288,24 @@ class ChildCount(Traceable):
 
 
 
+# --- Traversable interface ------------------------------------------------- #
+
+class Traversable(abc.ABC):
+
+   @abc.abstractmethod
+   def sweep(self, step):
+       pass
+
+   @abc.abstractmethod
+   def apply(self, step):
+       pass
+
+
+
+
 # --- Traversal ------------------------------------------------------------- #
 
-class Traversal:
+class Traversal(Traversable):
 
    def __init__(self, end):
 
@@ -270,9 +331,24 @@ class Traversal:
 
 
 
+# --- Sortable interface ---------------------------------------------------- #
+
+class Sortable(abc.ABC):
+
+   @abc.abstractmethod
+   def traverse(self):
+       pass
+
+   @abc.abstractmethod
+   def __iter__(self):
+       pass
+
+
+
+
 # --- Topological sort ------------------------------------------------------ #
 
-class TopoSort:
+class TopoSort(Sortable):
 
    def __init__(self, traversal, count):
 
@@ -312,9 +388,28 @@ def toposort(end):
 ###############################################################################
 
 
+# --- Cumulative interface -------------------------------------------------- #
+
+class Cumulative(abc.ABC):
+
+   @abc.abstractmethod
+   def add(self, nodes, parents):
+       pass
+
+   @abc.abstractmethod
+   def pop(self, node):
+       pass
+
+   @abc.abstractmethod
+   def result(self, node):
+       pass
+
+
+
+
 # --- Gradient summation ---------------------------------------------------- #
 
-class GradSum:
+class GradSum(Cumulative):
 
    def __init__(self, grads=None):
 
@@ -335,7 +430,7 @@ class GradSum:
        return self._grads.pop(node)
 
 
-   def get(self, node): # FIXME rename get -> result?
+   def result(self, node):
 
        return self._grads.get(node)
 
@@ -344,7 +439,7 @@ class GradSum:
 
 # --- Gradient accumulation ------------------------------------------------- #
 
-class GradAccum:
+class GradAccum(Cumulative):
 
    def __init__(self, grads=None):
 
@@ -370,7 +465,7 @@ class GradAccum:
        return grad
 
 
-   def get(self, node=None): # FIXME rename get -> result?
+   def result(self, node=None): 
 
        return self._grads.get(node)
 

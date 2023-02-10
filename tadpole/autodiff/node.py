@@ -1471,9 +1471,24 @@ class ReverseGate(GateLike):
 
 
 
-# --- Generic adjoint operator ---------------------------------------------- #
+# --- Adjoint interface ----------------------------------------------------- #
 
-class AdjointOp:
+class Adjoint(abc.ABC):
+
+   @abc.abstractmethod
+   def vjp(self, seed):
+       pass
+
+   @abc.abstractmethod
+   def jvp(self, seed):
+       pass
+
+
+
+
+# --- Adjoint operator ------------------------------------------------------ #
+
+class AdjointOp(Adjoint):
 
    def __init__(self, fun, adxs, out, *args):
  
@@ -1517,7 +1532,9 @@ class AdjointOp:
 
 
 
-class NullAdjointOp:
+# --- Null adjoint operator ------------------------------------------------- #
+
+class NullAdjointOp(Adjoint):
 
    def vjp(self, seed):
 
@@ -1573,17 +1590,7 @@ class Flow:
        return self._fun(parents, op)
 
 
-
-
-# --- Create gate ----------------------------------------------------------- #
-
-def make_gate(parents, op): # TODO altway: Flow(parents) / Flow.from(parents) / FlowFromParents(parents)
-                            # return FlowFromParents(parents).make_gate(parents, op)
-    flow = parents.flow()
-    return flow.make_gate(parents, op)
  
-
-
 
 ###############################################################################
 ###                                                                         ###
@@ -1717,12 +1724,9 @@ class Node(NodeLike):
        return self._source.tovalue()
 
 
-   def attach(self, train):
+   def concat(self, concatenable):
 
-       return (
-               train.with_node(self)
-                    .with_meta(self._source, self._layer)
-              )
+       return concatenable.attach(self, self._source, self._layer)
 
 
    def trace(self, traceable): 
@@ -1782,12 +1786,9 @@ class Point(NodeLike):
        return self._source
 
 
-   def attach(self, train):
+   def concat(self, concatenable):
 
-       return (
-               train.with_node(self)
-                    .with_meta(self, self._layer)
-              )
+       return concatenable.attach(self, self._source, self._layer)
 
 
    def trace(self, traceable): 
@@ -1802,50 +1803,35 @@ class Point(NodeLike):
 
 
 
+# --- Parental interface ---------------------------------------------------- #
+
+class Parental(abc.ABC):
+
+   @abc.abstractmethod
+   def next(self, source, layer, op):
+       pass
+
+
+
+
 # --- Parents --------------------------------------------------------------- #
 
-class Parents: 
+class Parents(tdutil.Tuple):
 
-   def __init__(self, *nodes):
+   @property
+   def _nodes(self): 
 
-       self._nodes = nodes
-
-
-   def __eq__(self, other):
-
-       return tuple(map(id, self._nodes)) 
-           == tuple(map(id, other._nodes))
+       return self._xs
 
 
-   def __hash__(self):
+   def next(self, source, layer, op):
 
-       return hash(self._nodes)
-
-
-   def __len__(self):
-
-       return len(self._nodes)
+       flow = sum(parent.flow() for parent in self)
+       return tdnode.Node(source, layer, flow.gate(self, op))
 
 
-   def __contains__(self, node):
+       
 
-       return node in self._nodes
-
-
-   def __iter__(self):
-
-       return iter(self._nodes)
-
-
-   def __getitem__(self, idx):
-
-       return self._nodes[idx]
-
-
-   def flow(self):
-
-       flow, = set([p.flow() for p in parents])
-       return flow
 
 
 

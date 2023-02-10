@@ -124,6 +124,103 @@ class Sequence:
 
 ###############################################################################
 ###                                                                         ###
+### Tuple data structure (immutable):                                       ###
+### a base class for customized tuple-like types.                           ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Tuple ----------------------------------------------------------------- #
+
+class Tuple:
+
+   def __init__(self, xs):
+
+       self._xs = xs
+
+
+   def __len__(self):
+
+       return len(self._xs)
+
+
+   def __contains__(self, x):
+
+       return x in self._xs
+
+
+   def __iter__(self):
+
+       return iter(self._xs)
+
+
+   def __getitem__(self, idx):
+
+       return self._xs[idx]
+
+
+
+
+###############################################################################
+###                                                                         ###
+### Cutom loop iterator.                                                    ###
+### Defined by the first item and the next and stop functions, instead of   ###
+### a range. Can be traversed in forward and reverse directions, keeps      ###
+### track of the last item of the loop.                                     ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Loop iterator --------------------------------------------------------- #
+
+class Loop:
+
+   def __init__(self, first, next, stop):
+
+       self._first = first
+       self._next  = next
+       self._stop  = stop
+
+
+   def _run(self):
+
+       x = self._first
+
+       for _ in itertools.count():
+
+           yield x
+           x = self._next(x)
+
+           if self._stop(x):
+              break
+
+
+   @tdutil.cacheable
+   def _list(self):
+
+       return list(self._run())
+
+       
+   def __iter__(self):
+
+       return self._run()
+
+
+   def __reversed__(self):
+
+       return iter(reversed(self._list()))
+
+
+   def last(self):
+
+       return next(reversed(self)) 
+
+
+
+
+
+###############################################################################
+###                                                                         ###
 ###  Argument proxy: represents a variable in an argument list at a given   ###
 ###                  argument index. Performs insertion and extraction of   ###
 ###                  this variable to/from the argument list.               ###
