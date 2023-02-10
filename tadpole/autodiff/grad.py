@@ -183,6 +183,17 @@ class Graphable(abc.ABC):
 
 # --- Graph operator -------------------------------------------------------- #
 
+# TODO Future solution: remove .tovalue() method from Node, and make GraphOp
+# the only class able to retrieve its source. 
+
+# Either treat GraphOp as a friend of Node, or pass Node.tovalue(Value()) 
+# a Value() obj, only creatable by GraphOp (cf passkey idiom). 
+
+# Could also introduce ToValue(node) class, which takes care of retrieving 
+# Node's source internally (e.g. also using passkey idiom, or by simple 
+# friendship).
+
+
 class GraphOp(Graphable):
 
    def __init__(self, root, fun, x):

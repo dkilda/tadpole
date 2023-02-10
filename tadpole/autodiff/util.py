@@ -356,80 +356,151 @@ def make_argproxy(adx):
 
 ###############################################################################
 ###                                                                         ###
-###  Printing utility: string representation of an object.                  ###
+###  Logical chain: used for equality comparisons and other assertions.     ###
 ###                                                                         ###
 ###############################################################################
 
 
 # --- Helper methods -------------------------------------------------------- #
 
-def _format(x):
+def refid(x):
 
-    return f"type = {str(type(x))[8:-2]}, id = {id(x)} "
+    if isinstance(x, (tuple, list)):
+       return tuple(map(id, x))
 
-
-def _str(name, x):
-
-    if isinstance(x, (list, tuple)):
-       return "\n{}: [\n{}\n]".format(name, '\n'.join(_format(v) for v in x))
-
-    return f"\n{name}: {_format(x)}"  
+    return id(x)
 
 
 
 
-# --- String representation ------------------------------------------------- #
+# --- Logical chain --------------------------------------------------------- #
 
-class StringRep:
+class LogicalChain:
 
-   def __init__(self, obj, members=None, data=None):
+   def __init__(self):
 
-       if members is None: members = Sequence()
-       if data    is None: data    = Sequence()
-
-       self._obj     = obj
-       self._members = members
-       self._data    = data
+       self._chain = []
 
 
-   def with_member(self, name, x):
+   def _add(self, cond):
 
-       return self.__class__(
-                             self._obj, 
-                             self._members.push((name, x)), 
-                             self._data
-                            )
+       self._chain.append(cond)
+       return self
 
 
-   def with_data(self, name, x):
+   def typ(self, x, y):
 
-       return self.__class__(
-                             self._obj, 
-                             self._members, 
-                             self._data.push((name, x))
-                            )
-
-
-   def _obj_str(self):
+       return self._add(type(x) == type(y))
  
-       return f"\n\n{type(self._obj).__name__}. "
+
+   def ref(self, x, y):
+
+       return self._add(refid(x) == refid(y))
+        
+
+   def val(self, x, y):
+
+       return self._add(x == y)
 
 
-   def _member_str(self):
+   def __bool__(self):
 
-       return "".join(_str(name, x) for name, x in self._members)
-
-
-   def _data_str(self):
-
-       return "".join(f"\n{name}: {x}" for name, x in self._data)
+       return all(self._chain)
 
 
-   def compile(self):
+   def __repr__(self):
 
-       return f"{self._obj_str()}"  \
-              f"{self._data_str()}" \
-              f"{self._member_str()}\n\n"
+       rep = ReprChain()
+       rep.typ(self)
+       return str(rep)
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Representation chain: constructs a string representation (repr)        ###
+###  of an object.                                                          ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Helper methods (for formatting) --------------------------------------- #
+
+def format_type(x):
+
+    return f"{str(type(x))[8:-2]}"
+
+
+def format_obj(x):
+
+    return f"{format_type(x)}, id = {id(x)}, contains:"
+
+
+def format_val(name, x):
+
+    return f"{format_type(x)} {name} = {x}"
+
+
+def format_ref(name, x):
+
+    if isinstance(x, (tuple, list)):
+       return format_refs(name, x)
+
+    return f"{format_type(x)} {name} ID = {id(x)}"
+
+
+def format_refs(name, xs):
+
+    xids = ', '.join(map(lambda v: f"{format_type(v)} ID = {id(v)}", xs))
+    return f"{format_type(xs)} {name} : {xids}"
+
+
+def vjoin(args):
+
+    return '\n  . '.join(filter(None, args))
+
+
+
+
+# --- Representation chain -------------------------------------------------- #
+
+class ReprChain:
+
+   def __init__(self):
+
+       self._str = []
+
+
+   def _add(self, xstr):
+
+       self._str.append(xstr)
+       return self
+
+       
+   def typ(self, x):
+
+       return self._add(format_obj(x))
+
+  
+   def ref(self, name, x):
+
+       return self._add(format_ref(name, x))
+ 
+
+   def val(self, name, x):
+ 
+       return self._add(format_val(name, x))   
+
+
+   def __repr__(self):
+
+       return f"{format_obj(self)}"
+
+
+   def __str__(self):
+
+       return f"\n{vjoin(self._str)}\n"
 
 
 

@@ -314,6 +314,110 @@ class NodeLike(abc.ABC):
        pass
 
 
+"""
+   def __eq__(self, other):
+
+       log = LogicalChain()
+
+       log.typ(self, other) 
+       log.ref(self._source, other._source)
+       log.ref(self._gate,   other._gate)
+       log.val(self._layer,  other._layer)
+
+       return bool(log)
+"""
+
+
+
+def refid(x):
+
+    if isinstance(x, (tuple, list)):
+       return map(id, x)
+
+    return id(x)
+
+
+
+
+class LogicalChain:
+
+   def __init__(self):
+
+       self._chain = []
+
+
+   def _add(self, cond):
+
+       self._chain.append(cond)
+       return self
+
+
+   def typ(self, x, y):
+
+       return self._add(type(x) == type(y))
+ 
+
+   def ref(self, x, y):
+
+       return self._add(refid(x) == refid(y))
+        
+
+   def val(self, x, y):
+
+       return self._add(x == y)
+
+
+   def __bool__(self):
+
+       return all(self._chain)
+
+
+   def __repr__(self):
+
+       rep = ReprChain()
+       rep.typ(self)
+       return str(rep)
+
+
+
+
+class ReprChain:
+
+   def __init__(self):
+
+       self._str = ""
+
+
+   def _add(self, xstr):
+
+       self._str.append(xstr)
+       return self
+
+       
+   def typ(self, x):
+
+       return self._add(format_obj(x))
+
+  
+   def ref(self, name, x):
+
+       return self._add(format_ref(name, refid(x)))
+ 
+
+   def val(self, name, x):
+ 
+       return self._add(format_val(name, x))   
+
+
+   def __repr__(self):
+
+       return f"{format_obj(self)}"
+
+
+   def __str__(self):
+
+       return vjoin(self._str)
+
 
 
 # --- Node ------------------------------------------------------------------ #
