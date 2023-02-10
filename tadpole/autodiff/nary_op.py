@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from tadpole.autodiff.util import make_argproxy
+import tadpole.autodiff.util as tdutil
 
 
 
@@ -24,13 +24,16 @@ class NaryOp:
        self._argproxy = argproxy
 
 
-   def __eq__(self, other):
+   def __repr__(self):
 
-       return all((
-                   self._unary_op == other._unary_op, 
-                   self._fun      == other._fun, 
-                   self._argproxy == other._argproxy,
-                 ))
+       rep = tdutil.ReprChain()
+
+       rep.typ(self)
+       rep.val("unary_op", self._unary_op)
+       rep.val("fun",      self._fun)
+       rep.val("argproxy", self._argproxy)
+
+       return str(rep)
 
 
    def __call__(self, *args, **kwargs):
@@ -48,7 +51,7 @@ class NaryOp:
 def make_nary_op(unary_op):
 
     def wrap(fun, adx=None):
-        return NaryOp(unary_op, fun, make_argproxy(adx))
+        return NaryOp(unary_op, fun, tdutil.argproxy(adx))
 
     return wrap
 

@@ -84,6 +84,17 @@ class ForwardDifferentialOp(Differential):
        self._x   = x
 
 
+   def __repr__(self):
+
+       rep = tdutil.ReprChain()
+
+       rep.typ(self)
+       rep.val("fun", self._fun)
+       rep.ref("x",   self._x)
+
+       return str(rep)
+
+
    @tdutil.cacheable
    def graphop(self):
 
@@ -125,6 +136,17 @@ class ReverseDifferentialOp(Differential):
 
        self._fun = fun
        self._x   = x
+
+
+   def __repr__(self):
+
+       rep = tdutil.ReprChain()
+
+       rep.typ(self)
+       rep.val("fun", self._fun)
+       rep.ref("x",   self._x)
+
+       return str(rep)
 
 
    @tdutil.cacheable
@@ -203,6 +225,18 @@ class GraphOp(Graphable):
        self._x    = x
 
 
+   def __repr__(self):
+
+       rep = tdutil.ReprChain()
+
+       rep.typ(self)
+       rep.ref("root", self._root)
+       rep.val("fun",  self._fun)
+       rep.ref("x",    self._x)
+
+       return str(rep)
+
+
    def graph(self):
 
        return Graph(self._root)
@@ -254,6 +288,18 @@ class ChildCount(Traceable):
 
        self._parents = parents
        self._count   = count
+
+
+   def __repr__(self):
+
+       rep = tdutil.ReprChain()
+
+       rep.typ(self)
+       rep.ref("nodes",   list(self._parents.keys()))
+       rep.ref("parents", list(self._parents.values()))
+       rep.val("count",   list(self._count.values()))
+
+       return str(rep)
 
 
    def record(self, node, parents):
@@ -323,6 +369,16 @@ class Traversal(Traversable):
        self._end = end
 
 
+   def __repr__(self):
+
+       rep = tdutil.ReprChain()
+
+       rep.typ(self)
+       rep.ref("end", self._end)
+
+       return str(rep)
+
+
    def sweep(self, step): 
 
        pool = [self._end]
@@ -365,6 +421,17 @@ class TopoSort(Sortable):
 
        self._traversal = traversal
        self._count     = count
+
+
+   def __repr__(self):
+
+       rep = tdutil.ReprChain()
+
+       rep.typ(self)
+       rep.ref("traversal", self._traversal)
+       rep.ref("count",     self._count)
+
+       return str(rep)
 
 
    @tdutil.cacheable
@@ -430,6 +497,17 @@ class GradSum(Cumulative):
        self._grads = grads
 
 
+   def __repr__(self):
+
+       rep = tdutil.ReprChain()
+
+       rep.typ(self)
+       rep.ref("nodes", list(self._grads.keys()))
+       rep.val("grads", list(self._grads.values()))
+
+       return str(rep)
+
+
    def add(self, node, grads):
 
        self._grads[node] = reduce(tdmanip.add_grads, grads, None)
@@ -458,6 +536,17 @@ class GradAccum(Cumulative):
           grads = {}
 
        self._grads = grads
+
+
+   def __repr__(self):
+
+       rep = tdutil.ReprChain()
+
+       rep.typ(self)
+       rep.ref("nodes", list(self._grads.keys()))
+       rep.val("grads", list(self._grads.values()))
+
+       return str(rep)
 
 
    def add(self, nodes, grads):

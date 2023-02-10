@@ -52,15 +52,57 @@ class Sequence:
        self._end = end
 
 
+   @property
+   def _sequence(self):
+
+       return self._xs[:self._end] 
+
+
+   def __repr__(self):
+
+       rep = tdutil.ReprChain()
+
+       rep.typ(self)
+       rep.ref("items", self._sequence)
+
+       return str(rep)
+
+
    def __eq__(self, other):
 
        if self._end != other._end:
           return False
 
        if self._end > 0:
-          return self._xs[:self._end] == other._xs[:other._end]
+          return self._sequence == other._sequence
 
        return True
+
+
+   def __hash__(self):
+
+       return id(self)
+
+
+   def __len__(self):
+
+       return self._end
+
+
+   def __contains__(self, x):
+
+       return x in self._sequence
+
+
+   def __iter__(self):
+
+       for i in range(self.size()):
+           yield self._xs[i]
+
+
+   def __reversed__(self):
+
+      return reversed(self.__iter__())
 
 
    def push(self, x):
@@ -72,52 +114,6 @@ class Sequence:
    def pop(self):
 
        return self.__class__(self._xs, self._end - 1)
-
-
-   def top(self):
-
-       return self._xs[self._end - 1] 
-
-
-   def size(self):
-
-       return self._end
-
-
-   def empty(self):
-
-       return self.size() == 0
-
-
-   def contains(self, x):
-
-       return x in self._xs[:self._end]
-
-
-   def iterate(self):
-
-       for i in range(self.size()):
-           yield self._xs[i]
-
-
-   def __len__(self):
-
-       return self.size()
-
-
-   def __contains__(self, x):
-
-       return self.contains(x)
-
-
-   def __iter__(self):
-
-       return self.iterate()
-
-
-   def __reversed__(self):
-
-      return reversed(self.iterate())
 
 
 
@@ -137,6 +133,31 @@ class Tuple:
    def __init__(self, xs):
 
        self._xs = xs
+
+
+   def __repr__(self):
+
+       rep = ReprChain()
+
+       rep.typ(self)
+       rep.ref("items", self._xs)
+
+       return str(rep)
+
+
+   def __eq__(self, other):
+
+       log = LogicalChain()
+
+       log.typ(self, other) 
+       log.ref(self._xs, other._xs)
+
+       return bool(log)
+
+
+   def __hash__(self):
+
+       return hash(self._xs)
 
 
    def __len__(self):
@@ -341,7 +362,7 @@ class PluralArgProxy(ArgProxy):
 
 # --- Unary function argument proxy ----------------------------------------- # 
 
-def make_argproxy(adx):
+def argproxy(adx):
 
     if adx is None:
        adx = 0

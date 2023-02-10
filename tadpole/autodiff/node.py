@@ -15,6 +15,116 @@ import tadpole.autodiff.adjoints as tda
 
 ###############################################################################
 ###                                                                         ###
+###  Adjoint operators associated with a specific function,                 ###
+###  with knowledge of how to compute VJP's and JVP's.                      ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Adjoint interface ----------------------------------------------------- #
+
+class Adjoint(abc.ABC):
+
+   @abc.abstractmethod
+   def vjp(self, seed):
+       pass
+
+   @abc.abstractmethod
+   def jvp(self, seed):
+       pass
+
+
+
+
+# --- Adjoint operator ------------------------------------------------------ #
+
+class AdjointOp(Adjoint):
+
+   def __init__(self, fun, adxs, out, args):
+ 
+       self._fun  = fun
+       self._adxs = adxs 
+       self._out  = out
+       self._args = args
+
+
+   def __repr__(self):
+
+       rep = tdutil.ReprChain()
+
+       rep.typ(self)
+       rep.val("fun",  self._fun)
+       rep.val("adxs", self._adxs)
+       rep.ref("out",  self._out)
+       rep.val("args", self._args)
+
+       return str(rep)
+
+
+   def __eq__(self, other):
+
+       log = tdutil.LogicalChain()
+
+       log.typ(self, other) 
+       log.val(self._fun,  other._fun)
+       log.val(self._adxs, other._adxs)
+       log.ref(self._out,  other._out)
+       log.val(self._args, other._args)
+
+       return bool(log)
+
+
+   def __hash__(self):
+
+       return id(self)
+
+
+   def _apply(self, fun):
+
+       return fun(self._adxs, self._out, *self._args)
+
+
+   def vjp(self, seed):
+
+       vjpfun = tda.vjpmap.get(self._fun)
+
+       return self._apply(vjpfun)(seed)
+
+
+   def jvp(self, seed):
+
+       jvpfun = tda.jvpmap.get(self._fun)
+
+       return self._apply(jvpfun)(seed)
+
+
+
+
+# --- Null adjoint operator ------------------------------------------------- #
+
+class NullAdjointOp(Adjoint):
+
+   def __repr__(self):
+
+       rep = tdutil.ReprChain()
+       rep.typ(self)
+       return str(rep)
+
+
+   def vjp(self, seed):
+
+       return tuple()
+
+
+   def jvp(self, seed):
+
+       return seed
+
+
+
+
+###############################################################################
+###                                                                         ###
 ###  Logic gates representing the logic of forward and reverse propagation. ###
 ###                                                                         ###
 ###############################################################################
@@ -42,6 +152,13 @@ class GateLike(abc.ABC):
 # --- Null logic gate ------------------------------------------------------- #
 
 class NullGate(GateLike):
+
+   def __repr__(self):
+
+       rep = tdutil.ReprChain()
+       rep.typ(self)
+       return str(rep)
+
 
    def flow(self):
 
@@ -72,14 +189,30 @@ class ForwardGate(GateLike):
        if parents is None: parents = tuple()
        if op      is None: op      = NullAdjointOp()
 
+       self._parents = parents
+       self._op      = op
+
+
+   def __repr__(self):
+
+       rep = tdutil.ReprChain()
+
+       rep.typ(self)
+       rep.val("parents", self._parents)
+       rep.val("op",      self._op)
+
+       return str(rep)
+
 
    def __eq__(self, other):
 
-       return all((
-                   type(self)    == type(other),
-                   self._parents == other._parents,
-                   self._op      == other._op,
-                 ))
+       log = tdutil.LogicalChain()
+
+       log.typ(self, other) 
+       log.val(self._parents, other._parents)
+       log.val(self._op,      other._op)
+
+       return bool(log)
 
 
    def __hash__(self):
@@ -125,13 +258,26 @@ class ReverseGate(GateLike):
        self._op      = op
 
 
+   def __repr__(self):
+
+       rep = tdutil.ReprChain()
+
+       rep.typ(self)
+       rep.val("parents", self._parents)
+       rep.val("op",      self._op)
+
+       return str(rep)
+
+
    def __eq__(self, other):
 
-       return all((
-                   type(self)    == type(other),
-                   self._parents == other._parents,
-                   self._op      == other._op,
-                 ))
+       log = tdutil.LogicalChain()
+
+       log.typ(self, other) 
+       log.val(self._parents, other._parents)
+       log.val(self._op,      other._op)
+
+       return bool(log)
 
 
    def __hash__(self):
@@ -161,83 +307,6 @@ class ReverseGate(GateLike):
 
 
 
-# --- Adjoint interface ----------------------------------------------------- #
-
-class Adjoint(abc.ABC):
-
-   @abc.abstractmethod
-   def vjp(self, seed):
-       pass
-
-   @abc.abstractmethod
-   def jvp(self, seed):
-       pass
-
-
-
-
-# --- Adjoint operator ------------------------------------------------------ #
-
-class AdjointOp(Adjoint):
-
-   def __init__(self, fun, adxs, out, *args):
- 
-       self._fun  = fun
-       self._adxs = adxs 
-       self._out  = out
-       self._args = args
-
-
-   def __eq__(self, other):
-
-       return all((
-                   type(self) == type(other), 
-                   self._fun  == other._fun,
-                 ))
-
-
-   def __hash__(self):
-
-       return id(self)
-
-
-   def _apply(self, fun):
-
-       return fun(self._adxs, self._out, *self._args)
-
-
-   def vjp(self, seed):
-
-       vjpfun = tda.vjpmap.get(self._fun)
-
-       return self._apply(vjpfun)(seed)
-
-
-   def jvp(self, seed):
-
-       jvpfun = tda.jvpmap.get(self._fun)
-
-       return self._apply(jvpfun)(seed)
-
-
-
-
-# --- Null adjoint operator ------------------------------------------------- #
-
-class NullAdjointOp(Adjoint):
-
-   def vjp(self, seed):
-
-       return tuple()
-
-
-   def jvp(self, seed):
-
-       return seed
-
-
-
-
 # --- Flow: defines the direction of propagation through AD graph ----------- # 
 
 class Flow:
@@ -248,12 +317,24 @@ class Flow:
        self._fun  = fun
 
 
+   def __repr__(self):
+
+       rep = tdutil.ReprChain()
+
+       rep.typ(self)
+       rep.val("direction", self._name)
+
+       return str(rep)
+
+
    def __eq__(self, other):
 
-       return all((
-                   type(self) == type(other), 
-                   self._name == other._name, 
-                 ))
+       log = tdutil.LogicalChain()
+
+       log.typ(self, other)
+       log.val(self._name, other._name)
+
+       return bool(log)
 
 
    def __hash__(self):
@@ -261,18 +342,13 @@ class Flow:
        return hash(self._name)
 
 
-   def __repr__(self):
-
-       return f"Flow: {self._name}"
-
-
    def __add__(self, other):
 
        if self == other:
           return self
 
-       raise ValueError(
-          f"Flow.__add__: cannot add unequal flows {self}, {other}")
+       raise ValueError((f"Flow.__add__: cannot add flows "
+                         f"with different directions {self}, {other}"))
 
 
    def gate(self, parents, op):
@@ -314,110 +390,6 @@ class NodeLike(abc.ABC):
        pass
 
 
-"""
-   def __eq__(self, other):
-
-       log = LogicalChain()
-
-       log.typ(self, other) 
-       log.ref(self._source, other._source)
-       log.ref(self._gate,   other._gate)
-       log.val(self._layer,  other._layer)
-
-       return bool(log)
-"""
-
-
-
-def refid(x):
-
-    if isinstance(x, (tuple, list)):
-       return map(id, x)
-
-    return id(x)
-
-
-
-
-class LogicalChain:
-
-   def __init__(self):
-
-       self._chain = []
-
-
-   def _add(self, cond):
-
-       self._chain.append(cond)
-       return self
-
-
-   def typ(self, x, y):
-
-       return self._add(type(x) == type(y))
- 
-
-   def ref(self, x, y):
-
-       return self._add(refid(x) == refid(y))
-        
-
-   def val(self, x, y):
-
-       return self._add(x == y)
-
-
-   def __bool__(self):
-
-       return all(self._chain)
-
-
-   def __repr__(self):
-
-       rep = ReprChain()
-       rep.typ(self)
-       return str(rep)
-
-
-
-
-class ReprChain:
-
-   def __init__(self):
-
-       self._str = ""
-
-
-   def _add(self, xstr):
-
-       self._str.append(xstr)
-       return self
-
-       
-   def typ(self, x):
-
-       return self._add(format_obj(x))
-
-  
-   def ref(self, name, x):
-
-       return self._add(format_ref(name, refid(x)))
- 
-
-   def val(self, name, x):
- 
-       return self._add(format_val(name, x))   
-
-
-   def __repr__(self):
-
-       return f"{format_obj(self)}"
-
-
-   def __str__(self):
-
-       return vjoin(self._str)
-
 
 
 # --- Node ------------------------------------------------------------------ #
@@ -431,77 +403,29 @@ class Node(NodeLike):
        self._gate   = gate
 
 
+   def __repr__(self):
 
-   """
-   def _signature(self):
+       rep = tdutil.ReprChain()
 
-       return Signature().type(self)
-                         .vals(self._layer)
-                         .ids(self._source, self._gate)
+       rep.typ(self)
+       rep.ref("source", self._source)
+       rep.val("layer",  self._layer)
+       rep.ref("gate",   self._gate)
 
-
-
-   def __eq__(self, other):
-
-       log = LogicalChain()
-
-       log(type(self)  == type(other))
-       log(self._layer == other._layer)
-
-       log(id(self._source) == id(other._source))
-       log(id(self._gate)   == id(other._gate))
-
-       return bool(log)
-   """
-
+       return str(rep)
 
 
    def __eq__(self, other):
 
-       log = LogicalChain()
+       log = tdutil.LogicalChain()
 
        log.typ(self, other) 
        log.ref(self._source, other._source)
-       log.ref(self._gate,   other._gate)
        log.val(self._layer,  other._layer)
+       log.ref(self._gate,   other._gate)
 
        return bool(log)
 
-
-   """
-   def __eq__(self, other):
-
-       if type(self)  == type(other)  and
-          self._layer == other._layer and
-          id(self._source) == id(other._source)
-          id(self._gate)   == id(other._gate)
-
-       return all((
-
-          type(self) == type(other),
-        
-          self._layer == other._layer,
-
-          id(self._source) == id(other._source),
-          id(self._gate)   == id(other._gate),
-       ))
-
-      
-
-
-       # return self._signature() == other._signature()
-       return all((
-          type(self) == type(other)
-          id(self._source) ==  
-
-
-       return all((
-                   type(self)       == type(other),
-                   self._layer      == other._layer,
-                   id(self._source) == id(other._source),
-                   id(self._gate)   == id(other._gate),
-                 ))
-       """
 
    def __hash__(self):
 
@@ -546,23 +470,28 @@ class Point(NodeLike):
    def __init__(self, source):
 
        self._source = source
+       self._layer  = tdgraph.minlayer()
+       self._gate   = NullGate()
 
 
-   @property
-   def _layer(self):
-       return tdgraph.minlayer()
+   def __repr__(self):
 
-   @property
-   def _gate(self):
-       return NullGate()
+       rep = tdutil.ReprChain()
+
+       rep.typ(self)
+       rep.ref("source", self._source)
+
+       return str(rep)
 
 
    def __eq__(self, other):
 
-       return all((
-                   type(self)       == type(other), 
-                   id(self._source) == id(other._source),
-                 )) 
+       log = tdutil.LogicalChain()
+
+       log.typ(self, other) 
+       log.ref(self._source, other._source)
+
+       return bool(log)
 
 
    def __hash__(self):
@@ -611,12 +540,6 @@ class Parental(abc.ABC):
 # --- Parents --------------------------------------------------------------- #
 
 class Parents(tdutil.Tuple):
-
-   @property
-   def _nodes(self): 
-
-       return self._xs
-
 
    def next(self, source, layer, op):
 

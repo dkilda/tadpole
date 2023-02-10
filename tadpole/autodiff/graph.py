@@ -76,6 +76,16 @@ class Differentiable:
        self._envelope = make_envelope
 
 
+   def __repr__(self):
+
+       rep = tdutil.ReprChain()
+
+       rep.typ(self)
+       rep.val("fun", self._fun)
+
+       return str(rep)
+
+
    def __call__(self, *args):
 
        return self._envelope(args).applywrap(self, self._fun)
@@ -91,6 +101,16 @@ class NonDifferentiable:
 
        self._fun      = fun
        self._envelope = make_envelope
+
+
+   def __repr__(self):
+
+       rep = tdutil.ReprChain()
+
+       rep.typ(self)
+       rep.val("fun", self._fun)
+
+       return str(rep)
 
 
    def __call__(self, *args):
@@ -156,16 +176,11 @@ def nodify(x):
 
 class Args(tdutil.Tuple):
 
-   @property
-   def _args(self): 
-
-       return self._xs
-
 
    def concat(self):
 
        concat = Concatenation() 
-       args   = map(nodify, self._args)
+       args   = map(nodify, self._xs)
 
        for arg in args:
            concat = arg.concat(concat)
@@ -227,6 +242,18 @@ class Concatenation(Concatenable, Cohesive):
        self._nodes   = nodes
        self._sources = sources
        self._layers  = layers
+
+
+   def __repr__(self):
+
+       rep = tdutil.ReprChain()
+
+       rep.typ(self)
+       rep.val("nodes",   self._nodes)
+       rep.val("sources", self._sources)
+       rep.val("layers",  self._layers)
+
+       return str(rep)
 
 
    def __eq__(self, other):
@@ -327,6 +354,31 @@ class Pack(Packed):
        self._concat = concat
 
 
+   def __repr__(self):
+
+       rep = tdutil.ReprChain()
+
+       rep.typ(self)
+       rep.ref("concat", self._concat)
+
+       return str(rep)
+
+
+   def __eq__(self, other):
+
+       log = LogicalChain()
+
+       log.typ(self, other) 
+       log.ref(self._concat, other._concat)
+
+       return bool(log)
+
+
+   def __hash__(self):
+
+       return id(self)
+
+
    @property
    def _layer(self):
 
@@ -403,6 +455,31 @@ class Envelope(Enveloped):
 
        self._args = args
 
+
+   def __repr__(self):
+
+       rep = tdutil.ReprChain()
+
+       rep.typ(self)
+       rep.ref("args", self._args)
+
+       return str(rep)
+
+
+   def __eq__(self, other):
+
+       log = LogicalChain()
+
+       log.typ(self, other) 
+       log.ref(self._args, other._args)
+
+       return bool(log)
+
+
+   def __hash__(self):
+
+       return id(self)
+
  
    def packs(self):
 
@@ -411,7 +488,6 @@ class Envelope(Enveloped):
                           lambda x: x.deshelled(), 
                           lambda x: x.innermost()
                          )
-
 
    def apply(self, fun):
 
