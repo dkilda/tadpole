@@ -148,9 +148,40 @@ class GateLike(abc.ABC):
 
 
 
-# --- GateLike interface with default methods ------------------------------- #
+# --- Null logic gate ------------------------------------------------------- #
 
-class GateLikeDefault(GateLike):
+class NullGate(GateLike):
+
+   def __repr__(self):
+
+       rep = tdutil.ReprChain()
+       rep.typ(self)
+       return str(rep)
+
+
+   def flow(self):
+
+       return Flow(
+                   "NULL", 
+                   lambda parents, op: self.__class__()
+                  )
+
+
+   def trace(self, node, traceable):
+
+       return traceable
+
+
+   def grads(self, node, grads):
+
+       return grads
+
+
+
+
+# --- Forward logic gate ---------------------------------------------------- #
+
+class ForwardGate(GateLike):
 
    def __init__(self, parents=None, op=None):
 
@@ -188,59 +219,17 @@ class GateLikeDefault(GateLike):
        return id(self)
 
 
-   def trace(self, node, traceable):
-
-       return traceable.record(node, self._parents)
-
-
-   def _flow(self, direction):
+   def flow(self):
 
        return Flow(
-                   direction, 
+                   "FORWARD", 
                    lambda parents, op: self.__class__(parents, op)
                   )
 
 
-
-
-# --- Null logic gate ------------------------------------------------------- #
-
-class NullGate(GateLike):
-
-   def __repr__(self):
-
-       rep = tdutil.ReprChain()
-       rep.typ(self)
-       return str(rep)
-
-
-   def flow(self):
-
-       return Flow(
-                   "NULL", 
-                   lambda parents, op: self.__class__()
-                  )
-
-
    def trace(self, node, traceable):
 
-       return traceable
-
-
-   def grads(self, node, grads):
-
-       return grads
-
-
-
-
-# --- Forward logic gate ---------------------------------------------------- #
-
-class ForwardGate(GateLikeDefault):
-
-   def flow(self):
-
-       return self._flow("FORWARD")
+       return traceable.record(node, self._parents)
 
 
    def grads(self, node, grads): 
@@ -257,11 +246,55 @@ class ForwardGate(GateLikeDefault):
 
 # --- Reverse logic gate ---------------------------------------------------- #
 
-class ReverseGate(GateLikeDefault):
+class ReverseGate(GateLike):
+
+   def __init__(self, parents=None, op=None):
+
+       if parents is None: parents = tuple()
+       if op      is None: op      = NullAdjointOp()
+
+       self._parents = parents
+       self._op      = op
+
+
+   def __repr__(self):
+
+       rep = tdutil.ReprChain()
+
+       rep.typ(self)
+       rep.val("parents", self._parents)
+       rep.val("op",      self._op)
+
+       return str(rep)
+
+
+   def __eq__(self, other):
+
+       log = tdutil.LogicalChain()
+
+       log.typ(self, other) 
+       log.val(self._parents, other._parents)
+       log.val(self._op,      other._op)
+
+       return bool(log)
+
+
+   def __hash__(self):
+
+       return id(self)
+
 
    def flow(self):
 
-       return self._flow("REVERSE")
+       return Flow(
+                   "REVERSE", 
+                   lambda parents, op: self.__class__(parents, op)
+                  )
+
+
+   def trace(self, node, traceable):
+
+       return traceable.record(node, self._parents)
 
 
    def grads(self, node, grads):
