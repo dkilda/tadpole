@@ -477,7 +477,7 @@ class Cumulative(abc.ABC):
        pass
 
    @abc.abstractmethod
-   def pop(self, node):
+   def pop(self, nodes):
        pass
 
    @abc.abstractmethod
@@ -489,11 +489,16 @@ class Cumulative(abc.ABC):
 
 # --- Gradient summation ---------------------------------------------------- #
 
+
 class GradSum(Cumulative):
 
-   def __init__(self, seed):
+   def __init__(self, seed, grads=None):
 
-       self._grads = {None: (seed,)}
+       if grads is None:
+          grads = {}
+
+       self._seed  = seed
+       self._grads = grads
 
 
    def __repr__(self):
@@ -509,19 +514,14 @@ class GradSum(Cumulative):
 
    def add(self, node, grads):
 
-       #print(f"\nGradSum-1: {node}")
-       #print(f"\nGradSum-2: {tuple(grads)}")
-
        self._grads[node] = reduce(tdmanip.add_grads, grads, None)
        return self
 
 
    def pop(self, nodes):
 
-       #print(f"\nGradSum-POP: {nodes}, {self._grads}")
-
        if not nodes:
-          return self._grads[None]    
+          return (self._seed,)   
 
        return tuple(map(self._grads.pop, nodes))
 

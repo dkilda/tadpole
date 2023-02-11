@@ -236,11 +236,7 @@ class ForwardGate(GateLike):
        for parent in self._parents:
            grads = parent.grads(grads)
 
-       print(f"\nPARENTS: {self._parents}")
-
        seed = grads.pop(self._parents)
-
-       #print(f"\nGRADS: {self._parents}, {tuple(seed)}, {self._op}, {tuple(self._op.jvp(seed))}")
 
        return grads.add(node, self._op.jvp(seed))
 
