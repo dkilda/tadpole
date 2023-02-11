@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import abc
+import functools
 import itertools
 
 
@@ -18,6 +19,7 @@ def cacheable(fun):
 
     name = f"_{fun.__name__}_cached"
 
+    @functools.wraps(fun)
     def wrap(self):
 
         try:
@@ -163,8 +165,7 @@ class Sequence:
 
 ###############################################################################
 ###                                                                         ###
-### Tuple data structure (immutable):                                       ###
-### a base class for customized tuple-like types.                           ###
+### Interface for tuple-like types.                                         ###
 ###                                                                         ###
 ###############################################################################
 
@@ -174,95 +175,28 @@ class Sequence:
 class TupleLike(abc.ABC):
 
    @abc.abstractmethod
-   def __len__(self):
-       pass
-
-   @abc.abstractmethod
-   def __contains__(self, x):
-       pass
-
-   @abc.abstractmethod
-   def __iter__(self):
-       pass
-
-   @abc.abstractmethod
-   def __getitem__(self, idx):
-       pass
-
-
-
-
-# --- TupleLike interface with default methods ------------------------------ #
-
-class TupleLikeDefault(TupleLike):
-
-   @property
-   @abc.abstractmethod
-   def _items(self):
-
-       pass
-
-
-   def __repr__(self):
-
-       rep = ReprChain()
-
-       rep.typ(self)
-       rep.ref("items", self._items)
-
-       return str(rep)
-
-
    def __eq__(self, other):
+       pass
 
-       log = LogicalChain()
-
-       log.typ(self, other) 
-       log.ref(self._items, other._items)
-
-       return bool(log)
-
-
+   @abc.abstractmethod
    def __hash__(self):
+       pass
 
-       return hash(self._items)
-
-
+   @abc.abstractmethod
    def __len__(self):
+       pass
 
-       return len(self._items)
-
-
+   @abc.abstractmethod
    def __contains__(self, x):
+       pass
 
-       return x in self._items
-
-
+   @abc.abstractmethod
    def __iter__(self):
+       pass
 
-       return iter(self._items)
-
-
+   @abc.abstractmethod
    def __getitem__(self, idx):
-
-       return self._items[idx]
-
-
-
-
-# --- Tuple ----------------------------------------------------------------- #
-
-class Tuple(TupleLikeDefault):
- 
-   def __init__(self, *xs):
-
-       self._xs = xs
-
-
-   @property
-   def _items(self):
-  
-       return self._xs
+       pass
 
 
 

@@ -161,7 +161,7 @@ class ArgsLike(abc.ABC):
 
 # --- Function arguments ---------------------------------------------------- #
 
-class Args(ArgsLike, tdutil.TupleLikeDefault): 
+class Args(ArgsLike, tdutil.TupleLike):  
 
    def __init__(self, args):
 
@@ -170,10 +170,49 @@ class Args(ArgsLike, tdutil.TupleLikeDefault):
        self._args = args
 
 
-   @property
-   def _items(self):
+   def __repr__(self):
 
-       return self._args
+       rep = ReprChain()
+
+       rep.typ(self)
+       rep.ref("args", self._args)
+
+       return str(rep)
+
+
+   def __eq__(self, other):
+
+       log = LogicalChain()
+
+       log.typ(self, other) 
+       log.ref(self._args, other._args)
+
+       return bool(log)
+
+
+   def __hash__(self):
+
+       return hash(self._args)
+
+
+   def __len__(self):
+
+       return len(self._args)
+
+
+   def __contains__(self, x):
+
+       return x in self._args
+
+
+   def __iter__(self):
+
+       return iter(self._args)
+
+
+   def __getitem__(self, idx):
+
+       return self._args[idx]
 
 
    def concat(self):

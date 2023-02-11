@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import abc
+import functools
 
 import tadpole.autodiff.util     as tdutil   
 import tadpole.autodiff.manip    as tdmanip        
@@ -365,30 +366,9 @@ class NodeLike(abc.ABC):
 
 
 
-# --- NodeLike interface with default methods ------------------------------- #
-
-class NodeLikeDefault(NodeLike):
-
-   def flow(self):
-
-       return self._gate.flow()
-
-
-   def trace(self, traceable): 
-
-       return self._gate.trace(self, traceable)
-
-
-   def grads(self, grads):
-
-       return self._gate.grads(self, grads)
-
-
-
-
 # --- Node ------------------------------------------------------------------ #
 
-class Node(NodeLikeDefault):
+class Node(NodeLike):
 
    def __init__(self, source, layer, gate): 
 
@@ -442,6 +422,21 @@ class Node(NodeLikeDefault):
        return concatenable.attach(self, self._source, self._layer)
 
 
+   def flow(self):
+
+       return self._gate.flow()
+
+
+   def trace(self, traceable): 
+
+       return self._gate.trace(self, traceable)
+
+
+   def grads(self, grads):
+
+       return self._gate.grads(self, grads)
+
+
 
 
 # --- Point (a disconnected node, only carries a value and no logic) -------- #
@@ -449,8 +444,7 @@ class Node(NodeLikeDefault):
 # TODO Future sol: let Array impl Node interface and act as a Point instead!
 # i.e. we'll replace Point with Array. Then Array.tovalue() will return self.
 
-
-class Point(NodeLikeDefault): 
+class Point(NodeLike): 
 
    def __init__(self, source):
 
@@ -494,6 +488,21 @@ class Point(NodeLikeDefault):
        return concatenable.attach(self, self, self._layer)
 
 
+   def flow(self):
+
+       return self._gate.flow()
+
+
+   def trace(self, traceable): 
+
+       return self._gate.trace(self, traceable)
+
+
+   def grads(self, grads):
+
+       return self._gate.grads(self, grads)
+
+
 
 
 # --- Parental interface ---------------------------------------------------- #
@@ -509,7 +518,7 @@ class Parental(abc.ABC):
 
 # --- Parents --------------------------------------------------------------- #
 
-class Parents(Parental, tdutil.TupleLikeDefault):
+class Parents(Parental, tdutil.TupleLike):  
 
    def __init__(self, parents):
 
@@ -519,11 +528,50 @@ class Parents(Parental, tdutil.TupleLikeDefault):
 
        self._parents = parents
 
-       
-   @property
-   def _items(self):
+    
+   def __repr__(self):
 
-       return self._parents
+       rep = ReprChain()
+
+       rep.typ(self)
+       rep.ref("parents", self._parents)
+
+       return str(rep)
+
+
+   def __eq__(self, other):
+
+       log = LogicalChain()
+
+       log.typ(self, other) 
+       log.ref(self._parents, other._parents)
+
+       return bool(log)
+
+
+   def __hash__(self):
+
+       return hash(self._parents)
+
+
+   def __len__(self):
+
+       return len(self._parents)
+
+
+   def __contains__(self, x):
+
+       return x in self._parents
+
+
+   def __iter__(self):
+
+       return iter(self._parents)
+
+
+   def __getitem__(self, idx):
+
+       return self._parents[idx]
    
 
    def next(self, source, layer, op):
