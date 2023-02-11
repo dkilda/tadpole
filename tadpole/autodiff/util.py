@@ -203,42 +203,31 @@ class Loop:
        self._next  = next
        self._stop  = stop
 
-
-   def _run(self):
+       
+   def __iter__(self):
 
        x = self._first
 
        for _ in itertools.count():
 
-           if self._stop(x):
-              break
-
            yield x
            x = self._next(x)
 
+           if self._stop(x):
+              break
+
 
    @cacheable
-   def _list(self):
-
-       return list(self._run())
-
-       
-   def __iter__(self):
-
-       return self._run()
-
-
    def __reversed__(self):
 
-       return iter(reversed(self._list()))
+       return iter(reversed(list(self)))
 
 
+   @cacheable
    def last(self):
  
-       try:
-          return next(reversed(self)) 
-       except StopIteration:
-          return self._first
+       return next(reversed(self)) 
+
 
 
 

@@ -19,13 +19,15 @@ y = 5.1
 
 val = fun(x, y)
 print(f"\nValue: {val}, {err(val, 0.13034543157)}")       # ans = 0.13034543157
+assert err(val, 0.13034543157)
 
 g = tad.grad(fun, 0)(x, y) 
 print(f"\nGradient wrt 0: {g}, {err(g, -1.00397095286)}") # ans = -1.00397095286
+assert err(g, -1.00397095286)
 
 g = tad.grad(fun, 1)(x, y) 
 print(f"\nGradient wrt 1: {g}, {err(g, -0.72755303459)}") # ans = -0.72755303459
-
+assert err(g, -0.72755303459)
 
 
 

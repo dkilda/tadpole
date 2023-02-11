@@ -421,11 +421,27 @@ class NodeLike(abc.ABC):
 
 
 
+# --- Convert to a NodeLike ------------------------------------------------- #
+
+def nodelike(x):
+
+    if isinstance(x, NodeLike):
+       return x
+
+    return Point(x)
+
+
+
+
 # --- Node ------------------------------------------------------------------ #
 
 class Node(NodeLike):
 
    def __init__(self, source, layer, gate): 
+
+       if not (layer > tdgraph.minlayer()):
+          raise ValueError((f"Node: the input layer {layer} must be higher "
+                            f"than the minimum layer {tdgraph.minlayer()}."))
 
        if not isinstance(source, NodeLike):
           source = Point(source)
@@ -574,11 +590,6 @@ class Parental(abc.ABC):
 class Parents(tdutil.Tuple):
 
    def next(self, source, layer, op):
-
-       print("---NEXT---")
-       for parent in self:
-           print(parent, parent.flow())
-       print("---")
 
        flow = sum(parent.flow() for parent in self)
        return Node(source, layer, flow.gate(self, op))

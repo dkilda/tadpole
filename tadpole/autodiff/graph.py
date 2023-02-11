@@ -159,29 +159,26 @@ class Compound(abc.ABC):
 
 
 
-# --- Helpers for Args ------------------------------------------------------- #
-
-def nodify(x):
-
-    if isinstance(x, tdnode.NodeLike):
-       return x
-
-    return tdnode.Point(x)
-
-
-
-
 # --- Function arguments ---------------------------------------------------- #
 
-class Args(tdutil.Tuple):
+class Args(tdutil.Tuple): # TODO swap inheritance for composition
+
+   def __init__(self, args):
+
+       super().__init__(tuple(map(tdnode.nodelike, args)))
+
+
+   @property
+   def _args(self):
+
+       return self._xs
 
 
    def concat(self):
 
        concat = Concatenation() 
-       args   = map(nodify, self._xs)
 
-       for arg in args:
+       for arg in self._args:
            concat = arg.concat(concat)
 
        return concat
@@ -274,8 +271,6 @@ class Concatenation(Concatenable, Cohesive):
 
    def attach(self, node, source, layer):
 
-       print(f"ATTACH: {node}, {source}, {layer}")
-
        return self.__class__(
                              self._nodes.push(node), 
                              self._sources.push(source), 
@@ -311,12 +306,8 @@ class Concatenation(Concatenable, Cohesive):
        args    = list(self._nodes)
        sources = list(self._sources)
 
-       print(f"DESHELL: {args}, {sources}")
-
        for adx in self.adxs():
            args[adx] = sources[adx] 
-
-       print(f"DESHELL-1: {args}, {sources}")
 
        return Args(args)
 
@@ -509,29 +500,21 @@ class Envelope(Enveloped):
    def apply(self, fun):
 
        args = self.packs().last().deshell()
-
-       print(f"\nARGS: {args}")
-
-       for arg in args:
-           print(f"\nARG: {arg}, {arg.tovalue()}")
-
        out  = fun(*(arg.tovalue() for arg in args))
 
-       return out # tdnode.Point(out)     
+       return out      
 
        
    def applywrap(self, funwrap, fun):
 
        out = self.apply(fun)
 
-       print(f"\nAPPLYWRAP-0: {out}")
-
        for pack in reversed(self.packs()):
-           print(f"\nAPPLYWRAP-1: {out}")
            out = pack.fold(funwrap, out) 
 
-       print(f"\nAPPLYWRAP-2: {out}")
-
+       if isinstance(out, tdnode.Point):
+          return out.tovalue() # FIXME Interim solution: in general, applywrap() must always return
+                               # the same type (NodeLike), so this will get fixed once our Value/Array = Point.
        return out
 
 
