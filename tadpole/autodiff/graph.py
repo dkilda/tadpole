@@ -144,12 +144,12 @@ def nondifferentiable(fun):
 ###############################################################################
 
 
-# --- Compound interface ---------------------------------------------------- #
+# --- ArgsLike interface ---------------------------------------------------- #
 
-class Compound(abc.ABC):
+class ArgsLike(abc.ABC):
 
    @abc.abstractmethod
-   def concatenate(self):
+   def concat(self):
        pass
 
    @abc.abstractmethod
@@ -161,24 +161,26 @@ class Compound(abc.ABC):
 
 # --- Function arguments ---------------------------------------------------- #
 
-class Args(tdutil.Tuple): # TODO swap inheritance for composition
+class Args(ArgsLike, tdutil.TupleLikeDefault): 
 
    def __init__(self, args):
 
-       super().__init__(tuple(map(tdnode.nodelike, args)))
+       args = tdnode.iterconv(tdnode.NodeLike)(args)
+
+       self._args = args
 
 
    @property
-   def _args(self):
+   def _items(self):
 
-       return self._xs
+       return self._args
 
 
    def concat(self):
 
        concat = Concatenation() 
 
-       for arg in self._args:
+       for arg in self:
            concat = arg.concat(concat)
 
        return concat

@@ -35,6 +35,48 @@ def cacheable(fun):
 
 ###############################################################################
 ###                                                                         ###
+### Automated type conversion                                               ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Conversion of type ---------------------------------------------------- #
+
+def typeconv(typA, typB=None):
+
+    if typB is None:
+       typB = typA
+
+    def wrap(x):
+
+        if isinstance(x, typA):
+           return x
+
+        return typB(x)
+
+    return wrap
+
+
+
+
+# --- Conversion of type stored in an iterable ------------------------------ #
+
+def iterconv(typA, typB=None):
+
+    def wrap(xs):
+
+        if all(isinstance(x, typA) for x in xs):
+           return xs
+
+        return type(xs)(map(typeconv(typA, typB), xs))
+
+    return wrap
+
+
+
+
+###############################################################################
+###                                                                         ###
 ### Sequence data structure (quasi-immutable)                               ###
 ###                                                                         ###
 ###############################################################################
@@ -127,13 +169,38 @@ class Sequence:
 ###############################################################################
 
 
-# --- Tuple ----------------------------------------------------------------- #
+# --- TupleLike interface --------------------------------------------------- #
 
-class Tuple:
+class TupleLike(abc.ABC):
 
-   def __init__(self, xs):
+   @abc.abstractmethod
+   def __len__(self):
+       pass
 
-       self._xs = xs
+   @abc.abstractmethod
+   def __contains__(self, x):
+       pass
+
+   @abc.abstractmethod
+   def __iter__(self):
+       pass
+
+   @abc.abstractmethod
+   def __getitem__(self, idx):
+       pass
+
+
+
+
+# --- TupleLike interface with default methods ------------------------------ #
+
+class TupleLikeDefault(TupleLike):
+
+   @property
+   @abc.abstractmethod
+   def _items(self):
+
+       pass
 
 
    def __repr__(self):
@@ -141,7 +208,7 @@ class Tuple:
        rep = ReprChain()
 
        rep.typ(self)
-       rep.ref("items", self._xs)
+       rep.ref("items", self._items)
 
        return str(rep)
 
@@ -151,34 +218,51 @@ class Tuple:
        log = LogicalChain()
 
        log.typ(self, other) 
-       log.ref(self._xs, other._xs)
+       log.ref(self._items, other._items)
 
        return bool(log)
 
 
    def __hash__(self):
 
-       return hash(self._xs)
+       return hash(self._items)
 
 
    def __len__(self):
 
-       return len(self._xs)
+       return len(self._items)
 
 
    def __contains__(self, x):
 
-       return x in self._xs
+       return x in self._items
 
 
    def __iter__(self):
 
-       return iter(self._xs)
+       return iter(self._items)
 
 
    def __getitem__(self, idx):
 
-       return self._xs[idx]
+       return self._items[idx]
+
+
+
+
+# --- Tuple ----------------------------------------------------------------- #
+
+class Tuple(TupleLikeDefault):
+ 
+   def __init__(self, *xs):
+
+       self._xs = xs
+
+
+   @property
+   def _items(self):
+  
+       return self._xs
 
 
 

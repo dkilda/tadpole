@@ -147,6 +147,61 @@ class GateLike(abc.ABC):
 
 
 
+# --- GateLike interface with default methods ------------------------------- #
+
+class GateLikeDefault(GateLike):
+
+   def __init__(self, parents=None, op=None):
+
+       if parents is None: parents = tuple()
+       if op      is None: op      = NullAdjointOp()
+
+       self._parents = parents
+       self._op      = op
+
+
+   def __repr__(self):
+
+       rep = tdutil.ReprChain()
+
+       rep.typ(self)
+       rep.val("parents", self._parents)
+       rep.val("op",      self._op)
+
+       return str(rep)
+
+
+   def __eq__(self, other):
+
+       log = tdutil.LogicalChain()
+
+       log.typ(self, other) 
+       log.val(self._parents, other._parents)
+       log.val(self._op,      other._op)
+
+       return bool(log)
+
+
+   def __hash__(self):
+
+       return id(self)
+
+
+   def trace(self, node, traceable):
+
+       return traceable.record(node, self._parents)
+
+
+   def _flow(self, direction):
+
+       return Flow(
+                   direction, 
+                   lambda parents, op: self.__class__(parents, op)
+                  )
+
+
+
+
 # --- Null logic gate ------------------------------------------------------- #
 
 class NullGate(GateLike):
@@ -180,55 +235,11 @@ class NullGate(GateLike):
 
 # --- Forward logic gate ---------------------------------------------------- #
 
-class ForwardGate(GateLike):
-
-   def __init__(self, parents=None, op=None):
-
-       if parents is None: parents = tuple()
-       if op      is None: op      = NullAdjointOp()
-
-       self._parents = parents
-       self._op      = op
-
-
-   def __repr__(self):
-
-       rep = tdutil.ReprChain()
-
-       rep.typ(self)
-       rep.val("parents", self._parents)
-       rep.val("op",      self._op)
-
-       return str(rep)
-
-
-   def __eq__(self, other):
-
-       log = tdutil.LogicalChain()
-
-       log.typ(self, other) 
-       log.val(self._parents, other._parents)
-       log.val(self._op,      other._op)
-
-       return bool(log)
-
-
-   def __hash__(self):
-
-       return id(self)
-
+class ForwardGate(GateLikeDefault):
 
    def flow(self):
 
-       return Flow(
-                   "FORWARD", 
-                   lambda parents, op: self.__class__(parents, op)
-                  )
-
-       
-   def trace(self, node, traceable):
-
-       return traceable.record(node, self._parents)
+       return self._flow("FORWARD")
 
 
    def grads(self, node, grads): 
@@ -241,78 +252,15 @@ class ForwardGate(GateLike):
        return grads.add(node, self._op.jvp(seed))
 
 
-"""
-New solution for sharing code:
-
-class ReverseGate:
-
-   def _traits(self):
-
-       return GateTraits
-
-
-   def __getattr__(self, attr):
-
-       return getattr(self._traits, attr)
-
-
----> doesn't really work w/o creating a new GateTraits object...
-
-
-"""
 
 
 # --- Reverse logic gate ---------------------------------------------------- #
 
-class ReverseGate(GateLike):
-
-   def __init__(self, parents=None, op=None):
-
-       if parents is None: parents = tuple()
-       if op      is None: op      = NullAdjointOp()
-
-       self._parents = parents
-       self._op      = op
-
-
-   def __repr__(self):
-
-       rep = tdutil.ReprChain()
-
-       rep.typ(self)
-       rep.val("parents", self._parents)
-       rep.val("op",      self._op)
-
-       return str(rep)
-
-
-   def __eq__(self, other):
-
-       log = tdutil.LogicalChain()
-
-       log.typ(self, other) 
-       log.val(self._parents, other._parents)
-       log.val(self._op,      other._op)
-
-       return bool(log)
-
-
-   def __hash__(self):
-
-       return id(self)
-
+class ReverseGate(GateLikeDefault):
 
    def flow(self):
 
-       return Flow(
-                   "REVERSE", 
-                   lambda parents, op: self.__class__(parents, op)
-                  )
-
-
-   def trace(self, node, traceable):
-
-       return traceable.record(node, self._parents)
+       return self._flow("REVERSE")
 
 
    def grads(self, node, grads):
@@ -417,21 +365,30 @@ class NodeLike(abc.ABC):
 
 
 
-# --- Convert to a NodeLike ------------------------------------------------- #
+# --- NodeLike interface with default methods ------------------------------- #
 
-def nodelike(x):
+class NodeLikeDefault(NodeLike):
 
-    if isinstance(x, NodeLike):
-       return x
+   def flow(self):
 
-    return Point(x)
+       return self._gate.flow()
+
+
+   def trace(self, traceable): 
+
+       return self._gate.trace(self, traceable)
+
+
+   def grads(self, grads):
+
+       return self._gate.grads(self, grads)
 
 
 
 
 # --- Node ------------------------------------------------------------------ #
 
-class Node(NodeLike):
+class Node(NodeLikeDefault):
 
    def __init__(self, source, layer, gate): 
 
@@ -439,8 +396,7 @@ class Node(NodeLike):
           raise ValueError((f"Node: the input layer {layer} must be higher "
                             f"than the minimum layer {tdgraph.minlayer()}."))
 
-       if not isinstance(source, NodeLike):
-          source = Point(source)
+       source = typeconv(NodeLike)(source)
                                             
        self._source = source              
        self._layer  = layer 
@@ -476,11 +432,6 @@ class Node(NodeLike):
        return id(self)
 
 
-   def flow(self):
-
-       return self._gate.flow()
-
-
    def tovalue(self):
 
        return self._source.tovalue()
@@ -491,16 +442,6 @@ class Node(NodeLike):
        return concatenable.attach(self, self._source, self._layer)
 
 
-   def trace(self, traceable): 
-
-       return self._gate.trace(self, traceable)
-
-
-   def grads(self, grads):
-
-       return self._gate.grads(self, grads)
-
-
 
 
 # --- Point (a disconnected node, only carries a value and no logic) -------- #
@@ -509,7 +450,7 @@ class Node(NodeLike):
 # i.e. we'll replace Point with Array. Then Array.tovalue() will return self.
 
 
-class Point(NodeLike): 
+class Point(NodeLikeDefault): 
 
    def __init__(self, source):
 
@@ -543,11 +484,6 @@ class Point(NodeLike):
        return id(self)
 
 
-   def flow(self):
-
-       return self._gate.flow()
-
-
    def tovalue(self):
 
        return self._source
@@ -556,16 +492,6 @@ class Point(NodeLike):
    def concat(self, concatenable):
 
        return concatenable.attach(self, self, self._layer)
-
-
-   def trace(self, traceable): 
-
-       return self._gate.trace(self, traceable)
-
-
-   def grads(self, grads):
-
-       return self._gate.grads(self, grads)
 
 
 
@@ -583,12 +509,55 @@ class Parental(abc.ABC):
 
 # --- Parents --------------------------------------------------------------- #
 
-class Parents(tdutil.Tuple):
+class Parents(Parental, tdutil.TupleLikeDefault):
+
+   def __init__(self, parents):
+
+       if not all(isinstance(parent, Node) for parent in parents):
+          raise ValueError((f"Parents: all constructor inputs must be Nodes, "
+                            f"but parents = {parents}"))
+
+       self._parents = parents
+
+       
+   @property
+   def _items(self):
+
+       return self._parents
+   
 
    def next(self, source, layer, op):
 
        flow = sum(parent.flow() for parent in self)
        return Node(source, layer, flow.gate(self, op))
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Auxiliary methods for Node module.                                     ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Shorthand type conversions -------------------------------------------- #
+
+def typeconv(typ):
+
+    assert typ is NodeLike
+    return tdutil.typeconv(NodeLike, Point)
+
+
+def iterconv(typ):
+
+    assert typ is NodeLike
+    return tdutil.iterconv(NodeLike, Point)
+
+
+
+
+
 
 
        
