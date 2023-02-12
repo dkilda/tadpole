@@ -279,9 +279,28 @@ class Traceable(abc.ABC):
 
 
 
+# --- Countable interface --------------------------------------------------- #
+
+class Countable(abc.ABC):
+
+   @abc.abstractmethod
+   def collect(self, node):
+       pass
+
+   @abc.abstractmethod
+   def increase(self, node):
+       pass
+
+   @abc.abstractmethod
+   def decrease(self, node):
+       pass
+
+
+
+
 # --- Child count ----------------------------------------------------------- #
 
-class ChildCount(Traceable):
+class ChildCount(Traceable, Countable):
 
    def __init__(self, parents=None, count=None):
 
@@ -488,7 +507,6 @@ class Cumulative(abc.ABC):
 
 
 # --- Gradient summation ---------------------------------------------------- #
-
 
 class GradSum(Cumulative):
 

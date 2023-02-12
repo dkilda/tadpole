@@ -363,9 +363,9 @@ class Concatenation(Concatenable, Cohesive):
 ###############################################################################
 
 
-# --- Packed interface ------------------------------------------------------ #
+# --- Packable interface ---------------------------------------------------- #
 
-class Packed(abc.ABC):
+class Packable(abc.ABC):
 
    @abc.abstractmethod
    def innermost(self):
@@ -388,7 +388,7 @@ class Packed(abc.ABC):
 
 # --- Argument pack (of concatenated nodes) --------------------------------- #
 
-class Pack(Packed):
+class Pack(Packable):
 
    def __init__(self, concat):
 
@@ -470,9 +470,9 @@ class Pack(Packed):
 
 
 
-# --- Enveloped interface --------------------------------------------------- #
+# --- Envelopable interface ------------------------------------------------- #
 
-class Enveloped(abc.ABC):
+class Envelopable(abc.ABC): 
 
    @abc.abstractmethod
    def packs(self):
@@ -495,7 +495,7 @@ class Enveloped(abc.ABC):
 # i.e. we'll replace Point with Array. Then Array.tovalue() will return self.
 
 
-class Envelope(Enveloped):
+class Envelope(Envelopable):
 
    def __init__(self, args):
 
