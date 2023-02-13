@@ -283,22 +283,14 @@ class SingularArgProxy(ArgProxy):
        self._adx = adx
 
 
-   def _str(self):
-
-       out = StringRep(self)
-       out = out.with_data("adx", self._adx)
-
-       return out.compile()
-       
-
-   def __str__(self):
- 
-       return self._str()
-
-
    def __repr__(self):
 
-       return self._str()
+       rep = ReprChain()
+
+       rep.typ(self)
+       rep.val("adx", self._adx)
+
+       return str(rep)
 
 
    def __eq__(self, other):
@@ -330,22 +322,14 @@ class PluralArgProxy(ArgProxy):
        self._adx = adx
 
 
-   def _str(self):
-
-       out = StringRep(self)
-       out = out.with_data("adx", self._adx)
-
-       return out.compile()
-       
-
-   def __str__(self):
- 
-       return self._str()
-
-
    def __repr__(self):
 
-       return self._str()
+       rep = ReprChain()
+
+       rep.typ(self)
+       rep.val("adx", self._adx)
+
+       return str(rep)
 
 
    def __eq__(self, other):

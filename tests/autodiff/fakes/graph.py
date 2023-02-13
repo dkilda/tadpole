@@ -1,336 +1,159 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import tadpole.autodiff.node  as tdnode
+import tests.common               as common
+import tests.autodiff.fakes.util  as util
+import tests.autodiff.fakes.node  as node
+import tests.autodiff.fakes.grad  as grad
+
+import tadpole.autodiff.graph as tdutil
 import tadpole.autodiff.graph as tdgraph
 
-from tests.common.fakes        import NULL, fakeit
-from tests.autodiff.fakes.misc import Fun, FunReturn, Map
-
-
-
-
-###############################################################################
-###                                                                         ###
-###  Autodiff computation graph                                             ###
-###                                                                         ###
-###############################################################################
-
-
-# --- Graph ----------------------------------------------------------------- #
-
-class Graph:
-
-   def __init__(self, build=NULL):
-
-       self._entered = False
-       self._exited  = False
-       self._build   = build
-
-
-   def entered(self):
-
-       return self._entered
-
-
-   def exited(self):
-
-       return self._exited
-
-
-   def __enter__(self):
-
-       self._entered = True
-       self._exited  = False
-       return self
-
-
-   def __exit__(self, exception_type, exception_val, trace):
-
-       self._entered = False
-       self._exited  = True
-
-
-   @fakeit
-   def build(self, gate):
-
-       return self._build[gate]
-
 
 
 
 ###############################################################################
 ###                                                                         ###
-###  Autodiff function decorators                                           ###
-###  for differentiable and non-differentiable functions                    ###
+###  Function arguments and their concatenation                             ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- Function with gate ---------------------------------------------------- #
+# --- ArgsLike interface ---------------------------------------------------- #
 
-class FunWithGate:
+class ArgsLike(tdgraph.ArgsLike):
 
-   def __init__(self, call=NULL, gate=NULL):
+   def __init__(self, **data):  
 
-       if call is NULL:
-          call = Map(FunReturn())
+       self._fun = util.FunMap(**data)
 
-       self._call = call
-       self._gate = gate
-
-
-   @fakeit
-   def __call__(self, *args):
-
-       return self._call[args]
-
-
-   @fakeit
-   def gate(self, logic):
-
-       return self._gate[logic]
-
-
-
-
-# --- Differentiable function decorator ------------------------------------- #
-
-Differentiable = Fun
-
-
-
-
-# --- Non-differentiable function decorator --------------------------------- #
-
-NonDifferentiable = Fun
-
-
-
-
-###############################################################################
-###                                                                         ###
-###  Node glue: code for glueing the input nodes together                   ###
-###                                                                         ###
-###############################################################################
-
-
-# --- Node train ------------------------------------------------------------ #
-
-class NodeTrain:
-
-   def __init__(self, with_node=NULL, with_meta=NULL, concatenate=NULL):
-
-       self._with_node   = with_node
-       self._with_meta   = with_meta
-       self._concatenate = concatenate 
-
-
-   @fakeit
-   def with_node(self, node):
-
-       return self._with_node
-
-
-   @fakeit
-   def with_meta(self, source, layer):
-
-       return self._with_meta
-
-
-   @fakeit
-   def concatenate(self):
-
-       return self._concatenate 
-
-
-
-
-# --- Node glue ------------------------------------------------------------- #
-
-class NodeGlue:
-
-   def __init__(self, iterate=NULL, concatenate=NULL):
-
-       self._iterate     = iterate
-       self._concatenate = concatenate 
-
-
-   @fakeit
-   def iterate(self):
  
-       return self._iterate
+   def concat(self):
 
+       return self._fun["concat", Concatenable()]()
 
-   @fakeit
-   def concatenate(self):
-
-       return self._concatenate
-
-
-
-
-###############################################################################
-###                                                                         ###
-###  Concatenated arguments                                                 ###
-###                                                                         ###
-###############################################################################
-
-
-# --- Concatenated arguments ------------------------------------------------ #
-
-class ConcatArgs(tdgraph.Cohesive): 
-
-   def __init__(self, layer=NULL, adxs=NULL, parents=NULL, 
-                      deshell=NULL, deshelled=NULL):
-
-       self._layer     = layer
-       self._adxs      = adxs
-       self._parents   = parents
-       self._deshell   = deshell
-       self._deshelled = deshelled
-
-
-   @fakeit
-   def layer(self):
-
-       return self._layer
-
-
-   @fakeit
-   def adxs(self):
-
-       return self._adxs
-
-
-   @fakeit
-   def parents(self):
-
-       return self._parents
-
-
-   @fakeit
-   def deshell(self):
-
-       return self._deshell
-
-
-   @fakeit
-   def deshelled(self):
-
-       return self._deshelled
-
-
-
-
-# --- Packable concatenated arguments --------------------------------------- #
-
-class PackableConcatArgs(tdgraph.Cohesive, tdgraph.Packable):
-
-   def __init__(self, layer=NULL, adxs=NULL, parents=NULL, 
-                      deshell=NULL, deshelled=NULL, pack=NULL):
-
-       self._layer     = layer
-       self._adxs      = adxs
-       self._parents   = parents
-       self._deshell   = deshell
-       self._deshelled = deshelled
-       self._pack      = pack
-
-
-   @fakeit
-   def layer(self):
-
-       return self._layer
-
-
-   @fakeit
-   def adxs(self):
-
-       return self._adxs
-
-
-   @fakeit
-   def parents(self):
-
-       return self._parents
-
-
-   @fakeit
-   def deshell(self):
-
-       return self._deshell
-
-
-   @fakeit
-   def deshelled(self):
-
-       return self._deshelled
-
-
-   @fakeit
+ 
    def pack(self):
 
-       return self._pack
+       return self._fun["pack", Packable()]()
 
 
 
 
-# --- Active concatenated arguments ----------------------------------------- #
+# --- Concatenable interface ------------------------------------------------ #
 
-Active = PackableConcatArgs
+class Concatenable(tdgraph.Concatenable):
+
+   def __init__(self, **data):  
+
+       self._fun = util.FunMap(**data)
+
+
+   def attach(self, node, source, layer):
+
+       return self._fun["attach", self.__class__()](node, source, layer)
 
 
 
 
-# --- Passive concatenated arguments ---------------------------------------- #
+# --- Cohesive interface ---------------------------------------------------- #
 
-Passive = PackableConcatArgs
+class Cohesive(tdgraph.Cohesive):
+
+   def __init__(self, **data):  
+
+       self._fun = util.FunMap(**data)
+
+
+   def layer(self):
+
+       return self._fun["layer", util.Value()]()
+
+       
+   def adxs(self):
+
+       return self._fun["adxs", util.Value()]()
+
+
+   def parents(self):
+
+       return self._fun["parents", tdnode.Parental()]()
+
+
+   def deshell(self):
+
+       return self._fun["deshell", ArgLike()]()
 
 
 
 
 ###############################################################################
 ###                                                                         ###
-###  Node packs: representing multiple nodes by a single argument           ###
-###              for function calls.                                        ###
+###  Argument pack and envelope, which enable us to operate on all          ###
+###  arguments as one unit.                                                 ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- Pack ------------------------------------------------------------------ #
+# --- Packable interface ---------------------------------------------------- #
 
-class Pack(tdgraph.Pack):
+class Packable(tdgraph.Packable):
 
-   def __init__(self, pluginto=NULL):
+   def __init__(self, **data):  
 
-       self._pluginto = pluginto
-
-
-   def pluginto(self, fun):
-
-       return self._pluginto[fun]
+       self._fun = util.FunMap(**data)
 
 
+   def innermost(self):
+
+       return self._fun["innermost", False]()
 
 
-# --- Active pack ----------------------------------------------------------- #
+   def deshell(self):
 
-ActivePack = Pack
-
-
+       return self._fun["deshell", ArgsLike()]()
 
 
-# --- Passive pack ---------------------------------------------------------- #
+   def deshelled(self):
 
-PassivePack = Pack
-
-
+       return self._fun["deshelled", self.__class__()]()
 
 
-# --- Point pack ------------------------------------------------------------ #
+   def fold(self, funwrap, out):
 
-PointPack = Pack
+       return self._fun["fold", NodeLike()](funwrap, out)
+
+
+
+
+# --- EnvelopeLike interface ------------------------------------------------ #
+
+class EnvelopeLike(tdgraph.EnvelopeLike): 
+
+   def __init__(self, **data):  
+
+       self._fun = util.FunMap(**data)
+
+
+   def packs(self):
+
+       default = tdutil.Loop(
+                             Packable(), 
+                             lambda x: Packable(), 
+                             lambda x: True
+                            )
+
+       return self._fun["packs", default]()
+
+
+   def apply(self, fun):
+
+       return self._fun["apply", util.Value()](fun)
+
+
+   def applywrap(self, funwrap, out):
+
+       return self._fun["applywrap", node.NodeLike()](funwrap, out)
 
 
 

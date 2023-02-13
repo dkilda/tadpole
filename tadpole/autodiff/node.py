@@ -9,6 +9,8 @@ import tadpole.autodiff.manip    as tdmanip
 import tadpole.autodiff.graph    as tdgraph
 import tadpole.autodiff.adjoints as tda
 
+from tadpole.autodiff.util import TupleLike
+
 
 
 
@@ -118,6 +120,99 @@ class NullAdjointOp(Adjoint):
    def jvp(self, seed):
 
        return seed
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Flow: defines the direction of propagation through AD graph.           ###
+###                                                                         ###
+###############################################################################
+
+
+# --- FlowLike interface ---------------------------------------------------- #
+
+class FlowLike(abc.ABC):
+
+   @abc.abstractmethod
+   def __eq__(self, other):
+       pass
+
+   @abc.abstractmethod
+   def __hash__(self):
+       pass
+
+   @abc.abstractmethod
+   def __add__(self, other):
+       pass
+
+   @abc.abstractmethod
+   def __radd__(self, other):
+       pass
+
+   @abc.abstractmethod
+   def gate(self, parents, op):
+       pass
+
+
+
+
+# --- Flow ------------------------------------------------------------------ # 
+
+class Flow(FlowLike):
+
+   def __init__(self, name, fun):
+
+       self._name = name
+       self._fun  = fun
+
+
+   def __repr__(self):
+
+       rep = tdutil.ReprChain()
+
+       rep.typ(self)
+       rep.val("direction", self._name)
+
+       return str(rep)
+
+
+   def __eq__(self, other):
+
+       log = tdutil.LogicalChain()
+
+       log.typ(self, other)
+       log.val(self._name, other._name)
+
+       return bool(log)
+
+
+   def __hash__(self):
+
+       return hash(self._name)
+
+
+   def __add__(self, other):
+
+       if not other:
+          return self
+
+       if self == other:
+          return self
+
+       raise ValueError((f"Flow.__add__: cannot add flows "
+                         f"with different directions {self}, {other}"))
+
+
+   def __radd__(self, other):
+
+       return self.__add__(other)
+
+
+   def gate(self, parents, op):
+
+       return self._fun(parents, op)
 
 
 
@@ -306,65 +401,6 @@ class ReverseGate(GateLike):
 
 
 
-# --- Flow: defines the direction of propagation through AD graph ----------- # 
-
-class Flow:
-
-   def __init__(self, name, fun):
-
-       self._name = name
-       self._fun  = fun
-
-
-   def __repr__(self):
-
-       rep = tdutil.ReprChain()
-
-       rep.typ(self)
-       rep.val("direction", self._name)
-
-       return str(rep)
-
-
-   def __eq__(self, other):
-
-       log = tdutil.LogicalChain()
-
-       log.typ(self, other)
-       log.val(self._name, other._name)
-
-       return bool(log)
-
-
-   def __hash__(self):
-
-       return hash(self._name)
-
-
-   def __add__(self, other):
-
-       if not other:
-          return self
-
-       if self == other:
-          return self
-
-       raise ValueError((f"Flow.__add__: cannot add flows "
-                         f"with different directions {self}, {other}"))
-
-
-   def __radd__(self, other):
-
-       return self.__add__(other)
-
-
-   def gate(self, parents, op):
-
-       return self._fun(parents, op)
-
-
- 
-
 ###############################################################################
 ###                                                                         ###
 ###  Nodes of the autodiff computation graph                                ###
@@ -538,6 +574,13 @@ class Point(NodeLike):
 
 
 
+###############################################################################
+###                                                                         ###
+###  Parents of an autodiff Node.                                           ###
+###                                                                         ###
+###############################################################################
+
+
 # --- Parental interface ---------------------------------------------------- #
 
 class Parental(abc.ABC):
@@ -551,7 +594,7 @@ class Parental(abc.ABC):
 
 # --- Parents --------------------------------------------------------------- #
 
-class Parents(Parental, tdutil.TupleLike):  
+class Parents(Parental, TupleLike):  
 
    def __init__(self, parents):
 

@@ -546,7 +546,7 @@ class GradSum(Cumulative):
 
    def result(self, node):
 
-       return self._grads.get(node)
+       return self._grads[node]
 
 
 
@@ -577,7 +577,7 @@ class GradAccum(Cumulative):
    def add(self, nodes, grads):
 
        for node, grad in zip(nodes, grads):
-           self._grads[node] = tdmanip.add_grads(self.result(node), grad)
+           self._grads[node] = tdmanip.add_grads(self._grads.get(node), grad)
 
        return self
 
@@ -592,7 +592,7 @@ class GradAccum(Cumulative):
 
    def result(self, node=None): 
 
-       return self._grads.get(node)
+       return self._grads[node]
 
 
 

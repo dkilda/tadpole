@@ -1,50 +1,102 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import tadpole.autodiff.node     as tdnode
-import tests.autodiff.fakes.misc as misc
-import tests.common.ntuple       as tpl
+import tests.common               as common
+import tests.autodiff.fakes.util  as util
+import tests.autodiff.fakes.graph as graph
+import tests.autodiff.fakes.grad  as grad
 
-from tests.common.fakes        import NULL, fakeit
-from tests.autodiff.fakes.misc import Fun, FunReturn, Map
+import tadpole.autodiff.node as tdnode
+
+
+"""
+
+If we don't spec e.g. trace, do we really care what .trace() returns? We won't be able to assert it anyway...
+
+
+   def trace(self, node, traceable):
+
+       if self._trace is None:
+          return grad.Traceable()
+
+       return self._trace(node, traceable) # FIXME it calls trace function, which returns a traceable object
+                                           # if not provided, just return a generic traceable (means we don't care)
+                                           # every data input should be a function, w/ or w/o args!
+
+
+"""
 
 
 
 
 ###############################################################################
 ###                                                                         ###
-###  Logic of forward and reverse propagation, creates logic gates.         ###
+###  Adjoint operators associated with a specific function,                 ###
+###  with knowledge of how to compute VJP's and JVP's.                      ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- Logic ----------------------------------------------------------------- #
+# --- Adjoint interface ----------------------------------------------------- #
 
-class Logic(tdnode.Logic):
+class Adjoint(tdnode.Adjoint):
 
-   def __init__(self, gate=NULL):
+   def __init__(self, **data):  
 
-       self._gate = gate
-
-
-   @fakeit
-   def gate(self, fun):
-
-       return self._gate
+       self._fun = util.FunMap(**data)
 
 
+   def vjp(self, seed):
+
+       return self._fun["vjp", seed](seed)
 
 
-# --- Forward logic --------------------------------------------------------- #
+   def jvp(self, seed):
 
-ForwardLogic = Logic
+       return self._fun["jvp", seed](seed)
 
 
 
 
-# --- Reverse logic --------------------------------------------------------- #
+###############################################################################
+###                                                                         ###
+###  Flow: defines the direction of propagation through AD graph.           ###
+###                                                                         ###
+###############################################################################
 
-ReverseLogic = Logic
+
+# --- FlowLike interface ---------------------------------------------------- #
+
+class FlowLike(tdnode.FlowLike):
+
+   def __init__(self, **data):  
+
+       self._fun = util.FunMap(**data)
+
+
+   def __eq__(self, other):
+
+       return self._fun["eq", id(self) == id(other)](other)       
+
+
+   def __hash__(self):
+
+       return self._fun["hash", id(self)]()
+
+
+   def __add__(self, other):
+
+       return self._fun["add", self](other)
+
+       
+   def __radd__(self, other):
+
+       return self.__add__(other)
+
+ 
+   def gate(self, parents, op):
+
+       return self._fun["gate", GateLike()](parents, op)
 
 
 
@@ -56,79 +108,28 @@ ReverseLogic = Logic
 ###############################################################################
 
 
-# --- Gate ------------------------------------------------------------------ #
+# --- GateLike interface ---------------------------------------------------- #
 
-class Gate(tdnode.Gate):
+class GateLike(tdnode.GateLike):
 
-   def __init__(self, nodify=NULL):
+   def __init__(self, **data):  
 
-       self._nodify = nodify
-
-
-   @fakeit   
-   def nodify(self, nodule):
-
-       return self._nodify[nodule]
+       self._fun = util.FunMap(**data)
 
 
+   def flow(self):
+
+       return self._fun["flow", FlowLike()]()
 
 
-# --- Forward logic gate ---------------------------------------------------- #
+   def trace(self, node, traceable):
 
-class ForwardGate(Gate):
-
-   def __init__(self, nodify=NULL, grad=NULL):
-
-       if grad is NULL:
-          grad = misc.randn()
-
-       self._grad = grad
-       super().__init__(nodify)
+       return self._fun["trace", traceable](node, traceable)
 
 
-   @fakeit
-   def grad(self):
+   def grads(self, node, grads):
 
-       return self._grad
-
-       
-
-
-# --- Reverse logic gate ---------------------------------------------------- #
-
-class ReverseGate(Gate):
-
-   def __init__(self, nodify=NULL, parents=NULL, grads=NULL):
-
-       super().__init__(nodify)
-       self._parents = parents
-       self._grads   = grads
-
-
-   @fakeit
-   def accumulate_parent_grads(self, seed, grads):
-
-       for parent, grad in zip(self._parents, self._grads(seed)):
-           grads.accumulate(parent, grad) 
-
-       return self
-
-
-   @fakeit
-   def add_to_childcount(self, childcount):
-
-       childcount.add(self._parents)
-
-       return self          
-    
-
-   @fakeit
-   def add_to_toposort(self, toposort):
-
-       for parent in self._parents:
-           toposort.add(parent)
-
-       return self
+       return self._fun["grads", grads](node, grads)  
 
 
 
@@ -140,118 +141,61 @@ class ReverseGate(Gate):
 ###############################################################################
 
 
-# --- Node ------------------------------------------------------------------ #
+# --- NodeLike interface ---------------------------------------------------- #
 
-class Node(tdnode.Node):
+class NodeLike(tdnode.NodeLike):
 
-   def __init__(self, tovalue=NULL, attach=NULL):
+   def __init__(self, **data):  
 
-       self._tovalue = tovalue
-       self._attach  = attach
+       self._fun = util.FunMap(**data)
 
 
-   @fakeit
    def tovalue(self):
 
-       return self._tovalue
+       return self._fun["tovalue", util.Value()]()
 
 
-   @fakeit
-   def attach(self, train):
+   def concat(self, concatenable):
 
-       return self._attach[train]
-
+       return self._fun["concat", concatenable](concatenable)
 
 
+   def flow(self):
 
-# --- Nodule: a node kernel ------------------------------------------------- #
-
-class Nodule(Node):
-   pass
-  
+       return self._fun["flow", FlowLike()]()
 
 
+   def trace(self, traceable):
 
-# --- Forward node ---------------------------------------------------------- #
-
-class ForwardNode(Node):
-
-   def __init__(self, tovalue=NULL, attach=NULL, logic=NULL, gate=NULL):
-
-       if gate is NULL:
-          gate = ForwardGate()
-
-       self._logic = logic
-       self._gate  = gate
-
-       super().__init__(tovalue, attach)
+       return self._fun["trace", traceable](traceable)
 
 
-   @fakeit
-   def logic(self, others, adxs, source, args):
+   def grads(self, grads):
 
-       return self._logic
-
-
-   @fakeit
-   def grad(self):
-
-       return self._gate.grad()
+       return self._fun["grads", grads](grads)
 
 
 
 
-# --- Reverse node ---------------------------------------------------------- #
-
-class ReverseNode(Node):
-
-   def __init__(self, tovalue=NULL, attach=NULL, logic=NULL, gate=NULL):
-
-       if gate is NULL:
-          gate = ReverseGate()
-
-       self._logic = logic
-       self._gate  = gate
-
-       super().__init__(tovalue, attach)
+###############################################################################
+###                                                                         ###
+###  Parents of an autodiff Node.                                           ###
+###                                                                         ###
+###############################################################################
 
 
-   @fakeit
-   def logic(self, others, adxs, source, args):
+# --- Parental interface ---------------------------------------------------- #
 
-       return self._logic
+class Parental(tdnode.Parental):
 
+   def __init__(self, **data):  
 
-   @fakeit
-   def accumulate_parent_grads(self, grads):
-
-       seed = grads.pop(self)
-       self._gate.accumulate_parent_grads(seed, grads)
-       return self
+       self._fun = util.FunMap(**data)
 
 
-   @fakeit
-   def add_to_childcount(self, childcount):
+   def next(self, source, layer, op):
 
-       childcount.visit(self)
-       self._gate.add_to_childcount(childcount)
-       return self          
-    
-
-   @fakeit
-   def add_to_toposort(self, toposort):
-
-       self._gate.add_to_toposort(toposort)
-       return self
-
-
-
-
-# --- Point (a disconnected node, only carries a value and no logic) -------- #
-
-class Point(Node):
-   pass
-
+       return self._fun["next", NodeLike()](source, layer, op)
 
 
 

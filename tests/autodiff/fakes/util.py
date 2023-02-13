@@ -1,125 +1,200 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import tadpole.autodiff.util as tdutil
+import abc
+import collections
 
-from tests.common.fakes        import NULL, fakeit
-from tests.autodiff.fakes.misc import Fun, FunReturn, Map
-
-
-
-###############################################################################
-###                                                                         ###
-###  Cache for methods with one-time evaluation                             ###
-###                                                                         ###
-###############################################################################
-
-
-# --- Fake class with a cacheable method ------------------------------------ #
-
-class CacheMe:
-
-   def __init__(self):
-
-       self._sentinel = 0
-
-
-   def sentinel(self):
-
-       return self._sentinel
-
-
-   def compute(self):
-
-       self._sentinel += 1
-       return FunReturn()
+import tests.common              as common
+import tests.autodiff.fakes.util as util
 
 
 
 
 ###############################################################################
 ###                                                                         ###
-### Sequence data structure (quasi-immutable)                               ###
+###  Basic building blocks for fake types:                                  ###
+###  map, operation set, value, function, function map.                     ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- Sequence -------------------------------------------------------------- #
+# --- Map ------------------------------------------------------------------- #
 
-class Sequence:
+class Map:
 
-   def __init__(self, push=NULL, pop=NULL, top=NULL, 
-                      size=NULL, empty=NULL, contains=NULL, iterate=NULL):
+   def __init__(self, out):
 
-       self._push = push
-       self._pop  = pop
-       self._top  = top
-       self._size = size
+       if not isinstance(out, dict):
+          out = collections.defaultdict(lambda: out)
 
-       self._contains = contains
-       self._iterate  = iterate
+       self._out = out
 
 
-   @fakeit
-   def push(self, x):
+   def __getitem__(self, key):
 
-       return self._push[x]
+       try:
+          return self._out[key]
 
+       except KeyError:
 
-   @fakeit
-   def pop(self):
-
-       return self._pop
-
-
-   @fakeit
-   def top(self):
-
-       return self._top
+          keys = list(self._out.keys())
+          return self._out[keys[keys.index(key)]]  
 
 
-   @fakeit
-   def size(self):
-
-       return self._size
 
 
-   @fakeit
-   def empty(self):
+# --- Operation set: add, multiply ------------------------------------------ #
 
-       return self._empty
+class Set:
 
+   def __init__(self, items):
 
-   @fakeit
-   def contains(self, x):
+       if not isinstance(items, frozenset):
+          items = frozenset([items])
 
-       return self._contains[x]
-
-
-   @fakeit
-   def iterate(self):
-
-       return self._iterate
+       self._items = items
 
 
-   def __len__(self):
+   def __eq__(self, other):
 
-       return self.size()
+       return all((
+                   type(self)  == type(other),
+                   self._items == other._items,
+                 ))
 
 
-   def __contains__(self, x):
+   def __hash__(self):
 
-       return self.contains(x)
+       return hash(self._items)
+
+
+   def __add__(self, other):
+
+       return AddSet(self._items | other._items)
+
+
+   def __mul__(self, other):
+
+       return MulSet(self._items | other._items)
+
+
+
+
+class AddSet(Set):
+   pass
+
+
+class MulSet(Set):
+   pass
+
+
+
+
+# --- Value ----------------------------------------------------------------- #
+
+class Value:
+
+   def __init__(self, val=None):  
+
+       if val is None:
+          val = id(self)
+
+       if not isinstance(val, Set):
+          val = AddSet(val)
+
+       self._val = val
+
+
+   def __eq__(self, other):
+
+       return self._val == other._val
+
+
+   def __hash__(self):
+
+       return hash(self._val)
 
 
    def __iter__(self):
 
-       return self.iterate()
+       yield self
 
 
-   def __reversed__(self):
+   def __len__(self):
 
-      return reversed(self.iterate())
+       return 1
+
+
+   def __contains__(self, x):
+
+       return x == self
+
+
+   def __getitem__(self, idx):
+
+       return tuple(self)[idx]
+
+
+   def __add__(self, other):
+
+       return self.__class__(self._val + other._val)   
+
+
+   def __mul__(self, other):
+
+       return self.__class__(self._val * other._val)
+
+
+
+
+# --- Fun ------------------------------------------------------------------- #
+
+class Fun:
+
+   def __init__(self, out, *args):
+
+       self._out  = out
+       self._args = args
+
+
+   def __call__(self, *args):
+
+       if self._out is None:
+          return Value()
+
+       if self._args is None:
+          return self._out
+
+       if isinstance(self._out, Map):
+          return self._out[args]
+
+       assert tuple(self._args) == args, (
+           f"Fun: no output for the args {args} provided. "
+           f"Fun accepts args {self._args}."
+       )
+
+       return self._out
+
+
+
+
+# --- FunMap ---------------------------------------------------------------- #
+
+class FunMap:
+
+   def __init__(self, **data):
+
+       self._data = data
+
+
+   def __getitem__(self, key): 
+
+       try:
+          name, default = key 
+       except ValueError:
+          name, default = key, None
+       
+       return self._data.get(name, lambda *args, **kwargs: default)
 
 
 
@@ -137,45 +212,29 @@ class Sequence:
 
 class ArgProxy(tdutil.ArgProxy):
 
-   def __init__(self, insert=NULL, extract=NULL):
+   def __init__(self, **data):  
 
-       self._insert  = insert
-       self._extract = extract
+       self._data = data
 
 
-   @fakeit
+   def _get(self, name, default=None):
+       
+       return self._data.get(name, default)
+
+
    def insert(self, args, x):
 
-       return self._insert[(args, x)]
+       default = Fun(Value())
+
+       return self._get("insert", default)(args, x)
 
 
-   @fakeit
    def extract(self, args):
 
-       return self._extract[args]
+       default = Fun(Value())
+
+       return self._get("extract", default)(args)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+ 
 

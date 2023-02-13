@@ -6,6 +6,8 @@ import abc
 import tadpole.autodiff.util as tdutil
 import tadpole.autodiff.node as tdnode
 
+from tadpole.autodiff.util import TupleLike
+
 
 
 
@@ -25,9 +27,28 @@ def minlayer():
 
 
 
+# --- GraphLike interface --------------------------------------------------- #
+
+class GraphLike(abc.ABC):
+
+   @abc.abstractmethod
+   def __enter__(self):
+       pass
+
+   @abc.abstractmethod
+   def __exit__(self, exception_type, exception_val, trace):
+       pass
+
+   @abc.abstractmethod
+   def build(self, fun, x):
+       pass
+
+
+
+
 # --- Graph ----------------------------------------------------------------- #
 
-class Graph:
+class Graph(GraphLike):
 
    _layer = minlayer() 
 
@@ -161,7 +182,7 @@ class ArgsLike(abc.ABC):
 
 # --- Function arguments ---------------------------------------------------- #
 
-class Args(ArgsLike, tdutil.TupleLike):  
+class Args(ArgsLike, TupleLike):  
 
    def __init__(self, args):
 
@@ -470,9 +491,9 @@ class Pack(Packable):
 
 
 
-# --- Envelopable interface ------------------------------------------------- #
+# --- EnvelopeLike interface ------------------------------------------------ #
 
-class Envelopable(abc.ABC): 
+class EnvelopeLike(abc.ABC): 
 
    @abc.abstractmethod
    def packs(self):
@@ -495,7 +516,7 @@ class Envelopable(abc.ABC):
 # i.e. we'll replace Point with Array. Then Array.tovalue() will return self.
 
 
-class Envelope(Envelopable):
+class Envelope(EnvelopeLike):
 
    def __init__(self, args):
 

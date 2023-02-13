@@ -3,106 +3,36 @@
 
 
 from .util import (
-   CacheMe,
-   Sequence,
-   ArgProxy,
+   Map,
+   Value,
+   Fun,
+   FunMap,
 )
 
 
 from .node import (
-   Logic,
-   ForwardLogic,
-   ReverseLogic,
-   Gate,
-   ForwardGate,
-   ReverseGate,
-   Node,
-   Nodule,
-   ForwardNode,
-   ReverseNode,
-   Point,
+   Adjoint,
+   FlowLike,
+   GateLike,
+   NodeLike,
+   Parental,
 )
 
 
 from .graph import (
-   Graph,
-   FunWithGate,
-   Differentiable,
-   NonDifferentiable,
-   NodeTrain,
-   NodeGlue,
-   ConcatArgs,
-   Active,
-   Passive,
-   ActivePack,
-   PassivePack,
-   PointPack,
+   ArgsLike,
+   Concatenable,
+   Cohesive,
+   Packable,
+   EnvelopeLike,
 )
 
 
 from .grad import (
-   ChildCount,
-   TopoSort,
-   GradAccum,
+   Traceable,
+   Countable,
+   Cumulative,
 )
-
-
-from .misc import (
-   Op,
-   Fun,
-   FunReturn,
-   CumFunReturn,
-   Map,
-   TrivMap,
-)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

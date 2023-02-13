@@ -3,15 +3,19 @@
 
 import pytest
 import collections
-
-import tests.common as common
-import tadpole      as td
+import tadpole as td
 
 
 """
 pytest autodiff/test_autodiff.py 
 
 """
+
+
+
+def err(x, y):
+
+    return abs(x - y) < 1e-10
 
 
 
@@ -87,7 +91,7 @@ class TestAD:
        fun = request.getfixturevalue(fun)
        val = fun.call(*fun.args)
 
-       assert common.allclose(val, fun.val)
+       assert err(val, fun.val)
 
 
    @pytest.mark.parametrize("fun, adx", [
@@ -101,7 +105,7 @@ class TestAD:
        fun  = request.getfixturevalue(fun)
        grad = td.grad(fun.call, adx)(*fun.args)
 
-       assert common.allclose(grad, fun.grad(adx))
+       assert err(grad, fun.grad(adx))
 
 
    @pytest.mark.parametrize("fun, adx", [
@@ -113,7 +117,7 @@ class TestAD:
        fun  = request.getfixturevalue(fun)
        grad = td.deriv(fun.call, adx)(*fun.args)
 
-       assert common.allclose(grad, fun.grad(adx))
+       assert err(grad, fun.grad(adx))
 
 
 
