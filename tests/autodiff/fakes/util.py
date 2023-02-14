@@ -147,12 +147,28 @@ class Value:
 
    def __add__(self, other):
 
-       return self.__class__(self._val + other._val)   
+       if not other:
+          return self
 
+       return self.__class__(self._val + other._val)  
+
+
+   def __radd__(self, other):
+
+       return self.__add__(other)
+ 
 
    def __mul__(self, other):
 
+       if not other:
+          return self
+
        return self.__class__(self._val * other._val)
+
+
+   def __rmul__(self, other):
+
+       return self.__mul__(other)
 
 
 

@@ -52,8 +52,6 @@ class TestAdjointOp:
        assert opA == opB
  
 
-
-
    @pytest.mark.parametrize("nargs, adxs", [
       [1, (0,)],
       [2, (0,)],
@@ -216,7 +214,7 @@ class TestFlow:
        w = data.reverse_gate()
        x = data.reverse_flow()
 
-       assert x.gate(w.parents, w.op) == w.gate
+       assert x.flow.gate(w.parents, w.op) == w.gate
 
 
    def test_forward_gate(self):
@@ -224,7 +222,7 @@ class TestFlow:
        w = data.forward_gate()
        x = data.forward_flow()
 
-       assert x.gate(w.parents, w.op) == w.gate
+       assert x.flow.gate(w.parents, w.op) == w.gate
 
        
 
@@ -265,8 +263,10 @@ class TestNullGate:
        x    = data.forward_gate(valency)
        node = fake.NodeLike()
 
-       grads  = tdgrad.GradSum(x.seed, {node: sum(x.grads)}) 
-       grads1 = tdgrad.GradSum(x.seed, {node: sum(x.grads)})
+       init_seed = fake.Value()
+
+       grads  = tdgrad.GradSum(init_seed, dict(zip(x.parents, x.seed))) 
+       grads1 = tdgrad.GradSum(init_seed, dict(zip(x.parents, x.seed)))
 
        gate = tdnode.NullGate()
        assert gate.grads(node, grads) == grads1
@@ -282,7 +282,7 @@ class TestNullGate:
        grads1 = tdgrad.GradAccum(dict(zip(x.parents, x.grads)))
 
        gate = tdnode.NullGate()
-       assert x.gate.grads(node, grads) == grads1
+       assert gate.grads(node, grads) == grads1
 
 
       
@@ -340,11 +340,13 @@ class TestForwardGate:
 
        x    = data.forward_gate(valency)
        node = fake.NodeLike()
+       
+       init_seed = fake.Value()
 
-       grads  = tdgrad.GradSum(x.seed) 
-       grads1 = tdgrad.GradSum(x.seed, {node: sum(x.grads)})
+       grads  = tdgrad.GradSum(init_seed, dict(zip(x.parents, x.seed))) 
+       grads1 = tdgrad.GradSum(init_seed, {node: sum(x.grads)})
 
-       assert x.node.grads(grads) == grads1
+       assert x.gate.grads(node, grads) == grads1
 
 
 
@@ -404,7 +406,10 @@ class TestReverseGate:
        node = fake.NodeLike()
 
        grads  = tdgrad.GradAccum({node: x.seed})
-       grads1 = tdgrad.GradAccum(dict(zip(x.parents, x.grads)))
+       grads1 = tdgrad.GradAccum({
+                                  None: x.seed, 
+                                  **dict(zip(x.parents, x.grads)),
+                                 })
 
        assert x.gate.grads(node, grads) == grads1
 
@@ -437,7 +442,7 @@ class TestNode:
        x = data.node()
        y = data.node()
 
-       combos = common.combos(tdnode.ForwardGate)
+       combos = common.combos(tdnode.Node)
        nodes  = combos(
                        (x.source, x.layer, x.gate), 
                        (y.source, y.layer, y.gate)
@@ -459,11 +464,7 @@ class TestNode:
        x = data.node()
 
        concat  = tdgraph.Concatenation()
-       concat1 = tdgraph.Concatenation(
-                                       tdutil.Sequence([x.node]), 
-                                       tdutil.Sequence([x.source]), 
-                                       tdutil.Sequence([x.layer])
-                                      ) 
+       concat1 = tdgraph.Concatenation().attach(x.node, x.source, x.layer)
 
        assert x.node.concat(concat) == concat1 
 
@@ -506,7 +507,10 @@ class TestNode:
        x = data.node(gate=w.gate)
 
        grads  = tdgrad.GradAccum({x.node: w.seed})
-       grads1 = tdgrad.GradAccum(dict(zip(w.parents, w.grads)))
+       grads1 = tdgrad.GradAccum({
+                                  None: w.seed, 
+                                  **dict(zip(w.parents, w.grads)),
+                                 })
 
        assert x.node.grads(grads) == grads1
 
@@ -517,8 +521,10 @@ class TestNode:
        w = data.forward_gate(valency)
        x = data.node(gate=w.gate)
 
-       grads  = tdgrad.GradSum(w.seed)
-       grads1 = tdgrad.GradSum(w.seed, {x.node: sum(w.grads)})
+       init_seed = fake.Value()
+
+       grads  = tdgrad.GradSum(init_seed, dict(zip(w.parents, w.seed))) 
+       grads1 = tdgrad.GradSum(init_seed, {x.node: sum(w.grads)})
 
        assert x.node.grads(grads) == grads1
 
@@ -561,11 +567,7 @@ class TestPoint:
        x = data.point()
 
        concat  = tdgraph.Concatenation() 
-       concat1 = tdgraph.Concatenation(
-                                       tdutil.Sequence([x.point]), 
-                                       tdutil.Sequence([x.point]), 
-                                       tdutil.Sequence([x.layer])
-                                      ) 
+       concat1 = tdgraph.Concatenation().attach(x.point, x.point, x.layer)
 
        assert x.point.concat(concat) == concat1 
 

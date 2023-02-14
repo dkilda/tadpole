@@ -459,7 +459,7 @@ class Node(NodeLike):
        rep.typ(self)
        rep.ref("source", self._source)
        rep.val("layer",  self._layer)
-       rep.val("gate",   self._gate)
+       rep.ref("gate",   self._gate)
 
        return str(rep)
 
@@ -471,7 +471,7 @@ class Node(NodeLike):
        log.typ(self, other) 
        log.ref(self._source, other._source)
        log.val(self._layer,  other._layer)
-       log.ref(self._gate,   other._gate)
+       log.val(self._gate,   other._gate)
 
        return bool(log)
 
@@ -598,9 +598,9 @@ class Parents(Parental, TupleLike):
 
    def __init__(self, parents):
 
-       if not all(isinstance(parent, Node) for parent in parents):
-          raise ValueError((f"Parents: all constructor inputs must be Nodes, "
-                            f"but parents = {parents}"))
+       if any(isinstance(parent, Point) for parent in parents):
+          raise ValueError((f"Parents: parent nodes {parents} "
+                            f"must not be Points. "))
 
        self._parents = parents
 

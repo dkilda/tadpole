@@ -206,7 +206,7 @@ def node(layer=0, gate=fake.GateLike()):
 
 PointData = collections.namedtuple("PointData", [
               "point", "source", "layer", "gate"
-           ])
+            ])
 
 
 
@@ -219,7 +219,7 @@ def point():
 
     point = tdnode.Point(source)
 
-    return PointData(node, source, layer, gate)
+    return PointData(point, source, layer, gate)
 
 
 
