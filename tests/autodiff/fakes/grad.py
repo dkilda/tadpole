@@ -6,7 +6,9 @@ import tests.autodiff.fakes.util  as util
 import tests.autodiff.fakes.node  as node
 import tests.autodiff.fakes.grad  as grad
 
-import tadpole.autodiff.grad as tdgrad
+import tadpole.autodiff.node  as tdnode
+import tadpole.autodiff.graph as tdgraph
+import tadpole.autodiff.grad  as tdgrad
 
 
 
@@ -35,7 +37,7 @@ class Traceable(tdgrad.Traceable):
 
 # --- Countable interface --------------------------------------------------- #
 
-class Countable(tdgraph.Countable):
+class Countable(tdgrad.Countable):
 
    def __init__(self, **data):  
 
@@ -68,7 +70,7 @@ class Countable(tdgraph.Countable):
 
 # --- Cumulative interface -------------------------------------------------- #
 
-class Cumulative(tdgraph.Cumulative):
+class Cumulative(tdgrad.Cumulative):
 
    def __init__(self, **data):  
 

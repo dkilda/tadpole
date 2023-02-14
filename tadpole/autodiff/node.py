@@ -607,7 +607,7 @@ class Parents(Parental, TupleLike):
     
    def __repr__(self):
 
-       rep = ReprChain()
+       rep = tdutil.ReprChain()
 
        rep.typ(self)
        rep.ref("parents", self._parents)
@@ -617,7 +617,7 @@ class Parents(Parental, TupleLike):
 
    def __eq__(self, other):
 
-       log = LogicalChain()
+       log = tdutil.LogicalChain()
 
        log.typ(self, other) 
        log.ref(self._parents, other._parents)

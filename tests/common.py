@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import pytest
+import itertools
+
 import numpy as np
 
 
@@ -41,14 +43,19 @@ def combos(typ):
 
     def wrap(*xs):
 
-        yield common.amap(typ, xs)
+        repeated = set()
 
-        for xcombo in itertools.product(*xs):
-            yield common.amap(typ, xcombo) 
+        for xcombo in itertools.product(*zip(*xs)):
+
+            if xcombo in repeated:
+               continue
+
+            repeated.add(xcombo)
+             
+            yield typ(*xcombo)
+  
 
     return wrap
-
-
 
 
 

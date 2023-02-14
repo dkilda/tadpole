@@ -76,6 +76,12 @@ class AdjMap:
        return self._add(fun, make_adjfun(adjfun))
 
 
+   def add_raw(self, fun, adjfun):
+
+       self._map[fun] = make_adjfun(adjfun)
+       return self
+
+
 
      
   

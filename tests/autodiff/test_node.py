@@ -12,6 +12,8 @@ import tadpole.autodiff.node  as tdnode
 import tadpole.autodiff.graph as tdgraph
 import tadpole.autodiff.grad  as tdgrad
 
+import tadpole.autodiff.adjoints as tda
+
 
 
 
@@ -27,7 +29,7 @@ import tadpole.autodiff.grad  as tdgrad
 
 class TestAdjointOp:
 
-   @pytest.mark.parametrize("nargs, adxs", 
+   @pytest.mark.parametrize("nargs, adxs", [
       [1, (0,)],
       [2, (0,)],
       [2, (1,)],
@@ -40,17 +42,19 @@ class TestAdjointOp:
       [3, (1,2)],
       [3, (0,1,2)],
    ])
-   def test_eq(self):
+   def test_eq(self, nargs, adxs):
 
        x = data.adjoint(nargs, adxs)
 
-       opA = AdjointOp(x.fun, x.adxs, x.out, x.args)
-       opB = AdjointOp(x.fun, x.adxs, x.out, x.args)
+       opA = tdnode.AdjointOp(x.fun, x.adxs, x.out, x.args)
+       opB = tdnode.AdjointOp(x.fun, x.adxs, x.out, x.args)
 
-       return opA == opB
+       assert opA == opB
  
 
-   @pytest.mark.parametrize("nargs, adxs", 
+
+
+   @pytest.mark.parametrize("nargs, adxs", [
       [1, (0,)],
       [2, (0,)],
       [2, (1,)],
@@ -63,21 +67,23 @@ class TestAdjointOp:
       [3, (1,2)],
       [3, (0,1,2)],
    ])
-   def test_ne(self):
+   def test_ne(self, nargs, adxs):
 
        x = data.adjoint(nargs, adxs)
        y = data.adjoint(nargs, adxs)
 
        combos = common.combos(tdnode.AdjointOp)
-
-       for opA, opB in combos(
-                              (x.fun, x.adxs, x.out, x.args), 
-                              (y.fun, y.adxs, y.out, y.args)
-                             ):
+       ops    = combos(
+                       (x.fun, x.adxs, x.out, x.args), 
+                       (y.fun, y.adxs, y.out, y.args),
+                      )
+  
+       opA = next(ops)
+       for opB in ops:
            assert opA != opB
 
 
-   @pytest.mark.parametrize("nargs, valency, adxs", 
+   @pytest.mark.parametrize("nargs, valency, adxs", [
       [1, 1, (0,)],
       [2, 1, (0,)],
       [2, 1, (1,)],
@@ -94,13 +100,13 @@ class TestAdjointOp:
 
        w = data.reverse_adjfun(valency)
        x = data.adjoint(nargs, adxs)
+    
+       tda.vjpmap.add_raw(x.fun, fake.Fun(w.adjfun, x.adxs, x.out, *x.args)) 
+                          
+       assert tuple(x.op.vjp(w.seed)) == w.grads
 
-       tda.vjpmap.add_combo(x.fun, w.adjfun)
 
-       assert x.op.vjp(w.seed) == w.grads
-
-
-   @pytest.mark.parametrize("nargs, valency, adxs", 
+   @pytest.mark.parametrize("nargs, valency, adxs", [
       [1, 1, (0,)],
       [2, 1, (0,)],
       [2, 1, (1,)],
@@ -118,9 +124,9 @@ class TestAdjointOp:
        w = data.forward_adjfun(valency)
        x = data.adjoint(nargs, adxs)
 
-       tda.jvpmap.add_combo(x.fun, w.adjfun)
+       tda.jvpmap.add_raw(x.fun, fake.Fun(w.adjfun, x.adxs, x.out, *x.args))
 
-       assert x.op.jvp(w.seed) == w.grads
+       assert tuple(x.op.jvp(w.seed)) == w.grads
 
 
 
@@ -250,7 +256,7 @@ class TestNullGate:
        count1 = tdgrad.ChildCount({node: parents})
       
        gate = tdnode.NullGate()
-       assert gate.trace(count) == count1 
+       assert gate.trace(node, count) == count1 
 
 
    @pytest.mark.parametrize("valency", [2])
@@ -303,11 +309,10 @@ class TestForwardGate:
        y = data.forward_gate(valency)
 
        combos = common.combos(tdnode.ForwardGate)
+       gates  = combos((x.parents, x.op), (y.parents, y.op))
 
-       for gateA, gateB in combos(
-                                  (x.parents, x.op), 
-                                  (y.parents, y.op)
-                                 ):
+       gateA = next(gates)
+       for gateB in gates:
            assert gateA != gateB
 
 
@@ -365,12 +370,11 @@ class TestReverseGate:
        x = data.reverse_gate(valency)
        y = data.reverse_gate(valency)
 
-       combos = common.combos(tdnode.ReverseGate)
+       combos = common.combos(tdnode.ForwardGate)
+       gates  = combos((x.parents, x.op), (y.parents, y.op))
 
-       for gateA, gateB in combos(
-                                  (x.parents, x.op), 
-                                  (y.parents, y.op)
-                                 ):
+       gateA = next(gates)
+       for gateB in gates:
            assert gateA != gateB
 
 
@@ -433,12 +437,14 @@ class TestNode:
        x = data.node()
        y = data.node()
 
-       combos = common.combos(tdnode.Node)
+       combos = common.combos(tdnode.ForwardGate)
+       nodes  = combos(
+                       (x.source, x.layer, x.gate), 
+                       (y.source, y.layer, y.gate)
+                      )
 
-       for nodeA, nodeB in combos(
-                                  (x.source, x.layer, x.gate), 
-                                  (y.source, y.layer, y.gate)
-                                 ):
+       nodeA = next(nodes)
+       for nodeB in nodes:
            assert nodeA != nodeB
 
 
@@ -707,7 +713,7 @@ class TestParents:
            assert x.parents[i] == node
    
 
-
-
+"""
+"""
 
 

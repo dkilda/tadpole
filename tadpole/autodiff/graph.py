@@ -193,7 +193,7 @@ class Args(ArgsLike, TupleLike):
 
    def __repr__(self):
 
-       rep = ReprChain()
+       rep = tdutil.ReprChain()
 
        rep.typ(self)
        rep.ref("args", self._args)
@@ -203,7 +203,7 @@ class Args(ArgsLike, TupleLike):
 
    def __eq__(self, other):
 
-       log = LogicalChain()
+       log = tdutil.LogicalChain()
 
        log.typ(self, other) 
        log.ref(self._args, other._args)
@@ -316,7 +316,7 @@ class Concatenation(Concatenable, Cohesive):
 
    def __eq__(self, other):
 
-       log = LogicalChain()
+       log = tdutil.LogicalChain()
 
        log.typ(self, other) 
        log.val(self._nodes,   other._nodes)
@@ -428,7 +428,7 @@ class Pack(Packable):
 
    def __eq__(self, other):
 
-       log = LogicalChain()
+       log = tdutil.LogicalChain()
 
        log.typ(self, other) 
        log.ref(self._concat, other._concat)
@@ -538,7 +538,7 @@ class Envelope(EnvelopeLike):
 
    def __eq__(self, other):
 
-       log = LogicalChain()
+       log = tdutil.LogicalChain()
 
        log.typ(self, other) 
        log.ref(self._args, other._args)

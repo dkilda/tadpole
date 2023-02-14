@@ -58,8 +58,12 @@ def add(fun, *adjfuns, adxs=None):
 
 def add_combo(fun, adjfun):
 
-    return _VJPMAP.add(fun, adjfun)
+    return _VJPMAP.add_combo(fun, adjfun)
 
+
+def add_raw(fun, adjfun):
+
+    return _VJPMAP.add_raw(fun, adjfun)
 
 
      

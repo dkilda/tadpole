@@ -7,6 +7,8 @@ import collections
 import tests.common              as common
 import tests.autodiff.fakes.util as util
 
+import tadpole.autodiff.util as tdutil
+
 
 
 
@@ -50,7 +52,7 @@ class Set:
    def __init__(self, items):
 
        if not isinstance(items, frozenset):
-          items = frozenset(items)
+          items = frozenset([items])
 
        self._items = items
 
@@ -90,6 +92,14 @@ class MulSet(Set):
 
 
 
+# --- Value unit ------------------------------------------------------------ #
+
+class ValueUnit:
+   pass
+ 
+
+
+
 # --- Value ----------------------------------------------------------------- #
 
 class Value:
@@ -97,7 +107,7 @@ class Value:
    def __init__(self, val=None):  
 
        if val is None:
-          val = id(self)
+          val = ValueUnit() 
 
        if not isinstance(val, Set):
           val = AddSet(val)
