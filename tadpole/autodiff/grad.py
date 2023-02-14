@@ -323,6 +323,17 @@ class ChildCount(Traceable, Countable):
        return str(rep)
 
 
+   def __eq__(self, other):
+
+       log = tdutil.LogicalChain()
+
+       log.typ(self, other)
+       log.val(self._parents, other._parents)
+       log.val(self._count,   other._count)
+
+       return bool(log)
+
+
    def record(self, node, parents):
 
        self._parents[node] = parents
@@ -530,6 +541,17 @@ class GradSum(Cumulative):
        return str(rep)
 
 
+   def __eq__(self, other):
+
+       log = tdutil.LogicalChain()
+
+       log.typ(self, other)
+       log.val(self._seed,  other._seed)
+       log.val(self._grads, other._grads)
+
+       return bool(log)
+
+
    def add(self, node, grads):
 
        self._grads[node] = reduce(tdmanip.add_grads, grads, None)
@@ -572,6 +594,16 @@ class GradAccum(Cumulative):
        rep.val("grads", list(self._grads.values()))
 
        return str(rep)
+
+
+   def __eq__(self, other):
+
+       log = tdutil.LogicalChain()
+
+       log.typ(self, other)
+       log.val(self._grads, other._grads)
+
+       return bool(log)
 
 
    def add(self, nodes, grads):

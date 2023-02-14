@@ -50,7 +50,7 @@ class Set:
    def __init__(self, items):
 
        if not isinstance(items, frozenset):
-          items = frozenset([items])
+          items = frozenset(items)
 
        self._items = items
 

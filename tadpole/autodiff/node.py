@@ -459,7 +459,7 @@ class Node(NodeLike):
        rep.typ(self)
        rep.ref("source", self._source)
        rep.val("layer",  self._layer)
-       rep.ref("gate",   self._gate)
+       rep.val("gate",   self._gate)
 
        return str(rep)
 
