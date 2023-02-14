@@ -35,6 +35,20 @@ def amap(creator, xs):
 
 
 
+# --- Create objects from combinations of ctor args ------------------------- #   
+
+def combos(typ):
+
+    def wrap(*xs):
+
+        yield common.amap(typ, xs)
+
+        for xcombo in itertools.product(*xs):
+            yield common.amap(typ, xcombo) 
+
+    return wrap
+
+
 
 
 

@@ -5,6 +5,7 @@ import pytest
 
 import tests.common         as common
 import tests.autodiff.fakes as fake
+import tests.autodiff.data  as data
 
 import tadpole.autodiff.util  as tdutil
 import tadpole.autodiff.node  as tdnode
@@ -14,243 +15,112 @@ import tadpole.autodiff.grad  as tdgrad
 
 
 
-# --- Parent data ----------------------------------------------------------- #
+###############################################################################
+###                                                                         ###
+###  Adjoint operators associated with a specific function,                 ###
+###  with knowledge of how to compute VJP's and JVP's.                      ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Adjoint operator ------------------------------------------------------ #
+
+class TestAdjointOp:
+
+   @pytest.mark.parametrize("nargs, adxs", 
+      [1, (0,)],
+      [2, (0,)],
+      [2, (1,)],
+      [2, (0,1)],
+      [3, (0,)],
+      [3, (1,)],
+      [3, (2,)],
+      [3, (0,1)],
+      [3, (0,2)],
+      [3, (1,2)],
+      [3, (0,1,2)],
+   ])
+   def test_eq(self):
+
+       x = data.adjoint(nargs, adxs)
+
+       opA = AdjointOp(x.fun, x.adxs, x.out, x.args)
+       opB = AdjointOp(x.fun, x.adxs, x.out, x.args)
+
+       return opA == opB
+ 
+
+   @pytest.mark.parametrize("nargs, adxs", 
+      [1, (0,)],
+      [2, (0,)],
+      [2, (1,)],
+      [2, (0,1)],
+      [3, (0,)],
+      [3, (1,)],
+      [3, (2,)],
+      [3, (0,1)],
+      [3, (0,2)],
+      [3, (1,2)],
+      [3, (0,1,2)],
+   ])
+   def test_ne(self):
+
+       x = data.adjoint(nargs, adxs)
+       y = data.adjoint(nargs, adxs)
+
+       combos = common.combos(tdnode.AdjointOp)
+
+       for opA, opB in combos(
+                              (x.fun, x.adxs, x.out, x.args), 
+                              (y.fun, y.adxs, y.out, y.args)
+                             ):
+           assert opA != opB
+
+
+   @pytest.mark.parametrize("nargs, valency, adxs", 
+      [1, 1, (0,)],
+      [2, 1, (0,)],
+      [2, 1, (1,)],
+      [2, 2, (0,1)],
+      [3, 1, (0,)],
+      [3, 1, (1,)],
+      [3, 1, (2,)],
+      [3, 2, (0,1)],
+      [3, 2, (0,2)],
+      [3, 2, (1,2)],
+      [3, 3, (0,1,2)],
+   ])
+   def test_vjp(self, nargs, valency, adxs):
+
+       w = data.reverse_adjfun(valency)
+       x = data.adjoint(nargs, adxs)
+
+       tda.vjpmap.add_combo(x.fun, w.adjfun)
+
+       assert x.op.vjp(w.seed) == w.grads
+
+
+   @pytest.mark.parametrize("nargs, valency, adxs", 
+      [1, 1, (0,)],
+      [2, 1, (0,)],
+      [2, 1, (1,)],
+      [2, 2, (0,1)],
+      [3, 1, (0,)],
+      [3, 1, (1,)],
+      [3, 1, (2,)],
+      [3, 2, (0,1)],
+      [3, 2, (0,2)],
+      [3, 2, (1,2)],
+      [3, 3, (0,1,2)],
+   ])
+   def test_jvp(self, nargs, valency, adxs):
+
+       w = data.forward_adjfun(valency)
+       x = data.adjoint(nargs, adxs)
 
-ParentData = collections.namedtuple("ParentData", [
-                "parents", "pnodes",
-             ])
+       tda.jvpmap.add_combo(x.fun, w.adjfun)
 
-
-
-
-def forward_parents(valency=1):
-
-    def pnode():
-
-        flow = tdnode.Flow("FORWARD", 
-           lambda parents, op: tdnode.ForwardGate(parents, op))
-
-        return fake.NodeLike(flow=fake.Fun(flow))
-
-    pnodes  = common.arepeat(pnode, valency)
-    parents = tdnode.Parents(pnodes)
-
-    return ParentData(parents, pnodes)
-
-
-
-
-def reverse_parents(valency=1):
-
-    def pnode():
-
-        flow = tdnode.Flow("REVERSE", 
-           lambda parents, op: tdnode.ReverseGate(parents, op))
-
-        return fake.NodeLike(flow=fake.Fun(flow))
-
-    pnodes  = common.arepeat(pnode, valency)
-    parents = tdnode.Parents(pnodes)
-
-    return ParentData(parents, pnodes)
-
-
-
-
-# --- Flow data ------------------------------------------------------------- #
-
-FlowData = collections.namedtuple("FlowData", [
-                 "flow", "name", "fun",
-              ])
-
-
-
-
-def null_flow():
-
-    def fun(parents, op):
-        return tdnode.NullGate()
-
-    name = "NULL"
-    flow = tdnode.Flow(name, fun)  
-    
-    return FlowData(flow, name, fun)
-
-
-
-
-def forward_flow():
-
-    def fun(parents, op):
-        return tdnode.ForwardGate(parents, op)
-
-    name = "FORWARD"
-    flow = tdnode.Flow(name, fun)  
-    
-    return FlowData(flow, name, fun)
-
-
-
-
-def reverse_flow():
-
-    def fun(parents, op):
-        return tdnode.ReverseGate(parents, op)
-
-    name = "REVERSE"
-    flow = tdnode.Flow(name, fun)  
-    
-    return FlowData(flow, name, fun)
-
-
-
-
-# --- Adjoint function data ------------------------------------------------- #
-
-AdjFunData = collections.namedtuple("AdjFunData", [
-                 "adjfun", "grads", "seed",
-              ])
-
-
-
-
-def forward_adjfun(valency=1):
-
-    grads  = common.arepeat(fake.Value, valency)
-    seed   = common.arepeat(fake.Value, valency)
-    adjfun = fake.Fun(grads, seed) 
-
-    return AdjFunData(adjfun, grads, seed)
-
-
-
-
-def reverse_adjfun(valency=1):
-
-    grads  = common.arepeat(fake.Value, valency)
-    seed   = fake.Value()
-    adjfun = fake.Fun(grads, seed) 
-
-    return AdjFunData(adjfun, grads, seed)
-
-
-
-
-# --- Adjoint data ---------------------------------------------------------- #
-
-AdjointData = collections.namedtuple("AdjointData", [
-                 "op", "fun", "adxs", "out", "args", 
-              ])
-
-
-
-
-def adjoint(nargs=1, adxs=(0,)):  
-
-    out  = fake.NodeLike()
-    args = common.arepeat(fake.NodeLike, nargs)
-
-    fun = fake.Fun(out, args)
-    op  = tdnode.AdjointOp(fun, adxs, out, args)
-
-    return AdjointData(
-              op, 
-              fun, adxs, out, args, 
-           )
-
-
-
-
-# --- Gate data ------------------------------------------------------------- #
-
-GateData = collections.namedtuple("GateData", [
-              "gate", "parents", "op", "grads", "seed",
-           ])
-
-
-
-
-def forward_gate(valency=1):
-
-    adjfun = forward_adjfun(valency)
-    op     = fake.Adjoint(jvp=fake.Fun(adjfun.grads, adjfun.seed))
-
-    parents = tdnode.Parents(common.arepeat(fake.NodeLike, valency))
-    gate    = tdnode.ForwardGate(parents, op) 
-
-    return GateData(gate, parents, op, adjfun.grads, adjfun.seed)
-
-
-
-
-def reverse_gate(valency=1):
-
-    adjfun = reverse_adjfun(valency)
-    op     = fake.Adjoint(vjp=fake.Fun(adjfun.grads, adjfun.seed))
-
-    parents = tdnode.Parents(common.arepeat(fake.NodeLike, valency))
-    gate    = tdnode.ReverseGate(parents, op) 
-
-    return GateData(gate, parents, op, adjfun.grads, adjfun.seed)
-
-
-
-
-# --- Node data ------------------------------------------------------------- #
-
-NodeData = collections.namedtuple("NodeData", [
-              "node", "source", "layer", "gate", "value"
-           ])
-
-
-
-
-def node(layer=0, gate=fake.GateLike()):
-
-    value  = fake.Value()
-    source = fake.NodeLike(tovalue=fake.Fun(value))
-
-    node = tdnode.Node(source, layer, gate)
-
-    return NodeData(node, source, layer, gate, value)
-
-
-
-
-# --- Point data ------------------------------------------------------------ #
-
-PointData = collections.namedtuple("PointData", [
-              "point", "source", "layer", "gate"
-           ])
-
-
-
-
-def point():
-
-    source = fake.Value() 
-    layer  = tdgraph.minlayer()
-    gate   = tdnode.NullGate()
-
-    point = tdnode.Point(source)
-
-    return PointData(node, source, layer, gate)
-
-
-
-
-# --- Helpers --------------------------------------------------------------- #
-
-def make_combos(typ):
-
-    def wrap(*xs):
-
-        yield common.amap(typ, xs)
-
-        for xcombo in itertools.product(*xs):
-            yield common.amap(typ, xcombo) 
-
-    return wrap
+       assert x.op.jvp(w.seed) == w.grads
 
 
 
@@ -355,116 +225,6 @@ class TestFlow:
 
 ###############################################################################
 ###                                                                         ###
-###  Adjoint operators associated with a specific function,                 ###
-###  with knowledge of how to compute VJP's and JVP's.                      ###
-###                                                                         ###
-###############################################################################
-
-
-# --- Adjoint operator ------------------------------------------------------ #
-
-class TestAdjointOp:
-
-   @pytest.mark.parametrize("nargs, adxs", 
-      [1, (0,)],
-      [2, (0,)],
-      [2, (1,)],
-      [2, (0,1)],
-      [3, (0,)],
-      [3, (1,)],
-      [3, (2,)],
-      [3, (0,1)],
-      [3, (0,2)],
-      [3, (1,2)],
-      [3, (0,1,2)],
-   ])
-   def test_eq(self):
-
-       x = data.adjoint(nargs, adxs)
-
-       opA = AdjointOp(x.fun, x.adxs, x.out, x.args)
-       opB = AdjointOp(x.fun, x.adxs, x.out, x.args)
-
-       return opA == opB
- 
-
-   @pytest.mark.parametrize("nargs, adxs", 
-      [1, (0,)],
-      [2, (0,)],
-      [2, (1,)],
-      [2, (0,1)],
-      [3, (0,)],
-      [3, (1,)],
-      [3, (2,)],
-      [3, (0,1)],
-      [3, (0,2)],
-      [3, (1,2)],
-      [3, (0,1,2)],
-   ])
-   def test_ne(self):
-
-       x = data.adjoint(nargs, adxs)
-       y = data.adjoint(nargs, adxs)
-
-       combos = make_combos(tdnode.AdjointOp)
-
-       for opA, opB in combos(
-                              (x.fun, x.adxs, x.out, x.args), 
-                              (y.fun, y.adxs, y.out, y.args)
-                             ):
-           assert opA != opB
-
-
-   @pytest.mark.parametrize("nargs, valency, adxs", 
-      [1, 1, (0,)],
-      [2, 1, (0,)],
-      [2, 1, (1,)],
-      [2, 2, (0,1)],
-      [3, 1, (0,)],
-      [3, 1, (1,)],
-      [3, 1, (2,)],
-      [3, 2, (0,1)],
-      [3, 2, (0,2)],
-      [3, 2, (1,2)],
-      [3, 3, (0,1,2)],
-   ])
-   def test_vjp(self, nargs, valency, adxs):
-
-       w = data.reverse_adjfun(valency)
-       x = data.adjoint(nargs, adxs)
-
-       tda.vjpmap.add_combo(x.fun, w.adjfun)
-
-       assert x.op.vjp(w.seed) == w.grads
-
-
-   @pytest.mark.parametrize("nargs, valency, adxs", 
-      [1, 1, (0,)],
-      [2, 1, (0,)],
-      [2, 1, (1,)],
-      [2, 2, (0,1)],
-      [3, 1, (0,)],
-      [3, 1, (1,)],
-      [3, 1, (2,)],
-      [3, 2, (0,1)],
-      [3, 2, (0,2)],
-      [3, 2, (1,2)],
-      [3, 3, (0,1,2)],
-   ])
-   def test_jvp(self, nargs, valency, adxs):
-
-       w = data.forward_adjfun(valency)
-       x = data.adjoint(nargs, adxs)
-
-       tda.jvpmap.add_combo(x.fun, w.adjfun)
-
-       assert x.op.jvp(w.seed) == w.grads
-
-
-
-
-###############################################################################
-###                                                                         ###
 ###  Logic gates representing the logic of forward and reverse propagation. ###
 ###                                                                         ###
 ###############################################################################
@@ -542,7 +302,7 @@ class TestForwardGate:
        x = data.forward_gate(valency)
        y = data.forward_gate(valency)
 
-       combos = make_combos(tdnode.ForwardGate)
+       combos = common.combos(tdnode.ForwardGate)
 
        for gateA, gateB in combos(
                                   (x.parents, x.op), 
@@ -605,7 +365,7 @@ class TestReverseGate:
        x = data.reverse_gate(valency)
        y = data.reverse_gate(valency)
 
-       combos = make_combos(tdnode.ReverseGate)
+       combos = common.combos(tdnode.ReverseGate)
 
        for gateA, gateB in combos(
                                   (x.parents, x.op), 
@@ -673,7 +433,7 @@ class TestNode:
        x = data.node()
        y = data.node()
 
-       combos = make_combos(tdnode.Node)
+       combos = common.combos(tdnode.Node)
 
        for nodeA, nodeB in combos(
                                   (x.source, x.layer, x.gate), 
