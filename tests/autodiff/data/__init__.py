@@ -16,8 +16,8 @@ from .graph import (
    differentiable_funwrap_dat, nondifferentiable_funwrap_dat,
    args_dat,
    nodeargs_dat,
-   concat_dat, 
-   pack_dat,
+   concat_dat, concat_args_dat, 
+   pack_dat, pack_args_dat,
 )
 
 

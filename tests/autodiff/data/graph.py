@@ -178,18 +178,28 @@ ConcatData = collections.namedtuple("ConcatData", [
 
 
 
+def concat_dat(nodes, sources, layers):
 
-def concat_dat(args_dat):
+    n = len(nodes)
 
-    n = len(args_dat.nodes)
-
-    nodes   = tdutil.Sequence(args_dat.nodes,   n)
-    sources = tdutil.Sequence(args_dat.sources, n)
-    layers  = tdutil.Sequence(args_dat.layers,  n)
+    nodes   = tdutil.Sequence(nodes,   n)
+    sources = tdutil.Sequence(sources, n)
+    layers  = tdutil.Sequence(layers,  n)
 
     concat = tdgraph.Concatenation(nodes, sources, layers)
 
     return ConcatData(concat, nodes, sources, layers)
+
+
+
+
+def concat_args_dat(args_dat):
+
+    return concat_dat(
+                      args_dat.nodes, 
+                      args_dat.sources, 
+                      args_dat.layers
+                     )
 
 
 
@@ -211,14 +221,22 @@ PackData = collections.namedtuple("PackData", [
 
 
 
-def pack_dat(args_dat):
+def pack_dat(args, concat):
 
-    args       = args_dat.args
-    concat     = concat_dat(args_dat).concat
     pack       = tdgraph.Pack(concat)
     envelope   = tdgraph.Envelope(args)
 
     return PackData(envelope, pack, concat, args)
+
+
+
+
+def pack_args_dat(args_dat):
+
+    concat_dat = concat_args_dat(args_dat)
+
+    return pack_dat(args_dat.args, concat_dat.concat)
+
 
 
 

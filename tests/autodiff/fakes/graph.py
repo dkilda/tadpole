@@ -6,7 +6,8 @@ import tests.autodiff.fakes.util  as util
 import tests.autodiff.fakes.node  as node
 import tests.autodiff.fakes.grad  as grad
 
-import tadpole.autodiff.graph as tdutil
+import tadpole.autodiff.util  as tdutil
+import tadpole.autodiff.node  as tdnode
 import tadpole.autodiff.graph as tdgraph
 
 
@@ -77,12 +78,12 @@ class Cohesive(tdgraph.Cohesive):
 
    def parents(self):
 
-       return self._fun["parents", tdnode.Parental()]()
+       return self._fun["parents", node.Parental()]()
 
 
    def deshell(self):
 
-       return self._fun["deshell", ArgLike()]()
+       return self._fun["deshell", ArgsLike()]()
 
 
 

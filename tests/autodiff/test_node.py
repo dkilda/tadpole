@@ -715,7 +715,6 @@ class TestParents:
            assert x.parents[i] == node
    
 
-"""
-"""
+
 
 

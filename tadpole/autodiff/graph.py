@@ -431,7 +431,7 @@ class Pack(Packable):
        log = tdutil.LogicalChain()
 
        log.typ(self, other) 
-       log.ref(self._concat, other._concat)
+       log.val(self._concat, other._concat)
 
        return bool(log)
 

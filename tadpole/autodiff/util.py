@@ -93,6 +93,9 @@ class Sequence:
        if xs is None:
           xs = []
 
+       if not isinstance(xs, list):
+          xs = list(xs)
+
        self._xs  = xs
        self._end = end
 
