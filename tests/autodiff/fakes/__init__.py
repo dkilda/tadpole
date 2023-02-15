@@ -7,6 +7,7 @@ from .util import (
    Value,
    Fun,
    FunMap,
+   Op,
 )
 
 

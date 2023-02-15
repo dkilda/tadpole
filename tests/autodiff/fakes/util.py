@@ -15,7 +15,7 @@ import tadpole.autodiff.util as tdutil
 ###############################################################################
 ###                                                                         ###
 ###  Basic building blocks for fake types:                                  ###
-###  map, operation set, value, function, function map.                     ###
+###  map, operation set, value, function, function map, operator.           ###
 ###                                                                         ###
 ###############################################################################
 
@@ -221,6 +221,25 @@ class FunMap:
           name, default = key, None
        
        return self._data.get(name, lambda *args, **kwargs: default)
+
+
+
+
+# --- Operator -------------------------------------------------------------- #
+
+class Op:
+
+   def __init__(self, transform=None):
+
+       self._transform = transform
+
+
+   def __call__(self, fun, *args):
+
+       if self._tranform is not None:
+          args = self._transform(*args)
+
+       return fun(*args)
 
 
 

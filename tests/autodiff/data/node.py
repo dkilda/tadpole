@@ -202,6 +202,76 @@ def node(layer=0, gate=fake.GateLike()):
 
 
 
+# --- Directed node data ---------------------------------------------------- #
+
+DirectedNodeData = collections.namedtuple("DirectedNodeData", [
+                       "node", "source",  "layer", "value", 
+                       "gate", "parents", "grads", "seed",
+                    ])
+
+
+
+
+def forward_node_dat(parent_nodes=1, grads=None, seed=None, layer=None):
+
+    if isinstance(parent_nodes, int):
+       parent_nodes = common.arepeat(fake.NodeLike, parent_nodes)
+
+    if grads is None or seed is None:
+       adjfun = forward_adjfun(len(parent_nodes))
+
+    if grads is None:
+       grads = adjfun.grads 
+
+    if seed is None:
+       seed = adjfun.seed
+
+    if layer is None:
+       layer = 0
+
+    op      = fake.Adjoint(jvp=fake.Fun(grads, seed))
+    parents = tdnode.Parents(parent_nodes)
+    gate    = tdnode.ForwardGate(parents, op)
+    node    = node(layer, gate)
+
+    return DirectedNodeData(
+                            node.node, node.source, node.layer, node.value,
+                            gate, parents, grads, seed
+                           )
+
+
+
+
+def reverse_node_dat(parent_nodes=1, grads=None, seed=None, layer=None):
+
+    if isinstance(parent_nodes, int):
+       parent_nodes = common.arepeat(fake.NodeLike, parent_nodes)
+
+    if grads is None or seed is None:
+       adjfun = reverse_adjfun(len(parent_nodes))
+
+    if grads is None:
+       grads = adjfun.grads 
+
+    if seed is None:
+       seed = adjfun.seed
+
+    if layer is None:
+       layer = 0
+
+    op      = fake.Adjoint(vjp=fake.Fun(grads, seed))
+    parents = tdnode.Parents(parent_nodes)
+    gate    = tdnode.ReverseGate(parents, op)
+    node    = node(layer, gate)
+    
+    return DirectedNodeData(
+                            node.node, node.source, node.layer, node.value,
+                            gate, parents, grads, seed
+                           )
+
+
+
+
 # --- Point data ------------------------------------------------------------ #
 
 PointData = collections.namedtuple("PointData", [

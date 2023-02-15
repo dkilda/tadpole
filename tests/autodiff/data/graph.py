@@ -87,6 +87,16 @@ def args(n=1, adxs=(0,), layers=(0,)):
 
 
 
+
+def nodeargs(n=1, layers=None):
+
+    if layers is None:
+       layers = common.arepeat(0, n)
+
+    return args(n, range(n), layers)
+
+
+
       
 # --- Concatenation of nodes ------------------------------------------------ #
 
@@ -136,49 +146,6 @@ def pack(args):
     envelope = tdgraph.Envelope(args.args)
 
     return EnvelopeData(envelope, pack, concat, args.args)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
