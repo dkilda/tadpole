@@ -183,18 +183,24 @@ class Fun:
        self._args = args
 
 
+   def update_args(self, *args): # TODO NB, THIS SOLVES PROBLEMS WITH CIRCULAR REFS!
+
+       self._args = args
+       return self
+
+
    def __call__(self, *args):
 
        if self._out is None:
           return Value()
 
-       if self._args is None:
+       if not self._args:
           return self._out
 
        if isinstance(self._out, Map):
           return self._out[args]
 
-       assert tuple(self._args) == args, (
+       assert self._args == args, (
            f"Fun: no output for the args {args} provided. "
            f"Fun accepts args {self._args}."
        )

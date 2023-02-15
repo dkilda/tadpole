@@ -151,9 +151,9 @@ class EnvelopeLike(tdgraph.EnvelopeLike):
        return self._fun["apply", util.Value()](fun)
 
 
-   def applywrap(self, funwrap, out):
+   def applywrap(self, funwrap, fun):
 
-       return self._fun["applywrap", node.NodeLike()](funwrap, out)
+       return self._fun["applywrap", node.NodeLike()](funwrap, fun)
 
 
 

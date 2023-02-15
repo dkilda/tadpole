@@ -12,12 +12,20 @@ from .node import (
 
 
 from .graph import (
-   graph,
-   args,
-   concatenation, 
-   pack,
+   graph_dat,
+   differentiable_funwrap_dat, nondifferentiable_funwrap_dat,
+   args_dat,
+   nodeargs_dat,
+   concat_dat, 
+   pack_dat,
 )
 
+
+from .grad import (
+   diffop_dat,
+   forward_node_network_dat,
+   reverse_node_network_dat,
+)
 
 
 

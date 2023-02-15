@@ -6,6 +6,7 @@ import collections
 
 import tests.common         as common
 import tests.autodiff.fakes as fake
+import tests.autodiff.data  as data
 
 import tadpole.autodiff.node  as tdnode
 import tadpole.autodiff.graph as tdgraph
@@ -24,45 +25,26 @@ import tadpole.autodiff.grad  as tdgrad
 # --- Differential and Graph operators -------------------------------------- #
 
 DiffOpData = collections.namedtuple("DiffOpData", [
-                "diffop", "graphop", "root", "fun", 
-                "x", "out", 
-                "start", "end",
+                "diffop", "graphop", 
+                "graph", "layer", "root", "fun", 
+                "x", "out", "start", "end",
              ])
 
 
 
 
-def diffop(which="REVERSE", x=None, out=None, start=None, end=None):
+def diffop_dat(which="REVERSE", layer=None, 
+               x=None, out=None, start=None, end=None):
 
-    if x is None:
-       x = fake.Value()
+    graph_dat = data.graph_dat(which, layer, x, out, start, end)
 
-    if out is None:
-       out = fake.Value()
-
-    if start is None:
-       start = fake.NodeLike(tovalue=fake.Fun(x))
-
-    if end is None:
-       end = fake.NodeLike(tovalue=fake.Fun(out))
-
-    fun  = fake.Fun(end, start)
-    root = {
-            "REVERSE": tdnode.ReverseGate,
-            "FORWARD": tdnode.ForwardGate,
-           }[which]()
-
-    graphop = tdgrad.GraphOp(root, fun, x)
+    graphop = tdgrad.GraphOp(graph_dat.root, graph_dat.fun, graph_dat.x)
     diffop  = {
                "REVERSE": tdgrad.ReverseDifferentialOp,
                "FORWARD": tdgrad.ForwardDifferentialOp,
               }[which]()
 
-    return DiffOpData(
-                      diffop, graphop, 
-                      root, fun, 
-                      x, out, start, end 
-                     )   
+    return DiffOpData(diffop, graphop, *graph_dat)   
 
 
 
@@ -83,7 +65,7 @@ NodeNetworkData = collections.namedtuple("NodeNetworkData", [
 
 
 
-def forward_node_network(layer=None):
+def forward_node_network_dat(layer=None):
 
     # --- Nodes and grads --- #
 
@@ -155,7 +137,7 @@ def forward_node_network(layer=None):
 
 
 
-def reverse_node_network(layer=None):
+def reverse_node_network_dat(layer=None):
 
     # --- Grads --- #
 

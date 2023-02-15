@@ -469,7 +469,7 @@ class Node(NodeLike):
        log = tdutil.LogicalChain()
 
        log.typ(self, other) 
-       log.ref(self._source, other._source)
+       log.val(self._source, other._source)
        log.val(self._layer,  other._layer)
        log.val(self._gate,   other._gate)
 
