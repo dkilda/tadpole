@@ -12,6 +12,35 @@ import tadpole.autodiff.grad  as tdgrad
 
 
 
+
+###############################################################################
+###                                                                         ###
+###  Gradient propagation through the AD computation graph.                 ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Gradient propagation interface ---------------------------------------- #
+
+class Propagation(tdgrad.Propagation):
+
+   def __init__(self, **data):  
+
+       self._fun = util.FunMap(**data)
+
+
+   def graphop(self, fun, x):
+
+       return self._fun["graphop", tdgrad.GraphOp(fun, x)](fun, x)
+
+
+   def accum(self, end, seed):
+
+       return self._fun["accum", Cumulative()](end, seed)
+
+
+
+
 ###############################################################################
 ###                                                                         ###
 ###  Topological sort of the computation graph                              ###

@@ -30,6 +30,7 @@ from .graph import (
 
 
 from .grad import (
+   Propagation,
    Traceable,
    Countable,
    Cumulative,

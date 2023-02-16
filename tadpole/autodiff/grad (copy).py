@@ -66,21 +66,24 @@ class Differential(abc.ABC):
        pass
 
    @abc.abstractmethod
+   def accum(self, seed):
+       pass
+
+   @abc.abstractmethod
    def grad(self, seed):
        pass
 
 
 
 
-# --- Differential operator ------------------------------------------------- #
+# --- Forward differential operator ----------------------------------------- #
 
-class DifferentialOp(Differential):
+class ForwardDifferentialOp(Differential):
 
-   def __init__(self, propagation, fun, x):
+   def __init__(self, fun, x):
 
-       self._prop = propagation
-       self._fun  = fun
-       self._x    = x
+       self._fun = fun
+       self._x   = x
 
 
    def __repr__(self):
@@ -88,9 +91,8 @@ class DifferentialOp(Differential):
        rep = tdutil.ReprChain()
 
        rep.typ(self)
-       rep.val("prop", self._prop)
-       rep.val("fun",  self._fun)
-       rep.ref("x",    self._x)
+       rep.val("fun", self._fun)
+       rep.ref("x",   self._x)
 
        return str(rep)
 
@@ -100,9 +102,8 @@ class DifferentialOp(Differential):
        log = tdutil.LogicalChain()
 
        log.typ(self, other)
-       log.val(self._prop, other._prop)
-       log.val(self._fun,  other._fun)
-       log.val(self._x,    other._x)
+       log.val(self._fun, other._fun)
+       log.val(self._x,   other._x)
 
        return bool(log)
 
@@ -110,7 +111,7 @@ class DifferentialOp(Differential):
    @tdutil.cacheable
    def graphop(self):
 
-       return self._prop.graphop(self._fun, self._x)
+       return GraphOp(tdnode.ForwardGate(), self._fun, self._x)
 
 
    @tdutil.cacheable
@@ -125,115 +126,86 @@ class DifferentialOp(Differential):
        return self.graphop().evaluate()
 
 
+   def accum(self, seed):
+
+       return GradSum(seed) 
+
+
    def grad(self, seed):
 
-       grads = self._prop.accum(self.end(), seed)
-       
-       return grads.result()
+       grads = self.accum(seed)
+       grads = self.end().grads(grads)
 
-
-
-
-# --- Forward differential operator ----------------------------------------- #
-
-class ForwardDifferentialOp(DifferentialOp):
-
-   def __init__(self, fun, x):
-
-       super().__init__(ForwardPropagation(), fun, x)
+       return grads.result(self.end())
 
 
 
 
 # --- Reverse differential operator ----------------------------------------- #
 
-class ReverseDifferentialOp(DifferentialOp):
+class ReverseDifferentialOp(Differential):
 
    def __init__(self, fun, x):
 
-       super().__init__(ReversePropagation(), fun, x)
+       self._fun = fun
+       self._x   = x
 
-
-
-
-###############################################################################
-###                                                                         ###
-###  Gradient propagation through the AD computation graph.                 ###
-###                                                                         ###
-###############################################################################
-
-
-# --- Gradient propagation interface ---------------------------------------- #
-
-class Propagation(abc.ABC):
-
-   @abc.abstractmethod
-   def graphop(self, fun, x):
-       pass
-
-   @abc.abstractmethod
-   def accum(self, end, seed):
-       pass
-
-
-
-
-# --- Forward gradient propagation ------------------------------------------ #
-
-class ForwardPropagation(Propagation):
 
    def __repr__(self):
 
        rep = tdutil.ReprChain()
+
        rep.typ(self)
+       rep.val("fun", self._fun)
+       rep.ref("x",   self._x)
+
        return str(rep)
 
 
-   def graphop(self, fun, x):
+   def __eq__(self, other):
 
-       return GraphOp(tdnode.ForwardGate(), fun, x)
+       log = tdutil.LogicalChain()
 
+       log.typ(self, other)
+       log.val(self._fun, other._fun)
+       log.val(self._x,   other._x)
 
-   def accum(self, end, seed):
-
-       return end.grads(GradSum(seed))
-
-
-
-
-# --- Reverse gradient propagation ------------------------------------------ #
-
-class ReversePropagation(Propagation):
-
-   def __repr__(self):
-
-       rep = tdutil.ReprChain()
-       rep.typ(self)
-       return str(rep)
+       return bool(log)
 
 
-   def graphop(self, fun, x):
+   @tdutil.cacheable
+   def graphop(self):
 
-       return GraphOp(tdnode.ReverseGate(), fun, x)
+       return GraphOp(tdnode.ReverseGate(), self._fun, self._x)
 
 
-   def accum(self, end, seed):
+   @tdutil.cacheable
+   def end(self):
 
-       grads = GradAccum({end: seed})
+       return self.graphop().end()
 
-       for node in toposort(end): 
+
+   @tdutil.cacheable
+   def evaluate(self):
+
+       return self.graphop().evaluate()
+
+
+   def accum(self, seed):
+
+       return GradAccum({self.end(): seed}) 
+
+
+   def grad(self, seed):
+
+       grads = self.accum(seed)
+
+       for node in toposort(self.end()): 
            grads = node.grads(grads)
 
-       return grads
+       return grads.result()
 
 
-
-
-###############################################################################
-###                                                                         ###
-###  Computation graph operator.                                            ###
-###                                                                         ###
-###############################################################################
 
 
 # --- Graphable interface --------------------------------------------------- #
@@ -573,7 +545,7 @@ class Cumulative(abc.ABC):
        pass
 
    @abc.abstractmethod
-   def result(self):
+   def result(self, node):
        pass
 
 
@@ -628,11 +600,9 @@ class GradSum(Cumulative):
        return tuple(map(self._grads.pop, nodes))
 
 
-   def result(self):
+   def result(self, node):
 
-       last_node = list(self._grads)[-1]
-
-       return self._grads[last_node]
+       return self._grads[node]
 
 
 
@@ -686,39 +656,9 @@ class GradAccum(Cumulative):
        return grad
 
 
-   def result(self): 
+   def result(self, node=None): 
 
-       return self._grads[None] 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+       return self._grads[node]
 
 
 

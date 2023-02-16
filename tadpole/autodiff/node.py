@@ -112,6 +112,16 @@ class NullAdjointOp(Adjoint):
        return str(rep)
 
 
+   def __eq__(self, other):
+
+       return True
+
+
+   def __hash__(self):
+
+       return id(self)
+
+
    def vjp(self, seed):
 
        return tuple()

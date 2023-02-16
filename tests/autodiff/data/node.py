@@ -232,10 +232,11 @@ def forward_node_dat(parent_nodes=1, grads=None, seed=None, layer=None):
     op      = fake.Adjoint(jvp=fake.Fun(grads, seed))
     parents = tdnode.Parents(parent_nodes)
     gate    = tdnode.ForwardGate(parents, op)
-    node    = node(layer, gate)
+    node_dat = node(layer, gate)
 
     return DirectedNodeData(
-                            node.node, node.source, node.layer, node.value,
+                            node_dat.node, node_dat.source, 
+                            node_dat.layer, node_dat.value,
                             gate, parents, grads, seed
                            )
 
@@ -262,10 +263,11 @@ def reverse_node_dat(parent_nodes=1, grads=None, seed=None, layer=None):
     op      = fake.Adjoint(vjp=fake.Fun(grads, seed))
     parents = tdnode.Parents(parent_nodes)
     gate    = tdnode.ReverseGate(parents, op)
-    node    = node(layer, gate)
+    node_dat = node(layer, gate)
     
     return DirectedNodeData(
-                            node.node, node.source, node.layer, node.value,
+                            node_dat.node, node_dat.source, 
+                            node_dat.layer, node_dat.value,
                             gate, parents, grads, seed
                            )
 

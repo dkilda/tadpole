@@ -42,7 +42,7 @@ def diffop_dat(which="REVERSE", layer=None,
     diffop  = {
                "REVERSE": tdgrad.ReverseDifferentialOp,
                "FORWARD": tdgrad.ForwardDifferentialOp,
-              }[which]()
+              }[which](graph_dat.fun, graph_dat.x)
 
     return DiffOpData(diffop, graphop, *graph_dat)   
 
@@ -59,7 +59,8 @@ def diffop_dat(which="REVERSE", layer=None,
 # --- Node network ---------------------------------------------------------- #
 
 NodeNetworkData = collections.namedtuple("NodeNetworkData", [
-                    "end", "nodes", "gradmap", "parentmap", "countmap",
+                     "end", "nodes", "leaves", 
+                     "gradmap", "parentmap", "countmap",
                   ])
 
 
@@ -73,33 +74,33 @@ def forward_node_network_dat(layer=None):
     seed1 = (fake.Value(), )
     seed2 = (fake.Value(), )
 
-    leaf0_dat = node.reverse_node_dat(0, seed0, seed0, layer)
-    leaf1_dat = node.reverse_node_dat(0, seed1, seed1, layer)
-    leaf2_dat = node.reverse_node_dat(0, seed2, seed2, layer)
+    leaf0_dat = data.forward_node_dat(0, seed0, seed0, layer)
+    leaf1_dat = data.forward_node_dat(0, seed1, seed1, layer)
+    leaf2_dat = data.forward_node_dat(0, seed2, seed2, layer)
 
-    nodeA_dat = node.reverse_node_dat(
+    nodeA_dat = data.forward_node_dat(
                                       (leaf0_dat.node,       leaf1_dat.node), 
                                       (sum(leaf0_dat.grads), sum(leaf1_dat.grads)),
                                       layer=layer
                                      )
-    nodeB_dat = node.reverse_node_dat(
+    nodeB_dat = data.forward_node_dat(
                                       (leaf0_dat.node,       leaf2_dat.node), 
                                       (sum(leaf0_dat.grads), sum(leaf2_dat.grads)),
                                       layer=layer
                                      )
-    nodeC_dat = node.reverse_node_dat(
+    nodeC_dat = data.forward_node_dat(
                                       (nodeA_dat.node,       ), 
                                       (sum(nodeA_dat.grads), ),
                                       layer=layer
                                      )
-    nodeD_dat = node.reverse_node_dat(
+    nodeD_dat = data.forward_node_dat(
                                       (leaf1_dat.node,       nodeB_dat.node), 
                                       (sum(leaf1_dat.grads), sum(nodeB_dat.grads)), 
                                       layer=layer
                                      )
-    nodeE_dat = node.reverse_node_dat(
-                                      (nodeC_dat.node,      leaf1_dat.node,      nodeD_dat.node), 
-                                      (sum(nodeC_dat.node), sum(leaf1_dat.node), sum(nodeD_dat.node)), 
+    nodeE_dat = data.forward_node_dat(
+                                      (nodeC_dat.node,       leaf1_dat.node,       nodeD_dat.node), 
+                                      (sum(nodeC_dat.grads), sum(leaf1_dat.grads), sum(nodeD_dat.grads)), 
                                       layer=layer
                                      ) 
 
@@ -116,8 +117,9 @@ def forward_node_network_dat(layer=None):
                  leaf0_dat,
                 )
   
-    end   = nodeE_dat.node
-    nodes = tuple(dat.node for dat in node_dats)
+    end    = nodeE_dat.node
+    nodes  = tuple(dat.node for dat in node_dats) 
+    leaves = (leaf0_dat.node, leaf1_dat.node, leaf2_dat.node)
 
     gradmap   = {dat.node: sum(dat.grads) for dat in node_dats}
     parentmap = {dat.node: dat.parents    for dat in node_dats}
@@ -132,7 +134,8 @@ def forward_node_network_dat(layer=None):
                  leaf0_dat.node: 2,
                 }
 
-    return NodeNetworkData(end, nodes, gradmap, parentmap, countmap)
+    return NodeNetworkData(end, nodes, leaves, 
+                           gradmap, parentmap, countmap)
 
 
 
@@ -178,35 +181,35 @@ def reverse_node_network_dat(layer=None):
 
     # --- Nodes --- #
 
-    leaf0_dat = node.reverse_node_dat(0, grad0[None], grad0[None], layer)
-    leaf1_dat = node.reverse_node_dat(0, grad1[None], grad1[None], layer)
-    leaf2_dat = node.reverse_node_dat(0, grad2[None], grad2[None], layer)
+    leaf0_dat = data.reverse_node_dat(0, grad0[None], grad0[None], layer)
+    leaf1_dat = data.reverse_node_dat(0, grad1[None], grad1[None], layer)
+    leaf2_dat = data.reverse_node_dat(0, grad2[None], grad2[None], layer)
 
-    nodeA_dat = node.reverse_node_dat(
+    nodeA_dat = data.reverse_node_dat(
                                       (leaf0_dat.node, leaf1_dat.node), 
                                       (gradA["0"], gradA["1"]),
                                       gradA[None],
                                       layer
                                      )
-    nodeB_dat = node.reverse_node_dat(
+    nodeB_dat = data.reverse_node_dat(
                                       (leaf0_dat.node, leaf2_dat.node), 
                                       (gradB["0"], gradB["2"]),
                                       gradB[None],
                                       layer
                                      )
-    nodeC_dat = node.reverse_node_dat(
+    nodeC_dat = data.reverse_node_dat(
                                       (nodeA_dat.node,), 
                                       (gradC["A"],),
                                       gradC[None],
                                       layer
                                      )
-    nodeD_dat = node.reverse_node_dat(
+    nodeD_dat = data.reverse_node_dat(
                                       (leaf1_dat.node, nodeB_dat.node), 
                                       (gradD["1"], gradD["B"]),
                                       gradD[None],
                                       layer
                                      )
-    nodeE_dat = node.reverse_node_dat(
+    nodeE_dat = data.reverse_node_dat(
                                       (nodeC_dat.node, leaf1_dat.node, nodeD_dat.node), 
                                       (gradE["C"], gradE["1"], gradE["D"]),
                                       gradE[None],
@@ -226,8 +229,9 @@ def reverse_node_network_dat(layer=None):
                  leaf0_dat,
                 )
   
-    end   = nodeE_dat.node
-    nodes = tuple(dat.node for dat in node_dats)
+    end    = nodeE_dat.node
+    nodes  = tuple(dat.node for dat in node_dats)
+    leaves = (leaf0_dat.node, leaf1_dat.node, leaf2_dat.node)
 
     gradmap   = {dat.node: dat.seed    for dat in node_dats}
     parentmap = {dat.node: dat.parents for dat in node_dats}
@@ -242,7 +246,8 @@ def reverse_node_network_dat(layer=None):
                  leaf0_dat.node: 2,
                 }
 
-    return NodeNetworkData(end, nodes, gradmap, parentmap, countmap)
+    return NodeNetworkData(end, nodes, leaves,
+                           gradmap, parentmap, countmap)
 
 
 

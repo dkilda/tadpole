@@ -202,7 +202,7 @@ class Fun:
 
        if isinstance(self._out, Map):
           return self._out[args]
-
+ 
        assert self._args == args, (
            f"Fun: no output for the args {args} provided. "
            f"Fun accepts args {self._args}."
