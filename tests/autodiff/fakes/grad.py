@@ -31,7 +31,9 @@ class Propagation(tdgrad.Propagation):
 
    def graphop(self, fun, x):
 
-       return self._fun["graphop", tdgrad.GraphOp(fun, x)](fun, x)
+       graphop = tdgrad.GraphOp(node.GateLike(), fun, x)
+
+       return self._fun["graphop", graphop](fun, x)
 
 
    def accum(self, end, seed):

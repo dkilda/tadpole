@@ -22,70 +22,40 @@ import tadpole.autodiff.adjoints as tda
 ###  Differential operators: forward and reverse                            ###
 ###                                                                         ###
 ###############################################################################
-"""
-
-# --- Forward differential operator ----------------------------------------- #
-
-class TestForwardDifferentialOp:
-
-   @pytest.mark.parametrize("layer", [0])
-   def test_graphop(self, layer):
-
-       dat = data.diffop_dat("FORWARD", layer)
-       assert dat.diffop.graphop() == dat.graphop
 
 
-   @pytest.mark.parametrize("layer", [0])
-   def test_end(self, layer):
+# --- Differential operator ------------------------------------------------- #
 
-       dat = data.diffop_dat("FORWARD", layer)
-       assert dat.diffop.end() == dat.end
+class TestDifferentialOp:
 
+   @pytest.mark.parametrize("which", ["REVERSE", "FORWARD"])
+   def test_graphop(self, which):
 
-   @pytest.mark.parametrize("layer", [0])
-   def test_evaluate(self, layer):
+       dat  = data.graph_dat(which)
+       prop = fake.Propagation(graphop=fake.Fun(dat.graphop, dat.fun, dat.x))
 
-       dat = data.diffop_dat("FORWARD", layer)
-       assert dat.diffop.evaluate() == dat.out
-
-
-   @pytest.mark.parametrize("layer", [0])
-   def test_accum(self, layer):
-
-       dat = data.diffop_dat("FORWARD", layer)
-
-       seed  = fake.Value()
-       accum = tdgrad.GradSum(seed)
-
-       assert dat.diffop.accum(seed) == accum
+       diffop = tdgrad.DifferentialOp(prop, dat.fun, dat.x) 
+       assert diffop.graphop() == dat.graphop
 
 
-   @pytest.mark.parametrize("layer", [0])
-   def test_grad(self, layer):
+   @pytest.mark.parametrize("which", ["REVERSE", "FORWARD"])
+   def test_end(self, which):
 
-       network = data.forward_node_network_dat(layer=None)
+       dat  = data.graph_dat(which)
+       prop = fake.Propagation(graphop=fake.Fun(dat.graphop, dat.fun, dat.x))
 
-       start = network.leaves[0]
-       end   = network.end
-
-       seed = network.gradmap[start]
-       grad = network.gradmap[end]
-
-       dat = data.diffop_dat("FORWARD", layer, start=start, end=end)
-       assert dat.diffop.grad(seed) == grad
-
-"""
+       diffop = tdgrad.DifferentialOp(prop, dat.fun, dat.x) 
+       assert diffop.end() == dat.end
 
 
+   @pytest.mark.parametrize("which", ["REVERSE", "FORWARD"])
+   def test_end(self, which):
 
- 
+       dat  = data.graph_dat(which)
+       prop = fake.Propagation(graphop=fake.Fun(dat.graphop, dat.fun, dat.x))
 
-
-
-
-# --- Reverse differential operator ----------------------------------------- #
-
-
+       diffop = tdgrad.DifferentialOp(prop, dat.fun, dat.x) 
+       assert diffop.evaluate() == dat.out
 
 
 
@@ -189,21 +159,134 @@ class TestGraphOp:
 
 
 
+###############################################################################
+###                                                                         ###
+###  Topological sort of the computation graph                              ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Child count ----------------------------------------------------------- #
+
+class TestChildCount:
+
+   @pytest.mark.parametrize("valency", [1,2,3])
+   def test_record(self, valency):
+
+       dat  = data.reverse_node_dat(valency)
+       dat1 = data.reverse_node_dat(valency)
+
+       parentmap  = {}
+       parentmap1 = {dat.node: dat.parents}
+       parentmap2 = {dat.node: dat.parents, dat1.node: dat1.parents}
+
+       count  = tdgrad.ChildCount(parentmap)
+       count1 = tdgrad.ChildCount(parentmap1)
+       count2 = tdgrad.ChildCount(parentmap2)
+
+       assert count.record(dat.node,  dat.parents)  == count1
+       assert count.record(dat1.node, dat1.parents) == count2
+
+
+   @pytest.mark.parametrize("valency", [1,2,3])
+   def test_collect(self, valency):
+
+       dat  = data.reverse_node_dat(valency)
+       dat1 = data.reverse_node_dat(valency)
+
+       parentmap  = {}
+       parentmap1 = {dat.node: dat.parents}
+       parentmap2 = {dat.node: dat.parents, dat1.node: dat1.parents}
+
+       count  = tdgrad.ChildCount(parentmap)
+       count1 = tdgrad.ChildCount(parentmap1)
+       count2 = tdgrad.ChildCount(parentmap2)
+
+       assert count.collect(dat.node) == dat.parents
+       assert parentmap == parentmap1
+
+       assert count.collect(dat1.node) == dat1.parents
+       assert parentmap == parentmap2
+
+
+   @pytest.mark.parametrize("valency", [1,2,3])
+   def test_increase(self, valency):
+
+       dat  = data.reverse_node_dat(valency)
+       dat1 = data.reverse_node_dat(valency)
+
+       parentmap = {dat.node: dat.parents, dat1.node: dat1.parents}
+       countmap  = {}
+       count     = tdgrad.ChildCount(parentmap, countmap)
+
+       assert count.increase(dat.node) == dat.parents
+       assert countmap == {dat.node: 1} 
+
+       assert count.increase(dat1.node) == dat1.parents         
+       assert countmap == {dat.node: 1, dat1.node: 1} 
+
+       assert count.increase(dat.node) == tuple() 
+       assert countmap == {dat.node: 2, dat1.node: 1} 
+
+
+   @pytest.mark.parametrize("valency", [1,2,3])
+   def test_decrease(self, valency):
+
+       dat  = data.reverse_node_dat(valency)
+       dat1 = data.reverse_node_dat(valency)        
+
+       parentmap = {dat.node: dat.parents, dat1.node: dat1.parents}
+       countmap  = {
+                    **{p: 2 for p in dat.parents},
+                    **{p: 1 for p in dat1.parents},
+                   }
+       countmap1 = {
+                    **{p: 1 for p in dat.parents},
+                    **{p: 1 for p in dat1.parents},
+                   }
+       countmap2 = {
+                    **{p: 1 for p in dat.parents},
+                    **{p: 0 for p in dat1.parents},
+                   }
+       countmap3 = {
+                    **{p: 0 for p in dat.parents},
+                    **{p: 0 for p in dat1.parents},
+                   }
+
+       count = tdgrad.ChildCount(parentmap, countmap)
+
+       assert count.decrease(dat.node) == tuple()
+       assert countmap == countmap1
+
+       assert count.decrease(dat1.node) == tuple(dat1.parents)
+       assert countmap == countmap2 
+
+       assert count.decrease(dat1.node) == tuple()
+       assert countmap == countmap2 
+
+       assert count.decrease(dat.node) == tuple(dat.parents)
+       assert countmap == countmap3 
 
 
 
 
+# --- Traversal ------------------------------------------------------------- #
+"""
+class TestTraversal:
 
+   def test_sweep(self):
 
+       dat       = data.reverse_node_network_dat()
+       traversal = tdgrad.Traversal(dat.end)
 
+       parentmap = dat.parentmap.copy()
+       def step(x):
+           return parentmap.pop(x, tuple())    
 
-
-
-
-
-
-
-
+       for node in traversal.sweep(step):
+           assert node == 
+"""
+           
 
 
 

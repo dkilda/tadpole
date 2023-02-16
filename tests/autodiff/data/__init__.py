@@ -25,7 +25,6 @@ from .graph import (
 from .grad import (
    diffop_dat,
    forward_node_network_dat,
-   forward_node_network_dat_001,
    reverse_node_network_dat,
 )
 
