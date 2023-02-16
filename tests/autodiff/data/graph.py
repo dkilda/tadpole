@@ -125,7 +125,8 @@ def nondifferentiable_funwrap_dat(args):
 # --- Function arguments ---------------------------------------------------- #
 
 ArgsData = collections.namedtuple("ArgsData", [
-              "args", "adxs", "nodes", "sources", "layers", "values"
+              "args", "concat", "pack", 
+              "adxs", "nodes", "sources", "layers", "values",
            ])
 
 
@@ -155,7 +156,15 @@ def args_dat(n=1, adxs=(0,), layers=(0,)):
     nodes, sources, layers, values = zip(*info)
     args = tdgraph.Args(nodes)
 
-    return ArgsData(args, adxs, nodes, sources, layers, values)
+    concat = tdgraph.Concatenation(
+                                   tdutil.Sequence(nodes,   n), 
+                                   tdutil.Sequence(sources, n), 
+                                   tdutil.Sequence(layers,  n)
+                                  )
+    pack = tdgraph.Pack(concat)
+
+    return ArgsData(args, concat, pack, 
+                    adxs, nodes, sources, layers, values)
 
 
 
@@ -173,33 +182,113 @@ def nodeargs_dat(n=1, layers=None):
 # --- Concatenation of nodes ------------------------------------------------ #
 
 ConcatData = collections.namedtuple("ConcatData", [
-                       "concat", "nodes", "sources", "layers"
-                    ])
-
-
-
-def concat_dat(nodes, sources, layers):
-
-    n = len(nodes)
-
-    nodes   = tdutil.Sequence(nodes,   n)
-    sources = tdutil.Sequence(sources, n)
-    layers  = tdutil.Sequence(layers,  n)
-
-    concat = tdgraph.Concatenation(nodes, sources, layers)
-
-    return ConcatData(concat, nodes, sources, layers)
+                "concat", "concat_history", "attach_history", 
+                "nodes", "sources", "layers",
+             ])
 
 
 
 
-def concat_args_dat(args_dat):
+def concat_dat(n, adxs, layers):
 
-    return concat_dat(
-                      args_dat.nodes, 
-                      args_dat.sources, 
-                      args_dat.layers
-                     )
+    x = args_dat(n, adxs, layers)
+
+    attach_history = list(zip(x.nodes, x.sources, x.layers))
+    concat_history = []
+
+    for size in range(n):
+
+        _nodes   = tdutil.Sequence(x.nodes[:size],   size)
+        _sources = tdutil.Sequence(x.sources[:size], size)
+        _layers  = tdutil.Sequence(x.layers[:size],  size)
+
+        _concat  = tdgraph.Concatenation(_nodes, _sources, _layers)
+
+        concat_history.append(_concat)
+         
+    nodes   = tdutil.Sequence(x.nodes,   n)
+    sources = tdutil.Sequence(x.sources, n)
+    layers  = tdutil.Sequence(x.layers,  n)
+
+    concat  = tdgraph.Concatenation(nodes, sources, layers)
+
+    return ConcatData(concat, concat_history, attach_history, 
+                      nodes, sources, layers)
+
+
+
+
+ConcatOutput = collections.namedtuple("ConcatOutput", [
+                  "concat", "layer", "adxs", "parents", "deshell",
+               ])
+
+
+
+
+def concat_out(n, adxs, layers):
+
+    x = args_dat(n, adxs, layers)
+
+    def case_000():
+        return (
+           0, (0,  ), (x.nodes[0], ), (x.sources[0], )
+        )
+
+    def case_001():
+        return (
+           1, (0,  ), (x.nodes[0], ), (x.sources[0], x.nodes[1])
+        )
+
+    def case_002():
+        return (
+           0, (1,  ), (x.nodes[1], ), (x.nodes[0], x.sources[1])
+        )
+
+    def case_003():
+        return (
+           0, (0, 1), (x.nodes[0], x.nodes[1]), (x.sources[0], x.sources[1])
+        )
+
+    def case_004():
+        return (
+           2, (1,  ), (x.nodes[1], ), (x.nodes[0], x.sources[1])
+        )
+
+    def case_005():
+        return (
+           1, (2,  ), (x.nodes[2], ), (x.nodes[0], x.nodes[1], x.sources[2])
+        )
+
+    def case_006():
+        return (
+           2, (0,  ), (x.nodes[0], ), (x.sources[0], x.nodes[1], x.nodes[2])
+        )
+
+    def case_007():
+        return (
+           1, (0, 2), (x.nodes[0], x.nodes[2]), (x.sources[0], x.nodes[1], x.sources[2])
+        )
+
+    def case_008():
+        return (
+           -1, tuple(), tuple(), (x.nodes[0], x.nodes[1])
+        )
+
+    case = {
+            (1,  (0,),    (0,)    ): case_000,
+            (2,  (0,),    (1,)    ): case_001,
+            (2,  (1,),    (0,)    ): case_002,
+            (2,  (0,1),   (0,0)   ): case_003,
+            (2,  (0,1),   (0,2)   ): case_004,
+            (3,  (0,2),   (0,1)   ): case_005,
+            (3,  (0,2),   (2,1)   ): case_006,
+            (3,  (0,2),   (1,1)   ): case_007,
+            (2,  tuple(), tuple() ): case_008,
+           }[n, adxs, layers]()
+
+
+    return ConcatOutput(x.concat, case[0], case[1], 
+                        tdnode.Parents(case[2]), tdgraph.Args(case[3]))
 
 
 
@@ -212,30 +301,151 @@ def concat_args_dat(args_dat):
 ###############################################################################
 
 
-# --- Argument pack and envelope -------------------------------------------- #
+# --- Argument pack (of concatenated nodes) --------------------------------- #
 
 PackData = collections.namedtuple("PackData", [
-              "envelope", "pack", "concat", "args"
+              "pack", "deshelled", "deshell", "concat", 
+              "node", "source", "funwrap", 
            ])
 
 
 
 
-def pack_dat(args, concat):
+def pack_dat(valency=1, layer=0):
+ 
+    deshelled_pack = fake.Packable()
+    deshelled_args = fake.ArgsLike(pack=fake.Fun(deshelled_pack))
 
-    pack       = tdgraph.Pack(concat)
-    envelope   = tdgraph.Envelope(args)
+    if   layer == tdgraph.minlayer():
+         source  = fake.Value()
+         node    = tdnode.Point(source)         
+    else:
+         source  = fake.NodeLike()
+         node    = fake.NodeLike()
 
-    return PackData(envelope, pack, concat, args)
+    funwrap = fake.Fun(None)
+    adxs    = common.arepeat(fake.Value, valency)
+    op      = tdnode.AdjointOp(funwrap, adxs, source, deshelled_args)
+    parents = fake.Parental(next=fake.Fun(node, source, layer, op))  
+
+    concat = fake.Cohesive(
+                           layer=fake.Fun(layer),
+                           adxs=fake.Fun(adxs),
+                           parents=fake.Fun(parents),
+                           deshell=fake.Fun(deshelled_args)
+                          )
+    pack = tdgraph.Pack(concat)
+
+    return PackData(pack, deshelled_pack, deshelled_args, concat, 
+                    node, source, funwrap)
+  
+
+
+
+# --- Argument envelope ----------------------------------------------------- #
+
+EnvelopeData = collections.namedtuple("EnvelopeData", [
+                  "envelope", "args", "packs", "nodes", 
+                  "value", "fun", "funwrap"
+               ])
+
+
+
+def envelope_dat(nargs=1):
+
+    outval1  = fake.Value()
+    argvals1 = common.arepeat(fake.Value, nargs) 
+    args1    = common.amap(tdnode.Point, argvals1)
+
+    out1 = fake.NodeLike(tovalue=fake.Fun(outval1))
+    out2 = fake.NodeLike(tovalue=fake.Fun(outval1))
+    out3 = fake.NodeLike(tovalue=fake.Fun(outval1))
+
+    fun     = fake.Fun(outval1, *argvals1)
+    funwrap = fake.Fun(None)
+
+    pack0 = fake.Packable(
+                          innermost=fake.Fun(True), 
+                         )
+    pack1 = fake.Packable(
+                          innermost=fake.Fun(False), 
+                          deshelled=fake.Fun(pack0),
+                          deshell=fake.Fun(args1),
+                          fold=fake.Fun(out1, funwrap, outval1)
+                         )
+    pack2 = fake.Packable(
+                          innermost=fake.Fun(False), 
+                          deshelled=fake.Fun(pack1),
+                          fold=fake.Fun(out2, funwrap, out1)
+                         )
+    pack3 = fake.Packable(
+                          innermost=fake.Fun(False), 
+                          deshelled=fake.Fun(pack2),
+                          fold=fake.Fun(out3, funwrap, out2)
+                         )
+
+    packs    = (pack1, pack2, pack3)
+    nodes    = (out1, out2, out3)
+    args     = fake.ArgsLike(pack=fake.Fun(pack3))
+    envelope = tdgraph.Envelope(args)
+    
+    return EnvelopeData(envelope, args, packs, nodes, 
+                        outval1, fun, funwrap)
+
+
+
+def envelope_dat_001(nargs=1):
+
+    outval1  = fake.Value()
+    argvals1 = common.arepeat(fake.Value, nargs) 
+    args1    = common.amap(tdnode.Point, argvals1)
+
+    out1 = tdnode.Point(outval1)  
+
+    fun     = fake.Fun(outval1, *argvals1)
+    funwrap = fake.Fun(None)
+
+    pack0 = fake.Packable(
+                          innermost=fake.Fun(True), 
+                         )
+    pack1 = fake.Packable(
+                          innermost=fake.Fun(True), 
+                          deshelled=fake.Fun(pack0),
+                          deshell=fake.Fun(args1),
+                          fold=fake.Fun(out1, funwrap, outval1)
+                         )
+
+    packs    = (pack1, )
+    nodes    = (out1,  )
+    args     = fake.ArgsLike(pack=fake.Fun(pack1))
+    envelope = tdgraph.Envelope(args)
+    
+    return EnvelopeData(envelope, args, packs, nodes, 
+                        outval1, fun, funwrap)
 
 
 
 
-def pack_args_dat(args_dat):
 
-    concat_dat = concat_args_dat(args_dat)
 
-    return pack_dat(args_dat.args, concat_dat.concat)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

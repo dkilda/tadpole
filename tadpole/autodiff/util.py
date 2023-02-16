@@ -231,11 +231,11 @@ class Loop:
 
        for _ in itertools.count():
 
-           yield x
-           x = self._next(x)
-
            if self._stop(x):
               break
+
+           yield x
+           x = self._next(x)
 
 
    @cacheable
@@ -248,6 +248,11 @@ class Loop:
    def last(self):
  
        return next(reversed(self)) 
+
+
+   def first(self):
+
+       return self._first
 
 
 

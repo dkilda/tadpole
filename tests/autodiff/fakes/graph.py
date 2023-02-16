@@ -122,7 +122,7 @@ class Packable(tdgraph.Packable):
 
    def fold(self, funwrap, out):
 
-       return self._fun["fold", NodeLike()](funwrap, out)
+       return self._fun["fold", node.NodeLike()](funwrap, out)
 
 
 

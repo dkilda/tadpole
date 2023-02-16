@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import pytest
+import itertools
 
 import tests.common         as common
 import tests.autodiff.fakes as fake
@@ -35,16 +36,18 @@ class TestGraph:
        assert tdgraph.minlayer() == -1
 
 
-   # --- Test enter and build --- #
+   # --- Test build --- #
 
    @pytest.mark.parametrize("which", ["REVERSE", "FORWARD"])
-   def test_enter(self, which):
+   def test_build(self, which):
 
        dat = data.graph_dat(which, 0)
 
        with tdgraph.Graph(dat.root) as graph:
           assert graph.build(dat.fun, dat.x) == dat.end
 
+
+   # --- Test enter --- #
 
    @pytest.mark.parametrize("which", ["REVERSE", "FORWARD"])
    def test_single_nested_enter(self, which):
@@ -165,9 +168,7 @@ class TestArgs:
    def test_concat(self, n, adxs, layers):
 
        x = data.args_dat(n, adxs, layers)
-       w = data.concat_args_dat(x)
-
-       assert x.args.concat() == w.concat
+       assert x.args.concat() == x.concat
 
        
    @pytest.mark.parametrize("n, adxs, layers", [
@@ -180,9 +181,7 @@ class TestArgs:
    def test_pack(self, n, adxs, layers):
 
        x = data.args_dat(n, adxs, layers)
-       w = data.pack_args_dat(x)
-
-       assert x.args.pack() == w.pack
+       assert x.args.pack() == x.pack
 
 
    @pytest.mark.parametrize("n, adxs, layers", [
@@ -246,7 +245,6 @@ class TestArgs:
        x = data.args_dat(n, adxs, layers)
 
        for node in x.nodes:
-           print("CONTAINS-3(loop): ", node, x.args._args)
            assert node in x.args
 
 
@@ -294,114 +292,87 @@ class TestConcatenation:
       [3, (0,2), (0,1)],
    ])  
    def test_attach(self, n, adxs, layers):
+    
+       w = data.concat_dat(n, adxs, layers)
 
-       x = data.args_dat(n, adxs, layers)
+       concat1 = w.concat_history[-1]
+       concat2 = w.concat
 
-       nodes, sources, layers = x.nodes[:-1], x.sources[:-1], x.layers[:-1]
-       node,  source,  layer  = x.nodes[-1],  x.sources[-1],  x.layers[-1]
+       node, source, layer = w.attach_history[-1]
 
-       w1 = data.concat_dat(nodes, sources, layers)
-       w2 = data.concat_dat(x.nodes, x.sources, x.layers)
-
-       assert w1.concat.attach(node, source, layer) == w2.concat     
+       assert concat1.attach(node, source, layer) == concat2
 
 
-   @pytest.mark.parametrize("n, adxs, layers, result", [
-      [1, (0,),    (0,),     0],
-      [2, (0,),    (1,),     1],
-      [2, (1,),    (0,),     0],
-      [2, (0,1),   (0,0),    0],
-      [2, (0,1),   (0,2),    2],
-      [3, (0,2),   (0,1),    1],
-      [3, (0,2),   (2,1),    2],
-      [2, tuple(), tuple(), -1],
+   @pytest.mark.parametrize("n, adxs, layers", [
+      [1, (0,),    (0,)],
+      [2, (0,),    (1,)],
+      [2, (1,),    (0,)],
+      [2, (0,1),   (0,0)],
+      [2, (0,1),   (0,2)],
+      [3, (0,2),   (0,1)],
+      [3, (0,2),   (2,1)],
+      [3, (0,2),   (1,1)],
+      [2, tuple(), tuple()],
    ])  
-   def test_layer(self, n, adxs, layers, result):
+   def test_layer(self, n, adxs, layers):
 
-       w = data.concat_args_dat(data.args_dat(n, adxs, layers))
+       w = data.concat_out(n, adxs, layers)
 
-       assert w.concat.layer() == result
+       assert w.concat.layer() == w.layer
   
 
-   @pytest.mark.parametrize("n, adxs, layers, result", [
-      [1, (0,),    (0,),    (0,)   ],
-      [2, (0,),    (1,),    (0,)   ],
-      [2, (1,),    (0,),    (1,)   ],
-      [2, (0,1),   (0,0),   (0,1)  ],
-      [2, (0,1),   (0,2),   (1,)   ],
-      [3, (0,2),   (0,1),   (2,)   ],
-      [3, (0,2),   (2,1),   (0,)   ],
-      [3, (0,2),   (1,1),   (0,2)  ],
-      [2, tuple(), tuple(), tuple()],
+   @pytest.mark.parametrize("n, adxs, layers", [
+      [1, (0,),    (0,)],
+      [2, (0,),    (1,)],
+      [2, (1,),    (0,)],
+      [2, (0,1),   (0,0)],
+      [2, (0,1),   (0,2)],
+      [3, (0,2),   (0,1)],
+      [3, (0,2),   (2,1)],
+      [3, (0,2),   (1,1)],
+      [2, tuple(), tuple()],
    ])  
-   def test_adxs(self, n, adxs, layers, result):
+   def test_adxs(self, n, adxs, layers):
 
-       w = data.concat_args_dat(data.args_dat(n, adxs, layers))
+       w = data.concat_out(n, adxs, layers)
 
-       assert w.concat.adxs() == result
+       assert w.concat.adxs() == w.adxs
 
 
-   @pytest.mark.parametrize("n, adxs, layers, which", [
-      [1, (0,),    (0,),    0],
-      [2, (0,),    (1,),    1],
-      [2, (1,),    (0,),    2],
-      [2, (0,1),   (0,0),   3],
-      [2, (0,1),   (0,2),   4],
-      [3, (0,2),   (0,1),   5],
-      [3, (0,2),   (2,1),   6],
-      [3, (0,2),   (1,1),   7],
-      [2, tuple(), tuple(), 8],
+   @pytest.mark.parametrize("n, adxs, layers", [
+      [1, (0,),    (0,)],
+      [2, (0,),    (1,)],
+      [2, (1,),    (0,)],
+      [2, (0,1),   (0,0)],
+      [2, (0,1),   (0,2)],
+      [3, (0,2),   (0,1)],
+      [3, (0,2),   (2,1)],
+      [3, (0,2),   (1,1)],
+      [2, tuple(), tuple()],
    ])  
-   def tests_parents(self, n, adxs, layers, which):
+   def tests_parents(self, n, adxs, layers):
 
-       x = data.args_dat(n, adxs, layers)
-       w = data.concat_args_dat(x)
+       w = data.concat_out(n, adxs, layers)
 
-       result = (
-                 lambda: (x.nodes[0], ),
-                 lambda: (x.nodes[0], ),
-                 lambda: (x.nodes[1], ),
-                 lambda: (x.nodes[0], x.nodes[1]),
-                 lambda: (x.nodes[1], ),
-                 lambda: (x.nodes[2], ),
-                 lambda: (x.nodes[0], ),
-                 lambda: (x.nodes[0], x.nodes[2]),
-                 lambda: tuple(),
-                )[which]()
-
-       assert w.concat.parents() == tdnode.Parents(result)
+       assert w.concat.parents() == w.parents
 
 
-   @pytest.mark.parametrize("n, adxs, layers, which", [
-      [1, (0,),    (0,),    0],
-      [2, (0,),    (1,),    1],
-      [2, (1,),    (0,),    2],
-      [2, (0,1),   (0,0),   3],
-      [2, (0,1),   (0,2),   4],
-      [3, (0,2),   (0,1),   5],
-      [3, (0,2),   (2,1),   6],
-      [3, (0,2),   (1,1),   7],
-      [2, tuple(), tuple(), 8],
+   @pytest.mark.parametrize("n, adxs, layers", [
+      [1, (0,),    (0,)],
+      [2, (0,),    (1,)],
+      [2, (1,),    (0,)],
+      [2, (0,1),   (0,0)],
+      [2, (0,1),   (0,2)],
+      [3, (0,2),   (0,1)],
+      [3, (0,2),   (2,1)],
+      [3, (0,2),   (1,1)],
+      [2, tuple(), tuple()],
    ])  
-   def tests_deshell(self, n, adxs, layers, which):
+   def tests_deshell(self, n, adxs, layers):
 
-       x = data.args_dat(n, adxs, layers)
-       w = data.concat_args_dat(x)       
+       w = data.concat_out(n, adxs, layers)    
 
-       result = (
-                 lambda: (x.sources[0],                             ),
-                 lambda: (x.sources[0], x.nodes[1],                 ),
-                 lambda: (x.nodes[0],   x.sources[1],               ),
-                 lambda: (x.sources[0], x.sources[1],               ),
-                 lambda: (x.nodes[0],   x.sources[1],               ),
-                 lambda: (x.nodes[0],   x.nodes[1],   x.sources[2], ),
-                 lambda: (x.sources[0], x.nodes[1],   x.nodes[2],   ),
-                 lambda: (x.sources[0], x.nodes[1],   x.sources[2], ),
-                 lambda: (x.nodes[0],   x.nodes[1],                 ),
-                )[which]()
-
-       assert w.concat.deshell() == tdgraph.Args(result)
-
+       assert w.concat.deshell() == w.deshell
 
 
 
@@ -417,167 +388,92 @@ class TestConcatenation:
 
 class TestPack:
 
-   @pytest.mark.parametrize("n, adxs, layers, result", [
-      [1, (0,),    (0,),     False],
-      [2, (0,),    (1,),     False],
-      [2, (1,),    (0,),     False],
-      [2, (0,1),   (0,0),    False],
-      [2, (0,1),   (0,2),    False],
-      [3, (0,2),   (0,1),    False],
-      [3, (0,2),   (2,1),    False],
-      [2, tuple(), tuple(),  True],
-   ])  
-   def test_innermost(self, n, adxs, layers, result):
-
-       x = data.args_dat(n, adxs, layers)
-       w = data.pack_args_dat(x)  
-
-       assert w.pack.innermost() == result
-
-
-   @pytest.mark.parametrize("n, adxs, layers, which", [
-      [1, (0,),    (0,),    0],
-      [2, (0,),    (1,),    1],
-      [2, (1,),    (0,),    2],
-      [2, (0,1),   (0,0),   3],
-      [2, (0,1),   (0,2),   4],
-      [3, (0,2),   (0,1),   5],
-      [3, (0,2),   (2,1),   6],
-      [3, (0,2),   (1,1),   7],
-      [2, tuple(), tuple(), 8],
-   ])  
-   def tests_deshell(self, n, adxs, layers, which):
-
-       x = data.args_dat(n, adxs, layers)
-       w = data.pack_args_dat(x)  
-
-       result = (
-                 lambda: (x.sources[0],                             ),
-                 lambda: (x.sources[0], x.nodes[1],                 ),
-                 lambda: (x.nodes[0],   x.sources[1],               ),
-                 lambda: (x.sources[0], x.sources[1],               ),
-                 lambda: (x.nodes[0],   x.sources[1],               ),
-                 lambda: (x.nodes[0],   x.nodes[1],   x.sources[2], ),
-                 lambda: (x.sources[0], x.nodes[1],   x.nodes[2],   ),
-                 lambda: (x.sources[0], x.nodes[1],   x.sources[2], ),
-                 lambda: (x.nodes[0],   x.nodes[1],                 ),
-                )[which]()
-
-       assert w.pack.deshell() == tdgraph.Args(result)
-
-
-   @pytest.mark.parametrize("n, adxs, layers, which", [
-      [1, (0,),    (0,),    0],
-      [2, (0,),    (1,),    1],
-      [2, (1,),    (0,),    2],
-      [2, (0,1),   (0,0),   3],
-      [2, (0,1),   (0,2),   4],
-      [3, (0,2),   (0,1),   5],
-      [3, (0,2),   (2,1),   6],
-      [3, (0,2),   (1,1),   7],
-      [2, tuple(), tuple(), 8],
-   ])  
-   def test_deshelled(self, n, adxs, layers, which):
-
-       x = data.args_dat(n, adxs, layers)
-       w = data.pack_args_dat(x)  
-
-       result = (
-                 lambda: (x.sources[0],                             ),
-                 lambda: (x.sources[0], x.nodes[1],                 ),
-                 lambda: (x.nodes[0],   x.sources[1],               ),
-                 lambda: (x.sources[0], x.sources[1],               ),
-                 lambda: (x.nodes[0],   x.sources[1],               ),
-                 lambda: (x.nodes[0],   x.nodes[1],   x.sources[2], ),
-                 lambda: (x.sources[0], x.nodes[1],   x.nodes[2],   ),
-                 lambda: (x.sources[0], x.nodes[1],   x.sources[2], ),
-                 lambda: (x.nodes[0],   x.nodes[1],                 ),
-                )[which]()
-
-       pack = tdgraph.Args(result).pack()
-
-       assert w.pack.deshelled() == pack
-
-
-
-
+   @pytest.mark.parametrize("valency", [1,2,3])   
    @pytest.mark.parametrize("layer, result", [
       [-1, True], 
       [ 0, False], 
       [ 1, False], 
       [ 2, False],
    ])
-   def test_innermost_001(self, layer, result):
+   def test_innermost(self, valency, layer, result):
 
-       concat = fake.Cohesive(layer=fake.Fun(layer))
-       pack   = tdgraph.Pack(concat)
-       assert pack.innermost() == result
-
-
-   def test_deshell_001(self):
-
-       args   = fake.ArgsLike()
-       concat = fake.Cohesive(deshell=fake.Fun(args))
-
-       pack = tdgraph.Pack(concat)
-       assert pack.deshell() == args
+       x = data.pack_dat(valency, layer)
+       assert x.pack.innermost() == result
 
 
-   def test_deshelled_001(self):
+   @pytest.mark.parametrize("valency", [1,2,3]) 
+   @pytest.mark.parametrize("layer",   [0,1])
+   def test_deshell(self, valency, layer):
 
-       out    = fake.Packable()
-       args   = fake.ArgsLike(pack=fake.Fun(out))
-       concat = fake.Cohesive(deshell=fake.Fun(args))
+       x = data.pack_dat(valency, layer)
+       assert x.pack.deshell() == x.deshell
 
-       pack = tdgraph.Pack(concat)
-       assert pack.deshelled() == out
+
+   @pytest.mark.parametrize("valency", [1,2,3]) 
+   @pytest.mark.parametrize("layer",   [0,1])
+   def test_deshelled(self, valency, layer):
+
+       x = data.pack_dat(valency, layer)
+       assert x.pack.deshelled() == x.deshelled
 
 
    @pytest.mark.parametrize("valency", [1,2,3])
    @pytest.mark.parametrize("layer",   [0,1])
    def test_fold_001(self, valency, layer):
+
+       x = data.pack_dat(valency, layer)
+       assert x.pack.fold(x.funwrap, x.source) == x.node
+
+
+   @pytest.mark.parametrize("valency", [1,2,3])
+   def test_fold_002(self, valency):
+
+       x = data.pack_dat(valency, -1)
+       assert x.pack.fold(x.funwrap, x.source) == x.node
  
-       fun   = fake.Fun(None)
-       adxs  = common.arepeat(fake.Value, valency)
-       out   = fake.NodeLike()
-       args  = fake.ArgsLike()
-
-       op      = tdnode.AdjointOp(fun, adxs, out, args)
-       node    = fake.NodeLike()
-       parents = fake.Parental(next=fake.Fun(node, out, layer, op))  
-
-       concat = fake.Cohesive(
-                              layer=fake.Fun(layer),
-                              adxs=fake.Fun(adxs),
-                              parents=fake.Fun(parents),
-                              deshell=fake.Fun(args)
-                             )
-       pack = tdgraph.Pack(concat)
-
-       assert pack.fold(fun, out) == node 
-
-
-   def test_fold_002(self):
- 
-       fun   = fake.Fun(None)
-       out   = fake.Value()
-       point = tdnode.Point(out)
-
-       concat = fake.Cohesive(layer=fake.Fun(tdgraph.minlayer()))
-       pack   = tdgraph.Pack(concat)
-
-       assert pack.fold(fun, out) == point       
 
 
 
+# --- Argument envelope ----------------------------------------------------- #
+
+class TestEnvelope:
+
+   @pytest.mark.parametrize("nargs", [1,2,3]) 
+   def test_packs(self, nargs):
+
+       x     = data.envelope_dat(nargs)
+       packs = x.envelope.packs()
+
+       for pack, xpack in itertools.zip_longest(reversed(packs), x.packs):
+           assert pack == xpack
 
 
+   @pytest.mark.parametrize("nargs", [1,2,3]) 
+   def test_apply(self, nargs):
+
+       x = data.envelope_dat(nargs)
+       assert x.envelope.apply(x.fun) == x.value
 
 
+   @pytest.mark.parametrize("nargs", [1,2,3]) 
+   def test_applywrap(self, nargs):
+
+       x = data.envelope_dat(nargs)
+       assert x.envelope.applywrap(x.funwrap, x.fun) == x.nodes[-1]
 
 
+   @pytest.mark.parametrize("nargs", [1,2,3]) 
+   def test_apply_001(self, nargs):
+
+       x = data.envelope_dat_001(nargs)
+       assert x.envelope.apply(x.fun) == x.value
 
 
+   @pytest.mark.parametrize("nargs", [1,2,3]) 
+   def test_applywrap_001(self, nargs):
+
+       x = data.envelope_dat_001(nargs)
+       assert x.envelope.applywrap(x.funwrap, x.fun) == x.nodes[-1].tovalue()
 
 
 

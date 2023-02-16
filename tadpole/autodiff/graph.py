@@ -520,7 +520,7 @@ class Envelope(EnvelopeLike):
 
    def __init__(self, args):
 
-       if not isinstance(args, Args):
+       if not isinstance(args, ArgsLike):
           args = Args(args)
 
        self._args = args
@@ -561,7 +561,12 @@ class Envelope(EnvelopeLike):
 
    def apply(self, fun):
 
-       args = self.packs().last().deshell()
+       try:
+            last = self.packs().last()
+       except StopIteration:
+            last = self.packs().first()
+
+       args = last.deshell() 
        out  = fun(*(arg.tovalue() for arg in args))
 
        return out      
