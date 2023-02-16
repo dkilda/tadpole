@@ -569,7 +569,7 @@ class Cumulative(abc.ABC):
        pass
 
    @abc.abstractmethod
-   def pop(self, nodes):
+   def pick(self, nodes):
        pass
 
    @abc.abstractmethod
@@ -588,6 +588,7 @@ class GradSum(Cumulative):
        if grads is None:
           grads = {}
 
+       self._last  = None
        self._seed  = seed
        self._grads = grads
 
@@ -617,22 +618,22 @@ class GradSum(Cumulative):
    def add(self, node, grads):
 
        self._grads[node] = reduce(tdmanip.add_grads, grads, None)
+
+       self._last = node
        return self
 
 
-   def pop(self, nodes):
+   def pick(self, nodes):
 
        if not nodes:
           return (self._seed,)   
 
-       return tuple(map(self._grads.pop, nodes))
+       return tuple(map(self._grads.get, nodes))
 
 
    def result(self):
 
-       last_node = list(self._grads)[-1]
-
-       return self._grads[last_node]
+       return self._grads[self._last]
 
 
 
@@ -678,7 +679,7 @@ class GradAccum(Cumulative):
        return self
 
 
-   def pop(self, node): 
+   def pick(self, node): 
  
        grad = self._grads.pop(node)
 

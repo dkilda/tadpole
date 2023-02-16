@@ -342,7 +342,7 @@ class ForwardGate(GateLike):
        for parent in self._parents:
            grads = parent.grads(grads)
 
-       seed = grads.pop(self._parents)
+       seed = grads.pick(self._parents)
 
        return grads.add(node, self._op.jvp(seed))
 
@@ -404,7 +404,7 @@ class ReverseGate(GateLike):
 
    def grads(self, node, grads):
 
-       seed = grads.pop(node)
+       seed = grads.pick(node)
 
        return grads.add(self._parents, self._op.vjp(seed))
 

@@ -58,6 +58,26 @@ class Graph(GraphLike):
        self._root = root
 
 
+   def __repr__(self):
+
+       rep = tdutil.ReprChain()
+
+       rep.typ(self)
+       rep.val("root", self._root)
+
+       return str(rep)
+
+
+   def __eq__(self, other):
+
+       log = tdutil.LogicalChain()
+
+       log.typ(self, other)
+       log.ref(self._root, other._root)
+
+       return bool(log)
+       
+
    def __enter__(self):
 
        type(self)._layer += 1

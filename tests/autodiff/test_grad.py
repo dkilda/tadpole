@@ -90,16 +90,101 @@ class TestForwardDifferentialOp:
 
 
 
+###############################################################################
+###                                                                         ###
+###  Gradient propagation through the AD computation graph.                 ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Forward gradient propagation ------------------------------------------ #
+
+class TestForwardPropagation:
+
+   def test_graphop(self):
+
+       dat  = data.graph_dat("FORWARD")
+       prop = tdgrad.ForwardPropagation()
+
+       assert prop.graphop(dat.fun, dat.x) == dat.graphop
+
+
+   @pytest.mark.parametrize("layer", [0])
+   def test_accum(self, layer):
+
+       network = data.forward_node_network_dat(layer)
+       prop    = tdgrad.ForwardPropagation()
+
+       end   = network.end
+       start = network.leaves[0]
+       seed  = network.gradmap[start]
+
+       grads = tdgrad.GradSum(seed, network.gradmap) 
+
+       assert prop.accum(end, seed) == grads
+
+
+
+
+# --- Reverse gradient propagation ------------------------------------------ #
+
+class TestReversePropagation:
+
+   def test_graphop(self):
+
+       dat  = data.graph_dat("REVERSE")
+       prop = tdgrad.ReversePropagation()
+
+       assert prop.graphop(dat.fun, dat.x) == dat.graphop
+
+
+   @pytest.mark.parametrize("layer", [0])
+   def test_accum(self, layer):
+
+       network = data.reverse_node_network_dat(layer)
+       prop    = tdgrad.ReversePropagation()
+
+       end   = network.end
+       start = network.leaves[0]
+       seed  = network.gradmap[network.end]
+
+       grads = tdgrad.GradAccum({None: network.gradmap[start]})
+
+       assert prop.accum(end, seed) == grads
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Computation graph operator.                                            ###
+###                                                                         ###
+###############################################################################
+
 
 # --- Graph operator -------------------------------------------------------- #
 
 class TestGraphOp:
 
-   def test_end(self):
+   @pytest.mark.parametrize("which", ["REVERSE", "FORWARD"])
+   def test_graph(self, which):
 
-       dat = data.diffop_dat("FORWARD", 0)
+       dat = data.graph_dat(which)
+       assert dat.graphop.graph() == dat.graph
+
+
+   @pytest.mark.parametrize("which", ["REVERSE", "FORWARD"])
+   def test_end(self, which):
+
+       dat = data.graph_dat(which)
        assert dat.graphop.end() == dat.end
 
+
+   @pytest.mark.parametrize("which", ["REVERSE", "FORWARD"])
+   def test_evaluate(self, which):
+
+       dat = data.graph_dat(which)
+       assert dat.graphop.evaluate() == dat.out
 
 
 

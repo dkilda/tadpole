@@ -111,14 +111,14 @@ class Cumulative(tdgrad.Cumulative):
        return self._fun["add", self](nodes, parents)
 
 
-   def pop(self, nodes):
+   def pick(self, nodes):
 
-       return self._fun["pop", util.Value()]
+       return self._fun["pick", util.Value()](nodes)
 
 
-   def result(self, node):
+   def result(self):
 
-       return self._fun["result", util.Value()]
+       return self._fun["result", util.Value()]()
 
 
 

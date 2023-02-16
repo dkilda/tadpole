@@ -10,7 +10,7 @@ import tests.autodiff.fakes as fake
 import tadpole.autodiff.util  as tdutil
 import tadpole.autodiff.node  as tdnode
 import tadpole.autodiff.graph as tdgraph
-
+import tadpole.autodiff.grad  as tdgrad
 
 
 
@@ -24,7 +24,7 @@ import tadpole.autodiff.graph as tdgraph
 # --- Graph ----------------------------------------------------------------- #
 
 GraphData = collections.namedtuple("GraphData", [
-               "graph", "layer", "root", "fun",
+               "graphop", "graph", "layer", "root", "fun",
                "x", "out", "start", "end",
             ])
 
@@ -55,10 +55,12 @@ def graph_dat(which="REVERSE", layer=None,
        src = fake.NodeLike(tovalue=fake.Fun(out))
        end = tdnode.Node(src, layer, fake.GateLike())
 
-    fun   = fake.Fun(end, start)
-    graph = tdgraph.Graph(root)
+    fun     = fake.Fun(end, start)
+    graph   = tdgraph.Graph(root)
+    graphop = tdgrad.GraphOp(root, fun, x)
 
-    return GraphData(graph, layer, root, fun, x, out, start, end)
+    return GraphData(graphop, graph, layer, root, fun, 
+                     x, out, start, end)
 
 
 

@@ -343,8 +343,11 @@ class TestForwardGate:
        
        init_seed = fake.Value()
 
-       grads  = tdgrad.GradSum(init_seed, dict(zip(x.parents, x.seed))) 
-       grads1 = tdgrad.GradSum(init_seed, {node: sum(x.grads)})
+       gradmap  = dict(zip(x.parents, x.seed))
+       gradmap1 = {**gradmap, node: sum(x.grads)}
+
+       grads  = tdgrad.GradSum(init_seed, gradmap) 
+       grads1 = tdgrad.GradSum(init_seed, gradmap1)
 
        assert x.gate.grads(node, grads) == grads1
 
@@ -523,8 +526,11 @@ class TestNode:
 
        init_seed = fake.Value()
 
-       grads  = tdgrad.GradSum(init_seed, dict(zip(w.parents, w.seed))) 
-       grads1 = tdgrad.GradSum(init_seed, {x.node: sum(w.grads)})
+       gradmap  = dict(zip(w.parents, w.seed))
+       gradmap1 = {**gradmap, x.node: sum(w.grads)}
+
+       grads  = tdgrad.GradSum(init_seed, gradmap) 
+       grads1 = tdgrad.GradSum(init_seed, gradmap1)
 
        assert x.node.grads(grads) == grads1
 

@@ -44,7 +44,7 @@ def diffop_dat(which="REVERSE", layer=None,
                "FORWARD": tdgrad.ForwardDifferentialOp,
               }[which](graph_dat.fun, graph_dat.x)
 
-    return DiffOpData(diffop, graphop, *graph_dat)   
+    return DiffOpData(diffop, *graph_dat)   
 
 
 
@@ -66,42 +66,178 @@ NodeNetworkData = collections.namedtuple("NodeNetworkData", [
 
 
 
-def forward_node_network_dat(layer=None):
 
-    # --- Nodes and grads --- #
+def forward_node_network_dat_001(layer=None):
 
-    seed0 = (fake.Value(), )
-    seed1 = (fake.Value(), )
-    seed2 = (fake.Value(), )
+    # --- Grads --- #
 
-    leaf0_dat = data.forward_node_dat(0, seed0, seed0, layer)
-    leaf1_dat = data.forward_node_dat(0, seed1, seed1, layer)
-    leaf2_dat = data.forward_node_dat(0, seed2, seed2, layer)
+    seed = (fake.Value(), )
+
+    grad0 = {"seed": seed, "grads": seed}
+    grad1 = {"seed": seed, "grads": seed}
+    grad2 = {"seed": seed, "grads": seed}
+
+    gradA = {
+             "seed":  (sum(grad0["grads"]), sum(grad1["grads"])),
+             "grads": (fake.Value(),        fake.Value()),
+            }
+    gradB = {
+             "seed":  (sum(grad0["grads"]), sum(grad2["grads"])),
+             "grads": (fake.Value(),        fake.Value()),
+            }
+    gradC = {
+             "seed":  (sum(gradA["grads"]), ),
+             "grads": (fake.Value(),        ),
+            }
+    gradD = {
+             "seed":  (sum(grad1["grads"]), sum(gradB["grads"])),
+             "grads": (fake.Value(),        fake.Value()),
+            }
+    gradE = {
+             "seed":  (sum(gradC["grads"]), sum(grad1["grads"]), sum(gradD["grads"])),
+             "grads": (fake.Value(),        fake.Value(),        fake.Value()),
+            }
+
+
+    # --- Nodes --- #
+
+    leaf0_dat = data.forward_node_dat(0, grad0["grads"], grad0["seed"], layer)
+    leaf1_dat = data.forward_node_dat(0, grad1["grads"], grad1["seed"], layer)
+    leaf2_dat = data.forward_node_dat(0, grad2["grads"], grad2["seed"], layer)
 
     nodeA_dat = data.forward_node_dat(
-                                      (leaf0_dat.node,       leaf1_dat.node), 
-                                      (sum(leaf0_dat.grads), sum(leaf1_dat.grads)),
-                                      layer=layer
+                                      (leaf0_dat.node, leaf1_dat.node), 
+                                      gradA["grads"], 
+                                      gradA["seed"], 
+                                      layer
                                      )
     nodeB_dat = data.forward_node_dat(
-                                      (leaf0_dat.node,       leaf2_dat.node), 
-                                      (sum(leaf0_dat.grads), sum(leaf2_dat.grads)),
-                                      layer=layer
+                                      (leaf0_dat.node, leaf2_dat.node), 
+                                      gradB["grads"], 
+                                      gradB["seed"],
+                                      layer
                                      )
     nodeC_dat = data.forward_node_dat(
-                                      (nodeA_dat.node,       ), 
-                                      (sum(nodeA_dat.grads), ),
-                                      layer=layer
+                                      (nodeA_dat.node, ), 
+                                      gradC["grads"], 
+                                      gradC["seed"],
+                                      layer
                                      )
     nodeD_dat = data.forward_node_dat(
-                                      (leaf1_dat.node,       nodeB_dat.node), 
-                                      (sum(leaf1_dat.grads), sum(nodeB_dat.grads)), 
-                                      layer=layer
+                                      (leaf1_dat.node, nodeB_dat.node), 
+                                      gradD["grads"], 
+                                      gradD["seed"],
+                                      layer
                                      )
     nodeE_dat = data.forward_node_dat(
-                                      (nodeC_dat.node,       leaf1_dat.node,       nodeD_dat.node), 
-                                      (sum(nodeC_dat.grads), sum(leaf1_dat.grads), sum(nodeD_dat.grads)), 
-                                      layer=layer
+                                      (nodeC_dat.node, leaf1_dat.node, nodeD_dat.node), 
+                                      gradE["grads"], 
+                                      gradE["seed"], 
+                                      layer
+                                     ) 
+
+    # --- Network data --- #
+
+    node_dats = (
+                 nodeE_dat, 
+                 nodeD_dat, # OK
+                 nodeB_dat, 
+                 leaf2_dat,
+                 nodeC_dat, # OK
+                 nodeA_dat, 
+                 leaf1_dat, 
+                 leaf0_dat,
+                )
+  
+    end    = nodeE_dat.node
+    nodes  = tuple(dat.node for dat in node_dats) 
+    leaves = (leaf0_dat.node, leaf1_dat.node, leaf2_dat.node)
+
+    gradmap   = {dat.node: sum(dat.grads) for dat in node_dats}
+    parentmap = {dat.node: dat.parents    for dat in node_dats}
+    countmap  = {
+                 nodeA_dat.node: 0,
+                 leaf0_dat.node: 1, 
+                }
+
+    return NodeNetworkData(end, nodes, leaves, 
+                           gradmap, parentmap, countmap)
+
+
+
+
+
+def forward_node_network_dat(layer=None):
+
+    # --- Grads --- #
+
+    seed = (fake.Value(), )
+
+    grad0 = {"seed": seed, "grads": seed}
+    grad1 = {"seed": seed, "grads": seed}
+    grad2 = {"seed": seed, "grads": seed}
+
+    gradA = {
+             "seed":  (sum(grad0["grads"]), sum(grad1["grads"])),
+             "grads": (fake.Value(),        fake.Value()),
+            }
+
+    gradB = {
+             "seed":  (sum(grad0["grads"]), sum(grad2["grads"])),
+             "grads": (fake.Value(),        fake.Value()),
+            }
+
+    gradC = {
+             "seed":  (sum(gradA["grads"]), ),
+             "grads": (fake.Value(),        ),
+            }
+
+    gradD = {
+             "seed":  (sum(grad1["grads"]), sum(gradB["grads"])),
+             "grads": (fake.Value(),        fake.Value()),
+            }
+
+    gradE = {
+             "seed":  (sum(gradC["grads"]), sum(grad1["grads"]), sum(gradD["grads"])),
+             "grads": (fake.Value(),        fake.Value(),        fake.Value()),
+            }
+
+
+    # --- Nodes --- #
+
+    leaf0_dat = data.forward_node_dat(0, grad0["grads"], grad0["seed"], layer)
+    leaf1_dat = data.forward_node_dat(0, grad1["grads"], grad1["seed"], layer) 
+    leaf2_dat = data.forward_node_dat(0, grad2["grads"], grad2["seed"], layer) 
+
+    nodeA_dat = data.forward_node_dat(
+                                      (leaf0_dat.node, leaf1_dat.node), 
+                                      gradA["grads"], 
+                                      gradA["seed"], 
+                                      layer
+                                     )
+    nodeB_dat = data.forward_node_dat(
+                                      (leaf0_dat.node, leaf2_dat.node), 
+                                      gradB["grads"], 
+                                      gradB["seed"],
+                                      layer
+                                     )
+    nodeC_dat = data.forward_node_dat(
+                                      (nodeA_dat.node, ), 
+                                      gradC["grads"], 
+                                      gradC["seed"],
+                                      layer
+                                     )
+    nodeD_dat = data.forward_node_dat(
+                                      (leaf1_dat.node, nodeB_dat.node), 
+                                      gradD["grads"], 
+                                      gradD["seed"],
+                                      layer
+                                     )
+    nodeE_dat = data.forward_node_dat(
+                                      (nodeC_dat.node, leaf1_dat.node, nodeD_dat.node), 
+                                      gradE["grads"], 
+                                      gradE["seed"], 
+                                      layer
                                      ) 
 
     # --- Network data --- #
@@ -131,7 +267,7 @@ def forward_node_network_dat(layer=None):
                  nodeC_dat.node: 1,
                  nodeA_dat.node: 1,
                  leaf1_dat.node: 3,
-                 leaf0_dat.node: 2,
+                 leaf0_dat.node: 2, 
                 }
 
     return NodeNetworkData(end, nodes, leaves, 
