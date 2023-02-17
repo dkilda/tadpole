@@ -30,7 +30,7 @@ AdjFunData = collections.namedtuple("AdjFunData", [
 
 
 
-def forward_adjfun(valency=1):
+def forward_adjfun_dat(valency=1):
 
     grads  = common.arepeat(fake.Value, valency)
     seed   = common.arepeat(fake.Value, valency)
@@ -41,7 +41,7 @@ def forward_adjfun(valency=1):
 
 
 
-def reverse_adjfun(valency=1):
+def reverse_adjfun_dat(valency=1):
 
     grads  = common.arepeat(fake.Value, valency)
     seed   = fake.Value()
@@ -61,7 +61,7 @@ AdjointData = collections.namedtuple("AdjointData", [
 
 
 
-def adjoint(nargs=1, adxs=(0,)):  
+def adjoint_dat(nargs=1, adxs=(0,)):  
 
     out  = fake.NodeLike()
     args = common.arepeat(fake.NodeLike, nargs)
@@ -93,7 +93,7 @@ FlowData = collections.namedtuple("FlowData", [
 
 
 
-def null_flow():
+def null_flow_dat():
 
     def fun(parents, op):
         return tdnode.NullGate()
@@ -106,7 +106,7 @@ def null_flow():
 
 
 
-def forward_flow():
+def forward_flow_dat():
 
     def fun(parents, op):
         return tdnode.ForwardGate(parents, op)
@@ -119,7 +119,7 @@ def forward_flow():
 
 
 
-def reverse_flow():
+def reverse_flow_dat():
 
     def fun(parents, op):
         return tdnode.ReverseGate(parents, op)
@@ -148,9 +148,9 @@ GateData = collections.namedtuple("GateData", [
 
 
 
-def forward_gate(valency=1):
+def forward_gate_dat(valency=1):
 
-    adjfun = forward_adjfun(valency)
+    adjfun = forward_adjfun_dat(valency)
     op     = fake.Adjoint(jvp=fake.Fun(adjfun.grads, adjfun.seed))
 
     parents = tdnode.Parents(common.arepeat(fake.NodeLike, valency))
@@ -161,9 +161,9 @@ def forward_gate(valency=1):
 
 
 
-def reverse_gate(valency=1):
+def reverse_gate_dat(valency=1):
 
-    adjfun = reverse_adjfun(valency)
+    adjfun = reverse_adjfun_dat(valency)
     op     = fake.Adjoint(vjp=fake.Fun(adjfun.grads, adjfun.seed))
 
     parents = tdnode.Parents(common.arepeat(fake.NodeLike, valency))
@@ -190,7 +190,7 @@ NodeData = collections.namedtuple("NodeData", [
 
 
 
-def node(layer=0, gate=fake.GateLike()):
+def node_dat(layer=0, gate=fake.GateLike()):
 
     value  = fake.Value()
     source = fake.NodeLike(tovalue=fake.Fun(value))
@@ -218,7 +218,7 @@ def forward_node_dat(parent_nodes=1, grads=None, seed=None, layer=None):
        parent_nodes = common.arepeat(fake.NodeLike, parent_nodes)
 
     if grads is None or seed is None:
-       adjfun = forward_adjfun(len(parent_nodes))
+       adjfun = forward_adjfun_dat(len(parent_nodes))
 
     if grads is None:
        grads = adjfun.grads 
@@ -232,11 +232,11 @@ def forward_node_dat(parent_nodes=1, grads=None, seed=None, layer=None):
     op      = fake.Adjoint(jvp=fake.Fun(grads, seed))
     parents = tdnode.Parents(parent_nodes)
     gate    = tdnode.ForwardGate(parents, op)
-    node_dat = node(layer, gate)
+    nodedat = node_dat(layer, gate)
 
     return DirectedNodeData(
-                            node_dat.node, node_dat.source, 
-                            node_dat.layer, node_dat.value,
+                            nodedat.node, nodedat.source, 
+                            nodedat.layer, nodedat.value,
                             gate, parents, grads, seed
                            )
 
@@ -249,7 +249,7 @@ def reverse_node_dat(parent_nodes=1, grads=None, seed=None, layer=None):
        parent_nodes = common.arepeat(fake.NodeLike, parent_nodes)
 
     if grads is None or seed is None:
-       adjfun = reverse_adjfun(len(parent_nodes))
+       adjfun = reverse_adjfun_dat(len(parent_nodes))
 
     if grads is None:
        grads = adjfun.grads 
@@ -263,11 +263,11 @@ def reverse_node_dat(parent_nodes=1, grads=None, seed=None, layer=None):
     op      = fake.Adjoint(vjp=fake.Fun(grads, seed))
     parents = tdnode.Parents(parent_nodes)
     gate    = tdnode.ReverseGate(parents, op)
-    node_dat = node(layer, gate)
+    nodedat = node_dat(layer, gate)
     
     return DirectedNodeData(
-                            node_dat.node, node_dat.source, 
-                            node_dat.layer, node_dat.value,
+                            nodedat.node,  nodedat.source, 
+                            nodedat.layer, nodedat.value,
                             gate, parents, grads, seed
                            )
 
@@ -283,7 +283,7 @@ PointData = collections.namedtuple("PointData", [
 
 
 
-def point():
+def point_dat():
 
     source = fake.Value() 
     layer  = tdgraph.minlayer()
@@ -312,7 +312,7 @@ ParentData = collections.namedtuple("ParentData", [
 
 
 
-def forward_parents(valency=1):
+def forward_parents_dat(valency=1):
 
     def pnode():
 
@@ -329,7 +329,7 @@ def forward_parents(valency=1):
 
 
 
-def reverse_parents(valency=1):
+def reverse_parents_dat(valency=1):
 
     def pnode():
 

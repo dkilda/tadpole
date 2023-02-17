@@ -44,7 +44,7 @@ class TestAdjointOp:
    ])
    def test_eq(self, nargs, adxs):
 
-       x = data.adjoint(nargs, adxs)
+       x = data.adjoint_dat(nargs, adxs)
 
        opA = tdnode.AdjointOp(x.fun, x.adxs, x.out, x.args)
        opB = tdnode.AdjointOp(x.fun, x.adxs, x.out, x.args)
@@ -67,8 +67,8 @@ class TestAdjointOp:
    ])
    def test_ne(self, nargs, adxs):
 
-       x = data.adjoint(nargs, adxs)
-       y = data.adjoint(nargs, adxs)
+       x = data.adjoint_dat(nargs, adxs)
+       y = data.adjoint_dat(nargs, adxs)
 
        combos = common.combos(tdnode.AdjointOp)
        ops    = combos(
@@ -96,8 +96,8 @@ class TestAdjointOp:
    ])
    def test_vjp(self, nargs, valency, adxs):
 
-       w = data.reverse_adjfun(valency)
-       x = data.adjoint(nargs, adxs)
+       w = data.reverse_adjfun_dat(valency)
+       x = data.adjoint_dat(nargs, adxs)
     
        tda.vjpmap.add_raw(x.fun, fake.Fun(w.adjfun, x.adxs, x.out, *x.args)) 
                           
@@ -119,8 +119,8 @@ class TestAdjointOp:
    ])
    def test_jvp(self, nargs, valency, adxs):
 
-       w = data.forward_adjfun(valency)
-       x = data.adjoint(nargs, adxs)
+       w = data.forward_adjfun_dat(valency)
+       x = data.adjoint_dat(nargs, adxs)
 
        tda.jvpmap.add_raw(x.fun, fake.Fun(w.adjfun, x.adxs, x.out, *x.args))
 
@@ -169,9 +169,9 @@ class TestFlow:
 
        def select(which):
            return {
-                   "REVERSE": data.reverse_flow, 
-                   "FORWARD": data.forward_flow, 
-                   "NULL":    data.null_flow,
+                   "REVERSE": data.reverse_flow_dat, 
+                   "FORWARD": data.forward_flow_dat, 
+                   "NULL":    data.null_flow_dat,
                   }[which]()
 
        x = select(which)
@@ -193,9 +193,9 @@ class TestFlow:
 
        def select(which):
            return {
-                   "REVERSE": data.reverse_flow, 
-                   "FORWARD": data.forward_flow, 
-                   "NULL":    data.null_flow,
+                   "REVERSE": data.reverse_flow_dat, 
+                   "FORWARD": data.forward_flow_dat, 
+                   "NULL":    data.null_flow_dat,
                   }[which]()
 
        x = select(flowA)
@@ -211,16 +211,16 @@ class TestFlow:
 
    def test_reverse_gate(self):
 
-       w = data.reverse_gate()
-       x = data.reverse_flow()
+       w = data.reverse_gate_dat()
+       x = data.reverse_flow_dat()
 
        assert x.flow.gate(w.parents, w.op) == w.gate
 
 
    def test_forward_gate(self):
 
-       w = data.forward_gate()
-       x = data.forward_flow()
+       w = data.forward_gate_dat()
+       x = data.forward_flow_dat()
 
        assert x.flow.gate(w.parents, w.op) == w.gate
 
@@ -240,7 +240,7 @@ class TestNullGate:
 
    def test_flow(self):
 
-       f    = data.null_flow()
+       f    = data.null_flow_dat()
        gate = tdnode.NullGate()
        assert gate.flow() == f.flow
 
@@ -260,7 +260,7 @@ class TestNullGate:
    @pytest.mark.parametrize("valency", [2])
    def test_forward_grads(self, valency):
 
-       x    = data.forward_gate(valency)
+       x    = data.forward_gate_dat(valency)
        node = fake.NodeLike()
 
        init_seed = fake.Value()
@@ -275,7 +275,7 @@ class TestNullGate:
    @pytest.mark.parametrize("valency", [2])
    def test_reverse_grads(self, valency):
 
-       x    = data.reverse_gate(valency)
+       x    = data.reverse_gate_dat(valency)
        node = fake.NodeLike()
 
        grads  = tdgrad.GradAccum(dict(zip(x.parents, x.grads)))
@@ -294,7 +294,7 @@ class TestForwardGate:
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_eq(self, valency):
 
-       x = data.forward_gate(valency)
+       x = data.forward_gate_dat(valency)
 
        gateA = tdnode.ForwardGate(x.parents, x.op)
        gateB = tdnode.ForwardGate(x.parents, x.op)
@@ -305,8 +305,8 @@ class TestForwardGate:
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_ne(self, valency):
 
-       x = data.forward_gate(valency)
-       y = data.forward_gate(valency)
+       x = data.forward_gate_dat(valency)
+       y = data.forward_gate_dat(valency)
 
        combos = common.combos(tdnode.ForwardGate)
        gates  = combos((x.parents, x.op), (y.parents, y.op))
@@ -318,15 +318,15 @@ class TestForwardGate:
 
    def test_flow(self):
 
-       f = data.forward_flow()
-       x = data.forward_gate()
+       f = data.forward_flow_dat()
+       x = data.forward_gate_dat()
        assert x.gate.flow() == f.flow
 
 
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_trace(self, valency):
 
-       x    = data.forward_gate(valency)
+       x    = data.forward_gate_dat(valency)
        node = fake.NodeLike()
 
        count  = tdgrad.ChildCount()  
@@ -338,7 +338,7 @@ class TestForwardGate:
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_grads(self, valency): 
 
-       x    = data.forward_gate(valency)
+       x    = data.forward_gate_dat(valency)
        node = fake.NodeLike()
        
        init_seed = fake.Value()
@@ -361,7 +361,7 @@ class TestReverseGate:
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_eq(self, valency):
 
-       x = data.reverse_gate(valency)
+       x = data.reverse_gate_dat(valency)
 
        gateA = tdnode.ReverseGate(x.parents, x.op)
        gateB = tdnode.ReverseGate(x.parents, x.op)
@@ -372,8 +372,8 @@ class TestReverseGate:
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_ne(self, valency):
 
-       x = data.reverse_gate(valency)
-       y = data.reverse_gate(valency)
+       x = data.reverse_gate_dat(valency)
+       y = data.reverse_gate_dat(valency)
 
        combos = common.combos(tdnode.ForwardGate)
        gates  = combos((x.parents, x.op), (y.parents, y.op))
@@ -385,15 +385,15 @@ class TestReverseGate:
 
    def test_flow(self):
 
-       f = data.reverse_flow()
-       x = data.reverse_gate()
+       f = data.reverse_flow_dat()
+       x = data.reverse_gate_dat()
        assert x.gate.flow() == f.flow
 
 
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_trace(self, valency):
 
-       x    = data.reverse_gate(valency)
+       x    = data.reverse_gate_dat(valency)
        node = fake.NodeLike()
 
        count  = tdgrad.ChildCount()  
@@ -405,7 +405,7 @@ class TestReverseGate:
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_grads(self, valency): 
 
-       x    = data.reverse_gate(valency)
+       x    = data.reverse_gate_dat(valency)
        node = fake.NodeLike()
 
        grads  = tdgrad.GradAccum({node: x.seed})
@@ -432,7 +432,7 @@ class TestNode:
 
    def test_eq(self):
 
-       x = data.node()
+       x = data.node_dat()
 
        nodeA = tdnode.Node(x.source, x.layer, x.gate)
        nodeB = tdnode.Node(x.source, x.layer, x.gate)
@@ -442,8 +442,8 @@ class TestNode:
 
    def test_ne(self):
 
-       x = data.node()
-       y = data.node()
+       x = data.node_dat()
+       y = data.node_dat()
 
        combos = common.combos(tdnode.Node)
        nodes  = combos(
@@ -458,13 +458,13 @@ class TestNode:
 
    def test_tovalue(self):
 
-       x = data.node()
+       x = data.node_dat()
        assert x.node.tovalue() == x.value
 
 
    def test_concat(self):
 
-       x = data.node()
+       x = data.node_dat()
 
        concat  = tdgraph.Concatenation()
        concat1 = tdgraph.Concatenation().attach(x.node, x.source, x.layer)
@@ -476,12 +476,12 @@ class TestNode:
    def test_flow(self, which):
 
        f = {
-            "REVERSE": data.reverse_flow, 
-            "FORWARD": data.forward_flow,
+            "REVERSE": data.reverse_flow_dat, 
+            "FORWARD": data.forward_flow_dat,
            }[which]()
 
        gate = fake.GateLike(flow=fake.Fun(f.flow))
-       x    = data.node(gate=gate)
+       x    = data.node_dat(gate=gate)
 
        assert x.node.flow() == f.flow  
 
@@ -491,11 +491,11 @@ class TestNode:
    def test_trace(self, which, valency):
 
        w = {
-            "REVERSE": data.reverse_gate, 
-            "FORWARD": data.forward_gate,
+            "REVERSE": data.reverse_gate_dat, 
+            "FORWARD": data.forward_gate_dat,
            }[which](valency)
 
-       x = data.node(gate=w.gate)
+       x = data.node_dat(gate=w.gate)
 
        count  = tdgrad.ChildCount()  
        count1 = tdgrad.ChildCount({x.node: w.parents})
@@ -506,13 +506,12 @@ class TestNode:
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_reverse_grads(self, valency):
 
-       w = data.reverse_gate(valency)
-       x = data.node(gate=w.gate)
+       x = data.reverse_node_dat(valency)
 
-       grads  = tdgrad.GradAccum({x.node: w.seed})
+       grads  = tdgrad.GradAccum({x.node: x.seed})
        grads1 = tdgrad.GradAccum({
-                                  None: w.seed, 
-                                  **dict(zip(w.parents, w.grads)),
+                                  None: x.seed, 
+                                  **dict(zip(x.parents, x.grads)),
                                  })
 
        assert x.node.grads(grads) == grads1
@@ -521,13 +520,12 @@ class TestNode:
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_forward_grads(self, valency):
 
-       w = data.forward_gate(valency)
-       x = data.node(gate=w.gate)
+       x = data.forward_node_dat(valency)
 
        init_seed = fake.Value()
 
-       gradmap  = dict(zip(w.parents, w.seed))
-       gradmap1 = {**gradmap, x.node: sum(w.grads)}
+       gradmap  = dict(zip(x.parents, x.seed))
+       gradmap1 = {**gradmap, x.node: sum(x.grads)}
 
        grads  = tdgrad.GradSum(init_seed, gradmap) 
        grads1 = tdgrad.GradSum(init_seed, gradmap1)
@@ -543,7 +541,7 @@ class TestPoint:
 
    def test_eq(self):
 
-       x = data.point()
+       x = data.point_dat()
        
        pointA = tdnode.Point(x.source)
        pointB = tdnode.Point(x.source)
@@ -553,8 +551,8 @@ class TestPoint:
 
    def test_ne(self):
 
-       x = data.point()
-       y = data.point()
+       x = data.point_dat()
+       y = data.point_dat()
 
        pointA = tdnode.Point(x.source)
        pointB = tdnode.Point(y.source)
@@ -564,13 +562,13 @@ class TestPoint:
 
    def test_tovalue(self):
 
-       x = data.point()
+       x = data.point_dat()
        assert x.point.tovalue() == x.source
 
 
    def test_concat(self):
 
-       x = data.point()
+       x = data.point_dat()
 
        concat  = tdgraph.Concatenation() 
        concat1 = tdgraph.Concatenation().attach(x.point, x.point, x.layer)
@@ -580,8 +578,8 @@ class TestPoint:
 
    def test_flow(self):    
 
-       f = data.null_flow()
-       x = data.point() 
+       f = data.null_flow_dat()
+       x = data.point_dat() 
        assert x.point.flow() == f.flow  
 
 
@@ -593,32 +591,32 @@ class TestPoint:
        count  = tdgrad.ChildCount({node: parents})  
        count1 = tdgrad.ChildCount({node: parents})
 
-       x = data.point()
+       x = data.point_dat()
        assert x.point.trace(count) == count1 
 
 
    @pytest.mark.parametrize("valency", [2])
    def test_forward_grads(self, valency):
 
-       w    = data.forward_gate(valency)
+       w    = data.forward_gate_dat(valency)
        node = fake.NodeLike()
 
        grads  = tdgrad.GradSum(w.seed, {node: sum(w.grads)}) 
        grads1 = tdgrad.GradSum(w.seed, {node: sum(w.grads)})
 
-       x = data.point()
+       x = data.point_dat()
        assert x.point.grads(grads) == grads1
 
 
    @pytest.mark.parametrize("valency", [2])
    def test_reverse_grads(self, valency):
 
-       w = data.reverse_gate(valency)
+       w = data.reverse_gate_dat(valency)
 
        grads  = tdgrad.GradAccum(dict(zip(w.parents, w.grads)))
        grads1 = tdgrad.GradAccum(dict(zip(w.parents, w.grads)))
 
-       x = data.point()
+       x = data.point_dat()
        assert x.point.grads(grads) == grads1
 
 
@@ -639,7 +637,7 @@ class TestParents:
    @pytest.mark.parametrize("layer",   [0])
    def test_forward_next(self, valency, layer):
 
-       x = data.forward_parents(valency)
+       x = data.forward_parents_dat(valency)
         
        source = fake.NodeLike()
        op     = fake.Adjoint()
@@ -653,7 +651,7 @@ class TestParents:
    @pytest.mark.parametrize("layer",   [0])
    def test_reverse_next(self, valency, layer):
 
-       x = data.reverse_parents(valency)
+       x = data.reverse_parents_dat(valency)
         
        source = fake.NodeLike()
        op     = fake.Adjoint()
@@ -666,7 +664,7 @@ class TestParents:
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_eq(self, valency):
 
-       x = data.reverse_parents(valency)
+       x = data.reverse_parents_dat(valency)
        
        parentsA = tdnode.Parents(x.pnodes)
        parentsB = tdnode.Parents(x.pnodes)
@@ -677,8 +675,8 @@ class TestParents:
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_ne(self, valency):
 
-       x = data.reverse_parents(valency)
-       y = data.reverse_parents(valency)
+       x = data.reverse_parents_dat(valency)
+       y = data.reverse_parents_dat(valency)
        
        parentsA = tdnode.Parents(x.pnodes)
        parentsB = tdnode.Parents(y.pnodes)
@@ -689,7 +687,7 @@ class TestParents:
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_len(self, valency):
 
-       x = data.reverse_parents(valency)
+       x = data.reverse_parents_dat(valency)
 
        assert len(x.parents) == valency
 
@@ -697,7 +695,7 @@ class TestParents:
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_contains(self, valency):
 
-       x = data.reverse_parents(valency)
+       x = data.reverse_parents_dat(valency)
 
        for node in x.pnodes:
            assert node in x.parents
@@ -706,7 +704,7 @@ class TestParents:
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_iter(self, valency):
 
-       x = data.reverse_parents(valency)
+       x = data.reverse_parents_dat(valency)
 
        for nodeA, nodeB in zip(x.parents, x.pnodes):
            assert nodeA == nodeB
@@ -715,7 +713,7 @@ class TestParents:
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_getitem(self, valency):
 
-       x = data.reverse_parents(valency)
+       x = data.reverse_parents_dat(valency)
 
        for i, node in enumerate(x.pnodes):
            assert x.parents[i] == node

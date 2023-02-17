@@ -3,11 +3,11 @@
 
 
 from .node import (
-   forward_adjfun, reverse_adjfun, adjoint,
-   forward_flow, reverse_flow, null_flow,
-   forward_gate, reverse_gate,
-   forward_node_dat, reverse_node_dat, node, point,
-   forward_parents, reverse_parents,
+   forward_adjfun_dat,  reverse_adjfun_dat,  adjoint_dat,
+   forward_flow_dat,    reverse_flow_dat,    null_flow_dat,
+   forward_gate_dat,    reverse_gate_dat,
+   forward_node_dat,    reverse_node_dat,    node_dat, point_dat,
+   forward_parents_dat, reverse_parents_dat,
 )
 
 
