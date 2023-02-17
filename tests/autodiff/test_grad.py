@@ -271,7 +271,7 @@ class TestChildCount:
 
 
 # --- Traversal ------------------------------------------------------------- #
-"""
+
 class TestTraversal:
 
    def test_sweep(self):
@@ -279,14 +279,183 @@ class TestTraversal:
        dat       = data.reverse_node_network_dat()
        traversal = tdgrad.Traversal(dat.end)
 
-       parentmap = dat.parentmap.copy()
-       def step(x):
-           return parentmap.pop(x, tuple())    
+       nodes = list(dat.nodes)
 
-       for node in traversal.sweep(step):
-           assert node == 
-"""
+       def step(x):
+           try:
+              return (nodes[nodes.index(x) + 1], )    
+           except IndexError:
+              return tuple()
+
+       for i, node in enumerate(traversal.sweep(step)):
+           assert node == nodes[i]
+       
+
+   def test_apply(self):
+
+       dat       = data.reverse_node_network_dat()
+       traversal = tdgrad.Traversal(dat.end)
+
+       parentmap = {}
+       count     = tdgrad.ChildCount(parentmap)
+
+       traversal.apply(count.collect)
+       assert parentmap == dat.parentmap
+
+
+
+
+# --- Topological sort ------------------------------------------------------ #
+
+class TestTopoSort:
+
+   def test_traverse(self):
+
+       dat = data.reverse_node_network_dat() 
+
+       parentmap = {}
+       countmap  = {}
+       count     = tdgrad.ChildCount(parentmap, countmap) 
+       traversal = tdgrad.Traversal(dat.end) 
+
+       toposort = tdgrad.TopoSort(traversal, count)
+       
+       for i, node in enumerate(toposort.traverse()):
+           assert node == dat.nodes[i]
            
+
+   def test_toposort(self):
+
+       dat = data.reverse_node_network_dat()
+
+       for i, node in enumerate(tdgrad.toposort(dat.end)):
+           assert node == dat.nodes[i]
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Gradient summation and accumulation                                    ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Gradient summation ---------------------------------------------------- #
+
+class TestGradSum:
+
+   @pytest.mark.parametrize("valency", [1,2,3])
+   def test_add(self, valency):
+
+       x = data.forward_node_dat(valency)
+
+       gradmap = dict(zip(x.parents, x.seed))
+       grads   = tdgrad.GradSum(fake.Value(), gradmap)
+
+       grads.add(x.node, x.grads)
+       assert gradmap == {
+                          **dict(zip(x.parents, x.seed)), 
+                          x.node: sum(x.grads),
+                         }
+
+
+   @pytest.mark.parametrize("valency", [1,2,3])
+   def test_pick(self, valency):
+
+       x = data.forward_node_dat(valency)
+
+       gradmap = dict(zip(x.parents, x.seed))
+       grads   = tdgrad.GradSum(fake.Value(), gradmap)
+
+       assert grads.pick(x.parents) == x.seed
+       assert gradmap               == dict(zip(x.parents, x.seed))
+                                       
+
+   @pytest.mark.parametrize("valency", [1,2,3])
+   def test_pick_001(self, valency):
+
+       x = data.forward_node_dat(valency)
+
+       init_seed = fake.Value()
+       gradmap   = {x.node: sum(x.grads)}
+       grads     = tdgrad.GradSum(init_seed, gradmap)
+
+       assert grads.pick(tuple()) == (init_seed, )
+       assert gradmap             == {x.node: sum(x.grads)}
+
+
+   @pytest.mark.parametrize("valency", [1,2,3])
+   def test_result(self, valency):
+
+       x = data.forward_node_dat(valency)
+
+       gradmap = dict(zip(x.parents, x.seed))
+       grads   = tdgrad.GradSum(fake.Value(), gradmap)
+       assert grads.result() == x.seed[-1]
+
+       grads.add(x.node, x.grads)
+       assert grads.result() == sum(x.grads)
+
+
+
+# --- Gradient accumulation ------------------------------------------------- #
+
+class TestGradAccum:
+
+   @pytest.mark.parametrize("valency", [1,2,3])
+   def test_add(self, valency):
+
+       x = data.reverse_node_dat(valency)
+
+       gradmap = {x.node: x.seed} 
+       grads   = tdgrad.GradAccum(gradmap)
+
+       grads.add(x.parents, x.grads)
+       assert gradmap == {
+                          x.node: x.seed, 
+                          **dict(zip(x.parents, x.grads)),
+                         }
+
+
+   @pytest.mark.parametrize("valency", [1,2,3])
+   def test_pick(self, valency):
+
+       x = data.reverse_node_dat(valency)
+
+       gradmap = {**dict(zip(x.parents, x.grads)), x.node: x.seed} 
+       grads   = tdgrad.GradAccum(gradmap)
+
+       assert grads.pick(x.node) == x.seed
+       assert gradmap == {**dict(zip(x.parents, x.grads)), None: x.seed}
+
+
+   @pytest.mark.parametrize("valency", [1,2,3])
+   def test_result(self, valency):
+
+       x = data.reverse_node_dat(valency)
+
+       gradmap = {**dict(zip(x.parents, x.grads)), x.node: x.seed} 
+       grads   = tdgrad.GradAccum(gradmap)
+
+       out = grads.pick(x.node)
+       assert grads.result() == out 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

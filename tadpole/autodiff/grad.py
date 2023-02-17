@@ -618,7 +618,6 @@ class GradSum(Cumulative):
    def add(self, node, grads):
 
        self._grads[node] = reduce(tdmanip.add_grads, grads, None)
-
        self._last = node
        return self
 
@@ -628,12 +627,16 @@ class GradSum(Cumulative):
        if not nodes:
           return (self._seed,)   
 
-       return tuple(map(self._grads.get, nodes))
+       return tuple(map(self._grads.__getitem__, nodes))
 
 
    def result(self):
 
-       return self._grads[self._last]
+       last = self._last
+       if last is None:
+          last = list(self._grads)[-1]
+
+       return self._grads[last]
 
 
 
