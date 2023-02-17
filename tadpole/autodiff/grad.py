@@ -692,8 +692,12 @@ class GradAccum(Cumulative):
 
    def result(self): 
 
-       return self._grads[None] 
+       try:
+          return self._grads[None] 
 
+       except KeyError:
+          last = list(self._grads)[-1]
+          return self._grads[last]
 
 
 

@@ -36,6 +36,18 @@ class NaryOp:
        return str(rep)
 
 
+   def __eq__(self, other):
+
+       log = tdutil.LogicalChain()
+
+       log.typ(self, other)
+       log.val(self._unary_op, other._unary_op)
+       log.val(self._fun,      other._fun)
+       log.val(self._argproxy, other._argproxy)
+
+       return bool(log)
+
+
    def __call__(self, *args, **kwargs):
 
        def unary_fun(x):

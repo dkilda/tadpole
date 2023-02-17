@@ -245,8 +245,11 @@ class Op:
 
    def __call__(self, fun, *args):
 
-       if self._tranform is not None:
+       if self._transform is not None:
           args = self._transform(*args)
+
+       if not isinstance(args, tuple): # TODO CONTAINERIZE!
+          args = (args,)
 
        return fun(*args)
 

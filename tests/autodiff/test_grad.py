@@ -437,53 +437,10 @@ class TestGradAccum:
 
        gradmap = {**dict(zip(x.parents, x.grads)), x.node: x.seed} 
        grads   = tdgrad.GradAccum(gradmap)
+       assert grads.result() == x.seed
 
        out = grads.pick(x.node)
        assert grads.result() == out 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
