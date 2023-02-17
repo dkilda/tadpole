@@ -255,6 +255,34 @@ class Op:
 
 
 
+###############################################################################
+###                                                                         ###
+###  Cache for methods with one-time evaluation                             ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Fake class with a cacheable method ------------------------------------ #
+
+class CacheMe:
+
+   def __init__(self):
+
+       self._sentinel = 0
+
+
+   def sentinel(self):
+
+       return self._sentinel
+
+
+   def execute(self):
+
+       self._sentinel += 1
+       return Value()
+
+
+
 
 ###############################################################################
 ###                                                                         ###

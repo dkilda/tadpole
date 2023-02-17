@@ -303,7 +303,12 @@ class SingularArgProxy(ArgProxy):
 
    def __eq__(self, other):
 
-       return self._adx == other._adx
+       log = LogicalChain()
+
+       log.typ(self, other)
+       log.val(self._adx, other._adx)
+
+       return bool(log)
 
 
    def insert(self, args, x):
@@ -342,7 +347,12 @@ class PluralArgProxy(ArgProxy):
 
    def __eq__(self, other):
 
-       return self._adx == other._adx
+       log = LogicalChain()
+
+       log.typ(self, other)
+       log.val(self._adx, other._adx)
+
+       return bool(log)
 
 
    def insert(self, args, x):
