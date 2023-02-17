@@ -7,17 +7,6 @@ sys.path.insert(0, '..')
 import tadpole as tad
 
 
-"""
-
-# val = 5.0, g = 1.0
-
-def fun(x):
-   def funY(y):
-       return tad.mul(x, y)
-   return tad.grad(funY)(x)
-
-
-"""
 
 
 # val = 30.0, g = 6.0 
