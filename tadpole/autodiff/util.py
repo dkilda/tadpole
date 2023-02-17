@@ -316,7 +316,7 @@ class SingularArgProxy(ArgProxy):
        out            = list(args)
        out[self._adx] = x
 
-       return out
+       return tuple(out)
 
 
    def extract(self, args):
@@ -362,7 +362,7 @@ class PluralArgProxy(ArgProxy):
        for i, v in zip(self._adx, x):
            out[i] = v  
 
-       return out
+       return tuple(out)
 
 
    def extract(self, args):

@@ -220,14 +220,14 @@ def concat_dat(n, adxs, layers):
 
 
 
-ConcatOutput = collections.namedtuple("ConcatOutput", [
-                  "concat", "layer", "adxs", "parents", "deshell",
-               ])
+ConcatOutputData = collections.namedtuple("ConcatOutputData", [
+                      "concat", "layer", "adxs", "parents", "deshell",
+                   ])
 
 
 
 
-def concat_out(n, adxs, layers):
+def concat_output_dat(n, adxs, layers):
 
     x = args_dat(n, adxs, layers)
 
@@ -289,8 +289,8 @@ def concat_out(n, adxs, layers):
            }[n, adxs, layers]()
 
 
-    return ConcatOutput(x.concat, case[0], case[1], 
-                        tdnode.Parents(case[2]), tdgraph.Args(case[3]))
+    return ConcatOutputData(x.concat, case[0], case[1], 
+                            tdnode.Parents(case[2]), tdgraph.Args(case[3]))
 
 
 

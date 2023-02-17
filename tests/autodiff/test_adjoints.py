@@ -153,22 +153,10 @@ class TestNetJvpFun:
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_call(self, valency):
 
-       out     = fake.Value()
-       adxs    = range(valency)
-       grads   = common.arepeat(fake.Value, valency)
-       args    = common.arepeat(fake.Value, valency)
-       outputs = common.arepeat(fake.Value, valency)
+       w = data.jvpmap_dat(valency)
 
-       jvpfuns = [fake.Fun(outputs[adx], grads[adx], adx, out, *args) 
-                    for adx in adxs]
-
-       def jvpfun(g, adx, out, *args):
-           return jvpfuns[adx](g, adx, out, *args)
-
-       netjvpfun = tdjvp.NetJvpFun(jvpfun)
-       jvp       = netjvpfun(adxs, out, *args)
-
-       assert tuple(jvp(grads)) == outputs
+       jvp = w.netjvpfun(w.adxs, w.out, *w.args)
+       assert tuple(jvp(w.grads)) == w.outputs
 
 
 
@@ -180,48 +168,23 @@ class TestJvpMap:
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_add(self, valency):
 
-       out     = fake.Value()
-       adxs    = range(valency)
-       grads   = common.arepeat(fake.Value, valency)
-       args    = common.arepeat(fake.Value, valency)
-       outputs = common.arepeat(fake.Value, valency)
+       w = data.jvpmap_dat(valency)
 
-       jvpfuns = [fake.Fun(outputs[adx], grads[adx], out, *args) 
-                    for adx in adxs]
+       w.jvpmap.add(w.fun, *w.jvpfuns)
 
-       def fun(*args):
-           return fake.Value()
-
-       jvpmap = tdjvp.JvpMap()
-       jvpmap.add(fun, *jvpfuns)
-
-       jvp = jvpmap.get(fun)(adxs, out, *args)
-       assert tuple(jvp(grads)) == outputs       
-
+       jvp = w.jvpmap.get(w.fun)(w.adxs, w.out, *w.args)
+       assert tuple(jvp(w.grads)) == w.outputs 
+    
 
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_add_combo(self, valency):
 
-       out     = fake.Value()
-       adxs    = range(valency)
-       grads   = common.arepeat(fake.Value, valency)
-       args    = common.arepeat(fake.Value, valency)
-       outputs = common.arepeat(fake.Value, valency)
+       w = data.jvpmap_dat(valency)
 
-       jvpfuns = [fake.Fun(outputs[adx], grads[adx], adx, out, *args) 
-                    for adx in adxs]
+       w.jvpmap.add_combo(w.fun, w.concat_jvpfun)
 
-       def jvpfun(g, adx, out, *args):
-           return jvpfuns[adx](g, adx, out, *args)
-
-       def fun(*args):
-           return fake.Value()
-
-       jvpmap = tdjvp.JvpMap()
-       jvpmap.add_combo(fun, jvpfun)
-
-       jvp = jvpmap.get(fun)(adxs, out, *args)
-       assert tuple(jvp(grads)) == outputs
+       jvp = w.jvpmap.get(w.fun)(w.adxs, w.out, *w.args)
+       assert tuple(jvp(w.grads)) == w.outputs  
 
 
 
@@ -240,22 +203,10 @@ class TestNetVjpFun:
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_call(self, valency):
 
-       grad    = fake.Value()
-       out     = fake.Value()
-       adxs    = range(valency)
-       args    = common.arepeat(fake.Value, valency)
-       outputs = common.arepeat(fake.Value, valency)
+       w = data.vjpmap_dat(valency)
 
-       vjpfuns = [fake.Fun(outputs[adx], grad, adx, out, *args) 
-                    for adx in adxs]
-
-       def vjpfun(g, adx, out, *args):
-           return vjpfuns[adx](g, adx, out, *args)
-
-       netvjpfun = tdvjp.NetVjpFun(vjpfun)
-       vjp       = netvjpfun(adxs, out, *args)
-
-       assert tuple(vjp(grad)) == outputs
+       vjp = w.netvjpfun(w.adxs, w.out, *w.args)
+       assert tuple(vjp(w.grad)) == w.outputs
 
 
 
@@ -267,48 +218,24 @@ class TestVjpMap:
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_add(self, valency):
 
-       grad    = fake.Value()
-       out     = fake.Value()
-       adxs    = range(valency)
-       args    = common.arepeat(fake.Value, valency)
-       outputs = common.arepeat(fake.Value, valency)
+       w = data.vjpmap_dat(valency)
 
-       vjpfuns = [fake.Fun(outputs[adx], grad, out, *args) 
-                    for adx in adxs]
+       w.vjpmap.add(w.fun, *w.vjpfuns)
 
-       def fun(*args):
-           return fake.Value()
-
-       vjpmap = tdvjp.VjpMap()
-       vjpmap.add(fun, *vjpfuns)
-
-       vjp = vjpmap.get(fun)(adxs, out, *args)
-       assert tuple(vjp(grad)) == outputs       
+       vjp = w.vjpmap.get(w.fun)(w.adxs, w.out, *w.args)
+       assert tuple(vjp(w.grad)) == w.outputs 
 
 
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_add_combo(self, valency):
 
-       grad    = fake.Value()
-       out     = fake.Value()
-       adxs    = range(valency)
-       args    = common.arepeat(fake.Value, valency)
-       outputs = common.arepeat(fake.Value, valency)
+       w = data.vjpmap_dat(valency)
 
-       vjpfuns = [fake.Fun(outputs[adx], grad, adx, out, *args) 
-                    for adx in adxs]
+       w.vjpmap.add_combo(w.fun, w.concat_vjpfun)
 
-       def vjpfun(g, adx, out, *args):
-           return vjpfuns[adx](g, adx, out, *args)
+       vjp = w.vjpmap.get(w.fun)(w.adxs, w.out, *w.args)
+       assert tuple(vjp(w.grad)) == w.outputs 
 
-       def fun(*args):
-           return fake.Value()
-
-       vjpmap = tdvjp.VjpMap()
-       vjpmap.add_combo(fun, vjpfun)
-
-       vjp = vjpmap.get(fun)(adxs, out, *args)
-       assert tuple(vjp(grad)) == outputs
 
 
 

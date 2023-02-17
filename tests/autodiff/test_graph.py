@@ -316,7 +316,7 @@ class TestConcatenation:
    ])  
    def test_layer(self, n, adxs, layers):
 
-       w = data.concat_out(n, adxs, layers)
+       w = data.concat_output_dat(n, adxs, layers)
 
        assert w.concat.layer() == w.layer
   
@@ -334,7 +334,7 @@ class TestConcatenation:
    ])  
    def test_adxs(self, n, adxs, layers):
 
-       w = data.concat_out(n, adxs, layers)
+       w = data.concat_output_dat(n, adxs, layers)
 
        assert w.concat.adxs() == w.adxs
 
@@ -352,7 +352,7 @@ class TestConcatenation:
    ])  
    def tests_parents(self, n, adxs, layers):
 
-       w = data.concat_out(n, adxs, layers)
+       w = data.concat_output_dat(n, adxs, layers)
 
        assert w.concat.parents() == w.parents
 
@@ -370,7 +370,7 @@ class TestConcatenation:
    ])  
    def tests_deshell(self, n, adxs, layers):
 
-       w = data.concat_out(n, adxs, layers)    
+       w = data.concat_output_dat(n, adxs, layers)    
 
        assert w.concat.deshell() == w.deshell
 

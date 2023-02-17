@@ -2,6 +2,27 @@
 # -*- coding: utf-8 -*-
 
 
+from .util import (
+   loop_dat,
+   singular_argproxy_dat,
+   singular_argproxy_dat_001,
+   plural_argproxy_dat,
+   plural_argproxy_dat_001,
+)
+
+
+from .adjoints import (
+   jvpmap_dat,
+   vjpmap_dat,
+)
+
+
+from .nary_op import (
+   nary_op_dat,
+   nary_op_creator_dat,
+)
+
+
 from .node import (
    forward_adjfun_dat,  reverse_adjfun_dat,  adjoint_dat,
    forward_flow_dat,    reverse_flow_dat,    null_flow_dat,
@@ -13,10 +34,10 @@ from .node import (
 
 from .graph import (
    graph_dat,
-   differentiable_funwrap_dat, nondifferentiable_funwrap_dat,
-   args_dat,
-   nodeargs_dat,
-   concat_dat, concat_out, 
+   differentiable_funwrap_dat, 
+   nondifferentiable_funwrap_dat,
+   args_dat, nodeargs_dat,
+   concat_dat, concat_output_dat, 
    pack_dat, 
    envelope_dat, envelope_dat_001,
 )
@@ -24,9 +45,12 @@ from .graph import (
 
 from .grad import (
    diffop_dat,
+   childcount_dat,
    forward_node_network_dat,
    reverse_node_network_dat,
 )
+
+
 
 
 

@@ -25,7 +25,7 @@ import tadpole.autodiff.graph as tdgraph
 
 AdjFunData = collections.namedtuple("AdjFunData", [
                  "adjfun", "grads", "seed",
-              ])
+             ])
 
 
 

@@ -248,10 +248,11 @@ class Op:
        if self._transform is not None:
           args = self._transform(*args)
 
-       if not isinstance(args, tuple): # TODO CONTAINERIZE!
+       if not isinstance(args, tuple): # TODO NB THIS SOLVES THE PROBLEM OF CONTAINERIZATION!
           args = (args,)
 
        return fun(*args)
+
 
 
 

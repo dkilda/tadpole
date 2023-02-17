@@ -31,31 +31,22 @@ class TestDifferentialOp:
    @pytest.mark.parametrize("which", ["REVERSE", "FORWARD"])
    def test_graphop(self, which):
 
-       dat  = data.graph_dat(which)
-       prop = fake.Propagation(graphop=fake.Fun(dat.graphop, dat.fun, dat.x))
-
-       diffop = tdgrad.DifferentialOp(prop, dat.fun, dat.x) 
-       assert diffop.graphop() == dat.graphop
+       w = data.diffop_dat(which)
+       assert w.diffop.graphop() == w.graphop
 
 
    @pytest.mark.parametrize("which", ["REVERSE", "FORWARD"])
    def test_end(self, which):
 
-       dat  = data.graph_dat(which)
-       prop = fake.Propagation(graphop=fake.Fun(dat.graphop, dat.fun, dat.x))
-
-       diffop = tdgrad.DifferentialOp(prop, dat.fun, dat.x) 
-       assert diffop.end() == dat.end
+       w = data.diffop_dat(which)
+       assert w.diffop.end() == w.end
 
 
    @pytest.mark.parametrize("which", ["REVERSE", "FORWARD"])
-   def test_end(self, which):
+   def test_evaluate(self, which):
 
-       dat  = data.graph_dat(which)
-       prop = fake.Propagation(graphop=fake.Fun(dat.graphop, dat.fun, dat.x))
-
-       diffop = tdgrad.DifferentialOp(prop, dat.fun, dat.x) 
-       assert diffop.evaluate() == dat.out
+       w = data.diffop_dat(which)
+       assert w.diffop.evaluate() == w.out
 
 
 
@@ -173,98 +164,76 @@ class TestChildCount:
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_record(self, valency):
 
-       dat  = data.reverse_node_dat(valency)
-       dat1 = data.reverse_node_dat(valency)
+       w = data.childcount_dat(valency)
 
-       parentmap  = {}
-       parentmap1 = {dat.node: dat.parents}
-       parentmap2 = {dat.node: dat.parents, dat1.node: dat1.parents}
-
-       count  = tdgrad.ChildCount(parentmap)
-       count1 = tdgrad.ChildCount(parentmap1)
-       count2 = tdgrad.ChildCount(parentmap2)
-
-       assert count.record(dat.node,  dat.parents)  == count1
-       assert count.record(dat1.node, dat1.parents) == count2
+       assert w.count.record(w.node,  w.parents)  == w.count1
+       assert w.count.record(w.node1, w.parents1) == w.count2
 
 
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_collect(self, valency):
 
-       dat  = data.reverse_node_dat(valency)
-       dat1 = data.reverse_node_dat(valency)
+       w = data.childcount_dat(valency)
 
-       parentmap  = {}
-       parentmap1 = {dat.node: dat.parents}
-       parentmap2 = {dat.node: dat.parents, dat1.node: dat1.parents}
+       assert w.count.collect(w.node) == w.parents       
+       assert w.parentmap             == w.parentmap1
 
-       count  = tdgrad.ChildCount(parentmap)
-       count1 = tdgrad.ChildCount(parentmap1)
-       count2 = tdgrad.ChildCount(parentmap2)
-
-       assert count.collect(dat.node) == dat.parents
-       assert parentmap == parentmap1
-
-       assert count.collect(dat1.node) == dat1.parents
-       assert parentmap == parentmap2
+       assert w.count.collect(w.node1) == w.parents1
+       assert w.parentmap              == w.parentmap2
 
 
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_increase(self, valency):
 
-       dat  = data.reverse_node_dat(valency)
-       dat1 = data.reverse_node_dat(valency)
+       w = data.childcount_dat(valency)
 
-       parentmap = {dat.node: dat.parents, dat1.node: dat1.parents}
-       countmap  = {}
-       count     = tdgrad.ChildCount(parentmap, countmap)
+       countmap = {}
+       count    = tdgrad.ChildCount(w.parentmap2, countmap)
 
-       assert count.increase(dat.node) == dat.parents
-       assert countmap == {dat.node: 1} 
+       assert count.increase(w.node) == w.parents
+       assert countmap               == {w.node: 1} 
 
-       assert count.increase(dat1.node) == dat1.parents         
-       assert countmap == {dat.node: 1, dat1.node: 1} 
+       assert count.increase(w.node1) == w.parents1         
+       assert countmap                == {w.node: 1, w.node1: 1} 
 
-       assert count.increase(dat.node) == tuple() 
-       assert countmap == {dat.node: 2, dat1.node: 1} 
+       assert count.increase(w.node) == tuple() 
+       assert countmap               == {w.node: 2, w.node1: 1} 
 
 
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_decrease(self, valency):
 
-       dat  = data.reverse_node_dat(valency)
-       dat1 = data.reverse_node_dat(valency)        
+       w = data.childcount_dat(valency)
 
-       parentmap = {dat.node: dat.parents, dat1.node: dat1.parents}
        countmap  = {
-                    **{p: 2 for p in dat.parents},
-                    **{p: 1 for p in dat1.parents},
+                    **{p: 2 for p in w.parents},
+                    **{p: 1 for p in w.parents1},
                    }
        countmap1 = {
-                    **{p: 1 for p in dat.parents},
-                    **{p: 1 for p in dat1.parents},
+                    **{p: 1 for p in w.parents},
+                    **{p: 1 for p in w.parents1},
                    }
        countmap2 = {
-                    **{p: 1 for p in dat.parents},
-                    **{p: 0 for p in dat1.parents},
+                    **{p: 1 for p in w.parents},
+                    **{p: 0 for p in w.parents1},
                    }
        countmap3 = {
-                    **{p: 0 for p in dat.parents},
-                    **{p: 0 for p in dat1.parents},
+                    **{p: 0 for p in w.parents},
+                    **{p: 0 for p in w.parents1},
                    }
 
-       count = tdgrad.ChildCount(parentmap, countmap)
+       count = tdgrad.ChildCount(w.parentmap2, countmap)
 
-       assert count.decrease(dat.node) == tuple()
+       assert count.decrease(w.node) == tuple()
        assert countmap == countmap1
 
-       assert count.decrease(dat1.node) == tuple(dat1.parents)
+       assert count.decrease(w.node1) == tuple(w.parents1)
        assert countmap == countmap2 
 
-       assert count.decrease(dat1.node) == tuple()
+       assert count.decrease(w.node1) == tuple()
        assert countmap == countmap2 
 
-       assert count.decrease(dat.node) == tuple(dat.parents)
+       assert count.decrease(w.node) == tuple(w.parents)
        assert countmap == countmap3 
 
 

@@ -267,39 +267,30 @@ class TestLoop:
 
    def test_iter(self):
 
-       xs   = (1,4,7,10,13,16,19,22)
-       loop = tdutil.Loop(xs[0], lambda x: x+3, lambda x: x > 15)
+       w = data.loop_dat()
 
-       for i, x in enumerate(loop):
-           assert x == xs[i]
+       for i, x in enumerate(w.loop):
+           assert x == w.xs[i]
 
 
    def test_reversed(self):
 
-       xs  = (1,4,7,10,13,16,19,22)
-       rxs = (13,10,7,4,1)
+       w = data.loop_dat()
 
-       loop = tdutil.Loop(xs[0], lambda x: x+3, lambda x: x > 15)
-
-       for i, x in enumerate(reversed(loop)):
-           assert x == rxs[i]
+       for i, x in enumerate(reversed(w.loop)):
+           assert x == w.reversed_xs[i]
 
 
    def test_last(self):
 
-       xs   = (1,4,7,10,13,16,19,22)
-       loop = tdutil.Loop(xs[0], lambda x: x+3, lambda x: x > 15)
-
-       assert loop.last() == 13
+       w = data.loop_dat()
+       assert w.loop.last() == w.last
 
 
    def test_first(self):
 
-       xs   = (1,4,7,10,13,16,19,22)
-       loop = tdutil.Loop(xs[0], lambda x: x+3, lambda x: x > 15)
-
-       assert loop.first() == 1
-
+       w = data.loop_dat()
+       assert w.loop.first() == w.first
 
 
 
@@ -317,51 +308,30 @@ class TestLoop:
 
 class TestSingularArgProxy:
 
-   def _setup(self, args, adx, x):
+   @pytest.mark.parametrize("adx", [0,1,2,3])
+   def test_insert(self, adx):
 
-       if len(args) == 0:
-          return [x]
+       w = data.singular_argproxy_dat(adx)
 
-       ans = {
-              0: lambda: [x,       args[1], args[2], args[3]],
-              1: lambda: [args[0], x,       args[2], args[3]],
-              2: lambda: [args[0], args[1], x,       args[3]],
-              3: lambda: [args[0], args[1], args[2], x],
-             }[adx]()
-
-       return ans
+       assert w.argproxy.insert(w.args, w.x) == w.args1
 
 
-   @pytest.mark.parametrize("args, adx, x", [
-      [common.arepeat(fake.Value, 4), 0, fake.Value()],
-      [common.arepeat(fake.Value, 4), 1, fake.Value()],
-      [common.arepeat(fake.Value, 4), 2, fake.Value()],
-      [common.arepeat(fake.Value, 4), 3, fake.Value()],
-   ])  
-   def test_insert(self, args, adx, x):
+   @pytest.mark.parametrize("adx", [0,1,2,3])
+   def test_extract(self, adx):
 
-       ans      = self._setup(args, adx, x)
-       argproxy = tdutil.SingularArgProxy(adx)
-
-       assert argproxy.insert(args, x) == ans
+       w = data.singular_argproxy_dat(adx)
+  
+       assert w.argproxy.extract(w.args1) == w.x
 
 
-   @pytest.mark.parametrize("args, adx, x", [
-      [tuple(),                       0, fake.Value()],
-      [common.arepeat(fake.Value, 4), 0, fake.Value()],
-      [common.arepeat(fake.Value, 4), 1, fake.Value()],
-      [common.arepeat(fake.Value, 4), 2, fake.Value()],
-      [common.arepeat(fake.Value, 4), 3, fake.Value()],
-   ])  
-   def test_extract(self, args, adx, x):
+   def test_extract_001(self):
 
-       args     = self._setup(args, adx, x)
-       argproxy = tdutil.SingularArgProxy(adx)
-
-       assert argproxy.extract(args) == x
+       w = data.singular_argproxy_dat_001()
+  
+       assert w.argproxy.extract(w.args1) == w.x
 
 
-   @pytest.mark.parametrize("adx", [None,0,1,2])
+   @pytest.mark.parametrize("adx", [None, 0, 1, 2])
    def test_argproxy(self, adx):
 
        if   adx is None:
@@ -369,7 +339,7 @@ class TestSingularArgProxy:
        else:
             ans = tdutil.SingularArgProxy(adx)
 
-       assert tdutil.argproxy(adx) == ans
+       assert tdutil.argproxy(adx) == ans       
 
 
 
@@ -378,58 +348,42 @@ class TestSingularArgProxy:
 
 class TestPluralArgProxy:
 
-   def _setup(self, args, adx, x):
+   @pytest.mark.parametrize("adx", [
+      (1,), (0,1), (1,3), (0,2,3), (0,3)
+   ])
+   def test_insert(self, adx):
 
-       if len(args) == 0:
-          return x
+       w = data.plural_argproxy_dat(adx)
 
-       ans = {
-              (1,):    lambda: [args[0], x[0],    args[2], args[3]],
-              (0,1):   lambda: [x[0],    x[1],    args[2], args[3]],
-              (1,3):   lambda: [args[0], x[0],    args[2], x[1]],
-              (0,2,3): lambda: [x[0],    args[1], x[1],    x[2]],
-              (0,3):   lambda: [x[0],    args[1], args[2], x[1]],
-             }[adx]()
-
-       return ans
+       assert w.argproxy.insert(w.args, w.x) == w.args1
 
 
-   @pytest.mark.parametrize("args, adx, x", [
-      [common.arepeat(fake.Value, 4), (1,),    common.arepeat(fake.Value, 1)],
-      [common.arepeat(fake.Value, 4), (0,1),   common.arepeat(fake.Value, 2)],
-      [common.arepeat(fake.Value, 4), (1,3),   common.arepeat(fake.Value, 2)],
-      [common.arepeat(fake.Value, 4), (0,2,3), common.arepeat(fake.Value, 3)],
-      [common.arepeat(fake.Value, 4), (0,3),   common.arepeat(fake.Value, 2)],
-   ])  
-   def test_insert(self, args, adx, x):
+   @pytest.mark.parametrize("adx", [
+      (1,), (0,1), (1,3), (0,2,3), (0,3)
+   ])
+   def test_extract(self, adx):
 
-       ans      = self._setup(args, adx, x)
-       argproxy = tdutil.PluralArgProxy(adx)
-
-       assert argproxy.insert(args, x) == ans
+       w = data.plural_argproxy_dat(adx)
+  
+       assert w.argproxy.extract(w.args1) == w.x
 
 
-   @pytest.mark.parametrize("args, adx, x", [
-      [tuple(),                       (0,1),   common.arepeat(fake.Value, 2)],
-      [common.arepeat(fake.Value, 4), (1,),    common.arepeat(fake.Value, 1)],
-      [common.arepeat(fake.Value, 4), (0,1),   common.arepeat(fake.Value, 2)],
-      [common.arepeat(fake.Value, 4), (1,3),   common.arepeat(fake.Value, 2)],
-      [common.arepeat(fake.Value, 4), (0,2,3), common.arepeat(fake.Value, 3)],
-      [common.arepeat(fake.Value, 4), (0,3),   common.arepeat(fake.Value, 2)],
-   ])  
-   def test_extract(self, args, adx, x):
+   def test_extract_001(self):
 
-       args     = self._setup(args, adx, x)
-       argproxy = tdutil.PluralArgProxy(adx)
-
-       assert argproxy.extract(args) == x
+       w = data.plural_argproxy_dat_001()
+  
+       assert w.argproxy.extract(w.args1) == w.x
 
 
-   @pytest.mark.parametrize("adx", [(0,1), (1,), (0,2,3)])
+   @pytest.mark.parametrize("adx", [
+      (0,1), (1,), (0,2,3)
+   ])
    def test_argproxy(self, adx):
 
        ans = tdutil.PluralArgProxy(adx)
        assert tdutil.argproxy(adx) == ans
+
+
 
 
 

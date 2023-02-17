@@ -22,29 +22,70 @@ import tadpole.autodiff.grad  as tdgrad
 ###############################################################################
 
 
-# --- Differential and Graph operators -------------------------------------- #
+# --- Differential operator ------------------------------------------------- #
 
 DiffOpData = collections.namedtuple("DiffOpData", [
-                "diffop", "graphop", 
-                "graph", "layer", "root", "fun", 
+                "diffop", "prop", 
+                "graphop", "graph", "layer", "root", "fun", 
                 "x", "out", "start", "end",
              ])
 
 
 
 
-def diffop_dat(which="REVERSE", layer=None, 
-               x=None, out=None, start=None, end=None):
+def diffop_dat(which):
 
-    graph_dat = data.graph_dat(which, layer, x, out, start, end)
+    dat  = data.graph_dat(which)
+    prop = fake.Propagation(graphop=fake.Fun(dat.graphop, dat.fun, dat.x))
 
-    graphop = tdgrad.GraphOp(graph_dat.root, graph_dat.fun, graph_dat.x)
-    diffop  = {
-               "REVERSE": tdgrad.ReverseDifferentialOp,
-               "FORWARD": tdgrad.ForwardDifferentialOp,
-              }[which](graph_dat.fun, graph_dat.x)
+    diffop = tdgrad.DifferentialOp(prop, dat.fun, dat.x) 
+    return DiffOpData(diffop, prop, *dat) 
 
-    return DiffOpData(diffop, *graph_dat)   
+    
+
+
+###############################################################################
+###                                                                         ###
+###  Topological sort of the computation graph                              ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Child count ----------------------------------------------------------- #
+
+ChildCountData = collections.namedtuple("ChildCountData", [
+                    "count", "count1", "count2",
+                    "parentmap", "parentmap1", "parentmap2",
+                    "countmap", "countmap1", "countmap2",
+                    "node", "node1", 
+                    "parents", "parents1",
+                 ])
+
+
+
+
+def childcount_dat(valency=1, **countmaps):
+
+    dat  = data.reverse_node_dat(valency)
+    dat1 = data.reverse_node_dat(valency)
+    
+    parentmap  = {}
+    parentmap1 = {dat.node: dat.parents}
+    parentmap2 = {dat.node: dat.parents, dat1.node: dat1.parents}   
+
+    countmap  = countmaps.get("countmap",  {})
+    countmap1 = countmaps.get("countmap1", {})
+    countmap2 = countmaps.get("countmap2", {})
+
+    count  = tdgrad.ChildCount(parentmap,  countmap)
+    count1 = tdgrad.ChildCount(parentmap1, countmap1)
+    count2 = tdgrad.ChildCount(parentmap2, countmap2) 
+
+    return ChildCountData(count, count1, count2,     
+                          parentmap, parentmap1, parentmap2, 
+                          countmap, countmap1, countmap2,
+                          dat.node, dat1.node, 
+                          dat.parents, dat1.parents)
 
 
 
