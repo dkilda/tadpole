@@ -1,58 +1,471 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import abc
+
+
+"""
+Up next:
+
+--- implement the ListRef for a quasi-immutable List-like structure
+    (this should be a more versatile alternative to Sequence):
+
+    https://stackoverflow.com/questions/24524409/out-of-place-transformations-on-python-list
+
+--- sort out the backend module/subpackage
+
+--- implement dense/sparse grads (that will follow ArrayLike interface)
+
+--- make Array implement NodeLike interface: integrate Array with tadpole/autodiff
+
+--- implement all the specific Array operations
+
+--- write tests
+
+"""
+
+
+
+###############################################################################
+###                                                                         ###
+###  Array creation functions                                               ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Array factories ------------------------------------------------------- #
+
+def fromfun(fun, backend, *datas, **opts):
+
+    return DataFun(fun)(
+              backend, *datas, **opts
+           )
+
+
+def asarray(backend, data, **opts):
+
+    return applyfun(
+              lambda backend_, data_: data_, backend, data, **opts
+           )
+
+
+def zeros(backend, shape, **opts):
+
+    return ShapeFun("zeros")(
+              backend, shape, **opts
+           )
+
+
+def ones(backend, shape, **opts):
+
+    return ShapeFun("ones")(
+              backend, shape, **opts
+           )
+
+
+def rand(backend, shape, **opts):
+
+    return ShapeFun("rand")(
+              backend, shape, **opts
+           )
+
+
+def randn(backend, shape, dtype=None, **opts):
+
+    return ShapeFun("randn")(
+              backend, shape, **opts
+           )
+
+
+def randuniform(backend, shape, boundaries, **opts):
+
+    return ShapeFun("randuniform")(
+              backend, shape, boundaries, **opts
+           )
 
 
 
 
+# --- Data function wrapper ------------------------------------------------- #
+
+class DataFun:
+
+   def __init__(self, fun): 
+
+       self._fun = fun
+
+
+   def __call__(self, backend, *datas, **opts):
+
+       backend = backends.get(backend)
+
+       newdata = self._fun(backend, *datas)
+       newdata = backend.asarray(newdata, **opts)
+
+       return Array(newdata, backend)
+
+       
+
+
+# --- Shape function wrappe-------------------------------------------------- #
+
+class ShapeFun:
+
+   def __init__(self, fun):
+
+       self._fun = fun
+
+
+   def __call__(self, backend, shape, *args, **opts):
+
+       backend = backends.get(backend)
+
+       fun = self._fun
+
+       if isinstance(fun, callable):
+          fun = fun(backend)
+
+       if isinstance(fun, str):
+          fun = {
+                 "zeros":       backend.zeros,
+                 "ones":        backend.ones,
+                 "rand":        backend.rand,
+                 "randn":       backend.randn,
+                 "randuniform": backend.randuniform,
+                }[fun]
+
+       data = fun(shape, *args, **opts)
+       return Array(data, backend)  
 
 
 
 
+###############################################################################
+###                                                                         ###
+###  Array space                                                            ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Space interface ------------------------------------------------------- #
+
+class Space(abc.ABC):
+
+   @abc.abstractmethod
+   def apply(self, fun, *datas):
+       pass
+
+   @abc.abstractmethod
+   def asarray(self, data):
+       pass
+
+   @abc.abstractmethod
+   def zeros(self):
+       pass
+
+   @abc.abstractmethod
+   def ones(self):
+       pass
+
+   @abc.abstractmethod
+   def rand(self, **opts):
+       pass
+
+   @abc.abstractmethod
+   def randn(self, **opts):
+       pass
+
+   @abc.abstractmethod
+   def randuniform(self, boundaries, **opts):
+       pass
+
+   @property
+   @abc.abstractmethod
+   def dtype(self):
+       pass
+
+   @property 
+   @abc.abstractmethod
+   def ndim(self):
+       pass
+
+   @property
+   @abc.abstractmethod
+   def shape(self):
+       pass
+
+       
+
+
+# --- ArraySpace ------------------------------------------------------------ #
+
+class ArraySpace(Space):
+
+   def __init__(self, backend, dtype, shape):
+
+       self._backend = backend
+       self._dtype   = dtype
+       self._shape   = shape
+
+
+   def _shapefun(self, fun, *args, **opts):
+
+       return fun(
+          self._backend, self._shape, *args, dtype=self._dtype, **opts
+       )
+
+
+   def apply(self, fun, *datas):
+
+       return fromfun(fun, self._backend, *datas, dtype=self._dtype)
+
+
+   def asarray(self, data):
+
+       return asarray(self._backend, data, dtype=self._dtype)
+
+
+   def zeros(self):
+
+       return self._shapefun(zeros) 
+
+
+   def ones(self):
+
+       return self._shapefun(ones) 
+
+
+   def rand(self, **opts):
+
+       return self._shapefun(rand, **opts) 
+
+
+   def randn(self, **opts):
+
+       return self._shapefun(randn, **opts) 
+
+
+   def randuniform(self, boundaries, **opts):
+
+       return self._shapefun(randuniform, boundaries, **opts) 
+
+
+   @property
+   def dtype(self):
+       return self._dtype
+
+   @property 
+   def ndim(self):
+       return len(self._shape)
+
+   @property
+   def shape(self):
+       return self._shape
 
 
 
 
+###############################################################################
+###                                                                         ###
+###  Array and a general framework for array operations                     ###
+###                                                                         ###
+###############################################################################
+
+
+# --- ArrayLike interface --------------------------------------------------- #
+
+class ArrayLike(abc.ABC):
+
+   @abc.abstractmethod
+   def copy(self):
+       pass
+
+   @abc.abstractmethod
+   def space(self):
+       pass
+
+   @abc.abstractmethod
+   def pluginto(self, funcall):
+       pass
+
+   @abc.abstractmethod
+   def __getitem__(self, coords):
+       pass
+
+   @property
+   @abc.abstractmethod
+   def dtype(self):
+       pass
+
+   @property
+   @abc.abstractmethod 
+   def ndim(self):
+       pass
+
+   @property
+   @abc.abstractmethod
+   def shape(self):
+       pass
 
 
 
 
+# --- Array ----------------------------------------------------------------- #
+
+class Array(ArrayLike):
+
+   def __init__(self, data, backend=None):
+
+       self._data    = data
+       self._backend = backend
+
+
+   def copy(self):
+
+       return self.__class__(self._data, self._backend)
+
+
+   def space(self):
+
+       return ArraySpace(self._backend, self.dtype, self.shape)
+
+
+   def pluginto(self, funcall):
+
+       return funcall.attach(self, self._data)
+
+
+   def __getitem__(self, coords):
+
+       return self._array[coords]
+
+
+   @property
+   def dtype(self):
+       return self._backend.dtype(self._array)
+
+   @property 
+   def ndim(self):
+       return self._backend.ndim(self._array)
+
+   @property
+   def shape(self):
+       return self._backend.shape(self._array)
 
 
 
 
+# --- Function call --------------------------------------------------------- #
+
+class FunCall:
+
+   def __init__(self, fun, content=None):
+
+       if content is None:
+          content = tdutil.Sequence()
+
+       self._fun     = fun
+       self._content = content
+
+
+   def attach(self, array, data):
+
+       return self.__class__(self._content.push((array, data)))
+
+
+   def size(self):
+
+       return len(self._content)
+
+
+   def execute(self):
+
+       arrays, datas = zip(*self._content)
+       space         = arrays[0].space() # FIXME create default list with default first param (like empty data, empty array?)
+
+       return space.apply(self._fun, *datas) 
 
 
 
 
+# --- Args ------------------------------------------------------------------ #
+
+class Args:
+
+   def __init__(self, *args):
+
+       self._args = args
+
+
+   def __len__(self):
+
+       return len(self._args)
+
+
+   def __contains__(self, x):
+
+       return x in self._args
+
+
+   def __iter__(self):
+
+       return iter(self._args)
+
+
+   def __getitem__(self, idx):
+
+       return self._args[idx]
+
+
+   def pluginto(self, funcall):
+
+       for arg in self._args:
+           funcall = arg.pluginto(funcall)
+
+       return funcall.execute()
 
 
 
 
+###############################################################################
+###                                                                         ###
+###  Definitions of specific array operations                               ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Array operations: unary ----------------------------------------------- #
+
+def reshape(x, shape):
+
+    def fun(backend, v):
+        return backend.reshape(v, shape)
+
+    return Args(x).pluginto(FunCall(fun))
 
 
 
 
+# --- Array operations: binary ---------------------------------------------- #
+
+def mul(x, y):
+
+    def fun(backend, v, u):
+        return backend.mul(v, u)
+         
+    return Args(x, y).pluginto(FunCall(fun))
 
 
 
 
+# --- Array operations: nary ------------------------------------------------ #
 
+def einsum(equation, *xs, optimize=True)
 
+    def fun(backend, *xs):
+        return backend.einsum(equation, *xs, optimize=optimize)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+    return Args(*xs).pluginto(FunCall(fun))
 
 
 
