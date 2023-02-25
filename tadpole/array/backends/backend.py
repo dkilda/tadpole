@@ -160,6 +160,18 @@ class Backend(abc.ABC):
        pass
 
    @abc.abstractmethod
+   def neg(self, array):
+       pass
+
+   @abc.abstractmethod
+   def sin(self, array):
+       pass
+
+   @abc.abstractmethod
+   def cos(self, array):
+       pass
+
+   @abc.abstractmethod
    def sumover(self, array, axis=None, dtype=None, **opts):
        pass
 

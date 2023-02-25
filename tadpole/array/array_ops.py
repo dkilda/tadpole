@@ -26,16 +26,33 @@ def reshape(x, shape):
     return Args(x).pluginto(FunCall(fun))
 
 
+def neg(x):
+
+    return Args(x).pluginto(FunCall(backend.neg))
+
+
+def sin(x):
+
+    return Args(x).pluginto(FunCall(backend.sin))
+
+
+def cos(x):
+
+    return Args(x).pluginto(FunCall(backend.cos))
+
+
 
 
 # --- Array operations: binary ---------------------------------------------- #
 
-def mul(x, y):
+def add(x, y):
 
-    def fun(backend, v, u):
-        return backend.mul(v, u)
-         
-    return Args(x, y).pluginto(FunCall(fun))
+    return Args(x, y).pluginto(FunCall(backend.add))
+
+
+def mul(x, y):
+        
+    return Args(x, y).pluginto(FunCall(backend.mul))
 
 
 
@@ -48,5 +65,7 @@ def einsum(equation, *xs, optimize=True)
         return backend.einsum(equation, *xs, optimize=optimize)
 
     return Args(*xs).pluginto(FunCall(fun))
+
+
 
 

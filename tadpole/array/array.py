@@ -4,7 +4,10 @@
 import abc
 import numpy as np
 
-import tadpole.array.util as util
+import tadpole.array.array_ops as ops
+import tadpole.array.backends  as backends
+import tadpole.array.util      as util
+
 
 
 """
@@ -17,7 +20,7 @@ V --- implement the ListRef for a quasi-immutable List-like structure
 
       https://stackoverflow.com/questions/24524409/out-of-place-transformations-on-python-list
 
---- sort out the backend module/subpackage
+V --- sort out the backend module/subpackage
 
 --- implement dense/sparse grads (that will follow ArrayLike interface)
 
@@ -326,6 +329,20 @@ class ArraySpace(Space):
    def shape(self):
        return self._shape
 
+
+   def __neg__(self):
+
+       return ops.neg(self)
+
+
+   def __add__(self, other):
+
+       return ops.add(self, other)
+
+
+   def __mul__(self, other):
+
+       return ops.mul(self, other)
 
 
 

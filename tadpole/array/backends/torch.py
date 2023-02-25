@@ -278,6 +278,21 @@ class TorchBackend(backend.Backend):
    def sqrt(self, array, **opts):
 
        return torch.sqrt(array, **opts) 
+
+
+   def neg(self, array):
+
+       return torch.neg(array)
+
+
+   def sin(self, array):
+       
+       return torch.sin(array)
+
+
+   def cos(self, array):
+
+       return torch.cos(array)
        
 
    def sumover(self, array, axis=None, dtype=None, **opts):

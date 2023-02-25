@@ -225,6 +225,21 @@ class NumpyBackend(backend.Backend):
    def sqrt(self, array, **opts):
 
        return np.sqrt(array, **opts) 
+
+
+   def neg(self, array):
+
+       return np.negative(array)
+
+
+   def sin(self, array):
+       
+       return np.sin(array)
+
+
+   def cos(self, array):
+
+       return np.cos(array)
        
 
    def sumover(self, array, axis=None, dtype=None, **opts):
