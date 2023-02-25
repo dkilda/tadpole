@@ -54,7 +54,10 @@ class List:
 
 class Sequence:
 
-   def __init__(self, origin, tasks=tuple()):
+   def __init__(self, origin=None, tasks=tuple()):
+
+       if not origin:
+          origin = []
 
        if not isinstance(origin, List):
           origin = List(origin)

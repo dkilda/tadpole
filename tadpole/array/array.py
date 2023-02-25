@@ -12,10 +12,10 @@ Up next:
 
 V --- Add .basis() method to ArraySpace
 
---- implement the ListRef for a quasi-immutable List-like structure
-    (this should be a more versatile alternative to Sequence):
+V --- implement the ListRef for a quasi-immutable List-like structure
+      (this should be a more versatile alternative to Sequence):
 
-    https://stackoverflow.com/questions/24524409/out-of-place-transformations-on-python-list
+      https://stackoverflow.com/questions/24524409/out-of-place-transformations-on-python-list
 
 --- sort out the backend module/subpackage
 
@@ -484,49 +484,6 @@ class Args:
            funcall = arg.pluginto(funcall)
 
        return funcall.execute()
-
-
-
-
-###############################################################################
-###                                                                         ###
-###  Definitions of specific array operations                               ###
-###                                                                         ###
-###############################################################################
-
-
-# --- Array operations: unary ----------------------------------------------- #
-
-def reshape(x, shape):
-
-    def fun(backend, v):
-        return backend.reshape(v, shape)
-
-    return Args(x).pluginto(FunCall(fun))
-
-
-
-
-# --- Array operations: binary ---------------------------------------------- #
-
-def mul(x, y):
-
-    def fun(backend, v, u):
-        return backend.mul(v, u)
-         
-    return Args(x, y).pluginto(FunCall(fun))
-
-
-
-
-# --- Array operations: nary ------------------------------------------------ #
-
-def einsum(equation, *xs, optimize=True)
-
-    def fun(backend, *xs):
-        return backend.einsum(equation, *xs, optimize=optimize)
-
-    return Args(*xs).pluginto(FunCall(fun))
 
 
 
