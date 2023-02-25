@@ -4,6 +4,9 @@
 import abc
 import numpy as np
 
+import tadpole.array.util as util
+
+
 """
 Up next:
 
@@ -420,10 +423,7 @@ class Array(ArrayLike):
 
 class FunCall:
 
-   def __init__(self, fun, content=None):
-
-       if content is None:
-          content = tdutil.Sequence()
+   def __init__(self, fun, content=util.Sequence()):
 
        self._fun     = fun
        self._content = content
@@ -442,7 +442,7 @@ class FunCall:
    def execute(self):
 
        arrays, datas = zip(*self._content)
-       space         = arrays[0].space() # FIXME create default list with default first param (like empty data, empty array?)
+       space         = arrays[0].space() 
 
        return space.apply(self._fun, *datas) 
 
