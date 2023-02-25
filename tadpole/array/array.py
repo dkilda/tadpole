@@ -2,10 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import abc
-
+import numpy as np
 
 """
 Up next:
+
+V --- Add .basis() method to ArraySpace
 
 --- implement the ListRef for a quasi-immutable List-like structure
     (this should be a more versatile alternative to Sequence):
@@ -23,6 +25,7 @@ Up next:
 --- write tests
 
 """
+
 
 
 
@@ -63,6 +66,13 @@ def ones(backend, shape, **opts):
            )
 
 
+def unit(backend, shape, idx, **opts):
+
+    return ShapeFun("unit")(
+              backend, shape, idx, **opts
+           )
+
+
 def rand(backend, shape, **opts):
 
     return ShapeFun("rand")(
@@ -70,7 +80,7 @@ def rand(backend, shape, **opts):
            )
 
 
-def randn(backend, shape, dtype=None, **opts):
+def randn(backend, shape, **opts):
 
     return ShapeFun("randn")(
               backend, shape, **opts
@@ -86,6 +96,29 @@ def randuniform(backend, shape, boundaries, **opts):
 
 
 
+# --- Array generators ------------------------------------------------------ #
+
+def units(backend, shape, dtype=None):
+
+    for idx in np.index(*shape):
+        yield unit(backend, idx, shape, dtype=dtype)
+
+
+
+def basis(backend, shape, dtype=None): 
+
+    dtype = backend.dtype(dtype)
+
+    if  dtype not in backend.complex_dtypes():
+        return units(backend, shape, dtype=dtype)
+
+    for unit in units(backend, shape, dtype=dtype):
+        yield unit
+        yield 1j * unit
+
+
+
+
 # --- Data function wrapper ------------------------------------------------- #
 
 class DataFun:
@@ -97,8 +130,8 @@ class DataFun:
 
    def __call__(self, backend, *datas, **opts):
 
-       backend = backends.get(backend)
-
+       backend = backends.get(backend) # TODO make backends a pass-as-argument object instead of a module
+                                       #      inject it into ctor
        newdata = self._fun(backend, *datas)
        newdata = backend.asarray(newdata, **opts)
 
@@ -129,6 +162,7 @@ class ShapeFun:
           fun = {
                  "zeros":       backend.zeros,
                  "ones":        backend.ones,
+                 "unit":        backend.unit,
                  "rand":        backend.rand,
                  "randn":       backend.randn,
                  "randuniform": backend.randuniform,
@@ -152,19 +186,15 @@ class ShapeFun:
 class Space(abc.ABC):
 
    @abc.abstractmethod
-   def apply(self, fun, *datas):
-       pass
-
-   @abc.abstractmethod
-   def asarray(self, data):
-       pass
-
-   @abc.abstractmethod
    def zeros(self):
        pass
 
    @abc.abstractmethod
    def ones(self):
+       pass
+
+   @abc.abstractmethod
+   def unit(self):
        pass
 
    @abc.abstractmethod
@@ -177,6 +207,22 @@ class Space(abc.ABC):
 
    @abc.abstractmethod
    def randuniform(self, boundaries, **opts):
+       pass
+
+   @abc.abstractmethod
+   def units(self):
+       pass
+
+   @abc.abstractmethod
+   def basis(self):
+       pass
+
+   @abc.abstractmethod
+   def apply(self, fun, *datas):
+       pass
+
+   @abc.abstractmethod
+   def asarray(self, data):
        pass
 
    @property
@@ -208,11 +254,51 @@ class ArraySpace(Space):
        self._shape   = shape
 
 
-   def _shapefun(self, fun, *args, **opts):
+   def _create(self, fun, *args, **opts):
 
        return fun(
           self._backend, self._shape, *args, dtype=self._dtype, **opts
        )
+
+
+   def zeros(self):
+
+       return self._create(zeros) 
+
+
+   def ones(self):
+
+       return self._create(ones) 
+
+
+   def unit(self):
+
+       return self._create(unit) 
+
+
+   def rand(self, **opts):
+
+       return self._create(rand, **opts) 
+
+
+   def randn(self, **opts):
+
+       return self._create(randn, **opts) 
+
+
+   def randuniform(self, boundaries, **opts):
+
+       return self._create(randuniform, boundaries, **opts) 
+
+
+   def units(self):
+
+       return self._create(units) 
+
+
+   def basis(self):
+
+       return self._create(basis) 
 
 
    def apply(self, fun, *datas):
@@ -223,31 +309,6 @@ class ArraySpace(Space):
    def asarray(self, data):
 
        return asarray(self._backend, data, dtype=self._dtype)
-
-
-   def zeros(self):
-
-       return self._shapefun(zeros) 
-
-
-   def ones(self):
-
-       return self._shapefun(ones) 
-
-
-   def rand(self, **opts):
-
-       return self._shapefun(rand, **opts) 
-
-
-   def randn(self, **opts):
-
-       return self._shapefun(randn, **opts) 
-
-
-   def randuniform(self, boundaries, **opts):
-
-       return self._shapefun(randuniform, boundaries, **opts) 
 
 
    @property
