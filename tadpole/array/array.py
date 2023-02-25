@@ -104,13 +104,13 @@ def randuniform(backend, shape, boundaries, **opts):
 def units(backend, shape, dtype=None):
 
     for idx in np.index(*shape):
-        yield unit(backend, idx, shape, dtype=dtype)
+        yield unit(backend, shape, idx, dtype=dtype)
 
 
 
 def basis(backend, shape, dtype=None): 
 
-    dtype = backend.dtype(dtype)
+    dtype = backend.get_dtype(dtype)
 
     if  dtype not in backend.complex_dtypes():
         return units(backend, shape, dtype=dtype)
