@@ -110,10 +110,10 @@ class Graph(GraphLike):
 
 class Differentiable:
 
-   def __init__(self, fun, make_envelope):
+   def __init__(self, fun, envelope):
 
        self._fun      = fun
-       self._envelope = make_envelope
+       self._envelope = envelope
 
 
    def __repr__(self):
@@ -128,7 +128,7 @@ class Differentiable:
 
    def __call__(self, *args):
 
-       return self._envelope(args).applywrap(self, self._fun)
+       return self._envelope(*args).applywrap(self, self._fun)
 
 
 
@@ -137,10 +137,10 @@ class Differentiable:
 
 class NonDifferentiable:
 
-   def __init__(self, fun, make_envelope):
+   def __init__(self, fun, envelope):
 
        self._fun      = fun
-       self._envelope = make_envelope
+       self._envelope = envelope
 
 
    def __repr__(self):
@@ -155,7 +155,7 @@ class NonDifferentiable:
 
    def __call__(self, *args):
 
-       return self._envelope(args).apply(self._fun)
+       return self._envelope(*args).apply(self._fun)
 
 
 
@@ -164,7 +164,7 @@ class NonDifferentiable:
 
 def differentiable(fun):
 
-    return Differentiable(fun, lambda x: Envelope(x))
+    return Differentiable(fun, lambda *args: Envelope(*args))
 
 
 
@@ -173,7 +173,7 @@ def differentiable(fun):
 
 def nondifferentiable(fun):
 
-    return NonDifferentiable(fun, lambda x: Envelope(x))
+    return NonDifferentiable(fun, lambda *args: Envelope(*args))
 
 
 
@@ -204,9 +204,7 @@ class ArgsLike(abc.ABC):
 
 class Args(ArgsLike, TupleLike):  
 
-   def __init__(self, args):
-
-       args = tdnode.iterconv(tdnode.NodeLike)(args)
+   def __init__(self, *args):
 
        self._args = args
 
@@ -256,12 +254,23 @@ class Args(ArgsLike, TupleLike):
        return self._args[idx]
 
 
+   def nodify(self):
+
+       for arg in self._args:
+
+           if isinstance(arg, tdnode.NodeLike):
+              yield arg
+              continue
+
+           yield tdnode.Point(arg)
+
+
    def concat(self):
 
        concat = Concatenation() 
 
-       for arg in self:
-           concat = arg.concat(concat)
+       for node in self.nodify():
+           concat = node.concat(concat)
 
        return concat
 
@@ -269,6 +278,11 @@ class Args(ArgsLike, TupleLike):
    def pack(self):
 
        return Pack(self.concat())
+
+
+   def deshelled(self):
+
+       return self.concat().deshell()
 
 
 
@@ -385,13 +399,16 @@ class Concatenation(Concatenable, Cohesive):
    @tdutil.cacheable
    def deshell(self):
 
+       if self.layer() == minlayer():
+          return Args(*self._sources)
+
        args    = list(self._nodes)
        sources = list(self._sources)
 
        for adx in self.adxs():
            args[adx] = sources[adx] 
 
-       return Args(args)
+       return Args(*args)
 
 
 
@@ -532,16 +549,15 @@ class EnvelopeLike(abc.ABC):
 
 # --- Argument envelope ----------------------------------------------------- #
 
-# TODO Future sol: let Array impl Node interface and act as a Point instead!
-# i.e. we'll replace Point with Array. Then Array.tovalue() will return self.
-
-
 class Envelope(EnvelopeLike):
 
-   def __init__(self, args):
+   def __init__(self, *args):
 
-       if not isinstance(args, ArgsLike):
-          args = Args(args)
+       if len(args) == 0:
+          raise ValueError("Envelope must have at least one input")
+
+       if not isinstance(args[0], ArgsLike):
+          args = Args(*args)
 
        self._args = args
 
@@ -587,7 +603,7 @@ class Envelope(EnvelopeLike):
             last = self.packs().first()
 
        args = last.deshell() 
-       out  = fun(*(arg.tovalue() for arg in args))
+       out  = fun(*args)
 
        return out      
 

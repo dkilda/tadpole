@@ -4,9 +4,12 @@
 import abc
 import numpy as np
 
+import tadpole.autodiff.graph as tdgraph
+
 from tadpole.array.array import Array, Args, FunCall
 
-
+# TODO: rename this to operations.py? (import operations as ops)
+# TODO: rename backends.backend_registry to backends.registry?
 
 
 ###############################################################################
@@ -18,6 +21,16 @@ from tadpole.array.array import Array, Args, FunCall
 
 # --- Array operations: unary ----------------------------------------------- #
 
+@tdgraph.differentiable
+def get(x, idx):
+
+    def fun(backend, v):
+        return v[idx]
+
+    return Args(x).pluginto(FunCall(fun))
+
+
+@tdgraph.differentiable
 def put(x, idxs, vals, accumulate=False):
 
     def fun(backend, v):
@@ -26,6 +39,7 @@ def put(x, idxs, vals, accumulate=False):
     return Args(x).pluginto(FunCall(fun))
 
 
+@tdgraph.differentiable
 def reshape(x, shape):
 
     def fun(backend, v):
@@ -34,39 +48,60 @@ def reshape(x, shape):
     return Args(x).pluginto(FunCall(fun))
 
 
+@tdgraph.differentiable
 def neg(x):
 
-    return Args(x).pluginto(FunCall(backend.neg))
+    def fun(backend, v):
+        return backend.neg(v)
+
+    return Args(x).pluginto(FunCall(fun))
 
 
+@tdgraph.differentiable
 def sin(x):
 
-    return Args(x).pluginto(FunCall(backend.sin))
+    def fun(backend, v):
+        return backend.sin(v)
+
+    return Args(x).pluginto(FunCall(fun))
 
 
+@tdgraph.differentiable
 def cos(x):
 
-    return Args(x).pluginto(FunCall(backend.cos))
+    def fun(backend, v):
+        return backend.cos(v)
+
+    return Args(x).pluginto(FunCall(fun))
 
 
 
 
 # --- Array operations: binary ---------------------------------------------- #
 
+@tdgraph.differentiable
 def add(x, y):
 
-    return Args(x, y).pluginto(FunCall(backend.add))
+    def fun(backend, v, u):
+        return backend.add(v, u)
+
+    return Args(x, y).pluginto(FunCall(fun))
 
 
+@tdgraph.differentiable
 def mul(x, y):
+
+    def fun(backend, v, u):
+        return backend.mul(v, u)
         
-    return Args(x, y).pluginto(FunCall(backend.mul))
+    return Args(x, y).pluginto(FunCall(fun))
 
 
 
 
 # --- Array operations: nary ------------------------------------------------ #
 
+@tdgraph.differentiable
 def einsum(equation, *xs, optimize=True)
 
     def fun(backend, *xs):

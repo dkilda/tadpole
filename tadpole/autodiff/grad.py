@@ -257,17 +257,6 @@ class Graphable(abc.ABC):
 
 # --- Graph operator -------------------------------------------------------- #
 
-# TODO Future solution: remove .tovalue() method from Node, and make GraphOp
-# the only class able to retrieve its source. 
-
-# Either treat GraphOp as a friend of Node, or pass Node.tovalue(Value()) 
-# a Value() obj, only creatable by GraphOp (cf passkey idiom). 
-
-# Could also introduce ToValue(node) class, which takes care of retrieving 
-# Node's source internally (e.g. also using passkey idiom, or by simple 
-# friendship).
-
-
 class GraphOp(Graphable):
 
    def __init__(self, root, fun, x):
@@ -318,7 +307,10 @@ class GraphOp(Graphable):
    @tdutil.cacheable
    def evaluate(self):
 
-       return self.end().tovalue()
+       args = tdgraph.Args(self.end())
+       args = args.deshelled()
+
+       return args
 
 
 
@@ -617,7 +609,8 @@ class GradSum(Cumulative):
 
    def add(self, node, grads):
 
-       self._grads[node] = reduce(tdmanip.add_grads, grads, None)
+       self._grads[node] = sum(grads)  
+
        self._last = node
        return self
 
@@ -677,7 +670,7 @@ class GradAccum(Cumulative):
    def add(self, nodes, grads):
 
        for node, grad in zip(nodes, grads):
-           self._grads[node] = tdmanip.add_grads(self._grads.get(node), grad)
+           self._grads[node] = self._grads.get(node, 0) + grad  
 
        return self
 
@@ -698,35 +691,6 @@ class GradAccum(Cumulative):
        except KeyError:
           last = list(self._grads)[-1]
           return self._grads[last]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

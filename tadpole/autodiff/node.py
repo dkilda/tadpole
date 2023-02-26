@@ -427,10 +427,6 @@ class NodeLike(abc.ABC):
        pass
 
    @abc.abstractmethod
-   def tovalue(self):
-       pass
-
-   @abc.abstractmethod
    def concat(self, concatenable):
        pass
 
@@ -455,7 +451,8 @@ class Node(NodeLike):
           raise ValueError((f"Node: the input layer {layer} must be higher "
                             f"than the minimum layer {tdgraph.minlayer()}."))
 
-       source = typeconv(NodeLike)(source)
+       if not isinstance(source, NodeLike):
+          source = Point(source)
                                             
        self._source = source              
        self._layer  = layer 
@@ -491,11 +488,6 @@ class Node(NodeLike):
        return id(self)
 
 
-   def tovalue(self):
-
-       return self._source.tovalue()
-
-
    def concat(self, concatenable):
 
        return concatenable.attach(self, self._source, self._layer)
@@ -519,9 +511,6 @@ class Node(NodeLike):
 
 
 # --- Point (a disconnected node, only carries a value and no logic) -------- #
-
-# TODO Future sol: let Array impl Node interface and act as a Point instead!
-# i.e. we'll replace Point with Array. Then Array.tovalue() will return self.
 
 class Point(NodeLike): 
 
@@ -555,11 +544,6 @@ class Point(NodeLike):
    def __hash__(self):
 
        return id(self)
-
-
-   def tovalue(self):
-
-       return self._source
 
 
    def concat(self, concatenable):
@@ -667,7 +651,7 @@ class Parents(Parental, TupleLike):
 
 
 
-
+"""
 ###############################################################################
 ###                                                                         ###
 ###  Auxiliary methods for Node module.                                     ###
@@ -687,7 +671,7 @@ def iterconv(typ):
 
     assert typ is NodeLike
     return tdutil.iterconv(NodeLike, Point)
-
+"""
 
 
 

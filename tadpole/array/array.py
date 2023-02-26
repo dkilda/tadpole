@@ -4,6 +4,7 @@
 import abc
 import numpy as np
 
+
 import tadpole.array.array_ops as ops
 import tadpole.array.backends  as backends
 import tadpole.array.util      as util
@@ -359,7 +360,7 @@ class ArrayLike(abc.ABC):
        pass
 
    @abc.abstractmethod
-   def __getitem__(self, coords):
+   def __getitem__(self, idx):
        pass
 
    @property
@@ -402,7 +403,7 @@ class ArrayLike(abc.ABC):
 
 # --- Array ----------------------------------------------------------------- #
 
-class Array(ArrayLike): # TODO update GradAccum/Sum so that get()/pop()/reduce()/etc use 0 and not None as their default!
+class Array(ArrayLike):
 
    def __init__(self, backend, data):
 
@@ -425,9 +426,9 @@ class Array(ArrayLike): # TODO update GradAccum/Sum so that get()/pop()/reduce()
        return funcall.attach(self, self._data)
 
 
-   def __getitem__(self, coords):
+   def __getitem__(self, idx):
 
-       return self._data[coords]
+       return ops.get(self, idx)  
 
 
    @property
