@@ -3,23 +3,44 @@
 
 import abc
 import numpy as np
-import tadpole.autodiff.graph as tdgraph
+
+import tadpole.util     as util
+import tadpole.autodiff as ad
 
 from tadpole.array.array import Array, Args, FunCall
 
 
+"""
+###############################################################################
+###                                                                         ###
+###  Definitions of non-differentiable array operations                     ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Generic array operations ---------------------------------------------- #
+
+@ad.nondifferentiable
+def floor(x, n):
+    return x // n
+
+@ad.nondifferentiable
+def equals(x, y):
+    return x == y 
+
+"""
 
 
 ###############################################################################
 ###                                                                         ###
-###  Definitions of specific array operations                               ###
+###  Definitions of differentiable array operations                         ###
 ###                                                                         ###
 ###############################################################################
 
 
 # --- Array operations: unary ----------------------------------------------- #
 
-@tdgraph.differentiable
+@ad.differentiable
 def get(x, idx):
 
     def fun(backend, v):
@@ -28,7 +49,7 @@ def get(x, idx):
     return Args(x).pluginto(FunCall(fun))
 
 
-@tdgraph.differentiable
+@ad.differentiable
 def put(x, idxs, vals, accumulate=False):
 
     def fun(backend, v):
@@ -37,7 +58,7 @@ def put(x, idxs, vals, accumulate=False):
     return Args(x).pluginto(FunCall(fun))
 
 
-@tdgraph.differentiable
+@ad.differentiable
 def reshape(x, shape):
 
     def fun(backend, v):
@@ -46,7 +67,7 @@ def reshape(x, shape):
     return Args(x).pluginto(FunCall(fun))
 
 
-@tdgraph.differentiable
+@ad.differentiable
 def neg(x):
 
     def fun(backend, v):
@@ -55,7 +76,7 @@ def neg(x):
     return Args(x).pluginto(FunCall(fun))
 
 
-@tdgraph.differentiable
+@ad.differentiable
 def sin(x):
 
     def fun(backend, v):
@@ -64,7 +85,7 @@ def sin(x):
     return Args(x).pluginto(FunCall(fun))
 
 
-@tdgraph.differentiable
+@ad.differentiable
 def cos(x):
 
     def fun(backend, v):
@@ -77,7 +98,7 @@ def cos(x):
 
 # --- Array operations: binary ---------------------------------------------- #
 
-@tdgraph.differentiable
+@ad.differentiable
 def add(x, y):
 
     def fun(backend, v, u):
@@ -86,7 +107,7 @@ def add(x, y):
     return Args(x, y).pluginto(FunCall(fun))
 
 
-@tdgraph.differentiable
+@ad.differentiable
 def mul(x, y):
 
     def fun(backend, v, u):
@@ -99,7 +120,7 @@ def mul(x, y):
 
 # --- Array operations: nary ------------------------------------------------ #
 
-@tdgraph.differentiable
+@ad.differentiable
 def einsum(equation, *xs, optimize=True)
 
     def fun(backend, *xs):

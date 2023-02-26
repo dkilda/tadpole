@@ -4,10 +4,11 @@
 import abc
 import numpy as np
 
+import tadpole.util as util
 
 import tadpole.array.operations as ops
 import tadpole.array.backends   as backends
-import tadpole.array.util       as util
+
 
 
 

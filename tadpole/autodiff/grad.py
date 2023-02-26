@@ -3,14 +3,13 @@
 
 import abc
 import collections
-
 from functools import reduce
 
-import tadpole.autodiff.util    as tdutil
-import tadpole.autodiff.nary_op as tdnary
-import tadpole.autodiff.node    as tdnode
-import tadpole.autodiff.graph   as tdgraph
+import tadpole.util as util
 
+import tadpole.autodiff.nary  as nary
+import tadpole.autodiff.node  as anode
+import tadpole.autodiff.graph as agraph
 
 
 
@@ -24,7 +23,7 @@ import tadpole.autodiff.graph   as tdgraph
 
 # --- Gradient -------------------------------------------------------------- #
 
-@tdnary.make_nary_op
+@nary.nary_op
 def grad(fun, x):  
   
     return ReverseDifferentialOp(fun, x).grad(1)
@@ -34,7 +33,7 @@ def grad(fun, x):
 
 # --- Derivative ------------------------------------------------------------ #
 
-@tdnary.make_nary_op
+@nary.nary_op
 def deriv(fun, x):
 
     return ForwardDifferentialOp(fun, x).grad(1)
@@ -85,7 +84,7 @@ class DifferentialOp(Differential):
 
    def __repr__(self):
 
-       rep = tdutil.ReprChain()
+       rep = util.ReprChain()
 
        rep.typ(self)
        rep.val("prop", self._prop)
@@ -97,7 +96,7 @@ class DifferentialOp(Differential):
 
    def __eq__(self, other):
 
-       log = tdutil.LogicalChain()
+       log = util.LogicalChain()
 
        log.typ(self, other)
        log.val(self._prop, other._prop)
@@ -107,19 +106,19 @@ class DifferentialOp(Differential):
        return bool(log)
 
 
-   @tdutil.cacheable
+   @util.cacheable
    def graphop(self):
 
        return self._prop.graphop(self._fun, self._x)
 
 
-   @tdutil.cacheable
+   @util.cacheable
    def end(self):
 
        return self.graphop().end()
 
 
-   @tdutil.cacheable
+   @util.cacheable
    def evaluate(self):
 
        return self.graphop().evaluate()
@@ -184,14 +183,14 @@ class ForwardPropagation(Propagation):
 
    def __repr__(self):
 
-       rep = tdutil.ReprChain()
+       rep = util.ReprChain()
        rep.typ(self)
        return str(rep)
 
 
    def graphop(self, fun, x):
 
-       return GraphOp(tdnode.ForwardGate(), fun, x)
+       return GraphOp(anode.ForwardGate(), fun, x)
 
 
    def accum(self, end, seed):
@@ -207,14 +206,14 @@ class ReversePropagation(Propagation):
 
    def __repr__(self):
 
-       rep = tdutil.ReprChain()
+       rep = util.ReprChain()
        rep.typ(self)
        return str(rep)
 
 
    def graphop(self, fun, x):
 
-       return GraphOp(tdnode.ReverseGate(), fun, x)
+       return GraphOp(anode.ReverseGate(), fun, x)
 
 
    def accum(self, end, seed):
@@ -268,7 +267,7 @@ class GraphOp(Graphable):
 
    def __repr__(self):
 
-       rep = tdutil.ReprChain()
+       rep = util.ReprChain()
 
        rep.typ(self)
        rep.ref("root", self._root)
@@ -280,7 +279,7 @@ class GraphOp(Graphable):
 
    def __eq__(self, other):
 
-       log = tdutil.LogicalChain()
+       log = util.LogicalChain()
 
        log.typ(self, other)
        log.val(self._root, other._root)
@@ -292,10 +291,10 @@ class GraphOp(Graphable):
 
    def graph(self):
 
-       return tdgraph.Graph(self._root)
+       return agraph.Graph(self._root)
 
 
-   @tdutil.cacheable
+   @util.cacheable
    def end(self):
 
        with self.graph() as graph:
@@ -304,10 +303,10 @@ class GraphOp(Graphable):
        return end
          
 
-   @tdutil.cacheable
+   @util.cacheable
    def evaluate(self):
 
-       args = tdgraph.Args(self.end())
+       args = agraph.Args(self.end())
        args = args.deshelled()
 
        return args
@@ -367,7 +366,7 @@ class ChildCount(Traceable, Countable):
 
    def __repr__(self):
 
-       rep = tdutil.ReprChain()
+       rep = util.ReprChain()
 
        rep.typ(self)
        rep.ref("nodes",   list(self._parents.keys()))
@@ -379,7 +378,7 @@ class ChildCount(Traceable, Countable):
 
    def __eq__(self, other):
 
-       log = tdutil.LogicalChain()
+       log = util.LogicalChain()
 
        log.typ(self, other)
        log.val(self._parents, other._parents)
@@ -457,7 +456,7 @@ class Traversal(Traversable):
 
    def __repr__(self):
 
-       rep = tdutil.ReprChain()
+       rep = util.ReprChain()
 
        rep.typ(self)
        rep.ref("end", self._end)
@@ -511,7 +510,7 @@ class TopoSort(Sortable):
 
    def __repr__(self):
 
-       rep = tdutil.ReprChain()
+       rep = util.ReprChain()
 
        rep.typ(self)
        rep.ref("traversal", self._traversal)
@@ -520,7 +519,7 @@ class TopoSort(Sortable):
        return str(rep)
 
 
-   @tdutil.cacheable
+   @util.cacheable
    def traverse(self):
 
        self._traversal.apply(self._count.collect)
@@ -587,7 +586,7 @@ class GradSum(Cumulative):
 
    def __repr__(self):
 
-       rep = tdutil.ReprChain()
+       rep = util.ReprChain()
 
        rep.typ(self)
        rep.ref("nodes", list(self._grads.keys()))
@@ -598,7 +597,7 @@ class GradSum(Cumulative):
 
    def __eq__(self, other):
 
-       log = tdutil.LogicalChain()
+       log = util.LogicalChain()
 
        log.typ(self, other)
        log.val(self._seed,  other._seed)
@@ -648,7 +647,7 @@ class GradAccum(Cumulative):
 
    def __repr__(self):
 
-       rep = tdutil.ReprChain()
+       rep = util.ReprChain()
 
        rep.typ(self)
        rep.ref("nodes", list(self._grads.keys()))
@@ -659,7 +658,7 @@ class GradAccum(Cumulative):
 
    def __eq__(self, other):
 
-       log = tdutil.LogicalChain()
+       log = util.LogicalChain()
 
        log.typ(self, other)
        log.val(self._grads, other._grads)

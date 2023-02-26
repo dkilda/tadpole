@@ -3,10 +3,10 @@
 
 import abc
 
-import tadpole.autodiff.util as tdutil
-import tadpole.autodiff.node as tdnode
+import tadpole.util as util
+from tadpole.util import TupleLike
 
-from tadpole.autodiff.util import TupleLike
+import tadpole.autodiff.node as anode
 
 
 
@@ -60,7 +60,7 @@ class Graph(GraphLike):
 
    def __repr__(self):
 
-       rep = tdutil.ReprChain()
+       rep = util.ReprChain()
 
        rep.typ(self)
        rep.val("root", self._root)
@@ -70,7 +70,7 @@ class Graph(GraphLike):
 
    def __eq__(self, other):
 
-       log = tdutil.LogicalChain()
+       log = util.LogicalChain()
 
        log.typ(self, other)
        log.ref(self._root, other._root)
@@ -91,7 +91,7 @@ class Graph(GraphLike):
 
    def build(self, fun, x):
 
-       start = tdnode.Node(x, type(self)._layer, self._root) 
+       start = anode.Node(x, type(self)._layer, self._root) 
 
        return fun(start)
 
@@ -118,7 +118,7 @@ class Differentiable:
 
    def __repr__(self):
 
-       rep = tdutil.ReprChain()
+       rep = util.ReprChain()
 
        rep.typ(self)
        rep.val("fun", self._fun)
@@ -145,7 +145,7 @@ class NonDifferentiable:
 
    def __repr__(self):
 
-       rep = tdutil.ReprChain()
+       rep = util.ReprChain()
 
        rep.typ(self)
        rep.val("fun", self._fun)
@@ -211,7 +211,7 @@ class Args(ArgsLike, TupleLike):
 
    def __repr__(self):
 
-       rep = tdutil.ReprChain()
+       rep = util.ReprChain()
 
        rep.typ(self)
        rep.ref("args", self._args)
@@ -221,7 +221,7 @@ class Args(ArgsLike, TupleLike):
 
    def __eq__(self, other):
 
-       log = tdutil.LogicalChain()
+       log = util.LogicalChain()
 
        log.typ(self, other) 
        log.ref(self._args, other._args)
@@ -258,11 +258,11 @@ class Args(ArgsLike, TupleLike):
 
        for arg in self._args:
 
-           if isinstance(arg, tdnode.NodeLike):
+           if isinstance(arg, anode.NodeLike):
               yield arg
               continue
 
-           yield tdnode.Point(arg)
+           yield anode.Point(arg)
 
 
    def concat(self):
@@ -325,20 +325,14 @@ class Cohesive(abc.ABC):
 
 class Concatenation(Concatenable, Cohesive):
 
-   def __init__(self, nodes=None, sources=None, layers=None):
+   def __init__(self, content=util.Sequence()): 
 
-       if nodes   is None: nodes   = tdutil.Sequence()
-       if sources is None: sources = tdutil.Sequence()
-       if layers  is None: layers  = tdutil.Sequence()
-
-       self._nodes   = nodes
-       self._sources = sources
-       self._layers  = layers
+       self._content = content 
 
 
    def __repr__(self):
 
-       rep = tdutil.ReprChain()
+       rep = util.ReprChain()
 
        rep.typ(self)
        rep.val("nodes",   self._nodes)
@@ -350,7 +344,7 @@ class Concatenation(Concatenable, Cohesive):
 
    def __eq__(self, other):
 
-       log = tdutil.LogicalChain()
+       log = util.LogicalChain()
 
        log.typ(self, other) 
        log.val(self._nodes,   other._nodes)
@@ -367,19 +361,18 @@ class Concatenation(Concatenable, Cohesive):
 
    def attach(self, node, source, layer):
 
-       return self.__class__(
-                             self._nodes.push(node), 
-                             self._sources.push(source), 
-                             self._layers.push(layer)
-                            )
+       content = self._content.push((node, source, layer))
 
-   @tdutil.cacheable
+       return self.__class__(content)
+
+
+   @util.cacheable
    def layer(self):
 
        return max(self._layers)
 
 
-   @tdutil.cacheable
+   @util.cacheable
    def adxs(self):
 
        if self.layer() == minlayer():
@@ -388,15 +381,15 @@ class Concatenation(Concatenable, Cohesive):
        return tuple(i for i, x in enumerate(self._layers) 
                                            if x == self.layer())
 
-   @tdutil.cacheable
+   @util.cacheable
    def parents(self):
 
        nodes = list(self._nodes)
        nodes = [nodes[adx] for adx in self.adxs()] 
-       return tdnode.Parents(nodes)
+       return anode.Parents(nodes)
 
 
-   @tdutil.cacheable
+   @util.cacheable
    def deshell(self):
 
        if self.layer() == minlayer():
@@ -455,7 +448,7 @@ class Pack(Packable):
 
    def __repr__(self):
 
-       rep = tdutil.ReprChain()
+       rep = util.ReprChain()
 
        rep.typ(self)
        rep.ref("concat", self._concat)
@@ -465,7 +458,7 @@ class Pack(Packable):
 
    def __eq__(self, other):
 
-       log = tdutil.LogicalChain()
+       log = util.LogicalChain()
 
        log.typ(self, other) 
        log.val(self._concat, other._concat)
@@ -520,9 +513,9 @@ class Pack(Packable):
    def fold(self, funwrap, out): 
 
        if self.innermost(): 
-          return tdnode.Point(out)
+          return anode.Point(out)
 
-       op = tdnode.AdjointOp(funwrap, self._adxs, out, self._args)
+       op = anode.AdjointOp(funwrap, self._adxs, out, self._args)
        return self._parents.next(out, self._layer, op) 
 
 
@@ -564,7 +557,7 @@ class Envelope(EnvelopeLike):
 
    def __repr__(self):
 
-       rep = tdutil.ReprChain()
+       rep = util.ReprChain()
 
        rep.typ(self)
        rep.ref("args", self._args)
@@ -574,7 +567,7 @@ class Envelope(EnvelopeLike):
 
    def __eq__(self, other):
 
-       log = tdutil.LogicalChain()
+       log = util.LogicalChain()
 
        log.typ(self, other) 
        log.ref(self._args, other._args)
@@ -589,7 +582,7 @@ class Envelope(EnvelopeLike):
  
    def packs(self):
 
-       return tdutil.Loop(
+       return util.Loop(
                           self._args.pack(),  
                           lambda x: x.deshelled(), 
                           lambda x: x.innermost()
@@ -615,9 +608,6 @@ class Envelope(EnvelopeLike):
        for pack in reversed(self.packs()):
            out = pack.fold(funwrap, out) 
 
-       if isinstance(out, tdnode.Point):
-          return out.tovalue() # FIXME Interim solution: in general, applywrap() must always return
-                               # the same type (NodeLike), so this will get fixed once our Value/Array = Point.
        return out
 
 

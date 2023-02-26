@@ -4,11 +4,12 @@
 import abc
 import functools
 
-import tadpole.autodiff.util     as tdutil        
-import tadpole.autodiff.graph    as tdgraph
-import tadpole.autodiff.adjoints as tda
-
-from tadpole.autodiff.util import TupleLike
+import tadpole.util as util 
+from tadpole.util import TupleLike
+       
+import tadpole.autodiff.graph   as agraph
+import tadpole.autodiff.map_jvp as jvpmap
+import tadpole.autodiff.map_vjp as vjpmap
 
 
 
@@ -86,14 +87,14 @@ class AdjointOp(Adjoint):
 
    def vjp(self, seed):
 
-       vjpfun = tda.vjpmap.get(self._fun)
+       vjpfun = vjpmap.get(self._fun)
 
        return self._apply(vjpfun)(seed)
 
 
    def jvp(self, seed):
 
-       jvpfun = tda.jvpmap.get(self._fun)
+       jvpfun = jvpmap.get(self._fun)
 
        return self._apply(jvpfun)(seed)
 
@@ -446,9 +447,9 @@ class Node(NodeLike):
 
    def __init__(self, source, layer, gate): 
 
-       if not (layer > tdgraph.minlayer()):
+       if not (layer > agraph.minlayer()):
           raise ValueError((f"Node: the input layer {layer} must be higher "
-                            f"than the minimum layer {tdgraph.minlayer()}."))
+                            f"than the minimum layer {agraph.minlayer()}."))
 
        if not isinstance(source, NodeLike):
           source = Point(source)
@@ -516,7 +517,7 @@ class Point(NodeLike):
    def __init__(self, source):
 
        self._source = source
-       self._layer  = tdgraph.minlayer()
+       self._layer  = agraph.minlayer()
        self._gate   = NullGate()
 
 

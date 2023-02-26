@@ -2,7 +2,61 @@
 # -*- coding: utf-8 -*-
 
 import abc
-import tadpole.autodiff.util as tdutil
+import itertools
+import tadpole.util as util
+
+
+
+
+###############################################################################
+###                                                                         ###
+### Customized loop iterator.                                               ###
+### Defined by the first item and the next and stop functions, instead of   ###
+### a range. Can be traversed in forward and reverse directions, keeps      ###
+### track of the last item of the loop.                                     ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Loop iterator --------------------------------------------------------- #
+
+class Loop:
+
+   def __init__(self, first, next, stop):
+
+       self._first = first
+       self._next  = next
+       self._stop  = stop
+
+       
+   def __iter__(self):
+
+       x = self._first
+
+       for _ in itertools.count():
+
+           if self._stop(x):
+              break
+
+           yield x
+           x = self._next(x)
+
+
+   @util.cacheable
+   def __reversed__(self):
+
+       return iter(reversed(list(self)))
+
+
+   @util.cacheable
+   def last(self):
+ 
+       return next(reversed(self)) 
+
+
+   def first(self):
+
+       return self._first
 
 
 
@@ -68,16 +122,42 @@ class Sequence:
 
 
    @property
-   @tdutil.cacheable
+   @util.cacheable
    def _list(self):
 
        self._origin.apply(self._tasks)
+
        return list(self._origin)
 
 
    def _apply(self, task):
 
        return self.__class__(self._origin, (*self._tasks, task))
+
+
+   def __repr__(self):
+
+       rep = util.ReprChain()
+
+       rep.typ(self)
+       rep.val("items", self._list)
+
+       return str(rep)
+
+
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+
+       log.typ(self, other)
+       log.val(self._list, other._list)
+
+       return bool(log)
+
+
+   def __hash__(self):
+
+       return id(self)
 
  
    def __iter__(self):
@@ -177,7 +257,6 @@ class Pop(Task):
    def undo(self, lst):
 
        lst.append(self._item)
-
 
 
 

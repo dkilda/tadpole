@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import itertools
-from tadpole.autodiff.adjoints.adjoints import AdjMap
+from tadpole.autodiff.map_adjoints import AdjMap
 
 
 
