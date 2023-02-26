@@ -73,6 +73,90 @@ class SparseGrad(Grad): # FIXME shall we make this SparseArray instead?
 
 
 
+"""
+
+One more thing:
+
+   def apply(self, fun):
+
+       try:
+            last = self.packs().last()
+       except StopIteration:
+            last = self.packs().first()
+
+       args = last.deshell() 
+       out  = fun(*(arg.tovalue() for arg in args))
+
+       return out   
+
+
+In out = fun(*(arg.tovalue() for arg in args)),
+what if some args are points, and others are arrays?
+
+we need to make points accessible for evaluation!
+
+e.g. suppose you want to call reshape(x, shape):
+shape will be converted to Point. How do we access it?
+
+Args convert all inputs to NodeLike's.
+Probs it could convert'em back too?
+
+
+* Q: Why convert all vals to Points?
+
+* A: Cuz we need polymorphic behavior in .concat() and then inside Concatenation.
+
+
+##############
+
+USE THIS!
+
+
+--- let the last deshelling to remove the final shell from all args and convert them to values?
+
+
+def deshell(self):
+
+    if self.layer() == minlayer():
+       return Args(tuple(self._sources)) --> but Args will convert it back to Points...
+
+    ... 
+
+
+Let Args:
+
+   self._args = args
+
+   .nodelike(self): convert all args to nodelikes, use this in .concat()
+
+   this way Args will keep the original vals!
+
+
+--- Ok, how does this change the deshelling iteration in Envelope?
+
+    A: we want to deshell when we hit minlayer()
+
+    But we do that anyway! We call last.deshell() in .apply()! So no changes.
+    This last deshell will return args with no-Point values.
+
+
+--- One last thing: is the usage of __iter__ of Args dependent on the NodeLike-ness of args?
+
+
+
+##############
+
+
+
+But: Concatenation knows which args are differentiable by looking at their layers.
+     It will skip any Points anyway.
+
+
+"""
+
+
+
+
 
 """
 
