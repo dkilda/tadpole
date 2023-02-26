@@ -5,9 +5,9 @@ import abc
 import numpy as np
 
 
-import tadpole.array.array_ops as ops
-import tadpole.array.backends  as backends
-import tadpole.array.util      as util
+import tadpole.array.operations as ops
+import tadpole.array.backends   as backends
+import tadpole.array.util       as util
 
 
 
@@ -23,9 +23,9 @@ V --- implement the ListRef for a quasi-immutable List-like structure
 
 V --- sort out the backend module/subpackage
 
---- implement dense/sparse grads (that will follow ArrayLike interface)
+V --- implement dense/sparse grads (that will follow ArrayLike interface)
 
---- make Array implement NodeLike interface: integrate Array with tadpole/autodiff
+V --- make Array implement NodeLike interface: integrate Array with tadpole/autodiff
 
 --- implement all the specific Array operations
 

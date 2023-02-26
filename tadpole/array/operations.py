@@ -3,13 +3,11 @@
 
 import abc
 import numpy as np
-
 import tadpole.autodiff.graph as tdgraph
 
 from tadpole.array.array import Array, Args, FunCall
 
-# TODO: rename this to operations.py? (import operations as ops)
-# TODO: rename backends.backend_registry to backends.registry?
+
 
 
 ###############################################################################

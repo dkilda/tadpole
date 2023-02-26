@@ -4,9 +4,9 @@
 import abc
 import numpy as np
 
-import tadpole.array.array_ops as ops
-import tadpole.array.array     as array
-import tadpole.array.util      as util
+import tadpole.array.operations as ops
+import tadpole.array.array      as array
+import tadpole.array.util       as util
 
 
 
