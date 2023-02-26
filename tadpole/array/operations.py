@@ -108,6 +108,15 @@ def add(x, y):
 
 
 @ad.differentiable
+def sub(x, y):
+
+    def fun(backend, v, u):
+        return backend.sub(v, u)
+
+    return Args(x, y).pluginto(FunCall(fun))
+
+
+@ad.differentiable
 def mul(x, y):
 
     def fun(backend, v, u):

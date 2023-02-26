@@ -429,7 +429,7 @@ class Array(ArrayLike):
 
    def __getitem__(self, idx):
 
-       return ops.get(self, idx)  
+       return op.get(self, idx)  
 
 
    @property
@@ -447,17 +447,17 @@ class Array(ArrayLike):
 
    def __neg__(self):
 
-       return ops.neg(self)
+       return op.neg(self)
 
 
    def __add__(self, other):
 
-       return ops.add(self, other)
+       return op.add(self, other)
 
 
    def __mul__(self, other):
 
-       return ops.mul(self, other)
+       return op.mul(self, other)
 
 
    def __radd__(self, other):
@@ -465,7 +465,7 @@ class Array(ArrayLike):
        if other == 0:
           return self
 
-       return ops.add(self, asarray(self._backend, other))
+       return op.add(self, asarray(self._backend, other))
 
 
    def __rmul__(self, other):
@@ -473,7 +473,7 @@ class Array(ArrayLike):
        if other == 1:
           return self
 
-       return ops.mul(self, asarray(self._backend, other))
+       return op.mul(self, asarray(self._backend, other))
 
 
 

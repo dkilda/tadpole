@@ -4,9 +4,8 @@
 import abc
 import numpy as np
 
-import tadpole.array.operations as ops
-import tadpole.array.array      as array
-import tadpole.array.util       as util
+import tadpole.array.operations as op
+from tadpole.array.array import ArrayLike
 
 
 
@@ -20,7 +19,7 @@ import tadpole.array.util       as util
 
 # --- Sparse gradient class ------------------------------------------------- #
 
-class SparseGrad(array.ArrayLike):
+class SparseGrad(ArrayLike):
 
    def __init__(self, space, idxs, vals):
 
@@ -37,7 +36,7 @@ class SparseGrad(array.ArrayLike):
 
    def todense(self):
 
-       return ops.put(self._space.zeros(), idxs, self._vals)
+       return op.put(self._space.zeros(), idxs, self._vals)
 
 
    def copy(self):
@@ -83,7 +82,7 @@ class SparseGrad(array.ArrayLike):
        if other == 0:
           other = self._space.zeros()
 
-       return ops.put(other, self._idxs, self._vals, accumulate=True)
+       return op.put(other, self._idxs, self._vals, accumulate=True)
 
 
    def __mul__(self, other):
