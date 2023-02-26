@@ -266,6 +266,11 @@ class TorchBackend(backend.Backend):
    def count_nonzero(self, array, axis=None, **opts):
 
        return torch.count_nonzero(array, axis, **opts)
+
+
+   def put(self, array, idxs, vals, accumulate=False):
+
+       return array.index_put(idxs, vals, accumulate=accumulate)
        
 
    # --- Simple math operations --- #

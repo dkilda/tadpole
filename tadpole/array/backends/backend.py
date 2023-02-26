@@ -148,6 +148,10 @@ class Backend(abc.ABC):
    def count_nonzero(self, array, axis=None, **opts):
        pass
 
+   @abc.abstractmethod
+   def put(self, array, idxs, vals, accumulate=False):
+       pass
+
 
    # --- Simple math operations --- #
 

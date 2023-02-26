@@ -53,8 +53,11 @@ def fromfun(fun, backend, *datas, **opts):
 
 def asarray(backend, data, **opts):
 
-    return applyfun(
-              lambda backend_, data_: data_, backend, data, **opts
+    if isinstance(data, ArrayLike):
+       return data
+
+    return DataFun(lambda backend_, data_: data_)(
+              backend, data, **opts
            )
 
 
@@ -129,19 +132,19 @@ def basis(backend, shape, dtype=None):
 
 class DataFun:
 
-   def __init__(self, fun): 
+   def __init__(self, fun):
 
        self._fun = fun
 
 
    def __call__(self, backend, *datas, **opts):
 
-       backend = backends.get(backend) # TODO make backends a pass-as-argument object instead of a module
-                                       #      inject it into ctor
+       backend = backends.get(backend) 
+                                       
        newdata = self._fun(backend, *datas)
        newdata = backend.asarray(newdata, **opts)
 
-       return Array(newdata, backend)
+       return Array(backend, newdata)
 
        
 
@@ -175,7 +178,7 @@ class ShapeFun:
                 }[fun]
 
        data = fun(shape, *args, **opts)
-       return Array(data, backend)  
+       return Array(backend, data)  
 
 
 
@@ -330,20 +333,6 @@ class ArraySpace(Space):
        return self._shape
 
 
-   def __neg__(self):
-
-       return ops.neg(self)
-
-
-   def __add__(self, other):
-
-       return ops.add(self, other)
-
-
-   def __mul__(self, other):
-
-       return ops.mul(self, other)
-
 
 
 ###############################################################################
@@ -388,22 +377,42 @@ class ArrayLike(abc.ABC):
    def shape(self):
        pass
 
+   @abc.abstractmethod
+   def __neg__(self):
+       pass
+
+   @abc.abstractmethod
+   def __add__(self, other):
+       pass
+
+   @abc.abstractmethod
+   def __mul__(self, other):
+       pass
+
+   @abc.abstractmethod
+   def __radd__(self, other):
+       pass
+
+   @abc.abstractmethod
+   def __rmul__(self, other):
+       pass
+
 
 
 
 # --- Array ----------------------------------------------------------------- #
 
-class Array(ArrayLike):
+class Array(ArrayLike): # TODO update GradAccum/Sum so that get()/pop()/reduce()/etc use 0 and not None as their default!
 
-   def __init__(self, data, backend=None):
+   def __init__(self, backend, data):
 
-       self._data    = data
        self._backend = backend
+       self._data    = data
 
 
    def copy(self):
 
-       return self.__class__(self._data, self._backend)
+       return self.__class__(self._backend, self._data)
 
 
    def space(self):
@@ -418,20 +427,51 @@ class Array(ArrayLike):
 
    def __getitem__(self, coords):
 
-       return self._array[coords]
+       return self._data[coords]
 
 
    @property
    def dtype(self):
-       return self._backend.dtype(self._array)
+       return self._backend.dtype(self._data)
 
    @property 
    def ndim(self):
-       return self._backend.ndim(self._array)
+       return self._backend.ndim(self._data)
 
    @property
    def shape(self):
-       return self._backend.shape(self._array)
+       return self._backend.shape(self._data)
+
+
+   def __neg__(self):
+
+       return ops.neg(self)
+
+
+   def __add__(self, other):
+
+       return ops.add(self, other)
+
+
+   def __mul__(self, other):
+
+       return ops.mul(self, other)
+
+
+   def __radd__(self, other):
+
+       if other == 0:
+          return self
+
+       return ops.add(self, asarray(self._backend, other))
+
+
+   def __rmul__(self, other):
+
+       if other == 1:
+          return self
+
+       return ops.mul(self, asarray(self._backend, other))
 
 
 

@@ -18,6 +18,14 @@ from tadpole.array.array import Array, Args, FunCall
 
 # --- Array operations: unary ----------------------------------------------- #
 
+def put(x, idxs, vals, accumulate=False):
+
+    def fun(backend, v):
+        return backend.put(v, idxs, vals, accumulate=accumulate)
+
+    return Args(x).pluginto(FunCall(fun))
+
+
 def reshape(x, shape):
 
     def fun(backend, v):

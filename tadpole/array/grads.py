@@ -4,72 +4,241 @@
 import abc
 import numpy as np
 
-import tadpole.array.backends as backends
-import tadpole.array.util     as util
+import tadpole.array.array_ops as ops
+import tadpole.array.array     as array
+import tadpole.array.util      as util
 
 
 
 
-# --- Gradient interface ---------------------------------------------------- #
-
-class Grad(abc.ABC):
-
-   @abc.abstractmethod
-   def __iadd__(self, other):
-       pass
-
-   @abc.abstractmethod
-   def __add__(self, other):
-       pass
-
-   @abc.abstractmethod
-   def __mul__(self, other):
-       pass
+###############################################################################
+###                                                                         ###
+###  A general framework for array gradients                                ###
+###                                                                         ###
+###############################################################################
 
 
+# --- Sparse gradient class ------------------------------------------------- #
 
-# --- Dense gradient -------------------------------------------------------- #
+class SparseGrad(array.ArrayLike):
 
-class DenseGrad(Grad): # FIXME so far it seems identical to Array...
+   def __init__(self, space, idxs, vals):
 
-   def __init__(self, array):
+       self._space = space
+       self._idxs  = idxs
+       self._vals  = vals
 
-       self._array = array
+ 
+   @property
+   def _array(self):
+
+       return self._todense()
+
+
+   def todense(self):
+
+       return ops.put(self._space.zeros(), idxs, self._vals)
+
+
+   def copy(self):
+
+       return self._array.copy()
+
+
+   def space(self):
+
+       return self._space 
+
+
+   def pluginto(self, funcall):
+
+       return self._array.attach(funcall)
+
+
+   def __getitem__(self, coords):
+
+       return self._array[coords]
+
+
+   @property
+   def dtype(self):
+       return self._space.dtype
+
+   @property 
+   def ndim(self):
+       return self._space.ndim
+
+   @property
+   def shape(self):
+       return self._space.shape
 
 
    def __neg__(self):
 
-       return self.__class__(ops.neg(self._array))
+       return -self._array
 
 
-   def __add__(self, other):
-     
-       if isinstance(other, self.__class__):
-          other = other._array
+   def __add__(self, other): 
 
-       return self.__class__(ops.add(self._array, other))
+       if other == 0:
+          other = self._space.zeros()
+
+       return ops.put(other, self._idxs, self._vals, accumulate=True)
 
 
    def __mul__(self, other):
 
-       if isinstance(other, self.__class__):
-          other = other._array
+       return self._array * other 
+
+
+   def __radd__(self, other): 
+
+       return self.__add__(other)  
+
+
+   def __rmul__(self, other):
+
+       return other * self._array   
+
+
+
+"""
+
+Move to tadpole/autodiff/grad.py:
+
+
+# --- Gradient summation ---------------------------------------------------- #
+
+class GradSum(Cumulative):
+
+   def __init__(self, seed, grads=None):
+
+       if grads is None:
+          grads = {}
+
+       self._last  = None
+       self._seed  = seed
+       self._grads = grads
+
+
+   def __repr__(self):
+
+       rep = tdutil.ReprChain()
+
+       rep.typ(self)
+       rep.ref("nodes", list(self._grads.keys()))
+       rep.val("grads", list(self._grads.values()))
+
+       return str(rep)
+
+
+   def __eq__(self, other):
+
+       log = tdutil.LogicalChain()
+
+       log.typ(self, other)
+       log.val(self._seed,  other._seed)
+       log.val(self._grads, other._grads)
+
+       return bool(log)
+
+
+   def add(self, node, grads):
+
+       self._grads[node] = sum(grads)  
+       self._last = node
+       return self
+
+
+   def pick(self, nodes):
+
+       if not nodes:
+          return (self._seed,)   
+
+       return tuple(map(self._grads.__getitem__, nodes))
+
+
+   def result(self):
+
+       last = self._last
+       if last is None:
+          last = list(self._grads)[-1]
+
+       return self._grads[last]
+
+
+
+
+# --- Gradient accumulation ------------------------------------------------- #
+
+class GradAccum(Cumulative):
+
+   def __init__(self, grads=None):
+
+       if grads is None:
+          grads = {}
+
+       self._grads = grads
+
+
+   def __repr__(self):
+
+       rep = tdutil.ReprChain()
+
+       rep.typ(self)
+       rep.ref("nodes", list(self._grads.keys()))
+       rep.val("grads", list(self._grads.values()))
+
+       return str(rep)
+
+
+   def __eq__(self, other):
+
+       log = tdutil.LogicalChain()
+
+       log.typ(self, other)
+       log.val(self._grads, other._grads)
+
+       return bool(log)
+
+
+   def add(self, nodes, grads):
+
+       for node, grad in zip(nodes, grads):
+           self._grads[node] = self._grads.get(node, 0) + grad  
+
+       return self
+
+
+   def pick(self, node): 
  
-       return self.__class__(ops.mul(self._array, other))
- 
+       grad = self._grads.pop(node)
+
+       self._grads[None] = grad
+       return grad
+
+
+   def result(self): 
+
+       try:
+          return self._grads[None] 
+
+       except KeyError:
+          last = list(self._grads)[-1]
+          return self._grads[last]
+
+"""
+
+###############################################################################
+###############################################################################
+###############################################################################
 
 
 
 
 
-class SparseGrad(Grad): # FIXME shall we make this SparseArray instead?
-
-   def __add__(self, other):
-
-       array = other.copy()
-
-       array.
-
+       
+       
 
 
 

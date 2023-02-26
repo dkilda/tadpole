@@ -213,7 +213,15 @@ class NumpyBackend(backend.Backend):
    def count_nonzero(self, array, axis=None, **opts):
 
        return np.count_nonzero(array, axis, **opts)
-       
+      
+ 
+   def put(self, array, idxs, vals, accumulate=False):
+
+       if accumulate:
+          return np.add.at(array.copy(), idxs, vals)
+
+       return np.put(array.copy(), idxs, vals)
+
 
    # --- Simple math operations --- #
 
