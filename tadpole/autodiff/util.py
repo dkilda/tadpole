@@ -37,48 +37,6 @@ def cacheable(fun):
 
 ###############################################################################
 ###                                                                         ###
-### Automated type conversion                                               ###
-###                                                                         ###
-###############################################################################
-
-
-# --- Conversion of type ---------------------------------------------------- #
-
-def typeconv(typA, typB=None):
-
-    if typB is None:
-       typB = typA
-
-    def wrap(x):
-
-        if isinstance(x, typA):
-           return x
-
-        return typB(x)
-
-    return wrap
-
-
-
-
-# --- Conversion of type stored in an iterable ------------------------------ #
-
-def iterconv(typA, typB=None):
-
-    def wrap(xs):
-
-        if all(isinstance(x, typA) for x in xs):
-           return xs
-
-        return type(xs)(map(typeconv(typA, typB), xs))
-
-    return wrap
-
-
-
-
-###############################################################################
-###                                                                         ###
 ### Sequence data structure (quasi-immutable)                               ###
 ###                                                                         ###
 ###############################################################################

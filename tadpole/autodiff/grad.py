@@ -10,7 +10,7 @@ import tadpole.autodiff.util    as tdutil
 import tadpole.autodiff.nary_op as tdnary
 import tadpole.autodiff.node    as tdnode
 import tadpole.autodiff.graph   as tdgraph
-import tadpole.autodiff.manip   as tdmanip
+
 
 
 

@@ -4,8 +4,7 @@
 import abc
 import functools
 
-import tadpole.autodiff.util     as tdutil   
-import tadpole.autodiff.manip    as tdmanip        
+import tadpole.autodiff.util     as tdutil        
 import tadpole.autodiff.graph    as tdgraph
 import tadpole.autodiff.adjoints as tda
 
@@ -651,32 +650,4 @@ class Parents(Parental, TupleLike):
 
 
 
-"""
-###############################################################################
-###                                                                         ###
-###  Auxiliary methods for Node module.                                     ###
-###                                                                         ###
-###############################################################################
-
-
-# --- Shorthand type conversions -------------------------------------------- #
-
-def typeconv(typ):
-
-    assert typ is NodeLike
-    return tdutil.typeconv(NodeLike, Point)
-
-
-def iterconv(typ):
-
-    assert typ is NodeLike
-    return tdutil.iterconv(NodeLike, Point)
-"""
-
-
-
-
-
-
-       
 
