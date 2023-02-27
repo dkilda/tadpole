@@ -11,9 +11,6 @@ import tadpole.autodiff.grad  as agrad
 import tadpole.util           as util
 
 
-print("\n\nAGRAD: ", agrad)
-
-
 
 
 ###############################################################################
