@@ -94,10 +94,12 @@ class NumpyBackend(backend.Backend):
        dtype = self.get_dtype(opts.pop("dtype", None))
        seed  = opts.pop("seed", None)
 
+       if seed is not None:
+          np.random.seed(seed)
+
        if dtype in self.complex_dtypes():
-
           return fun(**opts).astype(dtype) + 1j*fun(**opts).astype(dtype)
-
+        
        return fun(**opts).astype(dtype)
 
 

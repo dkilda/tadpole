@@ -2,13 +2,13 @@
 # -*- coding: utf-8 -*-
 
 
-from .array import (
+from .core import (
    ArrayLike,
    Array,
 )
 
 
-from .array import (
+from .core import (
    fromfun,  
    asarray,
    zeros,
@@ -45,66 +45,6 @@ from .operations import (
 from .operations import (
    einsum,   
 )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

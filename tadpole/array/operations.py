@@ -7,7 +7,7 @@ import numpy as np
 import tadpole.util     as util
 import tadpole.autodiff as ad
 
-import tadpole.array.array    as array
+import tadpole.array.core     as core
 import tadpole.array.function as function
 
 from tadpole.array.function import Args, FunCall

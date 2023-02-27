@@ -5,7 +5,8 @@ import abc
 import numpy as np
 
 import tadpole.array.operations as op
-from tadpole.array.array import ArrayLike
+
+from tadpole.array.core import ArrayLike
 
 
 
