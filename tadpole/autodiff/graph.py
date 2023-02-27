@@ -415,7 +415,7 @@ class Concatenation(Concatenable, Cohesive):
        nodes = list(self._nodes)
        nodes = [nodes[adx] for adx in self.adxs()] 
 
-       return anode.Parents(nodes)
+       return anode.Parents(*nodes)
 
 
    @util.cacheable

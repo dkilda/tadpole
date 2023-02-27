@@ -658,8 +658,8 @@ class TestParents:
 
        x = data.reverse_parents_dat(valency)
        
-       parentsA = anode.Parents(x.pnodes)
-       parentsB = anode.Parents(x.pnodes)
+       parentsA = anode.Parents(*x.pnodes)
+       parentsB = anode.Parents(*x.pnodes)
 
        assert parentsA == parentsB
 
@@ -670,8 +670,8 @@ class TestParents:
        x = data.reverse_parents_dat(valency)
        y = data.reverse_parents_dat(valency)
        
-       parentsA = anode.Parents(x.pnodes)
-       parentsB = anode.Parents(y.pnodes)
+       parentsA = anode.Parents(*x.pnodes)
+       parentsB = anode.Parents(*y.pnodes)
 
        assert parentsA != parentsB
 

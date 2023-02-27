@@ -294,7 +294,7 @@ def concat_output_dat(n, adxs, layers):
 
 
     return ConcatOutputData(x.concat, case[0], case[1], 
-                            anode.Parents(case[2]), agraph.Args(*case[3]))
+                            anode.Parents(*case[2]), agraph.Args(*case[3]))
 
 
 
@@ -488,7 +488,7 @@ def node_stack_dat_001(gatetype="REVERSE"):
         if op is None:
            op = fake.Adjoint()
 
-        parents = anode.Parents(parents)
+        parents = anode.Parents(*parents)
 
         return {
                 "REVERSE": anode.ReverseGate, 

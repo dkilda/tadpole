@@ -153,7 +153,7 @@ def forward_gate_dat(valency=1):
     adjfun = forward_adjfun_dat(valency)
     op     = fake.Adjoint(jvp=fake.Fun(adjfun.grads, adjfun.seed))
 
-    parents = anode.Parents(arepeat(fake.NodeLike, valency))
+    parents = anode.Parents(*arepeat(fake.NodeLike, valency))
     gate    = anode.ForwardGate(parents, op) 
 
     return GateData(gate, parents, op, adjfun.grads, adjfun.seed)
@@ -166,7 +166,7 @@ def reverse_gate_dat(valency=1):
     adjfun = reverse_adjfun_dat(valency)
     op     = fake.Adjoint(vjp=fake.Fun(adjfun.grads, adjfun.seed))
 
-    parents = anode.Parents(arepeat(fake.NodeLike, valency))
+    parents = anode.Parents(*arepeat(fake.NodeLike, valency))
     gate    = anode.ReverseGate(parents, op) 
 
     return GateData(gate, parents, op, adjfun.grads, adjfun.seed)
@@ -229,7 +229,7 @@ def forward_node_dat(parent_nodes=1, grads=None, seed=None, layer=None):
        layer = 0
 
     op      = fake.Adjoint(jvp=fake.Fun(grads, seed))
-    parents = anode.Parents(parent_nodes)
+    parents = anode.Parents(*parent_nodes)
     gate    = anode.ForwardGate(parents, op)
     nodedat = node_dat(layer, gate)
 
@@ -260,7 +260,7 @@ def reverse_node_dat(parent_nodes=1, grads=None, seed=None, layer=None):
        layer = 0
 
     op      = fake.Adjoint(vjp=fake.Fun(grads, seed))
-    parents = anode.Parents(parent_nodes)
+    parents = anode.Parents(*parent_nodes)
     gate    = anode.ReverseGate(parents, op)
     nodedat = node_dat(layer, gate)
     
@@ -321,7 +321,7 @@ def forward_parents_dat(valency=1):
         return fake.NodeLike(flow=fake.Fun(flow))
 
     pnodes  = arepeat(pnode, valency)
-    parents = anode.Parents(pnodes)
+    parents = anode.Parents(*pnodes)
 
     return ParentData(parents, pnodes)
 
@@ -338,7 +338,7 @@ def reverse_parents_dat(valency=1):
         return fake.NodeLike(flow=fake.Fun(flow))
 
     pnodes  = arepeat(pnode, valency)
-    parents = anode.Parents(pnodes)
+    parents = anode.Parents(*pnodes)
 
     return ParentData(parents, pnodes)
 

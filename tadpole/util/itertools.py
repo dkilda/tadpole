@@ -55,9 +55,7 @@ class Loop:
        return next(reversed(self)) 
 
 
-   def first(self):
 
-       return self._first
 
 
 

@@ -596,7 +596,7 @@ class Parental(abc.ABC):
 
 class Parents(Parental, TupleLike):  
 
-   def __init__(self, parents):
+   def __init__(self, *parents):
 
        if any(isinstance(parent, Point) for parent in parents):
           raise ValueError((f"Parents: parent nodes {parents} "
