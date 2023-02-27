@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 
-from tadpole.autodiff import *
-from tadpole.array    import *
+from .autodiff import *
+#from .array    import *
 
 
 

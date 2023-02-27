@@ -302,6 +302,10 @@ class Concatenable(abc.ABC):
 
 class Cohesive(abc.ABC):
 
+   @util.cacheable
+   def innermost(self):
+       pass
+
    @abc.abstractmethod
    def layer(self):
        pass
@@ -325,9 +329,16 @@ class Cohesive(abc.ABC):
 
 class Concatenation(Concatenable, Cohesive):
 
-   def __init__(self, content=util.Sequence()): 
+   def __init__(
+                self, 
+                nodes=util.Sequence(), 
+                sources=util.Sequence(), 
+                layers=util.Sequence()
+               ): 
 
-       self._content = content 
+       self._nodes   = nodes
+       self._sources = sources
+       self._layers  = layers  
 
 
    def __repr__(self):
@@ -361,9 +372,17 @@ class Concatenation(Concatenable, Cohesive):
 
    def attach(self, node, source, layer):
 
-       content = self._content.push((node, source, layer))
+       return self.__class__(
+                             self._nodes.push(node), 
+                             self._sources.push(source), 
+                             self._layers.push(layer)
+                            )
 
-       return self.__class__(content)
+
+   @util.cacheable
+   def innermost(self):
+
+       return self.layer() == minlayer() 
 
 
    @util.cacheable
@@ -375,7 +394,7 @@ class Concatenation(Concatenable, Cohesive):
    @util.cacheable
    def adxs(self):
 
-       if self.layer() == minlayer():
+       if self.innermost():
           return tuple()
 
        return tuple(i for i, x in enumerate(self._layers) 
@@ -392,7 +411,7 @@ class Concatenation(Concatenable, Cohesive):
    @util.cacheable
    def deshell(self):
 
-       if self.layer() == minlayer():
+       if self.innermost():
           return Args(*self._sources)
 
        args    = list(self._nodes)
@@ -497,7 +516,7 @@ class Pack(Packable):
 
    def innermost(self):
 
-       return self._layer == minlayer()
+       return self._concat.innermost() 
 
 
    def deshell(self):
@@ -549,9 +568,12 @@ class Envelope(EnvelopeLike):
        if len(args) == 0:
           raise ValueError("Envelope must have at least one input")
 
-       if not isinstance(args[0], ArgsLike):
+       if len(args) == 1 and isinstance(args[0], ArgsLike):
+          args, = args
+          
+       if not isinstance(args, ArgsLike):
           args = Args(*args)
-
+            
        self._args = args
 
 
@@ -583,18 +605,14 @@ class Envelope(EnvelopeLike):
    def packs(self):
 
        return util.Loop(
-                          self._args.pack(),  
-                          lambda x: x.deshelled(), 
-                          lambda x: x.innermost()
-                         )
+                        self._args.pack(),  
+                        lambda x: x.deshelled(), 
+                        lambda x: x.innermost()
+                       )
 
    def apply(self, fun):
 
-       try:
-            last = self.packs().last()
-       except StopIteration:
-            last = self.packs().first()
-
+       last = self.packs().last()
        args = last.deshell() 
        out  = fun(*args)
 
@@ -606,7 +624,7 @@ class Envelope(EnvelopeLike):
        out = self.apply(fun)
 
        for pack in reversed(self.packs()):
-           out = pack.fold(funwrap, out) 
+           out = pack.fold(funwrap, out)
 
        return out
 

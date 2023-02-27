@@ -3,17 +3,15 @@
 
 import pytest
 import itertools
+from tests.common import arepeat, arange, amap
 
-import tests.common         as common
 import tests.autodiff.fakes as fake
 import tests.autodiff.data  as data
 
-import tadpole.autodiff.util  as tdutil
-import tadpole.autodiff.node  as tdnode
-import tadpole.autodiff.graph as tdgraph
-import tadpole.autodiff.grad  as tdgrad
-
-import tadpole.autodiff.adjoints as tda
+import tadpole.autodiff.node  as anode
+import tadpole.autodiff.graph as agraph
+import tadpole.autodiff.grad  as agrad
+import tadpole.util           as util
 
 
 
@@ -33,7 +31,7 @@ class TestGraph:
 
    def test_minilayer(self):
 
-       assert tdgraph.minlayer() == -1
+       assert agraph.minlayer() == -1
 
 
    # --- Test build --- #
@@ -43,7 +41,7 @@ class TestGraph:
 
        dat = data.graph_dat(which, 0)
 
-       with tdgraph.Graph(dat.root) as graph:
+       with agraph.Graph(dat.root) as graph:
           assert graph.build(dat.fun, dat.x) == dat.end
 
 
@@ -54,8 +52,8 @@ class TestGraph:
 
        dat = data.graph_dat(which, 1)
 
-       with tdgraph.Graph(fake.GateLike()) as graph0:
-          with tdgraph.Graph(dat.root) as graph1:
+       with agraph.Graph(fake.GateLike()) as graph0:
+          with agraph.Graph(dat.root) as graph1:
              assert graph1.build(dat.fun, dat.x) == dat.end
 
 
@@ -64,9 +62,9 @@ class TestGraph:
 
        dat = data.graph_dat(which, 2)
 
-       with tdgraph.Graph(fake.GateLike()) as graph0:
-          with tdgraph.Graph(fake.GateLike()) as graph1:
-             with tdgraph.Graph(dat.root) as graph2:
+       with agraph.Graph(fake.GateLike()) as graph0:
+          with agraph.Graph(fake.GateLike()) as graph1:
+             with agraph.Graph(dat.root) as graph2:
                 assert graph2.build(dat.fun, dat.x) == dat.end
 
 
@@ -77,8 +75,8 @@ class TestGraph:
 
        dat = data.graph_dat(which, 0)
 
-       with tdgraph.Graph(dat.root) as graph0:
-          with tdgraph.Graph(fake.GateLike()) as graph1:
+       with agraph.Graph(dat.root) as graph0:
+          with agraph.Graph(fake.GateLike()) as graph1:
              pass
           assert graph0.build(dat.fun, dat.x) == dat.end
 
@@ -88,9 +86,9 @@ class TestGraph:
 
        dat = data.graph_dat(which, 0)
 
-       with tdgraph.Graph(dat.root) as graph0:
-          with tdgraph.Graph(fake.GateLike()) as graph1:
-             with tdgraph.Graph(fake.GateLike()) as graph2:
+       with agraph.Graph(dat.root) as graph0:
+          with agraph.Graph(fake.GateLike()) as graph1:
+             with agraph.Graph(fake.GateLike()) as graph2:
                 pass
           assert graph0.build(dat.fun, dat.x) == dat.end
 
@@ -164,13 +162,27 @@ class TestArgs:
       [2, (1,),  (0,)],
       [2, (0,1), (0,0)],
       [3, (0,2), (0,1)],
+      [3, tuple(), tuple()],
+   ])  
+   def test_nodify(self, n, adxs, layers):
+
+       x = data.args_dat(n, adxs, layers)
+       assert tuple(x.args.nodify()) == x.nodes
+
+
+   @pytest.mark.parametrize("n, adxs, layers", [
+      [1, (0,),  (0,)],
+      [2, (0,),  (1,)],
+      [2, (1,),  (0,)],
+      [2, (0,1), (0,0)],
+      [3, (0,2), (0,1)],
    ])  
    def test_concat(self, n, adxs, layers):
 
        x = data.args_dat(n, adxs, layers)
        assert x.args.concat() == x.concat
 
-       
+      
    @pytest.mark.parametrize("n, adxs, layers", [
       [1, (0,),  (0,)],
       [2, (0,),  (1,)],
@@ -195,8 +207,8 @@ class TestArgs:
 
        x = data.args_dat(n, adxs, layers)
 
-       argsA = tdgraph.Args(x.nodes)
-       argsB = tdgraph.Args(x.nodes)
+       argsA = agraph.Args(*x.nodes)
+       argsB = agraph.Args(*x.nodes)
 
        assert argsA == argsB
 
@@ -213,8 +225,8 @@ class TestArgs:
        x = data.args_dat(n, adxs, layers)
        y = data.args_dat(n, adxs, layers)
 
-       argsA = tdgraph.Args(x.nodes)
-       argsB = tdgraph.Args(y.nodes)
+       argsA = agraph.Args(*x.nodes)
+       argsB = agraph.Args(*y.nodes)
 
        assert argsA != argsB
 
@@ -244,8 +256,8 @@ class TestArgs:
 
        x = data.args_dat(n, adxs, layers)
 
-       for node in x.nodes:
-           assert node in x.args
+       for arg in x.rawargs:
+           assert arg in x.args
 
 
    @pytest.mark.parametrize("n, adxs, layers", [
@@ -259,8 +271,8 @@ class TestArgs:
 
        x = data.args_dat(n, adxs, layers)
 
-       for arg, node in zip(x.args, x.nodes):
-           assert arg == node
+       for i, arg in enumerate(x.args):
+           assert arg == x.rawargs[i]
 
 
    @pytest.mark.parametrize("n, adxs, layers", [
@@ -274,8 +286,8 @@ class TestArgs:
 
        x = data.args_dat(n, adxs, layers)
 
-       for i, node in enumerate(x.nodes):
-           assert x.args[i] == node
+       for i, arg in enumerate(x.rawargs):
+           assert x.args[i] == arg
 
 
 
@@ -370,9 +382,9 @@ class TestConcatenation:
    ])  
    def tests_deshell(self, n, adxs, layers):
 
-       w = data.concat_output_dat(n, adxs, layers)    
-
+       w = data.concat_output_dat(n, adxs, layers) 
        assert w.concat.deshell() == w.deshell
+
 
 
 
@@ -438,42 +450,37 @@ class TestPack:
 
 class TestEnvelope:
 
-   @pytest.mark.parametrize("nargs", [1,2,3]) 
-   def test_packs(self, nargs):
+   @pytest.mark.parametrize("node_stack_dat", [
+      data.node_stack_dat_001, 
+      data.node_stack_dat_002,
+   ])    
+   def test_packs(self, node_stack_dat): 
 
-       x     = data.envelope_dat(nargs)
+       x     = data.envelope_dat(node_stack_dat()) 
        packs = x.envelope.packs()
 
-       for pack, xpack in itertools.zip_longest(reversed(packs), x.packs):
+       for pack, xpack in itertools.zip_longest(packs, x.packs):
            assert pack == xpack
 
 
-   @pytest.mark.parametrize("nargs", [1,2,3]) 
-   def test_apply(self, nargs):
+   @pytest.mark.parametrize("node_stack_dat", [
+      data.node_stack_dat_001, 
+      data.node_stack_dat_002,
+   ])    
+   def test_apply(self, node_stack_dat):
 
-       x = data.envelope_dat(nargs)
-       assert x.envelope.apply(x.fun) == x.value
-
-
-   @pytest.mark.parametrize("nargs", [1,2,3]) 
-   def test_applywrap(self, nargs):
-
-       x = data.envelope_dat(nargs)
-       assert x.envelope.applywrap(x.funwrap, x.fun) == x.nodes[-1]
+       x = data.envelope_dat(node_stack_dat()) 
+       assert x.envelope.apply(x.fun) == x.outvalue
 
 
-   @pytest.mark.parametrize("nargs", [1,2,3]) 
-   def test_apply_001(self, nargs):
+   @pytest.mark.parametrize("node_stack_dat", [
+      data.node_stack_dat_001, 
+      data.node_stack_dat_002,
+   ]) 
+   def test_applywrap(self, node_stack_dat):
 
-       x = data.envelope_dat_001(nargs)
-       assert x.envelope.apply(x.fun) == x.value
-
-
-   @pytest.mark.parametrize("nargs", [1,2,3]) 
-   def test_applywrap_001(self, nargs):
-
-       x = data.envelope_dat_001(nargs)
-       assert x.envelope.applywrap(x.funwrap, x.fun) == x.nodes[-1].tovalue()
+       x = data.envelope_dat(node_stack_dat())
+       assert x.envelope.applywrap(x.funwrap, x.fun) == x.outnode
 
 
 

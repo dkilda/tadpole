@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import tests.common               as common
-import tests.autodiff.fakes.util  as util
-import tests.autodiff.fakes.node  as node
-import tests.autodiff.fakes.grad  as grad
+from tests.common import arepeat, arange, amap
 
-import tadpole.autodiff.util  as tdutil
-import tadpole.autodiff.node  as tdnode
-import tadpole.autodiff.graph as tdgraph
+import tests.autodiff.fakes as fake
+
+import tadpole.autodiff.node  as anode
+import tadpole.autodiff.graph as agraph
+import tadpole.util           as util
 
 
 
@@ -22,11 +21,16 @@ import tadpole.autodiff.graph as tdgraph
 
 # --- ArgsLike interface ---------------------------------------------------- #
 
-class ArgsLike(tdgraph.ArgsLike):
+class ArgsLike(agraph.ArgsLike):
 
    def __init__(self, **data):  
 
-       self._fun = util.FunMap(**data)
+       self._fun = fake.FunMap(**data)
+
+
+   def nodify(self):
+
+       return self._fun["nodify", arepeat(fake.NodeLike, 2)]()
 
  
    def concat(self):
@@ -38,16 +42,20 @@ class ArgsLike(tdgraph.ArgsLike):
 
        return self._fun["pack", Packable()]()
 
+ 
+   def deshelled(self):
+
+       return self._fun["deshelled", self.__class__()]()
 
 
 
 # --- Concatenable interface ------------------------------------------------ #
 
-class Concatenable(tdgraph.Concatenable):
+class Concatenable(agraph.Concatenable):
 
    def __init__(self, **data):  
 
-       self._fun = util.FunMap(**data)
+       self._fun = fake.FunMap(**data)
 
 
    def attach(self, node, source, layer):
@@ -59,26 +67,31 @@ class Concatenable(tdgraph.Concatenable):
 
 # --- Cohesive interface ---------------------------------------------------- #
 
-class Cohesive(tdgraph.Cohesive):
+class Cohesive(agraph.Cohesive):
 
    def __init__(self, **data):  
 
-       self._fun = util.FunMap(**data)
+       self._fun = fake.FunMap(**data)
+
+
+   def innermost(self):
+
+       return self._fun["innermost", self.layer() == agraph.minlayer()]()
 
 
    def layer(self):
 
-       return self._fun["layer", util.Value()]()
+       return self._fun["layer", fake.Value()]()
 
        
    def adxs(self):
 
-       return self._fun["adxs", util.Value()]()
+       return self._fun["adxs", fake.Value()]()
 
 
    def parents(self):
 
-       return self._fun["parents", node.Parental()]()
+       return self._fun["parents", fake.Parental()]()
 
 
    def deshell(self):
@@ -98,11 +111,11 @@ class Cohesive(tdgraph.Cohesive):
 
 # --- Packable interface ---------------------------------------------------- #
 
-class Packable(tdgraph.Packable):
+class Packable(agraph.Packable):
 
    def __init__(self, **data):  
 
-       self._fun = util.FunMap(**data)
+       self._fun = fake.FunMap(**data)
 
 
    def innermost(self):
@@ -122,39 +135,39 @@ class Packable(tdgraph.Packable):
 
    def fold(self, funwrap, out):
 
-       return self._fun["fold", node.NodeLike()](funwrap, out)
+       return self._fun["fold", fake.NodeLike()](funwrap, out)
 
 
 
 
 # --- EnvelopeLike interface ------------------------------------------------ #
 
-class EnvelopeLike(tdgraph.EnvelopeLike): 
+class EnvelopeLike(agraph.EnvelopeLike): 
 
    def __init__(self, **data):  
 
-       self._fun = util.FunMap(**data)
+       self._fun = fake.FunMap(**data)
 
 
    def packs(self):
 
-       default = tdutil.Loop(
-                             Packable(), 
-                             lambda x: Packable(), 
-                             lambda x: True
-                            )
+       default = util.Loop(
+                           Packable(), 
+                           lambda x: Packable(), 
+                           lambda x: True
+                          )
 
        return self._fun["packs", default]()
 
 
    def apply(self, fun):
 
-       return self._fun["apply", util.Value()](fun)
+       return self._fun["apply", fake.Value()](fun)
 
 
    def applywrap(self, funwrap, fun):
 
-       return self._fun["applywrap", node.NodeLike()](funwrap, fun)
+       return self._fun["applywrap", fake.NodeLike()](funwrap, fun)
 
 
 

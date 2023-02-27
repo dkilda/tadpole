@@ -2,13 +2,16 @@
 # -*- coding: utf-8 -*-
 
 
-from .util import (
+from tests.util.fakes import (
    Map,
    Value,
    Fun,
    FunMap,
-   Op,
-   CacheMe,
+   Op,   
+)
+
+
+from .nary import (
    ArgProxy,
 )
 

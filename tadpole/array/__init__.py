@@ -2,13 +2,13 @@
 # -*- coding: utf-8 -*-
 
 
-from tadpole.array.array import (
+from .array import (
    ArrayLike,
    Array,
 )
 
 
-from tadpole.array.array import (
+from .array import (
    fromfun,  
    asarray,
    zeros,
@@ -22,27 +22,27 @@ from tadpole.array.array import (
 )
 
 
-from tadpole.array.operations import (
+from .operations import (
    get,  
    put,
    reshape,
 )
 
 
-from tadpole.array.operations import (
+from .operations import (
    sin,
    cos,   
 )
 
 
-from tadpole.array.operations import (
+from .operations import (
    add,
    sub,
    mul,   
 )
 
 
-from tadpole.array.operations import (
+from .operations import (
    einsum,   
 )
 

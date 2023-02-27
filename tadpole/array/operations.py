@@ -7,7 +7,12 @@ import numpy as np
 import tadpole.util     as util
 import tadpole.autodiff as ad
 
-from tadpole.array.array import Array, Args, FunCall
+import tadpole.array.array as array
+
+Args    = array.Args
+FunCall = array.FunCall
+
+
 
 
 """
@@ -130,7 +135,7 @@ def mul(x, y):
 # --- Array operations: nary ------------------------------------------------ #
 
 @ad.differentiable
-def einsum(equation, *xs, optimize=True)
+def einsum(equation, *xs, optimize=True):
 
     def fun(backend, *xs):
         return backend.einsum(equation, *xs, optimize=optimize)

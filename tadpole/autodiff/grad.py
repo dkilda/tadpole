@@ -24,7 +24,7 @@ import tadpole.autodiff.graph as agraph
 # --- Gradient -------------------------------------------------------------- #
 
 @nary.nary_op
-def grad(fun, x):  
+def gradient(fun, x):  
   
     return ReverseDifferentialOp(fun, x).grad(1)
 
@@ -34,7 +34,7 @@ def grad(fun, x):
 # --- Derivative ------------------------------------------------------------ #
 
 @nary.nary_op
-def deriv(fun, x):
+def derivative(fun, x):
 
     return ForwardDifferentialOp(fun, x).grad(1)
 

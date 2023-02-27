@@ -2,14 +2,15 @@
 # -*- coding: utf-8 -*-
 
 import pytest
+from tests.common import arepeat, arange, amap
 
-import tests.common         as common
 import tests.autodiff.fakes as fake
 import tests.autodiff.data  as data
 
-import tadpole.autodiff.adjoints.adjoints as tda
-import tadpole.autodiff.adjoints.jvpmap   as tdjvp
-import tadpole.autodiff.adjoints.vjpmap   as tdvjp
+import tadpole.autodiff.map_adjoints as adj
+import tadpole.autodiff.map_jvp      as jvpmap
+import tadpole.autodiff.map_vjp      as vjpmap
+import tadpole.util                  as util
 
 
 
@@ -31,17 +32,17 @@ class TestAdjfun:
        def adjfun(*args):
            return fake.Value()
 
-       assert tda.make_adjfun(adjfun) == adjfun
+       assert adj.make_adjfun(adjfun) == adjfun
 
 
    @pytest.mark.parametrize("nargs", [0,1,2,3])
    def test_make_adjfun_001(self, nargs):
 
-       adjfun = tda.make_adjfun(None) 
+       adjfun = adj.make_adjfun(None) 
 
        g    = fake.Value()
        out  = fake.Value()
-       args = common.arepeat(fake.Value, nargs)
+       args = arepeat(fake.Value, nargs)
 
        assert adjfun(g, out, *args) == 0
 
@@ -51,12 +52,12 @@ class TestAdjfun:
 
        g    = fake.Value()
        out  = fake.Value()
-       args = common.arepeat(fake.Value, valency)
+       args = arepeat(fake.Value, valency)
 
-       answers = common.arepeat(fake.Value, valency)
+       answers = arepeat(fake.Value, valency)
        adjfuns = [fake.Fun(ans, g, out, *args) for ans in answers]
 
-       adjfun = tda.concatenate_adjfuns(*adjfuns)
+       adjfun = adj.concatenate_adjfuns(*adjfuns)
 
        for adx in range(valency):
            assert adjfun(g, adx, out, *args) == answers[adx]
@@ -72,12 +73,12 @@ class TestAdjfun:
 
        g    = fake.Value()
        out  = fake.Value()
-       args = common.arepeat(fake.Value, valency)
+       args = arepeat(fake.Value, valency)
 
-       answers = common.arepeat(fake.Value, valency)
+       answers = arepeat(fake.Value, valency)
        adjfuns = [fake.Fun(ans, g, out, *args) for ans in answers]
 
-       adjfun = tda.concatenate_adjfuns(*adjfuns, adxs=adxs)
+       adjfun = adj.concatenate_adjfuns(*adjfuns, adxs=adxs)
 
        for adx in adxs:
            assert adjfun(g, adx, out, *args) == answers[adx]
@@ -95,9 +96,9 @@ class TestAdjMap:
            return fake.Value()
 
        def adjfun(adxs, out, *args):
-           return lambda g: common.arepeat(fake.Value, len(adxs))
+           return lambda g: arepeat(fake.Value, len(adxs))
 
-       adjmap = tda.AdjMap(fake.Fun(adjfun, adjfun))       
+       adjmap = adj.AdjMap(fake.Fun(adjfun, adjfun))       
        adjmap.add_raw(fun, adjfun) 
 
        assert adjmap.get(fun) == adjfun
@@ -108,15 +109,15 @@ class TestAdjMap:
 
        g    = fake.Value()
        out  = fake.Value()
-       args = common.arepeat(fake.Value, valency)
+       args = arepeat(fake.Value, valency)
 
-       answers = common.arepeat(fake.Value, valency)
+       answers = arepeat(fake.Value, valency)
        adjfuns = [fake.Fun(ans, g, out, *args) for ans in answers]
 
        def fun(*args):
            return fake.Value()
 
-       adjmap = tda.AdjMap(lambda f: f)       
+       adjmap = adj.AdjMap(lambda f: f)       
        adjmap.add(fun, *adjfuns)
 
        for adx in range(valency):
@@ -129,9 +130,9 @@ class TestAdjMap:
            return fake.Value()
 
        def adjfun(adxs, out, *args):
-           return lambda g: common.arepeat(fake.Value, len(adxs))
+           return lambda g: arepeat(fake.Value, len(adxs))
 
-       adjmap = tda.AdjMap(fake.Fun(adjfun, adjfun))       
+       adjmap = adj.AdjMap(fake.Fun(adjfun, adjfun))       
        adjmap.add_combo(fun, adjfun) 
 
        assert adjmap.get(fun) == adjfun

@@ -3,14 +3,15 @@
 
 import pytest
 import collections
+from tests.common import arepeat, arange, amap
 
-import tests.common         as common
 import tests.autodiff.fakes as fake
 import tests.autodiff.data  as data
 
-import tadpole.autodiff.adjoints.adjoints as tda
-import tadpole.autodiff.adjoints.jvpmap   as tdjvp
-import tadpole.autodiff.adjoints.vjpmap   as tdvjp
+import tadpole.autodiff.map_adjoints as adj
+import tadpole.autodiff.map_jvp      as jvpmap
+import tadpole.autodiff.map_vjp      as vjpmap
+import tadpole.util                  as util
 
 
 
@@ -37,9 +38,9 @@ def jvpmap_dat(valency=1):
 
     out     = fake.Value()
     adxs    = range(valency)
-    grads   = common.arepeat(fake.Value, valency)
-    args    = common.arepeat(fake.Value, valency)
-    outputs = common.arepeat(fake.Value, valency)
+    grads   = arepeat(fake.Value, valency)
+    args    = arepeat(fake.Value, valency)
+    outputs = arepeat(fake.Value, valency)
 
     jvpfuns = [fake.Fun(outputs[adx], grads[adx], out, *args) 
                     for adx in adxs]
@@ -53,10 +54,10 @@ def jvpmap_dat(valency=1):
     def fun(*args):
         return fake.Value()
 
-    netjvpfun = tdjvp.NetJvpFun(concat_jvpfun)
-    jvpmap    = tdjvp.JvpMap()
+    netjvpfun = jvpmap.NetJvpFun(concat_jvpfun)
+    _jvpmap   = jvpmap.JvpMap()
 
-    return JvpMapData(jvpmap, netjvpfun, 
+    return JvpMapData(_jvpmap, netjvpfun, 
                       concat_jvpfun, jvpfuns, fun, 
                       out, adxs, grads, args, outputs)
 
@@ -79,8 +80,8 @@ def vjpmap_dat(valency=1):
     grad    = fake.Value()
     out     = fake.Value()
     adxs    = range(valency)
-    args    = common.arepeat(fake.Value, valency)
-    outputs = common.arepeat(fake.Value, valency)
+    args    = arepeat(fake.Value, valency)
+    outputs = arepeat(fake.Value, valency)
 
     vjpfuns = [fake.Fun(outputs[adx], grad, out, *args) 
                     for adx in adxs]
@@ -94,10 +95,10 @@ def vjpmap_dat(valency=1):
     def fun(*args):
         return fake.Value()
 
-    netvjpfun = tdvjp.NetVjpFun(concat_vjpfun)
-    vjpmap    = tdvjp.VjpMap()
+    netvjpfun = vjpmap.NetVjpFun(concat_vjpfun)
+    _vjpmap   = vjpmap.VjpMap()
 
-    return VjpMapData(vjpmap, netvjpfun, 
+    return VjpMapData(_vjpmap, netvjpfun, 
                       concat_vjpfun, vjpfuns, fun, 
                       out, adxs, grad, args, outputs)
 

@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import tests.common               as common
-import tests.autodiff.fakes.util  as util
-import tests.autodiff.fakes.node  as node
-import tests.autodiff.fakes.grad  as grad
+from tests.common import arepeat, arange, amap
 
-import tadpole.autodiff.node  as tdnode
-import tadpole.autodiff.graph as tdgraph
-import tadpole.autodiff.grad  as tdgrad
+import tests.autodiff.fakes as fake
+
+import tadpole.autodiff.node  as anode
+import tadpole.autodiff.graph as agraph
+import tadpole.autodiff.grad  as agrad
+import tadpole.util           as util
+
+
+print("\n\nAGRAD: ", agrad)
 
 
 
@@ -22,16 +25,16 @@ import tadpole.autodiff.grad  as tdgrad
 
 # --- Gradient propagation interface ---------------------------------------- #
 
-class Propagation(tdgrad.Propagation):
+class Propagation(agrad.Propagation):
 
    def __init__(self, **data):  
 
-       self._fun = util.FunMap(**data)
+       self._fun = fake.FunMap(**data)
 
 
    def graphop(self, fun, x):
 
-       graphop = tdgrad.GraphOp(node.GateLike(), fun, x)
+       graphop = agrad.GraphOp(fake.GateLike(), fun, x)
 
        return self._fun["graphop", graphop](fun, x)
 
@@ -52,11 +55,11 @@ class Propagation(tdgrad.Propagation):
 
 # --- Traceable interface --------------------------------------------------- #
 
-class Traceable(tdgrad.Traceable):
+class Traceable(agrad.Traceable):
 
    def __init__(self, **data):  
 
-       self._fun = util.FunMap(**data)
+       self._fun = fake.FunMap(**data)
 
 
    def record(self, node, parents):
@@ -68,11 +71,11 @@ class Traceable(tdgrad.Traceable):
 
 # --- Countable interface --------------------------------------------------- #
 
-class Countable(tdgrad.Countable):
+class Countable(agrad.Countable):
 
    def __init__(self, **data):  
 
-       self._fun = util.FunMap(**data)
+       self._fun = fake.FunMap(**data)
 
 
    def collect(self, node):
@@ -101,11 +104,11 @@ class Countable(tdgrad.Countable):
 
 # --- Cumulative interface -------------------------------------------------- #
 
-class Cumulative(tdgrad.Cumulative):
+class Cumulative(agrad.Cumulative):
 
    def __init__(self, **data):  
 
-       self._fun = util.FunMap(**data)
+       self._fun = fake.FunMap(**data)
 
 
    def add(self, nodes, parents):
@@ -115,12 +118,12 @@ class Cumulative(tdgrad.Cumulative):
 
    def pick(self, nodes):
 
-       return self._fun["pick", util.Value()](nodes)
+       return self._fun["pick", fake.Value()](nodes)
 
 
    def result(self):
 
-       return self._fun["result", util.Value()]()
+       return self._fun["result", fake.Value()]()
 
 
 

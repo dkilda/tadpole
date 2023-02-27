@@ -2,24 +2,19 @@
 # -*- coding: utf-8 -*-
 
 
-from .util import (
-   loop_dat,
-   singular_argproxy_dat,
-   singular_argproxy_dat_001,
-   plural_argproxy_dat,
-   plural_argproxy_dat_001,
-)
-
-
 from .adjoints import (
    jvpmap_dat,
    vjpmap_dat,
 )
 
 
-from .nary_op import (
+from .nary import (
    nary_op_dat,
    nary_op_creator_dat,
+   singular_argproxy_dat,
+   singular_argproxy_dat_001,
+   plural_argproxy_dat,
+   plural_argproxy_dat_001,
 )
 
 
@@ -39,7 +34,9 @@ from .graph import (
    args_dat, nodeargs_dat,
    concat_dat, concat_output_dat, 
    pack_dat, 
-   envelope_dat, envelope_dat_001,
+   envelope_dat,
+   node_stack_dat_001, 
+   node_stack_dat_002,
 )
 
 

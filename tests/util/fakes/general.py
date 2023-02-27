@@ -1,13 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import abc
 import collections
-
-import tests.common              as common
-import tests.autodiff.fakes.util as util
-
-import tadpole.autodiff.util as tdutil
 
 
 
@@ -254,73 +248,4 @@ class Op:
        return fun(*args)
 
 
-
-
-###############################################################################
-###                                                                         ###
-###  Cache for methods with one-time evaluation                             ###
-###                                                                         ###
-###############################################################################
-
-
-# --- Fake class with a cacheable method ------------------------------------ #
-
-class CacheMe:
-
-   def __init__(self):
-
-       self._sentinel = 0
-
-
-   def sentinel(self):
-
-       return self._sentinel
-
-
-   def execute(self):
-
-       self._sentinel += 1
-       return Value()
-
-
-
-
-###############################################################################
-###                                                                         ###
-###  Argument proxy: represents a variable in an argument list at a given   ###
-###                  argument index. Performs insertion and extraction of   ###
-###                  this variable to/from the argument list.               ###
-###                                                                         ###
-###############################################################################
-
-
-# --- Argument proxy -------------------------------------------------------- #
-
-class ArgProxy(tdutil.ArgProxy):
-
-   def __init__(self, **data):  
-
-       self._data = data
-
-
-   def _get(self, name, default=None):
-       
-       return self._data.get(name, default)
-
-
-   def insert(self, args, x):
-
-       default = Fun(Value())
-
-       return self._get("insert", default)(args, x)
-
-
-   def extract(self, args):
-
-       default = Fun(Value())
-
-       return self._get("extract", default)(args)
-
-
- 
 

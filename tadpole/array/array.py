@@ -6,7 +6,7 @@ import numpy as np
 
 import tadpole.util as util
 
-import tadpole.array.operations as ops
+import tadpole.array.operations as op
 import tadpole.array.backends   as backends
 
 

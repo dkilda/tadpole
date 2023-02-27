@@ -1,30 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import tests.common               as common
-import tests.autodiff.fakes.util  as util
-import tests.autodiff.fakes.graph as graph
-import tests.autodiff.fakes.grad  as grad
+from tests.common import arepeat, arange, amap
 
-import tadpole.autodiff.node as tdnode
-
-
-"""
-
-If we don't spec e.g. trace, do we really care what .trace() returns? We won't be able to assert it anyway...
-
-
-   def trace(self, node, traceable):
-
-       if self._trace is None:
-          return grad.Traceable()
-
-       return self._trace(node, traceable) # FIXME it calls trace function, which returns a traceable object
-                                           # if not provided, just return a generic traceable (means we don't care)
-                                           # every data input should be a function, w/ or w/o args!
-
-
-"""
+import tests.autodiff.fakes  as fake
+import tadpole.autodiff.node as anode
 
 
 
@@ -39,11 +19,11 @@ If we don't spec e.g. trace, do we really care what .trace() returns? We won't b
 
 # --- Adjoint interface ----------------------------------------------------- #
 
-class Adjoint(tdnode.Adjoint):
+class Adjoint(anode.Adjoint):
 
    def __init__(self, **data):  
 
-       self._fun = util.FunMap(**data)
+       self._fun = fake.FunMap(**data)
 
 
    def vjp(self, seed):
@@ -67,11 +47,11 @@ class Adjoint(tdnode.Adjoint):
 
 # --- FlowLike interface ---------------------------------------------------- #
 
-class FlowLike(tdnode.FlowLike):
+class FlowLike(anode.FlowLike):
 
    def __init__(self, **data):  
 
-       self._fun = util.FunMap(**data)
+       self._fun = fake.FunMap(**data)
 
 
    def __eq__(self, other):
@@ -110,11 +90,11 @@ class FlowLike(tdnode.FlowLike):
 
 # --- GateLike interface ---------------------------------------------------- #
 
-class GateLike(tdnode.GateLike):
+class GateLike(anode.GateLike):
 
    def __init__(self, **data):  
 
-       self._fun = util.FunMap(**data)
+       self._fun = fake.FunMap(**data)
 
 
    def flow(self):
@@ -143,16 +123,11 @@ class GateLike(tdnode.GateLike):
 
 # --- NodeLike interface ---------------------------------------------------- #
 
-class NodeLike(tdnode.NodeLike):
+class NodeLike(anode.NodeLike):
 
    def __init__(self, **data):  
 
-       self._fun = util.FunMap(**data)
-
-
-   def tovalue(self):
-
-       return self._fun["tovalue", util.Value()]()
+       self._fun = fake.FunMap(**data)
 
 
    def concat(self, concatenable):
@@ -186,11 +161,11 @@ class NodeLike(tdnode.NodeLike):
 
 # --- Parental interface ---------------------------------------------------- #
 
-class Parental(tdnode.Parental):
+class Parental(anode.Parental):
 
    def __init__(self, **data):  
 
-       self._fun = util.FunMap(**data)
+       self._fun = fake.FunMap(**data)
 
 
    def next(self, source, layer, op):

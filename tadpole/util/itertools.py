@@ -35,10 +35,11 @@ class Loop:
 
        for _ in itertools.count():
 
+           yield x
+
            if self._stop(x):
               break
 
-           yield x
            x = self._next(x)
 
 
@@ -73,6 +74,9 @@ class Loop:
 class List:
 
    def __init__(self, origin):
+
+       if not isinstance(origin, list):
+          origin = list(origin)
 
        self._origin  = origin
        self._history = tuple()

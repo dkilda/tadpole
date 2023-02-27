@@ -51,7 +51,7 @@ class AdjointOp(Adjoint):
 
    def __repr__(self):
 
-       rep = tdutil.ReprChain()
+       rep = util.ReprChain()
 
        rep.typ(self)
        rep.val("fun",  self._fun)
@@ -64,12 +64,12 @@ class AdjointOp(Adjoint):
 
    def __eq__(self, other):
 
-       log = tdutil.LogicalChain()
+       log = util.LogicalChain()
 
        log.typ(self, other) 
        log.val(self._fun,  other._fun)
        log.val(self._adxs, other._adxs)
-       log.ref(self._out,  other._out)
+       log.val(self._out,  other._out)
        log.val(self._args, other._args)
 
        return bool(log)
@@ -107,7 +107,7 @@ class NullAdjointOp(Adjoint):
 
    def __repr__(self):
 
-       rep = tdutil.ReprChain()
+       rep = util.ReprChain()
        rep.typ(self)
        return str(rep)
 
@@ -180,7 +180,7 @@ class Flow(FlowLike):
 
    def __repr__(self):
 
-       rep = tdutil.ReprChain()
+       rep = util.ReprChain()
 
        rep.typ(self)
        rep.val("direction", self._name)
@@ -190,7 +190,7 @@ class Flow(FlowLike):
 
    def __eq__(self, other):
 
-       log = tdutil.LogicalChain()
+       log = util.LogicalChain()
 
        log.typ(self, other)
        log.val(self._name, other._name)
@@ -259,7 +259,7 @@ class NullGate(GateLike):
 
    def __repr__(self):
 
-       rep = tdutil.ReprChain()
+       rep = util.ReprChain()
        rep.typ(self)
        return str(rep)
 
@@ -299,7 +299,7 @@ class ForwardGate(GateLike):
 
    def __repr__(self):
 
-       rep = tdutil.ReprChain()
+       rep = util.ReprChain()
 
        rep.typ(self)
        rep.val("parents", self._parents)
@@ -310,7 +310,7 @@ class ForwardGate(GateLike):
 
    def __eq__(self, other):
 
-       log = tdutil.LogicalChain()
+       log = util.LogicalChain()
 
        log.typ(self, other) 
        log.val(self._parents, other._parents)
@@ -364,7 +364,7 @@ class ReverseGate(GateLike):
 
    def __repr__(self):
 
-       rep = tdutil.ReprChain()
+       rep = util.ReprChain()
 
        rep.typ(self)
        rep.val("parents", self._parents)
@@ -375,7 +375,7 @@ class ReverseGate(GateLike):
 
    def __eq__(self, other):
 
-       log = tdutil.LogicalChain()
+       log = util.LogicalChain()
 
        log.typ(self, other) 
        log.val(self._parents, other._parents)
@@ -461,7 +461,7 @@ class Node(NodeLike):
 
    def __repr__(self):
 
-       rep = tdutil.ReprChain()
+       rep = util.ReprChain()
 
        rep.typ(self)
        rep.ref("source", self._source)
@@ -473,7 +473,10 @@ class Node(NodeLike):
 
    def __eq__(self, other):
 
-       log = tdutil.LogicalChain()
+       if type(self) != type(other):
+          return False
+
+       log = util.LogicalChain()
 
        log.typ(self, other) 
        log.val(self._source, other._source)
@@ -523,7 +526,7 @@ class Point(NodeLike):
 
    def __repr__(self):
 
-       rep = tdutil.ReprChain()
+       rep = util.ReprChain()
 
        rep.typ(self)
        rep.ref("source", self._source)
@@ -533,7 +536,10 @@ class Point(NodeLike):
 
    def __eq__(self, other):
 
-       log = tdutil.LogicalChain()
+       if type(self) != type(other):
+          return False
+
+       log = util.LogicalChain()
 
        log.typ(self, other) 
        log.ref(self._source, other._source)
@@ -548,7 +554,7 @@ class Point(NodeLike):
 
    def concat(self, concatenable):
 
-       return concatenable.attach(self, self, self._layer)
+       return concatenable.attach(self, self._source, self._layer)
 
 
    def flow(self):
@@ -601,7 +607,7 @@ class Parents(Parental, TupleLike):
     
    def __repr__(self):
 
-       rep = tdutil.ReprChain()
+       rep = util.ReprChain()
 
        rep.typ(self)
        rep.ref("parents", self._parents)
@@ -611,7 +617,7 @@ class Parents(Parental, TupleLike):
 
    def __eq__(self, other):
 
-       log = tdutil.LogicalChain()
+       log = util.LogicalChain()
 
        log.typ(self, other) 
        log.ref(self._parents, other._parents)

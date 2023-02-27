@@ -2,19 +2,19 @@
 # -*- coding: utf-8 -*-
 
 
-import tadpole.autodiff.map_vjp as vjpmap
-import tadpole.autodiff.map_jvp as jvpmap
+from . import map_vjp as vjpmap
+from . import map_jvp as jvpmap
 
 
-from tadpole.autodiff.graph import (
+from .graph import (
    differentiable,
    nondifferentiable,
 )
 
 
-from tadpole.autodiff.grad import (
-   grad,
-   deriv,
+from .grad import (
+   gradient,
+   derivative,
 )
 
 
