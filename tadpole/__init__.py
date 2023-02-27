@@ -3,7 +3,7 @@
 
 
 from .autodiff import *
-#from .array    import *
+from .array    import *
 
 
 

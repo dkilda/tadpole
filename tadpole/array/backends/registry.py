@@ -78,7 +78,7 @@ class BackendRegistry:
        raise ValueError((
           f"Invalid backend '{backend}'. " 
           f"The backend input must be a string or a Backend object."
-       )
+       ))
 
              
 
