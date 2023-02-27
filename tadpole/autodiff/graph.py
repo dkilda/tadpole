@@ -265,6 +265,7 @@ class Args(ArgsLike, TupleLike):
            yield anode.Point(arg)
 
 
+   @util.cacheable
    def concat(self):
 
        concat = Concatenation() 
@@ -275,6 +276,7 @@ class Args(ArgsLike, TupleLike):
        return concat
 
  
+   @util.cacheable
    def pack(self):
 
        return Pack(self.concat())
@@ -282,7 +284,12 @@ class Args(ArgsLike, TupleLike):
 
    def deshelled(self):
 
-       return self.concat().deshell()
+       args = self.concat().deshell()
+
+       if args.concat().innermost():
+          return args.concat().deshell()
+
+       return args
 
 
 
@@ -397,14 +404,17 @@ class Concatenation(Concatenable, Cohesive):
        if self.innermost():
           return tuple()
 
-       return tuple(i for i, x in enumerate(self._layers) 
-                                           if x == self.layer())
+       return tuple( 
+          i for i,x in enumerate(self._layers) if x == self.layer()
+       )
+
 
    @util.cacheable
    def parents(self):
 
        nodes = list(self._nodes)
        nodes = [nodes[adx] for adx in self.adxs()] 
+
        return anode.Parents(nodes)
 
 
@@ -625,6 +635,12 @@ class Envelope(EnvelopeLike):
 
        for pack in reversed(self.packs()):
            out = pack.fold(funwrap, out)
+
+   
+
+       #if isinstance(out, anode.Point):
+           
+          
 
        return out
 

@@ -309,7 +309,7 @@ class GraphOp(Graphable):
        args = agraph.Args(self.end())
        args = args.deshelled()
 
-       return args
+       return args[0]
 
 
 

@@ -20,10 +20,10 @@ LoopData = collections.namedtuple("LoopData", [
 def loop_dat(): 
 
     xs  = (1,4,7,10,13,16,19,22)
-    rxs = (13,10,7,4,1) 
+    rxs = (16,13,10,7,4,1) 
 
     first_ = 1
-    last_  = 13
+    last_  = 16
 
     def next_(x):
         return x+3

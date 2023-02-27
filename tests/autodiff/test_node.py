@@ -563,7 +563,7 @@ class TestPoint:
        x = data.point_dat()
 
        concat  = agraph.Concatenation() 
-       concat1 = agraph.Concatenation().attach(x.point, x.point, x.layer)
+       concat1 = agraph.Concatenation().attach(x.point, x.source, x.layer)
 
        assert x.point.concat(concat) == concat1 
 

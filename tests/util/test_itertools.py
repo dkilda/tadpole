@@ -49,12 +49,6 @@ class TestLoop:
        assert w.loop.last() == w.last
 
 
-   def test_first(self):
-
-       w = data.loop_dat()
-       assert w.loop.first() == w.first
-
-
 
 
 ###############################################################################

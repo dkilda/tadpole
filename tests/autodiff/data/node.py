@@ -192,9 +192,11 @@ NodeData = collections.namedtuple("NodeData", [
 
 def node_dat(layer=0, gate=fake.GateLike()):
 
-    node = anode.Node(source, layer, gate)
+    value  = fake.Value()
+    source = fake.NodeLike()
+    node   = anode.Node(source, layer, gate)
 
-    return NodeData(node, source, layer, gate)
+    return NodeData(node, source, layer, gate, value)
 
 
 

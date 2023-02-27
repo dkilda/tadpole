@@ -54,8 +54,7 @@ def graph_dat(which="REVERSE", layer=None,
        start = anode.Node(x, layer, root) 
 
     if end is None:
-       src = fake.NodeLike()
-       end = anode.Node(src, layer, fake.GateLike())
+       end = anode.Node(out, layer, fake.GateLike())
 
     fun     = fake.Fun(end, start)
     graph   = agraph.Graph(root)
