@@ -65,12 +65,8 @@ def array_dat(datafun):
                 #"torch": torch.as_tensor, 
                }[backend](data)
 
-        backend = {
-                   "numpy": tbackends.numpy.NumpyBackend,
-                   #"torch": tbackends.torch.TorchBackend, 
-                  }[backend]()
-
-        array = tcore.Array(backend, data)
+        backend = tbackends.get(backend)
+        array   = tcore.Array(backend, data)
 
         return ArrayData(array, backend, data, shape, opts)
 

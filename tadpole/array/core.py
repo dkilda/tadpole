@@ -117,8 +117,7 @@ class DataFun:
 
    def __call__(self, backend, *datas, **opts):
 
-       backend = backends.get(backend) 
-                                       
+       backend = backends.get(backend)                                        
        newdata = self._fun(backend, *datas)
        newdata = backend.asarray(newdata, **opts)
 

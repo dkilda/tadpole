@@ -8,8 +8,120 @@ import tests.array.fakes as fake
 import tests.array.data  as data
 
 import tadpole.util           as util
+import tadpole.array.backends as backends
 import tadpole.array.core     as tcore
 import tadpole.array.function as tfunction
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Array creation functions                                               ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Array factories ------------------------------------------------------- #
+
+
+
+
+# --- Array generators ------------------------------------------------------ #
+
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Array space                                                            ###
+###                                                                         ###
+###############################################################################
+
+
+# --- ArraySpace ------------------------------------------------------------ #
+
+class TestArraySpace:
+
+   @pytest.mark.parametrize("backend", ["numpy"])
+   @pytest.mark.parametrize("shape",   [(1,1)])
+   @pytest.mark.parametrize("dtype",   ["complex128"])
+   def test_apply(self, backend, shape, dtype):
+
+       w = data.array_space_dat(
+              backend, shape, dtype
+           )
+       x1 = data.array_dat(data.randn)(
+              backend, shape, dtype=dtype, seed=1
+            )
+       x2 = data.array_dat(data.randn)(
+              backend, shape, dtype=dtype, seed=2
+            )   
+       out = data.array_dat(data.randn)(
+              backend, shape, dtype=dtype, seed=3
+            ) 
+
+       fun = fake.Fun(out.data, out.backend, x1.data, x2.data)
+
+       assert w.space.apply(fun, x1.data, x2.data) == out.array 
+
+          
+   @pytest.mark.parametrize("backend", ["numpy"])
+   @pytest.mark.parametrize("shape",   [(2,3,4)])
+   @pytest.mark.parametrize("dtype",   ["complex128"])       
+   def test_visit(self, backend, shape, dtype): 
+
+       w = data.array_space_dat(
+              backend, shape, dtype
+           )
+       x1 = data.array_dat(data.randn)(
+              backend, shape, dtype=dtype, seed=1
+            )
+       x2 = data.array_dat(data.randn)(
+              backend, shape, dtype=dtype, seed=2
+            )   
+
+       out = fake.Value()
+       fun = fake.Fun(out, x1.backend, x1.data, x2.data)
+
+       assert w.space.visit(fun, x1.data, x2.data) == out 
+
+
+   @pytest.mark.parametrize("backend", ["numpy"])
+   @pytest.mark.parametrize("shape",   [(2,3,4)])
+   @pytest.mark.parametrize("dtype",   ["complex128"])  
+   def test_dtype(self, backend, shape, dtype):
+
+       w = data.array_space_dat(
+              backend, shape, dtype
+           )
+
+       assert w.space.dtype == dtype
+
+
+   @pytest.mark.parametrize("backend", ["numpy"])
+   @pytest.mark.parametrize("shape",   [(2,3,4)])
+   @pytest.mark.parametrize("dtype",   ["complex128"])  
+   def test_ndim(self, backend, shape, dtype):
+
+       w = data.array_space_dat(
+              backend, shape, dtype
+           )
+
+       assert w.space.ndim == len(shape)
+
+
+   @pytest.mark.parametrize("backend", ["numpy"])
+   @pytest.mark.parametrize("shape",   [(2,3,4)])
+   @pytest.mark.parametrize("dtype",   ["complex128"])  
+   def test_shape(self, backend, shape, dtype):
+
+       w = data.array_space_dat(
+              backend, shape, dtype
+           )
+
+       assert w.space.shape == shape
 
 
 
