@@ -40,9 +40,9 @@ class SparseGrad(ArrayLike):
        return op.put(self._space.zeros(), idxs, self._vals)
 
 
-   def copy(self):
+   def copy(self, **opts):
 
-       return self._array.copy()
+       return self._array.copy(**opts)
 
 
    def space(self):
@@ -84,14 +84,18 @@ class SparseGrad(ArrayLike):
        
    def __eq__(self, other):
 
-       log = util.LogicalChain()
+       if not type(self) == type(other):
+          return False
 
+       log = util.LogicalChain()
        log.typ(self, other)
        log.val(self._space, other._space)
        log.val(self._idxs,  other._idxs)
-       log.val(self._vals,  other._vals)
 
-       return bool(log)
+       if bool(log):
+          return util.allequal(self._data, other._data)  
+
+       return False
 
 
    def __getitem__(self, coords):

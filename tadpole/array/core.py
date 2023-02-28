@@ -5,6 +5,7 @@ import abc
 import numpy as np
 
 import tadpole.util as util
+import tadpole.autodiff as ad
 
 import tadpole.array.operations as op
 import tadpole.array.backends   as backends
@@ -208,6 +209,10 @@ class Space(abc.ABC):
        pass
 
    @abc.abstractmethod
+   def visit(self, fun, *datas):
+       pass
+
+   @abc.abstractmethod
    def asarray(self, data):
        pass
 
@@ -233,7 +238,7 @@ class Space(abc.ABC):
 
 class ArraySpace(Space):
 
-   def __init__(self, backend, dtype, shape):
+   def __init__(self, backend, shape, dtype):
 
        self._backend = backend
        self._dtype   = dtype
@@ -304,6 +309,11 @@ class ArraySpace(Space):
        return fromfun(fun, self._backend, *datas, dtype=self._dtype)
 
 
+   def visit(self, fun, *datas):
+               
+       return fun(backends.get(self._backend), *datas)
+
+
    def asarray(self, data):
 
        return asarray(self._backend, data, dtype=self._dtype)
@@ -336,7 +346,7 @@ class ArraySpace(Space):
 class ArrayLike(abc.ABC):
 
    @abc.abstractmethod
-   def copy(self):
+   def copy(self, **opts):
        pass
 
    @abc.abstractmethod
@@ -407,14 +417,19 @@ class Array(ArrayLike):
        self._data    = data
 
 
-   def copy(self):
+   def copy(self, deep=True):
 
-       return self.__class__(self._backend, self._data)
+       if   deep:
+            data = self._backend.copy(self._data)
+       else:
+            data = self._data
+
+       return self.__class__(self._backend, data)
 
 
    def space(self):
 
-       return ArraySpace(self._backend, self.dtype, self.shape)
+       return ArraySpace(self._backend, self.shape, self.dtype)
 
 
    def pluginto(self, funcall):
@@ -438,7 +453,6 @@ class Array(ArrayLike):
    def allclose(self, other, **opts):
 
        log = util.LogicalChain()
-
        log.typ(self, other)
        log.val(self._backend, other._backend)
 
@@ -449,19 +463,23 @@ class Array(ArrayLike):
 
 
    def __eq__(self, other):
+ 
+       if not type(self) == type(other):
+          return False
 
        log = util.LogicalChain()
-
        log.typ(self, other)
        log.val(self._backend, other._backend)
-       log.val(self._data,    other._data)
 
-       return bool(log)
+       if bool(log):
+          return util.allequal(self._data, other._data)   
+
+       return False
 
 
    def __getitem__(self, idx):
 
-       return op.get(self, idx)  
+       return op.getitem(self, idx)  
 
 
    def __neg__(self):
@@ -499,26 +517,39 @@ class Array(ArrayLike):
 
 ###############################################################################
 ###                                                                         ###
-###  Approximate comparison methods for arrays.                             ###
+###  Comparison methods for arrays.                                         ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- Approximate comparison of arrays -------------------------------------- #
+# --- Exact equality of arrays ---------------------------------------------- #
+
+def allequal(x, y):
+
+    return x.allequal(y)
+
+
+# --- Approximate equality of arrays ---------------------------------------- #
 
 def allclose(x, y, **opts):
 
     return x.allclose(y, **opts)
 
 
+# --- Exact equality of iterables of arrays --------------------------------- #
+
+def allallequal(xs, ys):
+
+    return all(allequal(x, y) for x, y in zip(xs, ys))
 
 
-# --- Approximate comparison of iterables of arrays ------------------------- #
+# --- Approximate equality of iterables of arrays --------------------------- #
 
 def allallclose(xs, ys, **opts):
 
     return all(allclose(x, y, **opts) for x, y in zip(xs, ys))
 
 
+# TODO we need a broadcasting method!
 
 

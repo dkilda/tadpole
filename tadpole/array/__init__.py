@@ -5,7 +5,9 @@
 from .core import (
    ArrayLike,
    Array,
+   allequal,
    allclose,
+   allallequal,
    allallclose,
 )
 
@@ -25,7 +27,7 @@ from .core import (
 
 
 from .operations import (
-   get,  
+   getitem,  
    put,
    reshape,
 )

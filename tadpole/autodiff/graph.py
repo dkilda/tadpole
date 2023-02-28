@@ -620,6 +620,7 @@ class Envelope(EnvelopeLike):
                         lambda x: x.innermost()
                        )
 
+
    def apply(self, fun):
 
        last = self.packs().last()
@@ -631,16 +632,14 @@ class Envelope(EnvelopeLike):
        
    def applywrap(self, funwrap, fun):
 
-       out = self.apply(fun)
+       outval = self.apply(fun)
 
+       out = outval
        for pack in reversed(self.packs()):
            out = pack.fold(funwrap, out)
 
-   
-
-       #if isinstance(out, anode.Point):
-           
-          
+       if isinstance(out, anode.Point):
+          return outval
 
        return out
 

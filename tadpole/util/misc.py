@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import tadpole.util as util
+
 
 
 
@@ -15,7 +17,7 @@
 
 def refid(x):
 
-    if isinstance(x, (tuple, list)):
+    if isinstance(x, (tuple, list)): 
        return tuple(map(id, x))
 
     return id(x)

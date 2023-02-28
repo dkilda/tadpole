@@ -16,11 +16,48 @@ import tadpole.util as util
 ###############################################################################
 
 
-# --- Function call --------------------------------------------------------- #
+# --- Content --------------------------------------------------------------- #
 
-class FunCall:
+class Content:
 
-   def __init__(self, fun, content=util.Sequence()):
+   def __init__(self, content=util.Sequence()):
+
+       self._content = content
+
+
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+
+       log.typ(self, other)
+       log.val(self._content, other._content)
+
+       return bool(log)
+
+
+   def __iter__(self):
+
+       return iter(self._content)
+
+
+   def __len__(self):
+
+       return len(self._content)
+
+         
+   def attach(self, array, data):
+
+       return self.__class__(self._content.push((array, data)))
+
+
+# --- Visit ----------------------------------------------------------------- #
+
+class Visit:
+
+   def __init__(self, fun, content=Content()):
+
+       if not isinstance(content, Content):
+          content = Content(content)
 
        self._fun     = fun
        self._content = content
@@ -30,21 +67,75 @@ class FunCall:
 
        log = util.LogicalChain()
 
-       log.typ(self, other)
+       log.typ(self,          other)
        log.val(self._fun,     other._fun)
        log.val(self._content, other._content)
 
        return bool(log)
 
 
-   def attach(self, array, data):
+   def __iter__(self):
 
-       return self.__class__(self._content.push((array, data)))
+       return iter(self._content)
 
 
-   def size(self):
+   def __len__(self):
 
        return len(self._content)
+
+
+   def attach(self, array, data):
+
+       return self.__class__(self._fun, self._content.attach(array, data)) 
+
+
+   def execute(self):
+
+       arrays, datas = zip(*self._content)
+       space         = arrays[0].space() 
+
+       return space.visit(self._fun, *datas) 
+
+
+
+
+# --- Function call --------------------------------------------------------- #
+
+class FunCall:
+
+   def __init__(self, fun, content=Content()):
+
+       if not isinstance(content, Content):
+          content = Content(content)
+
+       self._fun     = fun
+       self._content = content
+
+
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+
+       log.typ(self,          other)
+       log.val(self._fun,     other._fun)
+       log.val(self._content, other._content)
+
+       return bool(log)
+
+
+   def __iter__(self):
+
+       return iter(self._content)
+
+
+   def __len__(self):
+
+       return len(self._content)
+
+
+   def attach(self, array, data):
+
+       return self.__class__(self._fun, self._content.attach(array, data)) 
 
 
    def execute(self):
@@ -79,12 +170,16 @@ class Args:
 
    def __eq__(self, other):
 
+       if not type(self) == type(other):
+          return False
+
        log = util.LogicalChain()
-
        log.typ(self, other)
-       log.val(self._args, other._args)
 
-       return bool(log)
+       if bool(log):
+          return core.allallequal(self._args, other._args)    
+
+       return False
 
 
    def __len__(self):

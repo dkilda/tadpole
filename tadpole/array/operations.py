@@ -10,7 +10,7 @@ import tadpole.autodiff as ad
 import tadpole.array.core     as core
 import tadpole.array.function as function
 
-from tadpole.array.function import Args, FunCall
+from tadpole.array.function import Args, Visit, FunCall
 
 
 
@@ -46,12 +46,14 @@ def equals(x, y):
 # --- Array operations: unary ----------------------------------------------- #
 
 @ad.differentiable
-def get(x, idx):
+def getitem(x, idx):
 
     def fun(backend, v):
         return v[idx]
 
-    return Args(x).pluginto(FunCall(fun))
+    x.pluginto(FunCall(fun))
+
+    return Args(x).pluginto(Visit(fun))
 
 
 @ad.differentiable

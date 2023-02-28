@@ -475,13 +475,20 @@ class TestEnvelope:
 
    @pytest.mark.parametrize("node_stack_dat", [
       data.node_stack_dat_001, 
-      data.node_stack_dat_002,
    ]) 
    def test_applywrap(self, node_stack_dat):
 
        x = data.envelope_dat(node_stack_dat())
        assert x.envelope.applywrap(x.funwrap, x.fun) == x.outnode
 
+
+   @pytest.mark.parametrize("node_stack_dat", [
+      data.node_stack_dat_002,
+   ]) 
+   def test_applywrap_value(self, node_stack_dat):
+
+       x = data.envelope_dat(node_stack_dat())
+       assert x.envelope.applywrap(x.funwrap, x.fun) == x.outvalue
 
 
 
