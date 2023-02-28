@@ -5,6 +5,8 @@
 from .core import (
    ArrayLike,
    Array,
+   allclose,
+   allallclose,
 )
 
 

@@ -23,3 +23,9 @@ from tadpole.util.misc import (
    ReprChain,
 )
 
+
+from tadpole.util.logic import (
+   allclose,
+   allallclose,
+)
+

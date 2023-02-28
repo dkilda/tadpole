@@ -12,31 +12,6 @@ import tadpole.array.backends   as backends
 
 
 
-"""
-Up next:
-
-V --- Add .basis() method to ArraySpace
-
-V --- implement the ListRef for a quasi-immutable List-like structure
-      (this should be a more versatile alternative to Sequence):
-
-      https://stackoverflow.com/questions/24524409/out-of-place-transformations-on-python-list
-
-V --- sort out the backend module/subpackage
-
-V --- implement dense/sparse grads (that will follow ArrayLike interface)
-
-V --- make Array implement NodeLike interface: integrate Array with tadpole/autodiff
-
---- implement all the specific Array operations
-
---- write tests
-
-"""
-
-
-
-
 ###############################################################################
 ###                                                                         ###
 ###  Array creation functions                                               ###
@@ -265,6 +240,18 @@ class ArraySpace(Space):
        self._shape   = shape
 
 
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+
+       log.typ(self, other)
+       log.val(self._backend, other._backend)
+       log.val(self._dtype,   other._dtype)
+       log.val(self._shape,   other._shape)
+
+       return bool(log)
+
+
    def _create(self, fun, *args, **opts):
 
        return fun(
@@ -360,10 +347,6 @@ class ArrayLike(abc.ABC):
    def pluginto(self, funcall):
        pass
 
-   @abc.abstractmethod
-   def __getitem__(self, idx):
-       pass
-
    @property
    @abc.abstractmethod
    def dtype(self):
@@ -377,6 +360,18 @@ class ArrayLike(abc.ABC):
    @property
    @abc.abstractmethod
    def shape(self):
+       pass
+
+   @abc.abstractmethod
+   def allclose(self, other, **opts):
+       pass
+
+   @abc.abstractmethod
+   def __eq__(self, other):
+       pass
+
+   @abc.abstractmethod
+   def __getitem__(self, idx):
        pass
 
    @abc.abstractmethod
@@ -427,11 +422,6 @@ class Array(ArrayLike):
        return funcall.attach(self, self._data)
 
 
-   def __getitem__(self, idx):
-
-       return op.get(self, idx)  
-
-
    @property
    def dtype(self):
        return self._backend.dtype(self._data)
@@ -443,6 +433,35 @@ class Array(ArrayLike):
    @property
    def shape(self):
        return self._backend.shape(self._data)
+
+
+   def allclose(self, other, **opts):
+
+       log = util.LogicalChain()
+
+       log.typ(self, other)
+       log.val(self._backend, other._backend)
+
+       if bool(log):
+          return util.allclose(self._data, other._data, **opts)   
+
+       return False
+
+
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+
+       log.typ(self, other)
+       log.val(self._backend, other._backend)
+       log.val(self._data,    other._data)
+
+       return bool(log)
+
+
+   def __getitem__(self, idx):
+
+       return op.get(self, idx)  
 
 
    def __neg__(self):
@@ -474,6 +493,31 @@ class Array(ArrayLike):
           return self
 
        return op.mul(self, asarray(self._backend, other))
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Approximate comparison methods for arrays.                             ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Approximate comparison of arrays -------------------------------------- #
+
+def allclose(x, y, **opts):
+
+    return x.allclose(y, **opts)
+
+
+
+
+# --- Approximate comparison of iterables of arrays ------------------------- #
+
+def allallclose(xs, ys, **opts):
+
+    return all(allclose(x, y, **opts) for x, y in zip(xs, ys))
 
 
 

@@ -28,7 +28,7 @@ class SparseGrad(ArrayLike):
        self._idxs  = idxs
        self._vals  = vals
 
- 
+
    @property
    def _array(self):
 
@@ -55,11 +55,6 @@ class SparseGrad(ArrayLike):
        return self._array.attach(funcall)
 
 
-   def __getitem__(self, coords):
-
-       return self._array[coords]
-
-
    @property
    def dtype(self):
        return self._space.dtype
@@ -71,6 +66,37 @@ class SparseGrad(ArrayLike):
    @property
    def shape(self):
        return self._space.shape
+
+
+   def allclose(self, other, **opts):
+
+       log = util.LogicalChain()
+
+       log.typ(self, other)
+       log.val(self._space, other._space)
+       log.val(self._idxs,  other._idxs)
+
+       if bool(log):
+          return util.allclose(self._vals, other._vals, **opts)   
+
+       return False
+
+       
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+
+       log.typ(self, other)
+       log.val(self._space, other._space)
+       log.val(self._idxs,  other._idxs)
+       log.val(self._vals,  other._vals)
+
+       return bool(log)
+
+
+   def __getitem__(self, coords):
+
+       return self._array[coords]
 
 
    def __neg__(self):

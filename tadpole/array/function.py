@@ -26,6 +26,17 @@ class FunCall:
        self._content = content
 
 
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+
+       log.typ(self, other)
+       log.val(self._fun,     other._fun)
+       log.val(self._content, other._content)
+
+       return bool(log)
+
+
    def attach(self, array, data):
 
        return self.__class__(self._content.push((array, data)))
@@ -53,6 +64,27 @@ class Args:
    def __init__(self, *args):
 
        self._args = args
+
+
+   def allclose(self, other, **opts):
+
+       log = util.LogicalChain()
+       log.typ(self, other)
+
+       if bool(log):
+          return core.allallclose(self._args, other._args, **opts)    
+
+       return False
+
+
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+
+       log.typ(self, other)
+       log.val(self._args, other._args)
+
+       return bool(log)
 
 
    def __len__(self):
