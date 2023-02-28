@@ -111,8 +111,6 @@ def basis(backend, shape, dtype=None):
 
 
 
-
-
 # --- Data function wrapper ------------------------------------------------- #
 
 class DataFun:

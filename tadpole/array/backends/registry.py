@@ -52,12 +52,10 @@ class BackendRegistry:
 
           return self._instantiated[backend]
 
-
        if backend in type(self)._backends:
 
           self._instantiated[backend] = type(self)._backends[backend]()
           return self._instantiated[backend]
-
 
        raise UnsupportedBackendError(
           f"Backend '{backend}' is not supported."
@@ -108,7 +106,7 @@ def _get_str(cls):
 
 def get_str(array):
 
-    return _backend_str(array.__class__)
+    return _get_str(array.__class__)
 
 
 
