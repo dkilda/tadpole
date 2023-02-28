@@ -250,6 +250,9 @@ class ArraySpace(Space):
 
    def __eq__(self, other):
 
+       if type(self) != type(other):
+          return False
+
        log = util.LogicalChain()
 
        log.typ(self, other)
@@ -467,7 +470,7 @@ class Array(ArrayLike):
 
    def __eq__(self, other):
  
-       if not type(self) == type(other):
+       if type(self) != type(other):
           return False
 
        log = util.LogicalChain()

@@ -4,9 +4,12 @@
 import collections
 import numpy as np
 
-import tadpole.array.core     as tcore
-import tadpole.array.grad     as tgrad
-import tadpole.array.backends as tbackends
+import tests.array.fakes as fake
+import tests.array.data  as data
+
+import tadpole.array.core     as core
+import tadpole.array.grad     as grad
+import tadpole.array.backends as backends
 
 
 
@@ -14,7 +17,7 @@ import tadpole.array.backends as tbackends
 # --- Sparse gradient data -------------------------------------------------- #
 
 SparseGradData = collections.namedtuple("SparseGradData", [
-                    "grad", 
+                    "grad", "dense",
                     "space", "idxs", "vals", 
                     "backend", "dtype", "shape",
                  ])
@@ -22,15 +25,26 @@ SparseGradData = collections.namedtuple("SparseGradData", [
 
 
 
-def sparse_grad_dat(idxs, vals, backend, dtype, shape):
+def sparse_grad_dat(backend, shape, dtype, idxs, vals):
 
-    space = tcore.ArraySpace(backend, dtype, shape)
-    grad  = tgrad.SparseGrad(space, idxs, vals)
+    space = core.ArraySpace(backend, shape, dtype)
+    g     = grad.SparseGrad(space, idxs, vals)
+
+    def densefun(shape, dtype):
+ 
+        data = np.zeros(shape, dtype=dtype)
+
+        for idx, val in zip(idxs, vals):
+            data[idx] = val
+
+        return data
+
+    x = data.array_dat(densefun)(backend, shape, dtype=dtype)
 
     return SparseGradData(
-                          grad, 
+                          g, x.array,
                           space, idxs, vals,
-                          backend, dtype, shape,
+                          x.backend, dtype, shape,
                          )
  
 

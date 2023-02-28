@@ -219,10 +219,14 @@ class NumpyBackend(backend.Backend):
  
    def put(self, array, idxs, vals, accumulate=False):
 
-       if accumulate:
-          return np.add.at(array.copy(), idxs, vals)
+       out = array.copy()
 
-       return np.put(array.copy(), idxs, vals)
+       if accumulate:
+          np.add.at(out, idxs, vals)
+          return out
+
+       np.put(out, idxs, vals)
+       return out
 
 
    # --- Simple math operations --- #

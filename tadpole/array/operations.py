@@ -51,8 +51,6 @@ def getitem(x, idx):
     def fun(backend, v):
         return v[idx]
 
-    x.pluginto(FunCall(fun))
-
     return Args(x).pluginto(Visit(fun))
 
 

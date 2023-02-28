@@ -18,20 +18,40 @@ import tadpole.array.function as function
 
 ###############################################################################
 ###                                                                         ###
-###  A general framework for array gradients                                ###
+###  A general framework for array gradients.                               ###
 ###                                                                         ###
 ###############################################################################
 
 
 # --- Sparse gradient class ------------------------------------------------- #
-"""
+
 class TestSparseGrad:
 
-   def 
+   @pytest.mark.parametrize("backend", ["numpy"])
+   @pytest.mark.parametrize("dtype, shape, idxs, vals", [
+      [
+       "float64", 
+       (2,3,4), 
+       ((1,0,2), (0,2,1), (1,0,3)), 
+       np.random.randn(3),
+      ],
+      [
+       "complex128", 
+       (2,3,4), 
+       ((1,0,2), (0,2,1), (1,0,3)), 
+       np.random.randn(3) + 1j * np.random.randn(3),
+      ],
+   ])
+   def test_todense(self, backend, dtype, shape, idxs, vals):
 
 
-sparse_grad_dat
-"""
+       idxs = list(idxs)
+       vals = np.random.randn(3)
+       vals = [vals[i] for i in range(3)]
+
+       x = data.sparse_grad_dat(backend, shape, dtype, idxs, vals)
+       assert x.grad.todense() == x.dense
+
 
 
 

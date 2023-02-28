@@ -10,9 +10,18 @@ import tests.array.data  as data
 
 import tadpole.util           as util
 import tadpole.array.backends as backends
-import tadpole.array.core     as core
-import tadpole.array.function as function
 
+
+
+
+###############################################################################
+###                                                                         ###
+###  Backend registry and its access ports                                  ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Backend registry and its access ports --------------------------------- #
 
 class TestRegistry:
 

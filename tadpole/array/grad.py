@@ -37,7 +37,7 @@ class SparseGrad(ArrayLike):
 
    def todense(self):
 
-       return op.put(self._space.zeros(), idxs, self._vals)
+       return op.put(self._space.zeros(), self._idxs, self._vals)
 
 
    def copy(self, **opts):
@@ -71,7 +71,6 @@ class SparseGrad(ArrayLike):
    def allclose(self, other, **opts):
 
        log = util.LogicalChain()
-
        log.typ(self, other)
        log.val(self._space, other._space)
        log.val(self._idxs,  other._idxs)
@@ -84,7 +83,7 @@ class SparseGrad(ArrayLike):
        
    def __eq__(self, other):
 
-       if not type(self) == type(other):
+       if type(self) != type(other):
           return False
 
        log = util.LogicalChain()
@@ -93,7 +92,7 @@ class SparseGrad(ArrayLike):
        log.val(self._idxs,  other._idxs)
 
        if bool(log):
-          return util.allequal(self._data, other._data)  
+          return util.allequal(self._vals, other._vals)  
 
        return False
 

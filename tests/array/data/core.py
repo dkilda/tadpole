@@ -4,6 +4,9 @@
 import collections
 import numpy as np
 
+import tests.array.fakes as fake
+import tests.array.data  as data
+
 import tadpole.array.core     as core
 import tadpole.array.backends as backends
 
@@ -202,7 +205,8 @@ def randuniform_real_dat_001(backend, boundaries=(0,1), seed=1):
     array = core.Array(backend, data)
 
     return SampleData(array, data, 
-                      backend, shape, dtype, {"boundaries": boundaries})
+                      backend, shape, dtype, 
+                      {"boundaries": boundaries})
 
 
 
@@ -224,7 +228,8 @@ def randuniform_complex_dat_001(backend, boundaries=(0,1), seed=1):
     array = core.Array(backend, data)
 
     return SampleData(array, data, 
-                      backend, shape, dtype, {"boundaries": boundaries})
+                      backend, shape, dtype, 
+                      {"boundaries": boundaries})
 
 
 
