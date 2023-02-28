@@ -4,8 +4,227 @@
 import collections
 import numpy as np
 
-import tadpole.array.core     as tcore
-import tadpole.array.backends as tbackends
+import tadpole.array.core     as core
+import tadpole.array.backends as backends
+
+
+
+
+# --- Basis data ------------------------------------------------------------ #
+
+BasisData = collections.namedtuple("BasisData", [
+                    "arrays", "datas", "idxs", 
+                    "backend", "shape", "dtype",
+                 ])
+
+
+
+
+def basis_real_dat_001(backend):
+
+    backend = backends.get(backend)
+    shape   = (2,3)
+    dtype   = "float64"
+
+    idxs = [(0,0), (0,1), (0,2), (1,0), (1,1), (1,2)]
+
+    xs = [
+          np.array([[1,0,0],[0,0,0]]),
+          np.array([[0,1,0],[0,0,0]]),
+          np.array([[0,0,1],[0,0,0]]),
+          np.array([[0,0,0],[1,0,0]]),
+          np.array([[0,0,0],[0,1,0]]),
+          np.array([[0,0,0],[0,0,1]]),
+         ]
+
+    xs     = [backend.asarray(x, dtype=dtype) for x in xs]
+    arrays = [core.Array(backend, x)          for x in xs]
+
+    return BasisData(arrays, xs, idxs, backend, shape, dtype)
+
+
+
+
+def basis_complex_dat_001(backend):
+
+    backend = backends.get(backend)
+    shape   = (2,3)
+    dtype   = "complex128"
+
+    idxs = [(0,0), (0,1), (0,2), (1,0), (1,1), (1,2)]
+
+    xs = [
+          np.array([[1,0,0],[0,0,0]]),
+          np.array([[1j,0,0],[0,0,0]]),
+          np.array([[0,1,0],[0,0,0]]),
+          np.array([[0,1j,0],[0,0,0]]),
+          np.array([[0,0,1],[0,0,0]]),
+          np.array([[0,0,1j],[0,0,0]]),
+          np.array([[0,0,0],[1,0,0]]),
+          np.array([[0,0,0],[1j,0,0]]),
+          np.array([[0,0,0],[0,1,0]]),
+          np.array([[0,0,0],[0,1j,0]]),
+          np.array([[0,0,0],[0,0,1]]),
+          np.array([[0,0,0],[0,0,1j]]),
+         ]
+
+    xs     = [backend.asarray(x, dtype=dtype) for x in xs]
+    arrays = [core.Array(backend, x)          for x in xs]
+
+    return BasisData(arrays, xs, idxs, backend, shape, dtype)
+
+
+
+
+# --- Sample data ----------------------------------------------------------- #
+
+SampleData = collections.namedtuple("SampleData", [
+               "array", "data", "backend", "shape", "dtype", "opts"
+            ])
+
+
+
+
+def zeros_dat_001(backend, dtype="complex128"):
+
+    backend = backends.get(backend)
+    shape   = (2,3)
+
+    data = np.array([[0,0,0],[0,0,0]])
+    data = backend.asarray(data, dtype=dtype)
+
+    array = core.Array(backend, data)
+
+    return SampleData(array, data, backend, shape, dtype, {})
+
+
+
+
+def ones_dat_001(backend, dtype="complex128"):
+
+    backend = backends.get(backend)
+    shape   = (2,3)
+
+    data = np.array([[1,1,1],[1,1,1]])
+    data = backend.asarray(data, dtype=dtype)
+
+    array = core.Array(backend, data)
+
+    return SampleData(array, data, backend, shape, dtype, {})
+
+
+
+
+def rand_real_dat_001(backend, seed=1):
+
+    backend = backends.get(backend)
+    shape   = (2,3)
+    dtype   = "float64"
+
+    np.random.seed(seed)
+
+    data  = np.random.rand(*shape).astype(dtype)
+    data  = backend.asarray(data, dtype=dtype)
+    array = core.Array(backend, data)
+
+    return SampleData(array, data, backend, shape, dtype, {})
+
+
+
+
+def rand_complex_dat_001(backend, seed=1):
+
+    backend = backends.get(backend)
+    shape   = (2,3)
+    dtype   = "complex128"
+
+    np.random.seed(seed)
+
+    data  =      np.random.rand(*shape).astype(dtype) 
+    data += 1j * np.random.rand(*shape).astype(dtype)
+
+    data  = backend.asarray(data, dtype=dtype)
+    array = core.Array(backend, data)
+
+    return SampleData(array, data, backend, shape, dtype, {})
+
+
+
+
+def randn_real_dat_001(backend, seed=1):
+
+    backend = backends.get(backend)
+    shape   = (2,3)
+    dtype   = "float64"
+
+    np.random.seed(seed)
+
+    data  = np.random.randn(*shape).astype(dtype)
+    data  = backend.asarray(data, dtype=dtype)
+    array = core.Array(backend, data)
+
+    return SampleData(array, data, backend, shape, dtype, {})
+
+
+
+
+def randn_complex_dat_001(backend, seed=1):
+
+    backend = backends.get(backend)
+    shape   = (2,3)
+    dtype   = "complex128"
+
+    np.random.seed(seed)
+
+    data  =      np.random.randn(*shape).astype(dtype) 
+    data += 1j * np.random.randn(*shape).astype(dtype)
+
+    data  = backend.asarray(data, dtype=dtype)
+    array = core.Array(backend, data)
+
+    return SampleData(array, data, backend, shape, dtype, {})
+
+
+
+
+def randuniform_real_dat_001(backend, boundaries=(0,1), seed=1):
+
+    backend = backends.get(backend)
+    shape   = (2,3)
+    dtype   = "float64"
+
+    np.random.seed(seed)
+
+    args = (boundaries[0], boundaries[1], tuple(shape))
+
+    data  = np.random.uniform(*args).astype(dtype)
+    data  = backend.asarray(data, dtype=dtype)
+    array = core.Array(backend, data)
+
+    return SampleData(array, data, 
+                      backend, shape, dtype, {"boundaries": boundaries})
+
+
+
+
+def randuniform_complex_dat_001(backend, boundaries=(0,1), seed=1):
+
+    backend = backends.get(backend)
+    shape   = (2,3)
+    dtype   = "complex128"
+
+    np.random.seed(seed)
+
+    args = (boundaries[0], boundaries[1], tuple(shape))
+
+    data =       np.random.uniform(*args).astype(dtype) 
+    data += 1j * np.random.uniform(*args).astype(dtype)
+
+    data  = backend.asarray(data, dtype=dtype)
+    array = core.Array(backend, data)
+
+    return SampleData(array, data, 
+                      backend, shape, dtype, {"boundaries": boundaries})
 
 
 
@@ -65,8 +284,8 @@ def array_dat(datafun):
                 #"torch": torch.as_tensor, 
                }[backend](data)
 
-        backend = tbackends.get(backend)
-        array   = tcore.Array(backend, data)
+        backend = backends.get(backend)
+        array   = core.Array(backend, data)
 
         return ArrayData(array, backend, data, shape, opts)
 
@@ -78,15 +297,15 @@ def array_dat(datafun):
 # --- ArraySpace data ------------------------------------------------------- #
 
 ArraySpaceData = collections.namedtuple("ArraySpaceData", [
-                    "space", "backend", "dtype", "shape",
+                    "space", "backend", "shape", "dtype",
                  ])
 
 
-def array_space_dat(backend, dtype, shape):
+def array_space_dat(backend, shape, dtype):
 
-    space = tcore.ArraySpace(backend, dtype, shape)
+    space = core.ArraySpace(backend, shape, dtype)
 
-    return ArraySpaceData(space, backend, dtype, shape)
+    return ArraySpaceData(space, backend, shape, dtype)
 
 
 

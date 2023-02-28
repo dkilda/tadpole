@@ -119,7 +119,7 @@ class NumpyBackend(backend.Backend):
        return self._rand_helper(fun, **opts)
        
 
-   def randuniform(self, shapes, boundaries, **opts):
+   def randuniform(self, shape, boundaries, **opts):
 
        def fun(**kwargs): 
            return np.random.uniform(

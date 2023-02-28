@@ -87,21 +87,28 @@ def randuniform(backend, shape, boundaries, **opts):
 
 def units(backend, shape, dtype=None):
 
-    for idx in np.index(*shape):
+    for idx in np.ndindex(*shape):
         yield unit(backend, shape, idx, dtype=dtype)
 
 
 
 def basis(backend, shape, dtype=None): 
 
-    dtype = backend.get_dtype(dtype)
+    backend   = backends.get(backend)
+    dtype     = backend.get_dtype(dtype)
+    gen_units = units(backend.name(), shape, dtype=dtype)
 
-    if  dtype not in backend.complex_dtypes():
-        return units(backend, shape, dtype=dtype)
+    if  dtype in backend.complex_dtypes():
 
-    for unit in units(backend, shape, dtype=dtype):
-        yield unit
-        yield 1j * unit
+        for unit in gen_units:
+            yield unit
+            yield 1j * unit
+
+    else:
+        for unit in gen_units:
+            yield unit
+
+
 
 
 
@@ -138,10 +145,9 @@ class ShapeFun:
    def __call__(self, backend, shape, *args, **opts):
 
        backend = backends.get(backend)
+       fun     = self._fun
 
-       fun = self._fun
-
-       if isinstance(fun, callable):
+       if callable(fun): 
           fun = fun(backend)
 
        if isinstance(fun, str):
