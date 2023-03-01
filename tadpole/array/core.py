@@ -396,11 +396,19 @@ class ArrayLike(abc.ABC):
        pass
 
    @abc.abstractmethod
+   def __sub__(self, other):
+       pass
+
+   @abc.abstractmethod
    def __mul__(self, other):
        pass
 
    @abc.abstractmethod
    def __radd__(self, other):
+       pass
+
+   @abc.abstractmethod
+   def __rsub__(self, other):
        pass
 
    @abc.abstractmethod
@@ -491,6 +499,11 @@ class Array(ArrayLike):
        return op.add(self, other)
 
 
+   def __sub__(self, other):
+
+       return op.sub(self, other)
+
+
    def __mul__(self, other):
 
        return op.mul(self, other)
@@ -502,6 +515,14 @@ class Array(ArrayLike):
           return self
 
        return op.add(self, asarray(self._backend, other))
+
+
+   def __rsub__(self, other):
+
+       if other == 0:
+          return self
+
+       return op.sub(self, asarray(self._backend, other))
 
 
    def __rmul__(self, other):

@@ -114,6 +114,14 @@ class SparseGrad(ArrayLike):
        return op.put(other, self._idxs, self._vals, accumulate=True)
 
 
+   def __sub__(self, other): 
+
+       if other == 0:
+          other = self._space.zeros()
+
+       return op.put(other, self._idxs, -self._vals, accumulate=True)
+
+
    def __mul__(self, other):
 
        return self._array * other 
@@ -122,6 +130,11 @@ class SparseGrad(ArrayLike):
    def __radd__(self, other): 
 
        return self.__add__(other)  
+
+
+   def __rsub__(self, other): 
+
+       return self.__sub__(other)  
 
 
    def __rmul__(self, other):
