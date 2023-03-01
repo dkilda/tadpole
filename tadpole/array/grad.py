@@ -30,7 +30,7 @@ class SparseGrad(ArrayLike):
 
 
    @property
-   def _array(self):
+   def _array(self): 
 
        return self.todense()
 

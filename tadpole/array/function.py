@@ -205,6 +205,11 @@ class Args:
        return iter(self._args)
 
 
+   def __reversed__(self):
+
+       return iter(list(reversed(self._args)))
+
+
    def __getitem__(self, idx):
 
        return self._args[idx]

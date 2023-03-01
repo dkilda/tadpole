@@ -31,6 +31,11 @@ from .grad import (
 )
 
 
+from .function import (
+   function_dat,
+   visit_dat,
+)
+
 
 
 
