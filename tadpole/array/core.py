@@ -250,9 +250,6 @@ class ArraySpace(Space):
 
    def __eq__(self, other):
 
-       if type(self) != type(other):
-          return False
-
        log = util.LogicalChain()
 
        log.typ(self, other)
@@ -425,10 +422,7 @@ class Array(ArrayLike):
 
    def copy(self, deep=True):
 
-       if   deep:
-            data = self._backend.copy(self._data)
-       else:
-            data = self._data
+       data = self._backend.copy(self._data) if deep else self._data
 
        return self.__class__(self._backend, data)
 
@@ -470,12 +464,11 @@ class Array(ArrayLike):
 
    def __eq__(self, other):
  
-       if type(self) != type(other):
-          return False
-
        log = util.LogicalChain()
        log.typ(self, other)
-       log.val(self._backend, other._backend)
+
+       if bool(log):
+          log.val(self._backend, other._backend)
 
        if bool(log):
           return util.allequal(self._data, other._data)   

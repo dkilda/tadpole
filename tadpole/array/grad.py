@@ -32,7 +32,7 @@ class SparseGrad(ArrayLike):
    @property
    def _array(self):
 
-       return self._todense()
+       return self.todense()
 
 
    def todense(self):
@@ -52,7 +52,7 @@ class SparseGrad(ArrayLike):
 
    def pluginto(self, funcall):
 
-       return self._array.attach(funcall)
+       return self._array.pluginto(funcall)
 
 
    @property
@@ -83,13 +83,12 @@ class SparseGrad(ArrayLike):
        
    def __eq__(self, other):
 
-       if type(self) != type(other):
-          return False
-
        log = util.LogicalChain()
        log.typ(self, other)
-       log.val(self._space, other._space)
-       log.val(self._idxs,  other._idxs)
+
+       if bool(log):
+          log.val(self._space, other._space)
+          log.val(self._idxs,  other._idxs)
 
        if bool(log):
           return util.allequal(self._vals, other._vals)  

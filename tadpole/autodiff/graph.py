@@ -126,9 +126,9 @@ class Differentiable:
        return str(rep)
 
 
-   def __call__(self, *args):
+   def __call__(self, *args, **kwargs):
 
-       return self._envelope(*args).applywrap(self, self._fun)
+       return self._envelope(*args, **kwargs).applywrap(self, self._fun)
 
 
 
@@ -153,9 +153,9 @@ class NonDifferentiable:
        return str(rep)
 
 
-   def __call__(self, *args):
+   def __call__(self, *args, **kwargs):
 
-       return self._envelope(*args).apply(self._fun)
+       return self._envelope(*args, **kwargs).apply(self._fun)
 
 
 
@@ -164,7 +164,10 @@ class NonDifferentiable:
 
 def differentiable(fun):
 
-    return Differentiable(fun, lambda *args: Envelope(*args))
+    def envelope(*args, **kwargs):
+        return Envelope(*args, **kwargs)
+
+    return Differentiable(fun, envelope)
 
 
 
@@ -173,7 +176,10 @@ def differentiable(fun):
 
 def nondifferentiable(fun):
 
-    return NonDifferentiable(fun, lambda *args: Envelope(*args))
+    def envelope(*args, **kwargs):
+        return Envelope(*args, **kwargs)
+
+    return NonDifferentiable(fun, envelope)
 
 
 
@@ -309,7 +315,7 @@ class Concatenable(abc.ABC):
 
 class Cohesive(abc.ABC):
 
-   @util.cacheable
+   @abc.abstractmethod
    def innermost(self):
        pass
 
@@ -336,12 +342,11 @@ class Cohesive(abc.ABC):
 
 class Concatenation(Concatenable, Cohesive):
 
-   def __init__(
-                self, 
-                nodes=util.Sequence(), 
-                sources=util.Sequence(), 
-                layers=util.Sequence()
-               ): 
+   def __init__(self, nodes=None, sources=None, layers=None): 
+
+       if nodes   is None: nodes   = util.Sequence()
+       if sources is None: sources = util.Sequence()
+       if layers  is None: layers  = util.Sequence()
 
        self._nodes   = nodes
        self._sources = sources
@@ -573,7 +578,7 @@ class EnvelopeLike(abc.ABC):
 
 class Envelope(EnvelopeLike):
 
-   def __init__(self, *args):
+   def __init__(self, *args, **kwargs):
 
        if len(args) == 0:
           raise ValueError("Envelope must have at least one input")
@@ -584,7 +589,8 @@ class Envelope(EnvelopeLike):
        if not isinstance(args, ArgsLike):
           args = Args(*args)
             
-       self._args = args
+       self._args   = args
+       self._kwargs = kwargs
 
 
    def __repr__(self):
@@ -592,7 +598,8 @@ class Envelope(EnvelopeLike):
        rep = util.ReprChain()
 
        rep.typ(self)
-       rep.ref("args", self._args)
+       rep.ref("args",   self._args)
+       rep.ref("kwargs", self._kwargs)
 
        return str(rep)
 
@@ -602,7 +609,8 @@ class Envelope(EnvelopeLike):
        log = util.LogicalChain()
 
        log.typ(self, other) 
-       log.ref(self._args, other._args)
+       log.ref(self._args,   other._args)
+       log.ref(self._kwargs, other._kwargs)
 
        return bool(log)
 
@@ -625,9 +633,8 @@ class Envelope(EnvelopeLike):
 
        last = self.packs().last()
        args = last.deshell() 
-       out  = fun(*args)
 
-       return out      
+       return fun(*args,** self._kwargs)     
 
        
    def applywrap(self, funwrap, fun):

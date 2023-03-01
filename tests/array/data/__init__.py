@@ -26,6 +26,8 @@ from .core import (
 
 from .grad import (
    sparse_grad_dat,
+   sparse_grad_dat_001,
+   sparse_grad_dat_002,
 )
 
 

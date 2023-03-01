@@ -20,7 +20,10 @@ import tadpole.util as util
 
 class Content:
 
-   def __init__(self, content=util.Sequence()):
+   def __init__(self, content=None):
+   
+       if content is None:
+          content = util.Sequence()
 
        self._content = content
 
@@ -28,11 +31,17 @@ class Content:
    def __eq__(self, other):
 
        log = util.LogicalChain()
-
        log.typ(self, other)
-       log.val(self._content, other._content)
 
-       return bool(log)
+       if bool(log):
+
+          arrays1, datas1 = zip(*self._content)
+          arrays2, datas2 = zip(*other._content)
+
+          return ((arrays1 == arrays2) 
+                  and util.allallequal(datas1, datas2))
+
+       return False
 
 
    def __iter__(self):
@@ -56,7 +65,7 @@ class Content:
 
 class Visit:
 
-   def __init__(self, fun, content=Content()):
+   def __init__(self, fun, content=None):
 
        if not isinstance(content, Content):
           content = Content(content)
@@ -105,7 +114,7 @@ class Visit:
 
 class FunCall:
 
-   def __init__(self, fun, content=Content()):
+   def __init__(self, fun, content=None):
 
        if not isinstance(content, Content):
           content = Content(content)
@@ -171,9 +180,6 @@ class Args:
 
 
    def __eq__(self, other):
-
-       if not type(self) == type(other):
-          return False
 
        log = util.LogicalChain()
        log.typ(self, other)

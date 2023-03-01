@@ -225,7 +225,7 @@ class NumpyBackend(backend.Backend):
           np.add.at(out, idxs, vals)
           return out
 
-       np.put(out, idxs, vals)
+       out[idxs] = vals 
        return out
 
 
