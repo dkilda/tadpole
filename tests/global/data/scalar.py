@@ -106,3 +106,26 @@ def scalar_dat_005():
 
 
 
+def scalar_dat_006():
+
+    def fun(x, y):
+        return td.add(y, td.sin(x))  
+
+    x = td.asarray("numpy", 2.7)
+    y = td.asarray("numpy", 5.1)
+
+    out   = td.asarray("numpy", 5.52737988023) 
+    grads = {
+             0: td.asarray("numpy", -0.90407214201), 
+             1: td.asarray("numpy", 1.0),
+            }
+
+    return ScalarData(fun, (x,y), out, lambda adx: grads[adx])
+
+
+
+
+
+
+
+

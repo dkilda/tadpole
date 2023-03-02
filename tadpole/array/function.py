@@ -152,7 +152,9 @@ class FunCall:
    def execute(self):
 
        arrays, datas = zip(*self._content)
-       space         = arrays[0].space() 
+       space         = arrays[0].space()
+
+       print("\nFUNCALL-1 ", self._fun, datas, space.apply(self._fun, *datas)._data) 
 
        return space.apply(self._fun, *datas) 
 

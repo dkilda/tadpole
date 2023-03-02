@@ -128,7 +128,18 @@ class Differentiable:
 
    def __call__(self, *args, **kwargs):
 
-       return self._envelope(*args, **kwargs).applywrap(self, self._fun)
+       out = self._envelope(*args, **kwargs).applywrap(self, self._fun)
+
+       try:
+          print("\nDIFFABLE-1: ", self._fun)
+          print("DIFFABLE-2: ", [arg._data for arg in args])
+          print("DIFFABLE-3: ", out._data)
+       except AttributeError:
+          print("\nDIFFABLE-1: ", self._fun)
+          print("DIFFABLE-2: ", args)
+          print("DIFFABLE-3: ", out)
+
+       return out # self._envelope(*args, **kwargs).applywrap(self, self._fun)
 
 
 
@@ -634,7 +645,14 @@ class Envelope(EnvelopeLike):
        last = self.packs().last()
        args = last.deshell() 
 
-       return fun(*args,** self._kwargs)     
+       try:
+          print("\nENVELOPE.APPLY-1: ", fun)
+          print("ENVELOPE.APPLY-2: ", [arg._data for arg in args])
+          print("ENVELOPE.APPLY-3: ", fun(*args, **self._kwargs)._data)
+       except AttributeError:
+          pass
+
+       return fun(*args, **self._kwargs)     
 
        
    def applywrap(self, funwrap, fun):

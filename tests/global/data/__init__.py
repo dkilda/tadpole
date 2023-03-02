@@ -8,6 +8,7 @@ from .scalar import (
    scalar_dat_003,
    scalar_dat_004,
    scalar_dat_005,
+   scalar_dat_006,
 )
 
 

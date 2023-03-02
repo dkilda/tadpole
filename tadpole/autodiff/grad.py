@@ -11,6 +11,8 @@ import tadpole.autodiff.nary  as nary
 import tadpole.autodiff.node  as anode
 import tadpole.autodiff.graph as agraph
 
+import tadpole.array as td
+
 
 
 
@@ -26,7 +28,7 @@ import tadpole.autodiff.graph as agraph
 @nary.nary_op
 def gradient(fun, x):  
   
-    return ReverseDifferentialOp(fun, x).grad(1)
+    return ReverseDifferentialOp(fun, x).grad(td.asarray("numpy", 1.0)) # FIXME NEVER USE INT, OR SPECIFY DTYPE EXPLICITLY!!!
 
 
 
@@ -36,7 +38,7 @@ def gradient(fun, x):
 @nary.nary_op
 def derivative(fun, x):
 
-    return ForwardDifferentialOp(fun, x).grad(1)
+    return ForwardDifferentialOp(fun, x).grad(td.asarray("numpy", 1.0))
 
 
 
@@ -126,7 +128,11 @@ class DifferentialOp(Differential):
 
    def grad(self, seed):
 
+       print("\nGRAD-1: ", self.end(), self.end()._source, seed)
+
        grads = self._prop.accum(self.end(), seed)
+
+       print("\nGRAD-2: ", grads.result())
        
        return grads.result()
 
@@ -299,6 +305,11 @@ class GraphOp(Graphable):
 
        with self.graph() as graph:
           end = graph.build(self._fun, self._x)   
+
+       try:
+          print("\nEVALUATE-1: ", self._fun, end, end._source, end._source._source._data)
+       except AttributeError: 
+          pass
 
        return end
          
@@ -669,6 +680,12 @@ class GradAccum(Cumulative):
    def add(self, nodes, grads):
 
        for node, grad in zip(nodes, grads):
+
+           try:
+              print("\nGRADACCUM: ", node, node._source, node._source._source._data, grad._data)
+           except AttributeError:
+              pass
+
            self._grads[node] = self._grads.get(node, 0) + grad  
 
        return self

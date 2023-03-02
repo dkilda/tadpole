@@ -124,7 +124,13 @@ class DataFun:
 
        backend = backends.get(backend)                                        
        newdata = self._fun(backend, *datas)
+
+       print("\nDATAFUN-1: ", self._fun, datas, newdata)
+       print("DATAFUN-2: ", opts, np.asarray(newdata, **opts))
+
        newdata = backend.asarray(newdata, **opts)
+
+       print("DATAFUN-3: ", newdata)
 
        return Array(backend, newdata)
 
