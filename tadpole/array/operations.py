@@ -124,10 +124,7 @@ def sub(x, y):
 @ad.differentiable
 def mul(x, y):
 
-    print("\nMUL-1", mul, x._data, y._data)
-
     def fun(backend, v, u):
-        print("\nMUL-2", v, u, backend.mul(v, u))
         return backend.mul(v, u)
         
     return Args(x, y).pluginto(FunCall(fun))

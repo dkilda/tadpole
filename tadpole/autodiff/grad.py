@@ -128,7 +128,13 @@ class DifferentialOp(Differential):
 
    def grad(self, seed):
 
-       print("\nGRAD-1: ", self.end(), self.end()._source, seed)
+       try:
+          print("\nGRAD-1: ", self.end(), self.end()._source, self.end()._source._source._source._data, seed._data)
+       except AttributeError:
+          try:
+             print("\nGRAD-1: ", self.end(), self.end()._source, seed)
+          except AttributeError:
+             print("\nGRAD-1: ", self.end(), seed)
 
        grads = self._prop.accum(self.end(), seed)
 
@@ -682,11 +688,18 @@ class GradAccum(Cumulative):
        for node, grad in zip(nodes, grads):
 
            try:
-              print("\nGRADACCUM: ", node, node._source, node._source._source._data, grad._data)
+              # print("\nGRADACCUM: ", node, node._source, node._source._source._data, grad._data)
+              print("\nGRADACCUM-1: ", node, node._source._source._source._data) 
+              print("GRADACCUM-2: ", grad, grad._source, grad._source._source, grad._source._source._data)
            except AttributeError:
               pass
 
-           self._grads[node] = self._grads.get(node, 0) + grad  
+           if   self._grads.get(node, 0) == 0: # FIXME DK we need to take care of gradient addition more properly!
+                self._grads[node] = grad             
+           elif isinstance(self._grads.get(node, 0), anode.NodeLike) or isinstance(grad, anode.NodeLike):
+                self._grads[node] = td.add(self._grads.get(node, 0), grad)  
+           else:
+                self._grads[node] = self._grads.get(node, 0) + grad 
 
        return self
 

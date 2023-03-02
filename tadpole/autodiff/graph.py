@@ -130,12 +130,12 @@ class Differentiable:
 
        out = self._envelope(*args, **kwargs).applywrap(self, self._fun)
 
+       print("\nDIFFABLE-1: ", self._fun)
+
        try:
-          print("\nDIFFABLE-1: ", self._fun)
-          print("DIFFABLE-2: ", [arg._data for arg in args])
-          print("DIFFABLE-3: ", out._data)
+          print("DIFFABLE-2: ", args) #[arg._data for arg in args])
+          print("DIFFABLE-3: ", out, out._source._source._data)
        except AttributeError:
-          print("\nDIFFABLE-1: ", self._fun)
           print("DIFFABLE-2: ", args)
           print("DIFFABLE-3: ", out)
 

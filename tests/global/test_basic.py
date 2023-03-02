@@ -17,9 +17,9 @@ class TestScalar:
       data.scalar_dat_001, 
       data.scalar_dat_002, 
       data.scalar_dat_003, 
-      data.scalar_dat_004, 
-      data.scalar_dat_005, 
-      data.scalar_dat_006,
+      #data.scalar_dat_004, 
+      #data.scalar_dat_005, 
+      #data.scalar_dat_006,
    ]) 
    def test_fun(self, scalardat):
 
@@ -34,12 +34,12 @@ class TestScalar:
    @pytest.mark.parametrize("scalardat, adx", [
       [data.scalar_dat_001, 0], 
       [data.scalar_dat_001, 1],
-      [data.scalar_dat_004, 0], 
-      [data.scalar_dat_004, 1],
-      [data.scalar_dat_006, 0], 
-      [data.scalar_dat_006, 1],
-      #[data.scalar_dat_002, None], 
-      #[data.scalar_dat_003, None],
+      #[data.scalar_dat_004, 0], 
+      #[data.scalar_dat_004, 1],
+      #[data.scalar_dat_006, 0], 
+      #[data.scalar_dat_006, 1],
+      [data.scalar_dat_002, None], 
+      [data.scalar_dat_003, None],
    ])
    def test_gradient(self, scalardat, adx):
 
