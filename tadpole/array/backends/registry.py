@@ -78,10 +78,16 @@ class BackendRegistry:
           f"The backend input must be a string or a Backend object."
        ))
 
-             
+
+   def set_default(self, default):
+
+       self._default = default
+       return self
 
 
-# --- A global instance of backend registry and its access port ------------- #
+
+
+# --- A global instance of backend registry and its access ports ------------ #
            
 _BACKENDS = BackendRegistry(default="numpy")
 
@@ -89,6 +95,11 @@ _BACKENDS = BackendRegistry(default="numpy")
 def get(backend):
 
     return _BACKENDS.get(backend)
+
+
+def set_default(backend):
+
+    _BACKENDS.set_default(backend)
 
 
 

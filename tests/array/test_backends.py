@@ -26,6 +26,13 @@ import tadpole.array.backends as backends
 class TestRegistry:
 
    @pytest.mark.parametrize("backend", ["numpy"])
+   def test_set_default(self, backend):
+
+       backends.set_default(backend)
+       assert backends.get(None) == backends.get(backend)
+
+
+   @pytest.mark.parametrize("backend", ["numpy"])
    def test_get_by_name(self, backend):
 
        typ = {

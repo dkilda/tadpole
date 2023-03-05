@@ -6,6 +6,9 @@ from . import my_vjps
 from . import my_jvps
 
 
+from .backends import set_default as set_backend
+
+
 from .core import (
    ArrayLike,
    Array,
