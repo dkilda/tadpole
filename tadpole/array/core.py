@@ -443,7 +443,7 @@ class Array(ArrayLike):
 
    def pluginto(self, funcall):
 
-       return funcall.attach(self, self._data)
+       return funcall.attach(self._backend, self._data)
 
 
    @property
