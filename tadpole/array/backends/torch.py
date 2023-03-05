@@ -163,12 +163,17 @@ class TorchBackend(backend.Backend):
    def randuniform(self, shapes, boundaries, **opts):
 
        def fun(**kwargs): 
-           return torch.emply(tuple(shape), **kwargs).uniform_(*boundaries)
+           return torch.empty(tuple(shape), **kwargs).uniform_(*boundaries)
 
        return self._rand_helper(fun, **opts)
        
 
    # --- Array shape methods --- #
+
+   def size(self, array):
+
+       return torch.numel(array)
+
 
    def ndim(self, array):
 
@@ -207,6 +212,20 @@ class TorchBackend(backend.Backend):
        
 
    # --- Array value methods --- #
+
+   def item(self, array, *idxs):
+
+       if len(idxs) > 0:
+          return array[idxs]
+
+       if self.size(array) > 1:
+          raise ValueError(
+             f"TorchBackend.item(): can only convert array of "
+             f"size 1 to scalar, but array size is {self.size(array)}"
+          )
+
+       return array.item()
+
 
    def all(self, array, axis=None, **opts):
 

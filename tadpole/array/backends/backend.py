@@ -82,6 +82,10 @@ class Backend(abc.ABC):
    # --- Array shape methods --- #
 
    @abc.abstractmethod
+   def size(self, array):
+       pass
+
+   @abc.abstractmethod
    def ndim(self, array):
        pass
 
@@ -111,6 +115,10 @@ class Backend(abc.ABC):
 
 
    # --- Array value methods --- #
+
+   @abc.abstractmethod
+   def item(self, array, *idxs):
+       pass
 
    @abc.abstractmethod
    def all(self, array, axis=None, **opts):

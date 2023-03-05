@@ -134,6 +134,11 @@ class NumpyBackend(backend.Backend):
 
    # --- Array shape methods --- #
 
+   def size(self, array):
+
+       return array.size
+
+
    def ndim(self, array):
 
        return array.ndim
@@ -171,6 +176,20 @@ class NumpyBackend(backend.Backend):
        
 
    # --- Array value methods --- #
+
+   def item(self, array, *idxs):
+
+       if len(idxs) > 0:
+          return array[idxs]
+
+       if self.size(array) > 1:
+          raise ValueError(
+             f"NumpyBackend.item(): can only convert array of "
+             f"size 1 to scalar, but array size is {self.size(array)}"
+          )
+
+       return array.item()
+
 
    def all(self, array, axis=None, **opts):
 

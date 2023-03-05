@@ -485,6 +485,11 @@ class Array(ArrayLike):
        return False
 
 
+   def item(self, *idxs):
+
+       return self._backend.item(*idxs)
+
+
    def __getitem__(self, idx):
 
        return op.getitem(self, idx)  
@@ -550,11 +555,15 @@ def allequal(x, y):
     return x.allequal(y)
 
 
+
+
 # --- Approximate equality of arrays ---------------------------------------- #
 
 def allclose(x, y, **opts):
 
     return x.allclose(y, **opts)
+
+
 
 
 # --- Exact equality of iterables of arrays --------------------------------- #
@@ -564,6 +573,8 @@ def allallequal(xs, ys):
     return all(allequal(x, y) for x, y in zip(xs, ys))
 
 
+
+
 # --- Approximate equality of iterables of arrays --------------------------- #
 
 def allallclose(xs, ys, **opts):
@@ -571,6 +582,12 @@ def allallclose(xs, ys, **opts):
     return all(allclose(x, y, **opts) for x, y in zip(xs, ys))
 
 
+
+
 # TODO we need a broadcasting method!
+
+
+
+
 
 
