@@ -4,8 +4,8 @@
 import abc
 import numpy as np
 
-import tadpole.util as util
-
+import tadpole.util       as util
+import tadpole.array.core as core
 
 
 

@@ -10,7 +10,12 @@ import tadpole.autodiff as ad
 import tadpole.array.core     as core
 import tadpole.array.function as function
 
-from tadpole.array.function import Args, Visit, FunCall
+from tadpole.array.function import (
+   Args, 
+   VisitCall, 
+   SplitCall, 
+   TransformCall,
+)
 
 
 
