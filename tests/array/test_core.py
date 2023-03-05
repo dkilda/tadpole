@@ -202,53 +202,6 @@ class TestArraysFromShape:
 
        assert out == x.array
 
-"""
-
-   @pytest.mark.parametrize("backend", ["numpy"])
-   @pytest.mark.parametrize("shape",   [(2,3,4)])
-   @pytest.mark.parametrize("dtype",   ["complex128"])
-   def test_apply(self, backend, shape, dtype):
-
-       w = data.array_space_dat(
-              backend, shape, dtype
-           )
-       x1 = data.array_dat(data.randn)(
-              backend, shape, dtype=dtype, seed=1
-            )
-       x2 = data.array_dat(data.randn)(
-              backend, shape, dtype=dtype, seed=2
-            )   
-       out = data.array_dat(data.randn)(
-              backend, shape, dtype=dtype, seed=3
-            ) 
-
-       fun = fake.Fun(out.data, out.backend, x1.data, x2.data)
-
-       assert w.space.apply(fun, x1.data, x2.data) == out.array 
-
-          
-   @pytest.mark.parametrize("backend", ["numpy"])
-   @pytest.mark.parametrize("shape",   [(2,3,4)])
-   @pytest.mark.parametrize("dtype",   ["complex128"])       
-   def test_visit(self, backend, shape, dtype): 
-
-       w = data.array_space_dat(
-              backend, shape, dtype
-           )
-       x1 = data.array_dat(data.randn)(
-              backend, shape, dtype=dtype, seed=1
-            )
-       x2 = data.array_dat(data.randn)(
-              backend, shape, dtype=dtype, seed=2
-            )   
-
-       out = fake.Value()
-       fun = fake.Fun(out, x1.backend, x1.data, x2.data)
-
-       assert w.space.visit(fun, x1.data, x2.data) == out 
-
-"""
-
 
 
 
