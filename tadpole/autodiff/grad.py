@@ -27,8 +27,17 @@ import tadpole.array as td
 
 @nary.nary_op
 def gradient(fun, x):  
+
+    # TODO uncomment and replace once Node/Point impl ArrayLike iface
+
+    """
+    op  = ReverseDifferentialOp(fun, x)
+    out = op.evaluate()
+
+    return op.grad(out.space().ones())
+    """
   
-    return ReverseDifferentialOp(fun, x).grad(td.asarray("numpy", 1.0)) # FIXME NEVER USE INT, OR SPECIFY DTYPE EXPLICITLY!!!
+    return ReverseDifferentialOp(fun, x).grad(td.asarray(1.0)) # FIXME NEVER USE INT, OR SPECIFY DTYPE EXPLICITLY!!!
 
 
 
@@ -38,7 +47,10 @@ def gradient(fun, x):
 @nary.nary_op
 def derivative(fun, x):
 
-    return ForwardDifferentialOp(fun, x).grad(td.asarray("numpy", 1.0))
+    op  = ForwardDifferentialOp(fun, x)
+    out = op.evaluate()
+
+    return op.grad(out.space().ones())
 
 
 

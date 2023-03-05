@@ -41,7 +41,7 @@ class TestRegistry:
                "torch": backends.torch.TorchBackend, 
               }[backend]
 
-       out = backends.get_from(**opts)
+       out = backends.get_from(opts)
 
        assert isinstance(out, typ)
 
@@ -49,7 +49,7 @@ class TestRegistry:
    def test_get_from_default(self):
 
        opts = {"a": 1, "b": 2}
-       assert backends.get_from(**opts) == backends.get("numpy")
+       assert backends.get_from(opts) == backends.get("numpy")
 
 
    @pytest.mark.parametrize("backend", ["numpy"])

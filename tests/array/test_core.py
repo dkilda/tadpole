@@ -5,7 +5,7 @@ import pytest
 import itertools
 import numpy as np
 
-from tadpole.tests.common import options
+from tests.common import options
 
 import tests.array.fakes as fake
 import tests.array.data  as data

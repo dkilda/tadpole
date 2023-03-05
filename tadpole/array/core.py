@@ -122,7 +122,7 @@ class DataFun:
 
    def __call__(self, *datas, **opts):
 
-       backend = backends.get_from(**opts)                                        
+       backend = backends.get_from(opts)                                        
        newdata = self._fun(backend, *datas)
        newdata = backend.asarray(newdata, **opts)
 
@@ -142,7 +142,7 @@ class ArrayFromShape:
 
    def __call__(self, shape, *args, **opts):
 
-       backend = backends.get_from(**opts)  #opts.pop("backend", None)) # FIXME introduce backends.get with opts input
+       backend = backends.get_from(opts) 
        fun     = self._fun
 
        if callable(fun): 
@@ -241,7 +241,7 @@ class Space(abc.ABC):
 
 class ArraySpace(Space):
 
-   def __init__(self, shape, dtype):
+   def __init__(self, backend, shape, dtype):
 
        self._backend = backend
        self._dtype   = dtype
