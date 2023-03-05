@@ -4,6 +4,9 @@
 import abc
 import numpy as np
 
+import operator
+from functools import reduce
+
 import tadpole.util as util
 import tadpole.autodiff as ad
 
@@ -20,24 +23,57 @@ import tadpole.array.backends   as backends
 ###############################################################################
 
 
-# --- Array factories ------------------------------------------------------- #
+# --- Array generators ------------------------------------------------------ #
+
+def units(shape, dtype=None, backend=None):
+
+    for idx in np.ndindex(*shape):
+        yield unit(shape, idx, dtype=dtype, backend=backend)
+
+
+
+def basis(shape, dtype=None, backend=None): 
+
+    backend   = backends.get(backend)
+    dtype     = backend.get_dtype(dtype)
+    gen_units = units(shape, dtype=dtype, backend=backend)
+
+    if  dtype in backend.complex_dtypes():
+
+        for unit in gen_units:
+            yield unit
+            yield 1j * unit
+
+    else:
+        for unit in gen_units:
+            yield unit
+
+
+
+
+# --- Array factories (from data) ------------------------------------------- #
 
 def fromfun(fun, *datas, **opts):
 
-    return DataFun(fun)(
-              *datas, **opts
-           )
+    backend = backends.get_from(opts)
+                                        
+    outdata = fun(backend, *datas)
+    outdata = backend.asarray(outdata, **opts)
+
+    return Array(backend, outdata)
 
 
 def asarray(data, **opts):
 
-    if isinstance(data, ArrayLike):
-       return data
+    backend = backends.get_from(opts)                            
+    data    = backend.asarray(data, **opts)
 
-    return DataFun(lambda backend_, data_: data_)(
-              data, **opts
-           )
+    return Array(backend, data)
 
+
+
+
+# --- Array factories (from shape) ------------------------------------------ #
 
 def zeros(shape, **opts):
 
@@ -83,55 +119,7 @@ def randuniform(shape, boundaries, **opts):
 
 
 
-# --- Array generators ------------------------------------------------------ #
-
-def units(shape, dtype=None, backend=None):
-
-    for idx in np.ndindex(*shape):
-        yield unit(shape, idx, dtype=dtype, backend=backend)
-
-
-
-def basis(shape, dtype=None, backend=None): 
-
-    backend   = backends.get(backend)
-    dtype     = backend.get_dtype(dtype)
-    gen_units = units(shape, dtype=dtype, backend=backend)
-
-    if  dtype in backend.complex_dtypes():
-
-        for unit in gen_units:
-            yield unit
-            yield 1j * unit
-
-    else:
-        for unit in gen_units:
-            yield unit
-
-
-
-
-# --- Data function wrapper ------------------------------------------------- #
-
-class DataFun:
-
-   def __init__(self, fun):
-
-       self._fun = fun
-
-
-   def __call__(self, *datas, **opts):
-
-       backend = backends.get_from(opts)                                        
-       newdata = self._fun(backend, *datas)
-       newdata = backend.asarray(newdata, **opts)
-
-       return Array(backend, newdata)
-
-       
-
-
-# --- Factory that constructs an Array from shape input --------------------- #
+# --- Generic factory that constructs an Array from shape input ------------- #
 
 class ArrayFromShape:
 
@@ -207,21 +195,14 @@ class Space(abc.ABC):
    def basis(self):
        pass
 
+   @property
    @abc.abstractmethod
-   def apply(self, fun, *datas):
-       pass
-
-   @abc.abstractmethod
-   def visit(self, fun, *datas):
-       pass
-
-   @abc.abstractmethod
-   def asarray(self, data):
+   def dtype(self):
        pass
 
    @property
    @abc.abstractmethod
-   def dtype(self):
+   def size(self):
        pass
 
    @property 
@@ -308,24 +289,13 @@ class ArraySpace(Space):
        return self._create(basis) 
 
 
-   def apply(self, fun, *datas):
-
-       return fromfun(fun, *datas, dtype=self._dtype, backend=self._backend)
-
-
-   def visit(self, fun, *datas):
-               
-       return fun(backends.get(self._backend), *datas) # FIXME marked for removal!
-
-
-   def asarray(self, data):
-
-       return asarray(data, dtype=self._dtype, backend=self._backend)
-
-
    @property
    def dtype(self):
        return self._dtype
+
+   @property
+   def size(self):
+       return reduce(operator.mul, self._shape)
 
    @property 
    def ndim(self):
@@ -364,6 +334,11 @@ class ArrayLike(abc.ABC):
    @property
    @abc.abstractmethod
    def dtype(self):
+       pass
+
+   @property
+   @abc.abstractmethod
+   def size(self):
        pass
 
    @property
@@ -449,6 +424,10 @@ class Array(ArrayLike):
    @property
    def dtype(self):
        return self._backend.dtype(self._data)
+
+   @property 
+   def size(self):
+       return self._backend.size(self._data)
 
    @property 
    def ndim(self):
