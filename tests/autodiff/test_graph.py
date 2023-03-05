@@ -434,6 +434,11 @@ class TestPack:
    def test_fold_001(self, valency, layer):
 
        x = data.pack_dat(valency, layer)
+
+       print("\nFOLD-1: ", x.pack.fold(x.funwrap, x.sources))
+       print("FOLD-2: ", x.nodes)
+       print("FOLD-3: ", x.sources)
+
        assert x.pack.fold(x.funwrap, x.sources) == x.nodes
 
 

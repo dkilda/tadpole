@@ -44,8 +44,6 @@ class TestScalar:
        w    = scalardat()
        grad = td.gradient(w.fun, adx)(*w.args)
 
-       print("\nTEST-1: ", grad, grad._data)
-
        assert allclose(grad, w.grad(adx))
 
 

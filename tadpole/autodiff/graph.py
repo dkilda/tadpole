@@ -233,7 +233,7 @@ class Args(ArgsLike, TupleLike):
        rep = util.ReprChain()
 
        rep.typ(self)
-       rep.ref("args", self._args)
+       rep.val("args", self._args)
 
        return str(rep)
 
@@ -243,7 +243,7 @@ class Args(ArgsLike, TupleLike):
        log = util.LogicalChain()
 
        log.typ(self, other) 
-       log.ref(self._args, other._args)
+       log.val(self._args, other._args)
 
        return bool(log)
 
@@ -518,38 +518,6 @@ class Pack(Packable):
        return id(self)
 
 
-   def innermost(self):
-
-       return self._concat.innermost() 
-
-
-   def deshell(self):
-
-       return self._concat.deshell()
-
-
-   def deshelled(self):
-
-       return self._args.pack()
-
-
-   def fold(self, funwrap, outputs): 
-
-       def _fold(out):
-           return self._fold(funwrap, outputs, out)
-
-       return util.Outputs(*map(_fold, outputs))
-
-       
-   def _fold(self, funwrap, outputs, out):
-
-       if self.innermost():
-          return anode.Point(out)
-
-       op = anode.AdjointOp(funwrap, self._adxs, outputs, self._args)
-       return self._parents.next(out, self._layer, op) 
-
-
    @property
    def _layer(self):
 
@@ -573,8 +541,42 @@ class Pack(Packable):
 
        return self._concat.parents()
 
-       
 
+
+   def innermost(self):
+
+       return self._concat.innermost() 
+
+
+   def deshell(self):
+
+       return self._concat.deshell()
+
+
+   def deshelled(self):
+
+       return self._args.pack()
+
+
+   def _fold(self, funwrap, outputs, out):
+
+       if self.innermost():
+          return anode.Point(out)
+
+       op = anode.AdjointOp(funwrap, self._adxs, outputs, self._args)
+
+       return self._parents.next(out, self._layer, op) 
+
+
+   def fold(self, funwrap, outputs):
+
+       def _fold(out):
+           return self._fold(funwrap, outputs, out)
+
+       return outputs.apply(_fold)
+
+
+       
 
 # --- EnvelopeLike interface ------------------------------------------------ #
 
@@ -672,7 +674,7 @@ class Envelope(EnvelopeLike):
            
        out = self.apply(fun)
 
-       for pack in reversed(self.packs()):
+       for pack in reversed(self.packs()): 
            out = pack.fold(funwrap, out)
 
        return out

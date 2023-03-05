@@ -72,7 +72,7 @@ class Loop:
 
    def size(self):
 
-       return len(self._list())
+       return len(self._items())
 
        
    def once(self):

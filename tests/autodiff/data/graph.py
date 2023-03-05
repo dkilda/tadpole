@@ -89,7 +89,7 @@ def differentiable_funwrap_dat(args):
 
     out = fake.NodeLike()
 
-    applywrap     = fake.Fun(out)
+    applywrap     = fake.Fun(util.Outputs(out))
     envelope      = fake.EnvelopeLike(applywrap=applywrap)
     make_envelope = fake.Fun(envelope, *args)
 
@@ -107,7 +107,8 @@ def nondifferentiable_funwrap_dat(args):
 
     out = fake.NodeLike()
 
-    envelope      = fake.EnvelopeLike(**{"apply": fake.Fun(out)})
+    applyfun      = fake.Fun(util.Outputs(out))
+    envelope      = fake.EnvelopeLike(**{"apply": applyfun})
     make_envelope = fake.Fun(envelope, *args)
 
     fun     = fake.Fun(None)
@@ -409,7 +410,10 @@ def envelope_dat(stackdat):
 NodeStackData = collections.namedtuple("NodeStackData", [
                    "outnodes", "outparents", "outvalue",
                    "nodes",    "parents",    "values", 
-                   "layers", "adxs", "fun", "funwrap",
+                   "layers", 
+                   "adxs", 
+                   "fun", 
+                   "funwrap",
                 ])
 
 
@@ -481,7 +485,7 @@ def node_stack_dat_001(gatetype="REVERSE"):
     outparentsC = (nodesC[1], nodesC[2])
     outparentsD = (nodesD[0],          )
 
-    fun     = fake.Fun(outvalue, *values)
+    fun     = fake.Fun(util.Outputs(outvalue), *values)
     funwrap = fake.Fun(None)
 
     outnodeA = anode.Point(outvalue)
@@ -527,7 +531,7 @@ def node_stack_dat_002(gatetype="REVERSE"):
     outnodes   = (outnodeA,    )
     outparents = (outparentsA, )
 
-    fun     = fake.Fun(outvalue, *values)
+    fun     = fake.Fun(util.Outputs(outvalue), *values)
     funwrap = fake.Fun(None)
 
     return NodeStackData(

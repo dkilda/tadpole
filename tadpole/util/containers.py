@@ -71,7 +71,7 @@ class Outputs(TupleLike):
        rep = util.ReprChain()
 
        rep.typ(self)
-       rep.ref("outputs", self._outputs)
+       rep.val("outputs", self._outputs)
 
        return str(rep)
 
@@ -81,7 +81,7 @@ class Outputs(TupleLike):
        log = util.LogicalChain()
 
        log.typ(self, other) 
-       log.ref(self._outputs, other._outputs)
+       log.val(self._outputs, other._outputs)
 
        return bool(log)
 
@@ -117,6 +117,11 @@ class Outputs(TupleLike):
           return self._outputs[0]
 
        return self._outputs
+
+
+   def apply(self, fun):
+
+       return self.__class__(*map(fun, self._outputs)) 
 
 
 

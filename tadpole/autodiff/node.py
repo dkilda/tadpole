@@ -42,6 +42,9 @@ class Adjoint(abc.ABC):
 class AdjointOp(Adjoint):
 
    def __init__(self, fun, adxs, out, args):
+
+       if not isinstance(out, util.Outputs):
+          out = util.Outputs(out)
  
        self._fun  = fun
        self._adxs = adxs 
@@ -82,7 +85,7 @@ class AdjointOp(Adjoint):
 
    def _apply(self, fun):
 
-       return fun(self._adxs, self._out, *self._args)
+       return fun(self._adxs, self._out.unpack(), *self._args)
 
 
    def vjp(self, seed):

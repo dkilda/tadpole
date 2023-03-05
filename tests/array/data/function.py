@@ -66,7 +66,8 @@ def _function_dat(backend, shape, dtype, nargs, which="function"):
 
     return FunctionData(
                         funcall, content, args, 
-                        fun, out,
+                        fun, 
+                        util.Outputs(out),
                         arrays, datas, seq,
                        )
 
