@@ -708,12 +708,21 @@ class GradAccum(Cumulative):
            except AttributeError:
               pass
 
+           # self._grads[node] = td.gradadd(self._grads.get(node, 0), grad) 
+           
+           """
+           self._grads[node] = self._grads.get(node, 0) + grad
+           """
+
+
            if   self._grads.get(node, 0) == 0: # FIXME DK we need to take care of gradient addition more properly!
                 self._grads[node] = grad             
            elif isinstance(self._grads.get(node, 0), anode.NodeLike) or isinstance(grad, anode.NodeLike):
                 self._grads[node] = td.add(self._grads.get(node, 0), grad)  
            else:
                 self._grads[node] = self._grads.get(node, 0) + grad 
+
+
 
        return self
 

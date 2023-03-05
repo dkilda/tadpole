@@ -9,8 +9,17 @@ from . import my_jvps
 from .backends import set_default as set_backend
 
 
-from .core import (
+from .arraylike import (
    ArrayLike,
+)
+
+
+from .grad import (
+   SparseGrad,
+)
+
+
+from .core import (
    Array,
    allequal,
    allclose,
@@ -47,6 +56,7 @@ from .operations import (
 
 
 from .operations import (
+   gradadd,
    add,
    sub,
    mul,   

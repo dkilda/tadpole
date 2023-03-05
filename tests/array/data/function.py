@@ -70,8 +70,8 @@ def _function_dat(backend, shape, dtype, nargs, which="function"):
 
     elif which == "visit":
 
-         out = fake.Value()
-         fun = fake.Fun(out, xs[0].backend, *datas)
+         out = util.Outputs(fake.Value())
+         fun = fake.Fun(out.unpack(), xs[0].backend, *datas)
 
          funcall = function.VisitCall(fun, util.Sequence(seq))
 

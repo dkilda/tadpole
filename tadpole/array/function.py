@@ -148,7 +148,8 @@ class VisitCall(FunCall):
 
        backends, datas = zip(*self._content)
 
-       return self._fun(backends[0], *datas)
+       out = self._fun(backends[0], *datas)
+       return util.Outputs(out)
 
 
 

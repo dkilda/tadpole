@@ -40,6 +40,45 @@ def equals(x, y):
 
 """
 
+# --- Array properties ------------------------------------------------------ #
+
+@ad.nondifferentiable
+def dtype(x):
+
+    def fun(backend, v):
+        return backend.dtype(v)
+
+    return Args(x).pluginto(VisitCall(fun))
+
+
+@ad.nondifferentiable
+def size(x):
+
+    def fun(backend, v):
+        return backend.size(v)
+
+    return Args(x).pluginto(VisitCall(fun))
+
+
+@ad.nondifferentiable
+def ndim(x):
+
+    def fun(backend, v):
+        return backend.ndim(v)
+
+    return Args(x).pluginto(VisitCall(fun))
+
+
+@ad.nondifferentiable
+def shape(x):
+
+    def fun(backend, v):
+        return backend.shape(v)
+
+    return Args(x).pluginto(VisitCall(fun))
+
+
+
 
 ###############################################################################
 ###                                                                         ###
@@ -108,6 +147,11 @@ def cos(x):
 
 # --- Array operations: binary ---------------------------------------------- #
 
+def gradadd(x, y):
+
+    return x + y
+
+
 @ad.differentiable
 def add(x, y):
 
@@ -115,29 +159,6 @@ def add(x, y):
         return backend.add(v, u)
 
     return Args(x, y).pluginto(TransformCall(fun))
-
-"""
-@ad.differentiable
-def grad_add(x, y):
-
-    def fun(backend):
-
-        
-
-
-       if other == 0:
-          other = self._space.zeros()
-
-       return op.put(other, self._idxs, self._vals, accumulate=True)
-
-
-
-
-    def fun(backend, v, u):
-        return backend.add(v, u)
-
-    return Args(x, y).pluginto(TransformCall(fun))
-"""
 
 
 @ad.differentiable

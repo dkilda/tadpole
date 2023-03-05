@@ -5,8 +5,10 @@ import abc
 import numpy as np
 
 import tadpole.array.operations as op
+import tadpole.autodiff         as ad
+import tadpole.util             as util
 
-from tadpole.array.core import ArrayLike
+from tadpole.array.arraylike import ArrayLike
 
 
 
@@ -56,20 +58,24 @@ class SparseGrad(ArrayLike):
 
 
    @property
+   @ad.nondifferentiable
    def dtype(self):
-       return self._space.dtype
+       return util.Outputs(self._space.dtype)
 
    @property 
+   @ad.nondifferentiable
    def size(self):
-       return len(self._vals)
+       return util.Outputs(len(self._vals))
 
    @property 
+   @ad.nondifferentiable
    def ndim(self):
-       return self._space.ndim
+       return util.Outputs(self._space.ndim)
 
-   @property
+   @property 
+   @ad.nondifferentiable
    def shape(self):
-       return self._space.shape
+       return util.Outputs(self._space.shape)
 
 
    def allclose(self, other, **opts):
@@ -98,6 +104,11 @@ class SparseGrad(ArrayLike):
           return util.allequal(self._vals, other._vals)  
 
        return False
+
+
+   def item(self, *idxs):
+
+       return self._array.item(*idxs)
 
 
    def __getitem__(self, coords):
@@ -138,13 +149,78 @@ class SparseGrad(ArrayLike):
 
    def __rsub__(self, other): 
 
-       return self.__sub__(other)  
+       return -self.__sub__(other)  
 
 
    def __rmul__(self, other):
 
        return other * self._array   
 
+
+
+
+
+@ad.nondifferentiable
+def dtype(x):
+
+    return util.Outputs(x.space().dtype)
+
+
+@ad.nondifferentiable
+def size(x):
+
+    return util.Outputs(x.space().size)
+
+
+@ad.nondifferentiable
+def ndim(x):
+
+    return util.Outputs(x.space().ndim)
+
+
+@ad.nondifferentiable
+def shape(x):
+
+    return util.Outputs(x.space().shape)
+
+
+
+"""
+@ad.nondifferentiable
+def dtype(x):
+
+    def fun(backend, v):
+        return backend.dtype(v)
+
+    return Args(x).pluginto(VisitCall(fun))
+
+
+@ad.nondifferentiable
+def size(x):
+
+    def fun(backend, v):
+        return backend.size(v)
+
+    return Args(x).pluginto(VisitCall(fun))
+
+
+@ad.nondifferentiable
+def ndim(x):
+
+    def fun(backend, v):
+        return backend.ndim(v)
+
+    return Args(x).pluginto(VisitCall(fun))
+
+
+@ad.nondifferentiable
+def shape(x):
+
+    def fun(backend, v):
+        return backend.shape(v)
+
+    return Args(x).pluginto(VisitCall(fun))
+"""
 
 
 

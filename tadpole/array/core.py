@@ -4,11 +4,14 @@
 import abc
 import numpy as np
 
-import tadpole.util as util
+import tadpole.util     as util
 import tadpole.autodiff as ad
 
 import tadpole.array.operations as op
 import tadpole.array.backends   as backends
+import tadpole.array.grad       as grad
+
+from tadpole.array.arraylike import ArrayLike
 
 
 
@@ -61,6 +64,9 @@ def fromfun(fun, *datas, **opts):
 
 
 def asarray(data, **opts):
+
+    if isinstance(data, ArrayLike):
+       return data
 
     backend = backends.get_from(opts)                            
     data    = backend.asarray(data, **opts)
@@ -159,6 +165,10 @@ class ArrayFromShape:
 # --- Space interface ------------------------------------------------------- #
 
 class Space(abc.ABC):
+
+   @abc.abstractmethod
+   def zeros(self):
+       pass
 
    @abc.abstractmethod
    def zeros(self):
@@ -312,85 +322,6 @@ class ArraySpace(Space):
 ###############################################################################
 
 
-# --- ArrayLike interface --------------------------------------------------- #
-
-class ArrayLike(abc.ABC):
-
-   @abc.abstractmethod
-   def copy(self, **opts):
-       pass
-
-   @abc.abstractmethod
-   def space(self):
-       pass
-
-   @abc.abstractmethod
-   def pluginto(self, funcall):
-       pass
-
-   @property
-   @abc.abstractmethod
-   def dtype(self):
-       pass
-
-   @property
-   @abc.abstractmethod
-   def size(self):
-       pass
-
-   @property
-   @abc.abstractmethod 
-   def ndim(self):
-       pass
-
-   @property
-   @abc.abstractmethod
-   def shape(self):
-       pass
-
-   @abc.abstractmethod
-   def allclose(self, other, **opts):
-       pass
-
-   @abc.abstractmethod
-   def __eq__(self, other):
-       pass
-
-   @abc.abstractmethod
-   def __getitem__(self, idx):
-       pass
-
-   @abc.abstractmethod
-   def __neg__(self):
-       pass
-
-   @abc.abstractmethod
-   def __add__(self, other):
-       pass
-
-   @abc.abstractmethod
-   def __sub__(self, other):
-       pass
-
-   @abc.abstractmethod
-   def __mul__(self, other):
-       pass
-
-   @abc.abstractmethod
-   def __radd__(self, other):
-       pass
-
-   @abc.abstractmethod
-   def __rsub__(self, other):
-       pass
-
-   @abc.abstractmethod
-   def __rmul__(self, other):
-       pass
-
-
-
-
 # --- Array ----------------------------------------------------------------- #
 
 class Array(ArrayLike):
@@ -420,19 +351,19 @@ class Array(ArrayLike):
 
    @property
    def dtype(self):
-       return self._backend.dtype(self._data)
+       return op.dtype(self)
 
    @property 
    def size(self):
-       return self._backend.size(self._data)
+       return op.size(self)
 
    @property 
    def ndim(self):
-       return self._backend.ndim(self._data)
+       return op.ndim(self)
 
    @property
    def shape(self):
-       return self._backend.shape(self._data)
+       return op.shape(self) 
 
 
    def allclose(self, other, **opts):
@@ -461,9 +392,9 @@ class Array(ArrayLike):
        return False
 
 
-   def item(self, *idxs):
+   def item(self, *idxs): # TODO add test!
 
-       return self._backend.item(*idxs)
+       return self._backend.item(self._data, *idxs)
 
 
    def __getitem__(self, idx):
@@ -478,20 +409,8 @@ class Array(ArrayLike):
 
    def __add__(self, other):
 
-       return op.add(self, other)
-
-
-   def __sub__(self, other):
-
-       return op.sub(self, other)
-
-
-   def __mul__(self, other):
-
-       return op.mul(self, other)
-
-
-   def __radd__(self, other):
+       if isinstance(other, grad.SparseGrad):
+          return NotImplemented
 
        if other == 0:
           return self
@@ -499,7 +418,10 @@ class Array(ArrayLike):
        return op.add(self, asarray(other, backend=self._backend))
 
 
-   def __rsub__(self, other):
+   def __sub__(self, other):
+
+       if isinstance(other, grad.SparseGrad):
+          return NotImplemented
 
        if other == 0:
           return self
@@ -507,12 +429,27 @@ class Array(ArrayLike):
        return op.sub(self, asarray(other, backend=self._backend))
 
 
-   def __rmul__(self, other):
+   def __mul__(self, other):
 
        if other == 1:
           return self
 
        return op.mul(self, asarray(other, backend=self._backend))
+
+
+   def __radd__(self, other):
+
+       return self.__add__(other)
+
+ 
+   def __rsub__(self, other):
+
+       return -self.__sub__(other)
+
+
+   def __rmul__(self, other):
+
+       return self.__mul__(other)
 
 
 
