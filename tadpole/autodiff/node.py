@@ -56,7 +56,7 @@ class AdjointOp(Adjoint):
        rep.typ(self)
        rep.val("fun",  self._fun)
        rep.val("adxs", self._adxs)
-       rep.ref("out",  self._out)
+       rep.val("out",  self._out)
        rep.val("args", self._args)
 
        return str(rep)

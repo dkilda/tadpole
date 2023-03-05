@@ -128,7 +128,8 @@ class Differentiable:
 
    def __call__(self, *args, **kwargs):
 
-       out = self._envelope(*args, **kwargs).applywrap(self, self._fun)
+       envelope = self._envelope(*args, **kwargs)
+       out      = envelope.applywrap(self, self._fun)
 
        print("\nDIFFABLE-1: ", self._fun)
 
@@ -139,7 +140,7 @@ class Differentiable:
           print("DIFFABLE-2: ", args)
           print("DIFFABLE-3: ", out)
 
-       return out # self._envelope(*args, **kwargs).applywrap(self, self._fun)
+       return out.unpack() # self._envelope(*args, **kwargs).applywrap(self, self._fun)
 
 
 
@@ -166,8 +167,9 @@ class NonDifferentiable:
 
    def __call__(self, *args, **kwargs):
 
-       return self._envelope(*args, **kwargs).apply(self._fun)
+       out = self._envelope(*args, **kwargs).apply(self._fun)
 
+       return out.unpack()
 
 
 
@@ -516,6 +518,38 @@ class Pack(Packable):
        return id(self)
 
 
+   def innermost(self):
+
+       return self._concat.innermost() 
+
+
+   def deshell(self):
+
+       return self._concat.deshell()
+
+
+   def deshelled(self):
+
+       return self._args.pack()
+
+
+   def fold(self, funwrap, outputs): 
+
+       def _fold(out):
+           return self._fold(funwrap, outputs, out)
+
+       return util.Outputs(*map(_fold, outputs))
+
+       
+   def _fold(self, funwrap, outputs, out):
+
+       if self.innermost():
+          return anode.Point(out)
+
+       op = anode.AdjointOp(funwrap, self._adxs, outputs, self._args)
+       return self._parents.next(out, self._layer, op) 
+
+
    @property
    def _layer(self):
 
@@ -539,31 +573,7 @@ class Pack(Packable):
 
        return self._concat.parents()
 
-
-   def innermost(self):
-
-       return self._concat.innermost() 
-
-
-   def deshell(self):
-
-       return self._concat.deshell()
-
-
-   def deshelled(self):
-
-       return self._args.pack()
-
        
-   def fold(self, funwrap, out): 
-
-       if self.innermost(): 
-          return anode.Point(out)
-
-       op = anode.AdjointOp(funwrap, self._adxs, out, self._args)
-       return self._parents.next(out, self._layer, op) 
-
-
 
 
 # --- EnvelopeLike interface ------------------------------------------------ #
@@ -652,19 +662,18 @@ class Envelope(EnvelopeLike):
        except AttributeError:
           pass
 
-       return fun(*args, **self._kwargs)     
+       return fun(*args, **self._kwargs) # TODO solution: require any ops function to return a tuple/TupleLike/Outputs
 
-       
-   def applywrap(self, funwrap, fun):
+              
+   def applywrap(self, funwrap, fun): 
 
-       outval = self.apply(fun)
+       if self.packs().once():
+          return self.apply(fun)
+           
+       out = self.apply(fun)
 
-       out = outval
        for pack in reversed(self.packs()):
            out = pack.fold(funwrap, out)
-
-       if isinstance(out, anode.Point):
-          return outval
 
        return out
 

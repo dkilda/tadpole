@@ -26,8 +26,6 @@ class TestScalar:
        w   = scalardat()
        out = w.fun(*w.args)
 
-       print("\nTEST-1: ", out)
-
        assert allclose(out, w.out)
 
 

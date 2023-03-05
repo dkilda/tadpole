@@ -311,7 +311,7 @@ def concat_output_dat(n, adxs, layers):
 
 PackData = collections.namedtuple("PackData", [
               "pack", "deshelled", "deshell", "concat", 
-              "node", "source", "funwrap", 
+              "nodes", "sources", "funwrap", 
            ])
 
 
@@ -342,9 +342,16 @@ def pack_dat(valency=1, layer=0):
                           )
     pack = agraph.Pack(concat)
 
-    return PackData(pack, deshelled_pack, deshelled_args, concat, 
-                    node, source, funwrap)
-  
+    return PackData(
+                    pack, 
+                    deshelled_pack, 
+                    deshelled_args, 
+                    concat, 
+                    util.Outputs(node), 
+                    util.Outputs(source), 
+                    funwrap
+                   )
+
 
 
 
@@ -353,7 +360,7 @@ def pack_dat(valency=1, layer=0):
 EnvelopeData = collections.namedtuple("EnvelopeData", [
                   "envelope", "args", 
                   "packs", "nodes", 
-                  "outnode", "outvalue", "fun", "funwrap"
+                  "outnodes", "outvalues", "fun", "funwrap"
                ])
 
 
@@ -384,10 +391,14 @@ def envelope_dat(stackdat):
     envelope = agraph.Envelope(args)
 
     return EnvelopeData(
-                        envelope, args, 
-                        packs, stackdat.nodes, 
-                        outnode, stackdat.outvalue, 
-                        stackdat.fun, stackdat.funwrap
+                        envelope, 
+                        args, 
+                        packs, 
+                        stackdat.nodes, 
+                        util.Outputs(outnode), 
+                        util.Outputs(stackdat.outvalue), 
+                        stackdat.fun, 
+                        stackdat.funwrap
                        )
 
 

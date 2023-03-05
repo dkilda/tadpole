@@ -28,6 +28,18 @@ class Loop:
        self._next  = next
        self._stop  = stop
 
+
+   @util.cacheable
+   def _items(self):
+
+       return list(self)
+
+
+   @util.cacheable
+   def _reversed(self):
+
+       return reversed(self._items())
+
        
    def __iter__(self):
 
@@ -43,16 +55,29 @@ class Loop:
            x = self._next(x)
 
 
-   @util.cacheable
    def __reversed__(self):
 
-       return iter(reversed(list(self)))
+       return iter(self._reversed())
 
 
-   @util.cacheable
+   def first(self):
+
+       return self._first  
+
+
    def last(self):
  
        return next(reversed(self)) 
+
+
+   def size(self):
+
+       return len(self._list())
+
+       
+   def once(self):
+
+       return self.size() == 1
 
 
 

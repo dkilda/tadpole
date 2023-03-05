@@ -113,6 +113,28 @@ def add(x, y):
 
 
 @ad.differentiable
+def grad_add(x, y):
+
+    def fun(backend):
+
+        
+
+
+       if other == 0:
+          other = self._space.zeros()
+
+       return op.put(other, self._idxs, self._vals, accumulate=True)
+
+
+
+
+    def fun(backend, v, u):
+        return backend.add(v, u)
+
+    return Args(x, y).pluginto(FunCall(fun))
+
+
+@ad.differentiable
 def sub(x, y):
 
     def fun(backend, v, u):

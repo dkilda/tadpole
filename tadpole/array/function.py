@@ -105,7 +105,9 @@ class Visit:
        arrays, datas = zip(*self._content)
        space         = arrays[0].space() 
 
-       return space.visit(self._fun, *datas) 
+       out = space.visit(self._fun, *datas) 
+
+       return util.Outputs(out)
 
 
 
@@ -154,7 +156,9 @@ class FunCall:
        arrays, datas = zip(*self._content)
        space         = arrays[0].space()
 
-       return space.apply(self._fun, *datas) 
+       out = space.apply(self._fun, *datas) # FIXME Q: what if fun returns multiple values?
+                                            #       A: introduce SplitCall! In addition to 
+       return util.Outputs(out)             #          TransformCall, ReduceCall, VisitCall. 
 
 
 

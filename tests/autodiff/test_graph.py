@@ -434,14 +434,14 @@ class TestPack:
    def test_fold_001(self, valency, layer):
 
        x = data.pack_dat(valency, layer)
-       assert x.pack.fold(x.funwrap, x.source) == x.node
+       assert x.pack.fold(x.funwrap, x.sources) == x.nodes
 
 
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_fold_002(self, valency):
 
        x = data.pack_dat(valency, -1)
-       assert x.pack.fold(x.funwrap, x.source) == x.node
+       assert x.pack.fold(x.funwrap, x.sources) == x.nodes
  
 
 
@@ -470,7 +470,7 @@ class TestEnvelope:
    def test_apply(self, node_stack_dat):
 
        x = data.envelope_dat(node_stack_dat()) 
-       assert x.envelope.apply(x.fun) == x.outvalue
+       assert x.envelope.apply(x.fun) == x.outvalues
 
 
    @pytest.mark.parametrize("node_stack_dat", [
@@ -479,7 +479,7 @@ class TestEnvelope:
    def test_applywrap(self, node_stack_dat):
 
        x = data.envelope_dat(node_stack_dat())
-       assert x.envelope.applywrap(x.funwrap, x.fun) == x.outnode
+       assert x.envelope.applywrap(x.funwrap, x.fun) == x.outnodes
 
 
    @pytest.mark.parametrize("node_stack_dat", [
@@ -488,7 +488,7 @@ class TestEnvelope:
    def test_applywrap_value(self, node_stack_dat):
 
        x = data.envelope_dat(node_stack_dat())
-       assert x.envelope.applywrap(x.funwrap, x.fun) == x.outvalue
+       assert x.envelope.applywrap(x.funwrap, x.fun) == x.outvalues
 
 
 

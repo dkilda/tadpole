@@ -13,8 +13,9 @@ from tadpole.util.itertools import (
 )
 
 
-from tadpole.util.tuplelike import (
+from tadpole.util.containers import (
    TupleLike,
+   Outputs,
 )
 
 

@@ -231,9 +231,11 @@ class ReversePropagation(Propagation):
    def accum(self, end, seed):
 
        grads = GradAccum({end: seed})
+       print("\n\nPROPGRADS-BEGIN: ", grads._grads, seed)
 
        for node in toposort(end): 
            grads = node.grads(grads)
+           print("\nPROPGRADS: ", grads._grads)
 
        return grads
 
