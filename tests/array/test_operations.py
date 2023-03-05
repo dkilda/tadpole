@@ -5,6 +5,8 @@ import pytest
 import itertools
 import numpy as np
 
+from tadpole.tests.common import options
+
 import tests.array.fakes as fake
 import tests.array.data  as data
 
@@ -51,7 +53,7 @@ class TestUnaryOperations:
        out = op.put(w.array, idxs, vals)
 
        w.data[idxs] = vals
-       ans = core.asarray(backend, w.data)
+       ans = core.asarray(w.data, **options(backend=backend))
 
        assert out == ans
 
@@ -69,7 +71,7 @@ class TestUnaryOperations:
        out = op.put(w.array, idxs, vals, accumulate=True)
 
        np.add.at(w.data, idxs, vals) 
-       ans = core.asarray(backend, w.data)
+       ans = core.asarray(w.data, **options(backend=backend))
 
        assert out == ans
 
@@ -84,7 +86,7 @@ class TestUnaryOperations:
 
        out = op.reshape(w.array, shape1)
        ans = np.reshape(w.data,  shape1)
-       ans = core.asarray(backend, ans)
+       ans = core.asarray(ans, **options(backend=backend))
 
        assert out == ans
 
@@ -97,7 +99,7 @@ class TestUnaryOperations:
 
        out = -w.array 
        ans = -w.data
-       ans = core.asarray(backend, ans)
+       ans = core.asarray(ans, **options(backend=backend))
 
        assert core.allclose(out, ans)
 
@@ -110,7 +112,7 @@ class TestUnaryOperations:
 
        out = op.sin(w.array)
        ans = np.sin(w.data)
-       ans = core.asarray(backend, ans)
+       ans = core.asarray(ans, **options(backend=backend))
 
        assert core.allclose(out, ans)
 
@@ -123,7 +125,7 @@ class TestUnaryOperations:
 
        out = op.cos(w.array)
        ans = np.cos(w.data)
-       ans = core.asarray(backend, ans)
+       ans = core.asarray(ans, **options(backend=backend))
 
        assert core.allclose(out, ans)
 
@@ -146,7 +148,7 @@ class TestBinaryOperations:
 
        out = x1.array + x2.array
        ans = x1.data  + x2.data
-       ans = core.asarray(backend, ans)
+       ans = core.asarray(ans, **options(backend=backend))
        
        return core.allclose(out, ans)
 
@@ -162,7 +164,7 @@ class TestBinaryOperations:
 
        out = x1.array - x2.array
        ans = x1.data  - x2.data
-       ans = core.asarray(backend, ans)
+       ans = core.asarray(ans, **options(backend=backend))
        
        return core.allclose(out, ans)
 
@@ -178,7 +180,7 @@ class TestBinaryOperations:
 
        out = x1.array * x2.array
        ans = x1.data  * x2.data
-       ans = core.asarray(backend, ans)
+       ans = core.asarray(ans, **options(backend=backend))
        
        return core.allclose(out, ans)
        
@@ -202,7 +204,7 @@ class TestNaryOperations:
 
        out = op.einsum(equation, *(x.array for x in xs))
        ans = np.einsum(equation, *(x.data  for x in xs))
-       ans = core.asarray(backend, ans)
+       ans = core.asarray(ans, **options(backend=backend))
 
        assert core.allclose(out, ans) 
 

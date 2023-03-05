@@ -33,6 +33,26 @@ class TestRegistry:
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
+   def test_get_from(self, backend):
+
+       opts = {"a": 1, "backend": backend, "b": 2}
+       typ  = {
+               "numpy": backends.numpy.NumpyBackend, 
+               "torch": backends.torch.TorchBackend, 
+              }[backend]
+
+       out = backends.get_from(**opts)
+
+       assert isinstance(out, typ)
+
+
+   def test_get_from_default(self):
+
+       opts = {"a": 1, "b": 2}
+       assert backends.get_from(**opts) == backends.get("numpy")
+
+
+   @pytest.mark.parametrize("backend", ["numpy"])
    def test_get_by_name(self, backend):
 
        typ = {

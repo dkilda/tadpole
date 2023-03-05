@@ -97,6 +97,11 @@ def get(backend):
     return _BACKENDS.get(backend)
 
 
+def get_from(**opts):
+
+    return get(opts.pop("backend", None))
+
+
 def set_default(backend):
 
     _BACKENDS.set_default(backend)

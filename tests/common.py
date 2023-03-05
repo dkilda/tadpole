@@ -60,6 +60,13 @@ def combos(typ):
 
 
 
+# --- Create options dict from input kwargs (ignoring any None values) ------ #  
+
+def options(**kwargs):
+
+    return {k: v for k,v in kwargs.items() if v is not None}
+        
+
 
 
 

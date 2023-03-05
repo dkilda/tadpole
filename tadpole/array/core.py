@@ -22,62 +22,62 @@ import tadpole.array.backends   as backends
 
 # --- Array factories ------------------------------------------------------- #
 
-def fromfun(fun, backend, *datas, **opts):
+def fromfun(fun, *datas, **opts):
 
     return DataFun(fun)(
-              backend, *datas, **opts
+              *datas, **opts
            )
 
 
-def asarray(backend, data, **opts):
+def asarray(data, **opts):
 
     if isinstance(data, ArrayLike):
        return data
 
     return DataFun(lambda backend_, data_: data_)(
-              backend, data, **opts
+              data, **opts
            )
 
 
-def zeros(backend, shape, **opts):
+def zeros(shape, **opts):
 
-    return ShapeFun("zeros")(
-              backend, shape, **opts
+    return ArrayFromShape("zeros")(
+              shape, **opts
            )
 
 
-def ones(backend, shape, **opts):
+def ones(shape, **opts):
 
-    return ShapeFun("ones")(
-              backend, shape, **opts
+    return ArrayFromShape("ones")(
+              shape, **opts
            )
 
 
-def unit(backend, shape, idx, **opts):
+def unit(shape, idx, **opts):
 
-    return ShapeFun("unit")(
-              backend, shape, idx, **opts
+    return ArrayFromShape("unit")(
+              shape, idx, **opts
            )
 
 
-def rand(backend, shape, **opts):
+def rand(shape, **opts):
 
-    return ShapeFun("rand")(
-              backend, shape, **opts
+    return ArrayFromShape("rand")(
+              shape, **opts
            )
 
 
-def randn(backend, shape, **opts):
+def randn(shape, **opts):
 
-    return ShapeFun("randn")(
-              backend, shape, **opts
+    return ArrayFromShape("randn")(
+              shape, **opts
            )
 
 
-def randuniform(backend, shape, boundaries, **opts):
+def randuniform(shape, boundaries, **opts):
 
-    return ShapeFun("randuniform")(
-              backend, shape, boundaries, **opts
+    return ArrayFromShape("randuniform")(
+              shape, boundaries, **opts
            )
 
 
@@ -85,18 +85,18 @@ def randuniform(backend, shape, boundaries, **opts):
 
 # --- Array generators ------------------------------------------------------ #
 
-def units(backend, shape, dtype=None):
+def units(shape, dtype=None, backend=None):
 
     for idx in np.ndindex(*shape):
-        yield unit(backend, shape, idx, dtype=dtype)
+        yield unit(shape, idx, dtype=dtype, backend=backend)
 
 
 
-def basis(backend, shape, dtype=None): 
+def basis(shape, dtype=None, backend=None): 
 
     backend   = backends.get(backend)
     dtype     = backend.get_dtype(dtype)
-    gen_units = units(backend.name(), shape, dtype=dtype)
+    gen_units = units(shape, dtype=dtype, backend=backend)
 
     if  dtype in backend.complex_dtypes():
 
@@ -120,9 +120,9 @@ class DataFun:
        self._fun = fun
 
 
-   def __call__(self, backend, *datas, **opts):
+   def __call__(self, *datas, **opts):
 
-       backend = backends.get(backend)                                        
+       backend = backends.get_from(**opts)                                        
        newdata = self._fun(backend, *datas)
        newdata = backend.asarray(newdata, **opts)
 
@@ -131,18 +131,18 @@ class DataFun:
        
 
 
-# --- Shape function wrappe-------------------------------------------------- #
+# --- Factory that constructs an Array from shape input --------------------- #
 
-class ShapeFun:
+class ArrayFromShape:
 
    def __init__(self, fun):
 
        self._fun = fun
 
 
-   def __call__(self, backend, shape, *args, **opts):
+   def __call__(self, shape, *args, **opts):
 
-       backend = backends.get(backend)
+       backend = backends.get_from(**opts)  #opts.pop("backend", None)) # FIXME introduce backends.get with opts input
        fun     = self._fun
 
        if callable(fun): 
@@ -241,7 +241,7 @@ class Space(abc.ABC):
 
 class ArraySpace(Space):
 
-   def __init__(self, backend, shape, dtype):
+   def __init__(self, shape, dtype):
 
        self._backend = backend
        self._dtype   = dtype
@@ -263,7 +263,8 @@ class ArraySpace(Space):
    def _create(self, fun, *args, **opts):
 
        return fun(
-          self._backend, self._shape, *args, dtype=self._dtype, **opts
+          self._shape, *args, 
+          dtype=self._dtype, backend=self._backend, **opts
        )
 
 
@@ -309,17 +310,17 @@ class ArraySpace(Space):
 
    def apply(self, fun, *datas):
 
-       return fromfun(fun, self._backend, *datas, dtype=self._dtype)
+       return fromfun(fun, *datas, dtype=self._dtype, backend=self._backend)
 
 
    def visit(self, fun, *datas):
                
-       return fun(backends.get(self._backend), *datas)
+       return fun(backends.get(self._backend), *datas) # FIXME marked for removal!
 
 
    def asarray(self, data):
 
-       return asarray(self._backend, data, dtype=self._dtype)
+       return asarray(data, dtype=self._dtype, backend=self._backend)
 
 
    @property

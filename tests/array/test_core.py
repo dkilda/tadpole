@@ -5,6 +5,8 @@ import pytest
 import itertools
 import numpy as np
 
+from tadpole.tests.common import options
+
 import tests.array.fakes as fake
 import tests.array.data  as data
 
@@ -31,7 +33,7 @@ class TestArrayFactories:
    @pytest.mark.parametrize("shape",   [(2,3,4)])
    @pytest.mark.parametrize("dtype",   ["complex128"])
    def test_fromfun(self, backend, shape, dtype):
-
+       
        x1 = data.array_dat(data.randn)(
               backend, shape, dtype=dtype, seed=1
             )
@@ -42,8 +44,10 @@ class TestArrayFactories:
               backend, shape, dtype=dtype, seed=3
             ) 
 
+       opts = options(dtype=dtype, backend=backend)
+
        fun = fake.Fun(ans.data, ans.backend, x1.data, x2.data)
-       out = core.fromfun(fun, backend, x1.data, x2.data, dtype=dtype)
+       out = core.fromfun(fun, x1.data, x2.data, **opts)
 
        assert out == ans.array
 
@@ -53,11 +57,13 @@ class TestArrayFactories:
    @pytest.mark.parametrize("dtype",   ["complex128"])
    def test_asarray(self, backend, shape, dtype):
 
+       opts = {} if not backend else {"backend": backend} 
+
        x = data.array_dat(data.randn)(
               backend, shape, dtype=dtype, seed=1
            )
 
-       assert core.asarray(backend, x.data, dtype=dtype) == x.array
+       assert core.asarray(x.data, dtype=dtype, **opts) == x.array
 
 
    @pytest.mark.parametrize("backend",  ["numpy"])
@@ -66,11 +72,12 @@ class TestArrayFactories:
    ])
    def test_unit(self, backend, basisdat):
 
-       x = basisdat(backend)
+       x    = basisdat(backend)
+       opts = options(dtype=x.dtype, backend=backend)
 
        for idx, ans in zip(x.idxs, x.arrays):
 
-           out = core.unit(backend, x.shape, idx, dtype=x.dtype)
+           out = core.unit(x.shape, idx, **opts)
            assert out == ans
 
 
@@ -80,8 +87,10 @@ class TestArrayFactories:
    ])
    def test_zeros(self, backend, sampledat):
 
-       x   = sampledat(backend)
-       out = core.zeros(backend, x.shape, dtype=x.dtype)
+       x    = sampledat(backend)
+       opts = options(dtype=x.dtype, backend=backend)
+
+       out = core.zeros(x.shape, **opts)
 
        assert out == x.array
 
@@ -92,8 +101,10 @@ class TestArrayFactories:
    ])
    def test_ones(self, backend, sampledat):
 
-       x   = sampledat(backend)
-       out = core.ones(backend, x.shape, dtype=x.dtype)
+       x    = sampledat(backend)
+       opts = options(dtype=x.dtype, backend=backend)
+
+       out = core.ones(x.shape, **opts)
 
        assert out == x.array
 
@@ -105,8 +116,11 @@ class TestArrayFactories:
    ])
    def test_rand(self, backend, sampledat):
 
-       x   = sampledat(backend, seed=1)
-       out = core.rand(backend, x.shape, dtype=x.dtype, seed=1)
+       seed = 1
+       x    = sampledat(backend, seed=seed)
+       opts = options(dtype=x.dtype, seed=seed, backend=backend)
+
+       out = core.rand(x.shape, **opts)
 
        assert out == x.array
 
@@ -118,8 +132,11 @@ class TestArrayFactories:
    ])
    def test_randn(self, backend, sampledat):
 
-       x   = sampledat(backend, seed=1)
-       out = core.randn(backend, x.shape, dtype=x.dtype, seed=1)
+       seed = 1
+       x    = sampledat(backend, seed=seed)
+       opts = options(dtype=x.dtype, seed=seed, backend=backend)
+
+       out = core.randn(x.shape, **opts)
 
        assert out == x.array
 
@@ -131,9 +148,12 @@ class TestArrayFactories:
    ])
    def test_randuniform(self, backend, sampledat):
 
-       x   = sampledat(backend, seed=1)
+       seed = 1
+       x    = sampledat(backend, seed=seed)
+       opts = options(dtype=x.dtype, seed=seed, backend=backend)
+
        out = core.randuniform(
-                backend, x.shape, x.opts["boundaries"], dtype=x.dtype, seed=1
+                x.shape, x.opts["boundaries"], **opts
              )
 
        assert out == x.array
@@ -151,10 +171,11 @@ class TestArrayGenerators:
    ])
    def test_units(self, backend, basisdat):
 
-       x = basisdat(backend)
+       x    = basisdat(backend)
+       opts = options(dtype=x.dtype, backend=backend)
 
        ans = list(x.arrays)
-       out = list(core.units(backend, x.shape, dtype=x.dtype))
+       out = list(core.units(x.shape, **opts))
 
        assert out == ans
 
@@ -166,10 +187,11 @@ class TestArrayGenerators:
    ])
    def test_basis(self, backend, basisdat):
 
-       x = basisdat(backend)
+       x    = basisdat(backend)
+       opts = options(dtype=x.dtype, backend=backend)
 
        ans = list(x.arrays)
-       out = list(core.basis(backend, x.shape, dtype=x.dtype))
+       out = list(core.basis(x.shape, **opts))
 
        assert out == ans
 

@@ -3,6 +3,7 @@
 
 from .registry import (
    get,
+   get_from,
    set_default,
    get_str,
 )
