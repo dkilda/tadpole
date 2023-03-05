@@ -110,7 +110,7 @@ class TestArgs:
 
        w = data.transform_dat(backend, nargs)
 
-       funcall = function.FunCall(w.fun)
+       funcall = function.TransformCall(w.fun)
        args    = function.Args(*w.arrays)
 
        assert w.args.pluginto(funcall) == w.out

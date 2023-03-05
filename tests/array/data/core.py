@@ -237,7 +237,8 @@ def randuniform_complex_dat_001(backend, boundaries=(0,1), seed=1):
 # --- Array data ------------------------------------------------------------ #
 
 ArrayData = collections.namedtuple("ArrayData", [
-               "array", "backend", "data", "shape", "opts",
+               "array", "backend", "data", 
+               "shape", "opts",
             ])
 
 

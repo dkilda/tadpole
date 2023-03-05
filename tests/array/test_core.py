@@ -98,8 +98,8 @@ class TestArraysFromData:
               backend, shape, dtype=dtype, seed=1
            )
 
-       opts = options(dtype=x.dtype, backend=backend)
-       out  = core.asarray(x.data, dtype=dtype, **opts) 
+       opts = options(dtype=dtype, backend=backend)
+       out  = core.asarray(x.data, **opts) 
 
        assert out == x.array
 
@@ -337,8 +337,8 @@ class TestArray:
        seq = [(w.backend, w.data)       for w     in ws]
 
        fun     = fake.Fun(None)
-       ans     = function.FunCall(fun, util.Sequence(seq))
-       funcall = function.FunCall(fun)
+       ans     = function.TransformCall(fun, util.Sequence(seq))
+       funcall = function.TransformCall(fun)
 
        for w in ws:
            funcall = w.array.pluginto(funcall)
@@ -435,8 +435,11 @@ class TestArray:
 
        w = data.array_dat(data.randn)(backend, shape)
 
+       def elem(idx):
+           return core.asarray(w.data[idx], backend=w.backend)
+
        for idx in itertools.product(*map(range, shape)):
-           assert w.array[idx] == w.data[idx]
+           assert w.array[idx] == elem(idx)
 
 
 

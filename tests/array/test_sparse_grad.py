@@ -35,12 +35,12 @@ class TestSparseGrad:
    ])
    def test_pluginto(self, backend, graddats):
 
-       ws  = [dat(backend)           for dat in graddats] 
-       seq = [(w.dense, w.densedata) for w   in ws]
+       ws  = [dat(backend)             for dat in graddats] 
+       seq = [(w.backend, w.densedata) for w   in ws]
 
        fun     = fake.Fun(None)
-       ans     = function.FunCall(fun, util.Sequence(seq))
-       funcall = function.FunCall(fun)
+       ans     = function.TransformCall(fun, util.Sequence(seq))
+       funcall = function.TransformCall(fun)
 
        for w in ws:
            funcall = w.grad.pluginto(funcall)

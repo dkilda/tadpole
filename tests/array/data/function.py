@@ -62,7 +62,7 @@ def _function_dat(backend, shape, dtype, nargs, which="function"):
                    backend, shape, dtype=dtype, seed=nargs+2
                 ) 
 
-         fun = fake.Fun((out1.data, out2.data), out.backend, *datas)
+         fun = fake.Fun((out1.data, out2.data), out1.backend, *datas)
          out = util.Outputs(out1.array, out2.array)
 
          funcall = function.SplitCall(fun, util.Sequence(seq))

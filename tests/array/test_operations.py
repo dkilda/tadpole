@@ -36,8 +36,11 @@ class TestUnaryOperations:
 
        w = data.array_dat(data.randn)(backend, shape)
 
+       def elem(idx):
+           return core.asarray(w.data[idx], backend=w.backend)
+
        for idx in itertools.product(*map(range, shape)):
-           assert op.getitem(w.array, idx) == w.data[idx]
+           assert op.getitem(w.array, idx) == elem(idx)
 
 
    @pytest.mark.parametrize("backend",     ["numpy"])

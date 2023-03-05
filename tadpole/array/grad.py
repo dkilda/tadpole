@@ -60,6 +60,10 @@ class SparseGrad(ArrayLike):
        return self._space.dtype
 
    @property 
+   def size(self):
+       return len(self._vals)
+
+   @property 
    def ndim(self):
        return self._space.ndim
 

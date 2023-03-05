@@ -56,7 +56,7 @@ def getitem(x, idx):
     def fun(backend, v):
         return v[idx]
 
-    return Args(x).pluginto(VisitCall(fun))
+    return Args(x).pluginto(TransformCall(fun))
 
 
 @ad.differentiable
