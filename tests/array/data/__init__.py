@@ -32,7 +32,8 @@ from .grad import (
 
 
 from .function import (
-   function_dat,
+   transform_dat,
+   split_dat,
    visit_dat,
 )
 

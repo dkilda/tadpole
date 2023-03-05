@@ -31,11 +31,11 @@ class TestContent:
    @pytest.mark.parametrize("nargs",   [2])
    def test_attach(self, backend, nargs):
 
-       w       = data.function_dat(backend, nargs)
+       w       = data.transform_dat(backend, nargs)
        content = function.Content()
 
-       for warray, wdata in w.arrays_and_datas:
-           content = content.attach(warray, wdata)
+       for wbackend, wdata in w.backends_and_datas:
+           content = content.attach(wbackend, wdata)
 
        assert content == w.content
            
@@ -44,23 +44,23 @@ class TestContent:
    @pytest.mark.parametrize("nargs",   [2])
    def test_iter(self, backend, nargs):
 
-       w = data.function_dat(backend, nargs)
-       assert tuple(w.content) == tuple(w.arrays_and_datas)
+       w = data.transform_dat(backend, nargs)
+       assert tuple(w.content) == tuple(w.backends_and_datas)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
    @pytest.mark.parametrize("nargs",   [2])
    def test_len(self, backend, nargs):
 
-       w = data.function_dat(backend, nargs)
+       w = data.transform_dat(backend, nargs)
        assert len(w.content) == nargs
 
 
 
 
-# --- Visit ----------------------------------------------------------------- #
+# --- Visit call ------------------------------------------------------------ #
 
-class TestVisit:
+class TestVisitCall:
 
    @pytest.mark.parametrize("backend", ["numpy"])
    @pytest.mark.parametrize("nargs",   [2])
@@ -72,15 +72,29 @@ class TestVisit:
 
 
 
-# --- Function call --------------------------------------------------------- #
+# --- Split call ------------------------------------------------------------ #
 
-class TestFunCall:
+class TestSplitCall:
 
    @pytest.mark.parametrize("backend", ["numpy"])
    @pytest.mark.parametrize("nargs",   [2])
    def test_execute(self, backend, nargs):
 
-       w = data.function_dat(backend, nargs)
+       w = data.split_dat(backend, nargs)
+       assert w.funcall.execute() == w.out 
+
+
+
+
+# --- Transform call -------------------------------------------------------- #
+
+class TestTransformCall:
+
+   @pytest.mark.parametrize("backend", ["numpy"])
+   @pytest.mark.parametrize("nargs",   [2])
+   def test_execute(self, backend, nargs):
+
+       w = data.transform_dat(backend, nargs)
        assert w.funcall.execute() == w.out 
 
 
@@ -94,7 +108,7 @@ class TestArgs:
    @pytest.mark.parametrize("nargs",   [2])
    def test_pluginto(self, backend, nargs):
 
-       w = data.function_dat(backend, nargs)
+       w = data.transform_dat(backend, nargs)
 
        funcall = function.FunCall(w.fun)
        args    = function.Args(*w.arrays)
@@ -106,7 +120,7 @@ class TestArgs:
    @pytest.mark.parametrize("nargs",   [2])
    def test_iter(self, backend, nargs):
 
-       w = data.function_dat(backend, nargs)
+       w = data.transform_dat(backend, nargs)
        assert tuple(w.args) == tuple(w.arrays)
 
 
@@ -114,7 +128,7 @@ class TestArgs:
    @pytest.mark.parametrize("nargs",   [2])
    def test_reversed(self, backend, nargs):
 
-       w = data.function_dat(backend, nargs)
+       w = data.transform_dat(backend, nargs)
        assert tuple(reversed(w.args)) == tuple(reversed(w.arrays))
 
 
@@ -122,7 +136,7 @@ class TestArgs:
    @pytest.mark.parametrize("nargs",   [2])
    def test_len(self, backend, nargs):
 
-       w = data.function_dat(backend, nargs)
+       w = data.transform_dat(backend, nargs)
        assert len(w.args) == nargs
 
 
@@ -130,7 +144,7 @@ class TestArgs:
    @pytest.mark.parametrize("nargs",   [2])
    def test_contains(self, backend, nargs):
 
-       w = data.function_dat(backend, nargs)
+       w = data.transform_dat(backend, nargs)
 
        for x in w.arrays:
            assert x in w.args
@@ -140,7 +154,7 @@ class TestArgs:
    @pytest.mark.parametrize("nargs",   [2])
    def test_getitem(self, backend, nargs):
 
-       w = data.function_dat(backend, nargs)
+       w = data.transform_dat(backend, nargs)
 
        for i in range(nargs):
            assert w.args[i] == w.arrays[i]

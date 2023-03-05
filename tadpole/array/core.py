@@ -4,9 +4,6 @@
 import abc
 import numpy as np
 
-import operator as stdop
-from functools import reduce
-
 import tadpole.util as util
 import tadpole.autodiff as ad
 
@@ -295,7 +292,7 @@ class ArraySpace(Space):
 
    @property
    def size(self):
-       return reduce(stdop.mul, self._shape)
+       return np.prod(self._shape)
 
    @property 
    def ndim(self):

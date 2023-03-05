@@ -25,9 +25,46 @@ import tadpole.array.function as function
 ###############################################################################
 
 
-# --- Array factories ------------------------------------------------------- #
+# --- Array generators ------------------------------------------------------ #
 
-class TestArrayFactories:
+class TestArrayGenerators:
+
+   @pytest.mark.parametrize("backend",  ["numpy"])
+   @pytest.mark.parametrize("basisdat", [
+      data.basis_real_dat_001,
+   ])
+   def test_units(self, backend, basisdat):
+
+       x    = basisdat(backend)
+       opts = options(dtype=x.dtype, backend=backend)
+
+       ans = list(x.arrays)
+       out = list(core.units(x.shape, **opts))
+
+       assert out == ans
+
+
+   @pytest.mark.parametrize("backend",  ["numpy"])
+   @pytest.mark.parametrize("basisdat", [
+      data.basis_real_dat_001, 
+      data.basis_complex_dat_001,
+   ])
+   def test_basis(self, backend, basisdat):
+
+       x    = basisdat(backend)
+       opts = options(dtype=x.dtype, backend=backend)
+
+       ans = list(x.arrays)
+       out = list(core.basis(x.shape, **opts))
+
+       assert out == ans
+
+
+
+
+# --- Array factories (from data) ------------------------------------------- #
+
+class TestArraysFromData:
 
    @pytest.mark.parametrize("backend", ["numpy"])
    @pytest.mark.parametrize("shape",   [(2,3,4)])
@@ -57,14 +94,21 @@ class TestArrayFactories:
    @pytest.mark.parametrize("dtype",   ["complex128"])
    def test_asarray(self, backend, shape, dtype):
 
-       opts = {} if not backend else {"backend": backend} 
-
        x = data.array_dat(data.randn)(
               backend, shape, dtype=dtype, seed=1
            )
 
-       assert core.asarray(x.data, dtype=dtype, **opts) == x.array
+       opts = options(dtype=x.dtype, backend=backend)
+       out  = core.asarray(x.data, dtype=dtype, **opts) 
 
+       assert out == x.array
+
+
+
+
+# --- Array factories (from shape) ------------------------------------------ #
+
+class TestArraysFromShape:
 
    @pytest.mark.parametrize("backend",  ["numpy"])
    @pytest.mark.parametrize("basisdat", [
@@ -158,56 +202,7 @@ class TestArrayFactories:
 
        assert out == x.array
 
-
-
-
-# --- Array generators ------------------------------------------------------ #
-
-class TestArrayGenerators:
-
-   @pytest.mark.parametrize("backend",  ["numpy"])
-   @pytest.mark.parametrize("basisdat", [
-      data.basis_real_dat_001,
-   ])
-   def test_units(self, backend, basisdat):
-
-       x    = basisdat(backend)
-       opts = options(dtype=x.dtype, backend=backend)
-
-       ans = list(x.arrays)
-       out = list(core.units(x.shape, **opts))
-
-       assert out == ans
-
-
-   @pytest.mark.parametrize("backend",  ["numpy"])
-   @pytest.mark.parametrize("basisdat", [
-      data.basis_real_dat_001, 
-      data.basis_complex_dat_001,
-   ])
-   def test_basis(self, backend, basisdat):
-
-       x    = basisdat(backend)
-       opts = options(dtype=x.dtype, backend=backend)
-
-       ans = list(x.arrays)
-       out = list(core.basis(x.shape, **opts))
-
-       assert out == ans
-
-
-
-
-###############################################################################
-###                                                                         ###
-###  Array space                                                            ###
-###                                                                         ###
-###############################################################################
-
-
-# --- ArraySpace ------------------------------------------------------------ #
-
-class TestArraySpace:
+"""
 
    @pytest.mark.parametrize("backend", ["numpy"])
    @pytest.mark.parametrize("shape",   [(2,3,4)])
@@ -252,6 +247,21 @@ class TestArraySpace:
 
        assert w.space.visit(fun, x1.data, x2.data) == out 
 
+"""
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Array space                                                            ###
+###                                                                         ###
+###############################################################################
+
+
+# --- ArraySpace ------------------------------------------------------------ #
+
+class TestArraySpace:
 
    @pytest.mark.parametrize("backend", ["numpy"])
    @pytest.mark.parametrize("shape",   [(2,3,4)])
@@ -263,6 +273,18 @@ class TestArraySpace:
            )
 
        assert w.space.dtype == dtype
+
+
+   @pytest.mark.parametrize("backend", ["numpy"])
+   @pytest.mark.parametrize("shape",   [(2,3,4)])
+   @pytest.mark.parametrize("dtype",   ["complex128"])  
+   def test_size(self, backend, shape, dtype):
+
+       w = data.array_space_dat(
+              backend, shape, dtype
+           )
+
+       assert w.space.size == np.prod(shape) 
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
@@ -312,7 +334,7 @@ class TestArray:
        array_dat = data.array_dat(data.randn)
 
        ws  = [array_dat(backend, shape) for shape in shapes] 
-       seq = [(w.array, w.data)         for w     in ws]
+       seq = [(w.backend, w.data)       for w     in ws]
 
        fun     = fake.Fun(None)
        ans     = function.FunCall(fun, util.Sequence(seq))
@@ -381,6 +403,14 @@ class TestArray:
               backend, (2,3,4), dtype=dtype)
 
        assert w.array.dtype == dtype 
+
+
+   @pytest.mark.parametrize("backend", ["numpy"])
+   @pytest.mark.parametrize("shape",   [(2,3,4)])
+   def test_size(self, backend, shape):
+
+       w = data.array_dat(data.randn)(backend, shape)
+       assert w.array.size == np.prod(shape)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
