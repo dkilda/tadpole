@@ -515,7 +515,7 @@ class Array(ArrayLike):
        if other == 0:
           return self
 
-       return op.add(self, asarray(self._backend, other))
+       return op.add(self, asarray(other, backend=self._backend))
 
 
    def __rsub__(self, other):
@@ -523,7 +523,7 @@ class Array(ArrayLike):
        if other == 0:
           return self
 
-       return op.sub(self, asarray(self._backend, other))
+       return op.sub(self, asarray(other, backend=self._backend))
 
 
    def __rmul__(self, other):
@@ -531,7 +531,7 @@ class Array(ArrayLike):
        if other == 1:
           return self
 
-       return op.mul(self, asarray(self._backend, other))
+       return op.mul(self, asarray(other, backend=self._backend))
 
 
 
