@@ -56,7 +56,7 @@ def getitem(x, idx):
     def fun(backend, v):
         return v[idx]
 
-    return Args(x).pluginto(Visit(fun))
+    return Args(x).pluginto(VisitCall(fun))
 
 
 @ad.differentiable
@@ -65,7 +65,7 @@ def put(x, idxs, vals, accumulate=False):
     def fun(backend, v):
         return backend.put(v, idxs, vals, accumulate=accumulate)
 
-    return Args(x).pluginto(FunCall(fun))
+    return Args(x).pluginto(TransformCall(fun))
 
 
 @ad.differentiable
@@ -74,7 +74,7 @@ def reshape(x, shape):
     def fun(backend, v):
         return backend.reshape(v, shape)
 
-    return Args(x).pluginto(FunCall(fun))
+    return Args(x).pluginto(TransformCall(fun))
 
 
 @ad.differentiable
@@ -83,7 +83,7 @@ def neg(x):
     def fun(backend, v):
         return backend.neg(v)
 
-    return Args(x).pluginto(FunCall(fun))
+    return Args(x).pluginto(TransformCall(fun))
 
 
 @ad.differentiable
@@ -92,7 +92,7 @@ def sin(x):
     def fun(backend, v):
         return backend.sin(v)
 
-    return Args(x).pluginto(FunCall(fun))
+    return Args(x).pluginto(TransformCall(fun))
 
 
 @ad.differentiable
@@ -101,7 +101,7 @@ def cos(x):
     def fun(backend, v):
         return backend.cos(v)
 
-    return Args(x).pluginto(FunCall(fun))
+    return Args(x).pluginto(TransformCall(fun))
 
 
 
@@ -114,9 +114,9 @@ def add(x, y):
     def fun(backend, v, u):
         return backend.add(v, u)
 
-    return Args(x, y).pluginto(FunCall(fun))
+    return Args(x, y).pluginto(TransformCall(fun))
 
-
+"""
 @ad.differentiable
 def grad_add(x, y):
 
@@ -136,7 +136,8 @@ def grad_add(x, y):
     def fun(backend, v, u):
         return backend.add(v, u)
 
-    return Args(x, y).pluginto(FunCall(fun))
+    return Args(x, y).pluginto(TransformCall(fun))
+"""
 
 
 @ad.differentiable
@@ -145,7 +146,7 @@ def sub(x, y):
     def fun(backend, v, u):
         return backend.sub(v, u)
 
-    return Args(x, y).pluginto(FunCall(fun))
+    return Args(x, y).pluginto(TransformCall(fun))
 
 
 @ad.differentiable
@@ -154,7 +155,7 @@ def mul(x, y):
     def fun(backend, v, u):
         return backend.mul(v, u)
         
-    return Args(x, y).pluginto(FunCall(fun))
+    return Args(x, y).pluginto(TransformCall(fun))
 
 
 
@@ -167,7 +168,7 @@ def einsum(equation, *xs, optimize=True):
     def fun(backend, *xs):
         return backend.einsum(equation, *xs, optimize=optimize)
 
-    return Args(*xs).pluginto(FunCall(fun))
+    return Args(*xs).pluginto(TransformCall(fun))
 
 
 
