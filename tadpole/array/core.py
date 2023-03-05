@@ -4,7 +4,7 @@
 import abc
 import numpy as np
 
-import operator
+import operator as stdop
 from functools import reduce
 
 import tadpole.util as util
@@ -295,7 +295,7 @@ class ArraySpace(Space):
 
    @property
    def size(self):
-       return reduce(operator.mul, self._shape)
+       return reduce(stdop.mul, self._shape)
 
    @property 
    def ndim(self):
