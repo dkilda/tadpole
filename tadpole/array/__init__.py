@@ -15,6 +15,7 @@ from .arraylike import (
 
 
 from .grad import (
+   ZeroGrad,
    SparseGrad,
 )
 
@@ -31,6 +32,7 @@ from .core import (
 from .core import (
    fromfun,  
    asarray,
+   sparse,
    zeros,
    ones,
    unit,
@@ -57,6 +59,7 @@ from .operations import (
 
 from .operations import (
    gradadd,
+   sparseadd,
    add,
    sub,
    mul,   

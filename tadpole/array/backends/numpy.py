@@ -30,7 +30,10 @@ class NumpyBackend(backend.Backend):
 
    def dtype(self, array):
 
-       return array.dtype
+       try:   
+          return array.dtype
+       except AttributeError:
+          return np.result_type(array)
 
   
    def get_dtype(self, dtype):

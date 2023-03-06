@@ -11,6 +11,7 @@ import tests.array.data  as data
 import tadpole.util           as util
 import tadpole.array.backends as backends
 import tadpole.array.core     as core
+import tadpole.array.grad     as grad
 import tadpole.array.function as function
 
 
@@ -48,40 +49,44 @@ class TestSparseGrad:
        assert funcall == ans
 
 
-   @pytest.mark.parametrize("backend",  ["numpy"])
+   @pytest.mark.parametrize("backend", ["numpy"])
    @pytest.mark.parametrize("graddat", [
       data.sparse_grad_dat_001,
       data.sparse_grad_dat_002,
    ])
-   def test_add_zero(self, backend, graddat):
+   def test_sparseadd_zero(self, backend, graddat):
 
        w = graddat(backend)
-       assert w.grad + 0 == w.dense
+
+       out = w.grad.sparseadd(grad.ZeroGrad())
+       assert core.allclose(out.unpack(), w.dense)
 
 
-   @pytest.mark.parametrize("backend",  ["numpy"])
+   @pytest.mark.parametrize("backend", ["numpy"])
    @pytest.mark.parametrize("graddat", [
       data.sparse_grad_dat_001,
       data.sparse_grad_dat_002,
    ])
-   def test_add_dense(self, backend, graddat):
+   def test_sparseadd_dense(self, backend, graddat):
 
        w = graddat(backend)
        x = data.array_dat(data.randn)(backend, w.shape, dtype=w.dtype)
 
-       assert w.grad + x.array == w.dense + x.array
+       out = w.grad.sparseadd(x.array)
+       assert core.allclose(out.unpack(), w.dense + x.array)
 
 
    @pytest.mark.parametrize("backend",            ["numpy"])
    @pytest.mark.parametrize("graddat1, graddat2", [
       (data.sparse_grad_dat_001, data.sparse_grad_dat_001),
    ])
-   def test_add_sparse(self, backend, graddat1, graddat2):
+   def test_sparseadd_sparse(self, backend, graddat1, graddat2):
 
        x = graddat1(backend)
        y = graddat2(backend)
 
-       assert x.grad + 2 * y.grad == x.dense + 2 * y.dense
+       out = x.grad.sparseadd(y.grad)
+       assert core.allclose(out.unpack(), x.dense + y.dense)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
@@ -103,7 +108,7 @@ class TestSparseGrad:
    def test_copy(self, backend, graddat):
 
        x = graddat(backend)
-       assert x.grad.copy() == x.dense
+       assert x.grad.copy() == x.grad
 
 
    @pytest.mark.parametrize("backend", ["numpy"])

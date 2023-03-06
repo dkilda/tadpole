@@ -28,7 +28,7 @@ SparseGradData = collections.namedtuple("SparseGradData", [
 def sparse_grad_dat(backend, shape, dtype, idxs, vals):
 
     space = core.ArraySpace(backend, shape, dtype)
-    g     = grad.SparseGrad(space, idxs, vals)
+    g     = space.sparse(idxs, vals)
 
     def densefun(shape, dtype): 
         data       = np.zeros(shape, dtype=dtype)
@@ -66,7 +66,7 @@ def sparse_grad_dat_001(backend):
     dense[1,0,3] = vals[2]
 
     space = core.ArraySpace(backend, shape, dtype)
-    g     = grad.SparseGrad(space, idxs, vals)
+    g     = space.sparse(idxs, vals)
 
     def densefun(shape, dtype): 
         return dense
@@ -103,7 +103,7 @@ def sparse_grad_dat_002(backend):
     dense[1,0,3] = vals[2]
 
     space = core.ArraySpace(backend, shape, dtype)
-    g     = grad.SparseGrad(space, idxs, vals)
+    g     = space.sparse(idxs, vals)
 
     def densefun(shape, dtype): 
         return dense

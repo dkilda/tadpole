@@ -5,10 +5,14 @@ import abc
 import numpy as np
 
 import tadpole.array.operations as op
+import tadpole.array.function   as function
+import tadpole.array.backends   as backends
+import tadpole.array.core       as core
 import tadpole.autodiff         as ad
 import tadpole.util             as util
 
 from tadpole.array.arraylike import ArrayLike
+from tadpole.array.function  import Args, TransformCall
 
 
 
@@ -20,75 +24,66 @@ from tadpole.array.arraylike import ArrayLike
 ###############################################################################
 
 
-# --- Sparse gradient class ------------------------------------------------- #
+# --- Zero gradient --------------------------------------------------------- #
 
-class SparseGrad(ArrayLike):
+class ZeroGrad(ArrayLike):
 
-   def __init__(self, space, idxs, vals):
+   def copy(self):
 
-       self._space = space
-       self._idxs  = idxs
-       self._vals  = vals
-
-
-   @property
-   def _array(self): 
-
-       return self.todense()
-
-
-   def todense(self):
-
-       return op.put(self._space.zeros(), self._idxs, self._vals)
-
-
-   def copy(self, **opts):
-
-       return self._array.copy(**opts)
+       return self.__class__()
 
 
    def space(self):
 
-       return self._space 
+       backend = backends.get(None)
+
+       return core.ArraySpace(
+                              backend.name(), 
+                              tuple(), 
+                              backend.get_dtype(None)
+                             )
+
+   def todense(self):
+
+       return self.space().zeros()
+
+
+   @property
+   def dtype(self):
+       return self.space().dtype
+
+   @property 
+   def size(self):
+       return self.space().size
+
+   @property 
+   def ndim(self):
+       return self.space().ndim
+
+   @property 
+   def shape(self):
+       return self.space().shape
 
 
    def pluginto(self, funcall):
 
-       return self._array.pluginto(funcall)
+       return self.todense().pluginto(funcall)
 
 
-   @property
-   @ad.nondifferentiable
-   def dtype(self):
-       return util.Outputs(self._space.dtype)
+   def item(self):
 
-   @property 
-   @ad.nondifferentiable
-   def size(self):
-       return util.Outputs(len(self._vals))
-
-   @property 
-   @ad.nondifferentiable
-   def ndim(self):
-       return util.Outputs(self._space.ndim)
-
-   @property 
-   @ad.nondifferentiable
-   def shape(self):
-       return util.Outputs(self._space.shape)
+       return self.todense().item() 
 
 
    def allclose(self, other, **opts):
 
+       if not isinstance(other, self.__class__):
+          return self.todense().allclose(other, **opts) 
+
        log = util.LogicalChain()
        log.typ(self, other)
-       log.val(self._space, other._space)
-       log.val(self._idxs,  other._idxs)
 
-       if bool(log):
-          return util.allclose(self._vals, other._vals, **opts)   
-
-       return False
+       return bool(log)
 
        
    def __eq__(self, other):
@@ -96,50 +91,32 @@ class SparseGrad(ArrayLike):
        log = util.LogicalChain()
        log.typ(self, other)
 
-       if bool(log):
-          log.val(self._space, other._space)
-          log.val(self._idxs,  other._idxs)
-
-       if bool(log):
-          return util.allequal(self._vals, other._vals)  
-
-       return False
+       return bool(log)
 
 
-   def item(self, *idxs):
+   def __getitem__(self, idx):
 
-       return self._array.item(*idxs)
-
-
-   def __getitem__(self, coords):
-
-       return self._array[coords]
+       return self.todense()[idx]
 
 
    def __neg__(self):
 
-       return -self._array
+       return -self.todense()
 
 
    def __add__(self, other): 
 
-       if other == 0:
-          other = self._space.zeros()
-
-       return op.put(other, self._idxs, self._vals, accumulate=True)
+       return other
 
 
    def __sub__(self, other): 
 
-       if other == 0:
-          other = self._space.zeros()
-
-       return op.put(other, self._idxs, -self._vals, accumulate=True)
+       return -other 
 
 
    def __mul__(self, other):
 
-       return self._array * other 
+       return self.todense().item()
 
 
    def __radd__(self, other): 
@@ -154,73 +131,153 @@ class SparseGrad(ArrayLike):
 
    def __rmul__(self, other):
 
-       return other * self._array   
+       return self.__mul__(other)
 
 
 
 
+# --- Sparse gradient ------------------------------------------------------- #
 
-@ad.nondifferentiable
-def dtype(x):
+class SparseGrad(ArrayLike):
 
-    return util.Outputs(x.space().dtype)
+   def __init__(self, backend, shape, idxs, vals):
 
-
-@ad.nondifferentiable
-def size(x):
-
-    return util.Outputs(x.space().size)
-
-
-@ad.nondifferentiable
-def ndim(x):
-
-    return util.Outputs(x.space().ndim)
+       self._backend = backend
+       self._shape   = shape
+       self._idxs    = idxs
+       self._vals    = vals
 
 
-@ad.nondifferentiable
-def shape(x):
+   def copy(self):
 
-    return util.Outputs(x.space().shape)
-
-
-
-"""
-@ad.nondifferentiable
-def dtype(x):
-
-    def fun(backend, v):
-        return backend.dtype(v)
-
-    return Args(x).pluginto(VisitCall(fun))
+       return self.__class__(
+          self._backend, self._shape, self._idxs, self._vals
+       )
 
 
-@ad.nondifferentiable
-def size(x):
+   def space(self):
 
-    def fun(backend, v):
-        return backend.size(v)
-
-    return Args(x).pluginto(VisitCall(fun))
+       return core.ArraySpace(
+          self._backend.name(), self.shape, self.dtype
+       )
 
 
-@ad.nondifferentiable
-def ndim(x):
+   def todense(self):
 
-    def fun(backend, v):
-        return backend.ndim(v)
-
-    return Args(x).pluginto(VisitCall(fun))
+       return op.put(self.space().zeros(), self._idxs, self._vals)
 
 
-@ad.nondifferentiable
-def shape(x):
+   def sparseadd(self, other):
 
-    def fun(backend, v):
-        return backend.shape(v)
+       if isinstance(other, ZeroGrad):
+          other = self.space().zeros()
 
-    return Args(x).pluginto(VisitCall(fun))
-"""
+       def fun(backend, v):
+           return backend.put(v, self._idxs, self._vals, accumulate=True)
+
+       return Args(other).pluginto(TransformCall(fun))
+
+
+   @property
+   def dtype(self):
+       return self._backend.dtype(self._vals) 
+
+   @property 
+   def size(self):
+       return len(self._vals) 
+
+   @property 
+   def ndim(self):
+       return len(self._shape) 
+
+   @property 
+   def shape(self):
+       return self._shape
+
+
+   def pluginto(self, funcall):
+
+       return self.todense().pluginto(funcall)
+
+
+   def item(self, *idxs):
+
+       return self.todense().item(*idxs)  
+
+
+   def allclose(self, other, **opts):
+
+       if not isinstance(other, self.__class__):
+          return self.todense().allclose(other, **opts) 
+
+       log = util.LogicalChain()
+       log.typ(self, other)
+
+       log.val(self._backend, other._backend)
+       log.val(self._shape,   other._shape)
+       log.val(self._idxs,    other._idxs)
+
+       if bool(log):
+          return util.allclose(self._vals, other._vals, **opts)   
+
+       return False
+
+       
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+       log.typ(self, other)
+
+       if bool(log):
+          log.val(self._backend, other._backend)
+          log.val(self._shape,   other._shape)
+          log.val(self._idxs,    other._idxs)
+
+       if bool(log):
+          return util.allequal(self._vals, other._vals)  
+
+       return False
+
+
+   def __getitem__(self, idx):
+
+       return self.todense()[idx]
+
+
+   def __neg__(self):
+
+       return -self.todense()
+
+
+   def __add__(self, other): 
+
+       return self.todense() + other
+
+
+   def __sub__(self, other): 
+
+       return self.todense() - other   
+
+
+   def __mul__(self, other):
+
+       return self.todense() * other 
+
+
+   def __radd__(self, other): 
+
+       return self.__add__(other)  
+
+
+   def __rsub__(self, other): 
+
+       return -self.__sub__(other)  
+
+
+   def __rmul__(self, other):
+
+       return self.__mul__(other)
+
 
 
 

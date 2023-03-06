@@ -7,6 +7,7 @@ import numpy as np
 import tadpole.util     as util
 import tadpole.autodiff as ad
 
+import tadpole.array.grad     as grad
 import tadpole.array.core     as core
 import tadpole.array.function as function
 
@@ -17,10 +18,66 @@ from tadpole.array.function import (
    TransformCall,
 )
 
+from tadpole.array.arraylike import (
+   ArrayLike,
+)
 
 
 
-"""
+
+###############################################################################
+###                                                                         ###
+###  Helper functions                                                       ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Type cast for unary functions ----------------------------------------- #
+
+def typecast_binary(fun):
+
+    def wrap(x, *args, **kwargs):
+
+        try:
+            return fun(x, *args, **kwargs)       
+ 
+        except (AttributeError, TypeError):
+
+            return fun(core.asarray(x), *args, **kwargs)
+         
+    return wrap
+
+
+
+
+# --- Type cast for binary functions ---------------------------------------- #
+
+def typecast_binary(fun):
+
+    def wrap(x, y, *args, **kwargs):
+
+        try:
+            return fun(x, y, *args, **kwargs)       
+ 
+        except (AttributeError, TypeError):
+
+            if not any(isinstance(v, ArrayLike) for v in (x,y)):
+               x = core.asarray(x)
+               y = core.asarray(y) 
+
+            if not isinstance(x, ArrayLike):
+               x = y.asarray(x) 
+
+            if not isinstance(y, ArrayLike):
+               y = x.asarray(y) 
+
+            return fun(x, y, *args, **kwargs)
+         
+    return wrap
+
+
+
+
 ###############################################################################
 ###                                                                         ###
 ###  Definitions of non-differentiable array operations                     ###
@@ -28,6 +85,7 @@ from tadpole.array.function import (
 ###############################################################################
 
 
+"""
 # --- Generic array operations ---------------------------------------------- #
 
 @ad.nondifferentiable
@@ -40,42 +98,61 @@ def equals(x, y):
 
 """
 
-# --- Array properties ------------------------------------------------------ #
+# --- Array properties and basic functionality ------------------------------ #
 
 @ad.nondifferentiable
 def dtype(x):
 
-    def fun(backend, v):
-        return backend.dtype(v)
-
-    return Args(x).pluginto(VisitCall(fun))
+    return util.Outputs(x.dtype)
 
 
 @ad.nondifferentiable
 def size(x):
 
-    def fun(backend, v):
-        return backend.size(v)
-
-    return Args(x).pluginto(VisitCall(fun))
+    return util.Outputs(x.size)
 
 
 @ad.nondifferentiable
 def ndim(x):
 
-    def fun(backend, v):
-        return backend.ndim(v)
-
-    return Args(x).pluginto(VisitCall(fun))
+    return util.Outputs(x.ndim)
 
 
 @ad.nondifferentiable
 def shape(x):
 
-    def fun(backend, v):
-        return backend.shape(v)
+    return util.Outputs(x.shape)
 
-    return Args(x).pluginto(VisitCall(fun))
+
+@ad.nondifferentiable
+def asarray(x, data):
+
+    return util.Outputs(x.asarray(data))
+
+
+@ad.nondifferentiable
+def copy(x, **opts):
+
+    return util.Outputs(x.copy(**opts))
+
+
+@ad.nondifferentiable
+def item(self, *idxs):
+
+    return util.Outputs(x.item(*idxs))
+
+
+
+
+# --- Generic array operations ---------------------------------------------- #
+
+@ad.nondifferentiable
+def put(x, idxs, vals, accumulate=False): 
+
+    def fun(backend, v):
+        return backend.put(v, idxs, vals, accumulate=accumulate)
+
+    return Args(x).pluginto(TransformCall(fun))
 
 
 
@@ -94,15 +171,6 @@ def getitem(x, idx):
 
     def fun(backend, v):
         return v[idx]
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-@ad.differentiable
-def put(x, idxs, vals, accumulate=False):
-
-    def fun(backend, v):
-        return backend.put(v, idxs, vals, accumulate=accumulate)
 
     return Args(x).pluginto(TransformCall(fun))
 
@@ -147,11 +215,6 @@ def cos(x):
 
 # --- Array operations: binary ---------------------------------------------- #
 
-def gradadd(x, y):
-
-    return x + y
-
-
 @ad.differentiable
 def add(x, y):
 
@@ -177,6 +240,27 @@ def mul(x, y):
         return backend.mul(v, u)
         
     return Args(x, y).pluginto(TransformCall(fun))
+
+
+
+
+# --- Gradient operations --------------------------------------------------- #
+
+def gradadd(x, y):
+
+    if isinstance(y, grad.SparseGrad): return sparseadd(x, y)
+    if isinstance(x, grad.SparseGrad): return sparseadd(y, x)
+
+    if isinstance(x, grad.ZeroGrad): return y
+    if isinstance(y, grad.ZeroGrad): return x
+
+    return add(x, y)
+       
+
+@ad.differentiable
+def sparseadd(x, y):
+
+    return x.sparseadd(y)
 
 
 

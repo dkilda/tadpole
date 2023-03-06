@@ -78,6 +78,19 @@ def asarray(data, **opts):
 
 # --- Array factories (from shape) ------------------------------------------ #
 
+def sparse(shape, idxs, vals, **opts):
+
+    backend = backends.get_from(opts)
+
+    if "dtype" in opts:
+       vals = backend.asarray(vals)
+       vals = backend.astype(vals, **opts)
+
+    return grad.SparseGrad(
+              backend, shape, idxs, vals
+           )
+
+
 def zeros(shape, **opts):
 
     return ArrayFromShape("zeros")(
@@ -165,6 +178,10 @@ class ArrayFromShape:
 # --- Space interface ------------------------------------------------------- #
 
 class Space(abc.ABC):
+
+   @abc.abstractmethod
+   def sparse(self, idxs, vals):
+       pass
 
    @abc.abstractmethod
    def zeros(self):
@@ -256,6 +273,11 @@ class ArraySpace(Space):
        )
 
 
+   def sparse(self, idxs, vals):
+
+       return self._create(sparse, idxs, vals)
+
+
    def zeros(self):
 
        return self._create(zeros) 
@@ -339,6 +361,11 @@ class Array(ArrayLike):
        return self.__class__(self._backend, data)
 
 
+   def asarray(self, data):
+
+       return asarray(self._backend, data)
+
+
    def space(self):
 
        return ArraySpace(self._backend, self.shape, self.dtype)
@@ -351,19 +378,19 @@ class Array(ArrayLike):
 
    @property
    def dtype(self):
-       return op.dtype(self)
+       return self._backend.dtype(self._data)
 
    @property 
    def size(self):
-       return op.size(self)
+       return self._backend.size(self._data)  
 
    @property 
    def ndim(self):
-       return op.ndim(self)
+       return self._backend.ndim(self._data)  
 
    @property
    def shape(self):
-       return op.shape(self) 
+       return self._backend.shape(self._data)
 
 
    def allclose(self, other, **opts):
@@ -409,8 +436,8 @@ class Array(ArrayLike):
 
    def __add__(self, other):
 
-       if isinstance(other, grad.SparseGrad):
-          return NotImplemented
+       #if isinstance(other, grad.SparseGrad):
+       #   return NotImplemented
 
        if other == 0:
           return self
@@ -420,8 +447,8 @@ class Array(ArrayLike):
 
    def __sub__(self, other):
 
-       if isinstance(other, grad.SparseGrad):
-          return NotImplemented
+       #if isinstance(other, grad.SparseGrad):
+       #   return NotImplemented
 
        if other == 0:
           return self

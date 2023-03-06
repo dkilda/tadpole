@@ -43,7 +43,10 @@ class TorchBackend(backend.Backend):
 
    def dtype(self, array):
 
-       return array.dtype
+       try:   
+          return array.dtype
+       except AttributeError:
+          return torch.result_type(array)
 
 
    def _get_dtype(self, dtype):
