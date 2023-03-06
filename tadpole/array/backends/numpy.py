@@ -180,10 +180,10 @@ class NumpyBackend(backend.Backend):
 
    # --- Array value methods --- #
 
-   def item(self, array, *idxs):
+   def item(self, array, *idx):
 
-       if len(idxs) > 0:
-          return array[idxs]
+       if len(idx) > 0:
+          return array[idx]
 
        if self.size(array) > 1:
           raise ValueError(

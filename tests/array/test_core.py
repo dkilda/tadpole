@@ -395,5 +395,21 @@ class TestArray:
            assert w.array[idx] == elem(idx)
 
 
+   @pytest.mark.parametrize("backend", ["numpy"])
+   @pytest.mark.parametrize("shape",   [(2,3,4)])
+   def test_item(self, backend, shape):
+
+       w = data.array_dat(data.randn)(backend, shape)
+
+       for idx in itertools.product(*map(range, shape)):
+           assert w.array.item(*idx) == w.data[idx]
+
+
+   @pytest.mark.parametrize("backend", ["numpy"])
+   def test_item_zerodim(self, backend):
+
+       w = data.array_dat(data.randn)(backend, (1,))
+       assert w.array.item() == w.data[0]
+
 
 

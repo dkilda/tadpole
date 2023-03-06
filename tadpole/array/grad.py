@@ -200,9 +200,9 @@ class SparseGrad(ArrayLike):
        return self.todense().pluginto(funcall)
 
 
-   def item(self, *idxs):
+   def item(self, *idx):
 
-       return self.todense().item(*idxs)  
+       return self.todense().item(*idx)  
 
 
    def allclose(self, other, **opts):

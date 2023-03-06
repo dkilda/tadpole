@@ -419,9 +419,9 @@ class Array(ArrayLike):
        return False
 
 
-   def item(self, *idxs): # TODO add test!
+   def item(self, *idx): 
 
-       return self._backend.item(self._data, *idxs)
+       return self._backend.item(self._data, *idx)
 
 
    def __getitem__(self, idx):

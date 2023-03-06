@@ -137,9 +137,9 @@ def copy(x, **opts):
 
 
 @ad.nondifferentiable
-def item(self, *idxs):
+def item(self, *idx):
 
-    return util.Outputs(x.item(*idxs))
+    return util.Outputs(x.item(*idx))
 
 
 

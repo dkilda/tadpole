@@ -138,6 +138,17 @@ class TestSparseGrad:
       data.sparse_grad_dat_001,
       data.sparse_grad_dat_002,
    ])
+   def test_size(self, backend, graddat):
+
+       x = graddat(backend)
+       assert x.grad.size == len(x.vals)
+
+
+   @pytest.mark.parametrize("backend", ["numpy"])
+   @pytest.mark.parametrize("graddat", [
+      data.sparse_grad_dat_001,
+      data.sparse_grad_dat_002,
+   ])
    def test_ndim(self, backend, graddat):
 
        x = graddat(backend)

@@ -117,7 +117,7 @@ class Backend(abc.ABC):
    # --- Array value methods --- #
 
    @abc.abstractmethod
-   def item(self, array, *idxs):
+   def item(self, array, *idx):
        pass
 
    @abc.abstractmethod
