@@ -11,7 +11,7 @@ import tadpole.array.operations as op
 import tadpole.array.backends   as backends
 import tadpole.array.grad       as grad
 
-from tadpole.array.arraylike import ArrayLike
+from tadpole.array.arraylike import Pluggable, ArrayLike
 
 
 
@@ -179,6 +179,8 @@ class ArrayFromShape:
 
 class Space(abc.ABC):
 
+   # --- Factories --- #
+
    @abc.abstractmethod
    def sparse(self, idxs, vals):
        pass
@@ -219,6 +221,9 @@ class Space(abc.ABC):
    def basis(self):
        pass
 
+
+   # --- Space properties --- #
+
    @property
    @abc.abstractmethod
    def dtype(self):
@@ -246,12 +251,16 @@ class Space(abc.ABC):
 
 class ArraySpace(Space):
 
+   # --- Construction --- #
+
    def __init__(self, backend, shape, dtype):
 
        self._backend = backend
        self._dtype   = dtype
        self._shape   = shape
 
+
+   # --- Comparisons --- #
 
    def __eq__(self, other):
 
@@ -265,13 +274,7 @@ class ArraySpace(Space):
        return bool(log)
 
 
-   def _create(self, fun, *args, **opts):
-
-       return fun(
-          self._shape, *args, 
-          dtype=self._dtype, backend=self._backend, **opts
-       )
-
+   # --- Factories --- #
 
    def sparse(self, idxs, vals):
 
@@ -318,6 +321,8 @@ class ArraySpace(Space):
        return self._create(basis) 
 
 
+   # --- Space properties --- #
+
    @property
    def dtype(self):
        return self._dtype
@@ -335,6 +340,17 @@ class ArraySpace(Space):
        return self._shape
 
 
+   # --- Private helpers --- #
+
+   def _create(self, fun, *args, **opts):
+
+       return fun(
+          self._shape, *args, 
+          dtype=self._dtype, backend=self._backend, **opts
+       )
+
+
+
 
 
 ###############################################################################
@@ -346,13 +362,24 @@ class ArraySpace(Space):
 
 # --- Array ----------------------------------------------------------------- #
 
-class Array(ArrayLike):
+class Array(ArrayLike, Pluggable):
+
+   # --- Construction --- #
 
    def __init__(self, backend, data):
 
        self._backend = backend
        self._data    = data
 
+
+   # --- Plugging into function calls --- #
+
+   def pluginto(self, funcall):
+
+       return funcall.attach(self._backend, self._data)
+
+
+   # --- Basic functionality --- #
 
    def copy(self, deep=True):
 
@@ -371,10 +398,12 @@ class Array(ArrayLike):
        return ArraySpace(self._backend, self.shape, self.dtype)
 
 
-   def pluginto(self, funcall):
+   def item(self, *idx): 
 
-       return funcall.attach(self._backend, self._data)
+       return self._backend.item(self._data, *idx)
 
+
+   # --- Array properties --- #
 
    @property
    def dtype(self):
@@ -392,6 +421,8 @@ class Array(ArrayLike):
    def shape(self):
        return self._backend.shape(self._data)
 
+
+   # --- Comparisons --- #
 
    def allclose(self, other, **opts):
 
@@ -419,10 +450,7 @@ class Array(ArrayLike):
        return False
 
 
-   def item(self, *idx): 
-
-       return self._backend.item(self._data, *idx)
-
+   # --- Arithmetics and element access --- # 
 
    def __getitem__(self, idx):
 
@@ -436,9 +464,6 @@ class Array(ArrayLike):
 
    def __add__(self, other):
 
-       #if isinstance(other, grad.SparseGrad):
-       #   return NotImplemented
-
        if other == 0:
           return self
 
@@ -446,9 +471,6 @@ class Array(ArrayLike):
 
 
    def __sub__(self, other):
-
-       #if isinstance(other, grad.SparseGrad):
-       #   return NotImplemented
 
        if other == 0:
           return self

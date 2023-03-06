@@ -11,7 +11,7 @@ import tadpole.array.core       as core
 import tadpole.autodiff         as ad
 import tadpole.util             as util
 
-from tadpole.array.arraylike import ArrayLike
+from tadpole.array.arraylike import Pluggable, ArrayLike
 from tadpole.array.function  import Args, TransformCall
 
 
@@ -26,27 +26,54 @@ from tadpole.array.function  import Args, TransformCall
 
 # --- Zero gradient --------------------------------------------------------- #
 
-class ZeroGrad(ArrayLike):
+class ZeroGrad(ArrayLike, Pluggable):
+
+   # --- Construction --- #
+
+   def __init__(self):
+
+       self._backend = backends.get(None)
+
+
+   # --- Gradient-specific functionality --- #
+
+   def todense(self):
+
+       return self.space().zeros()
+
+
+   # --- Plugging into function calls --- #
+
+   def pluginto(self, funcall):
+
+       return self.todense().pluginto(funcall)
+
+
+   # --- Basic functionality --- #
 
    def copy(self):
 
        return self.__class__()
 
 
+   def asarray(self, data):
+
+       return core.asarray(self._backend, data)
+
+
    def space(self):
 
-       backend = backends.get(None)
-
        return core.ArraySpace(
-                              backend.name(), 
+                              self._backend.name(), 
                               tuple(), 
-                              backend.get_dtype(None)
+                              self._backend.get_dtype(None)
                              )
+   def item(self):
 
-   def todense(self):
+       return self.todense().item() 
 
-       return self.space().zeros()
 
+   # --- Array properties --- #
 
    @property
    def dtype(self):
@@ -65,15 +92,7 @@ class ZeroGrad(ArrayLike):
        return self.space().shape
 
 
-   def pluginto(self, funcall):
-
-       return self.todense().pluginto(funcall)
-
-
-   def item(self):
-
-       return self.todense().item() 
-
+   # --- Comparisons --- #
 
    def allclose(self, other, **opts):
 
@@ -93,6 +112,8 @@ class ZeroGrad(ArrayLike):
 
        return bool(log)
 
+
+   # --- Arithmetics and element access --- #
 
    def __getitem__(self, idx):
 
@@ -138,7 +159,9 @@ class ZeroGrad(ArrayLike):
 
 # --- Sparse gradient ------------------------------------------------------- #
 
-class SparseGrad(ArrayLike):
+class SparseGrad(ArrayLike, Pluggable):
+
+   # --- Construction --- #
 
    def __init__(self, backend, shape, idxs, vals):
 
@@ -148,19 +171,7 @@ class SparseGrad(ArrayLike):
        self._vals    = vals
 
 
-   def copy(self):
-
-       return self.__class__(
-          self._backend, self._shape, self._idxs, self._vals
-       )
-
-
-   def space(self):
-
-       return core.ArraySpace(
-          self._backend.name(), self.shape, self.dtype
-       )
-
+   # --- Gradient-specific functionality --- #
 
    def todense(self):
 
@@ -177,6 +188,41 @@ class SparseGrad(ArrayLike):
 
        return Args(other).pluginto(TransformCall(fun))
 
+
+   # --- Plugging into function calls --- #
+
+   def pluginto(self, funcall):
+
+       return self.todense().pluginto(funcall)
+
+
+   # --- Basic functionality --- #
+
+   def copy(self):
+
+       return self.__class__(
+          self._backend, self._shape, self._idxs, self._vals
+       )
+
+
+   def asarray(self, data):
+
+       return core.asarray(self._backend, data)
+
+
+   def space(self):
+
+       return core.ArraySpace(
+          self._backend.name(), self.shape, self.dtype
+       )
+
+
+   def item(self, *idx):
+
+       return self.todense().item(*idx)  
+
+
+   # --- Array properties --- #
 
    @property
    def dtype(self):
@@ -195,15 +241,7 @@ class SparseGrad(ArrayLike):
        return self._shape
 
 
-   def pluginto(self, funcall):
-
-       return self.todense().pluginto(funcall)
-
-
-   def item(self, *idx):
-
-       return self.todense().item(*idx)  
-
+   # --- Comparisons --- #
 
    def allclose(self, other, **opts):
 
@@ -238,6 +276,8 @@ class SparseGrad(ArrayLike):
 
        return False
 
+
+   # --- Arithmetics and element access --- # 
 
    def __getitem__(self, idx):
 

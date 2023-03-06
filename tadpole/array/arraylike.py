@@ -14,12 +14,29 @@ import abc
 ###############################################################################
 
 
+# --- Pluggable interface --------------------------------------------------- #
+
+class Pluggable(abc.ABC):
+
+   @abc.abstractmethod
+   def pluginto(self, funcall):
+       pass
+
+
+
+
 # --- ArrayLike interface --------------------------------------------------- #
 
 class ArrayLike(abc.ABC):
 
+   # --- Basic functionality --- #
+
    @abc.abstractmethod
    def copy(self, **opts):
+       pass
+
+   @abc.abstractmethod
+   def asarray(self, data):
        pass
 
    @abc.abstractmethod
@@ -27,8 +44,11 @@ class ArrayLike(abc.ABC):
        pass
 
    @abc.abstractmethod
-   def pluginto(self, funcall):
+   def item(self, *idx):
        pass
+
+
+   # --- Array properties --- #
 
    @property
    @abc.abstractmethod
@@ -50,6 +70,9 @@ class ArrayLike(abc.ABC):
    def shape(self):
        pass
 
+
+   # --- Comparisons --- #
+
    @abc.abstractmethod
    def allclose(self, other, **opts):
        pass
@@ -57,6 +80,9 @@ class ArrayLike(abc.ABC):
    @abc.abstractmethod
    def __eq__(self, other):
        pass
+
+
+   # --- Arithmetics and element access --- # 
 
    @abc.abstractmethod
    def __getitem__(self, idx):
@@ -89,10 +115,6 @@ class ArrayLike(abc.ABC):
    @abc.abstractmethod
    def __rmul__(self, other):
        pass
-
-
-
-
 
 
 

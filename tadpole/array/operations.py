@@ -19,6 +19,7 @@ from tadpole.array.function import (
 )
 
 from tadpole.array.arraylike import (
+   Pluggable,
    ArrayLike,
 )
 
@@ -34,7 +35,7 @@ from tadpole.array.arraylike import (
 
 # --- Type cast for unary functions ----------------------------------------- #
 
-def typecast_binary(fun):
+def typecast_unary(fun):
 
     def wrap(x, *args, **kwargs):
 
@@ -61,14 +62,14 @@ def typecast_binary(fun):
  
         except (AttributeError, TypeError):
 
-            if not any(isinstance(v, ArrayLike) for v in (x,y)):
+            if not any(isinstance(v, Pluggable) for v in (x,y)):
                x = core.asarray(x)
                y = core.asarray(y) 
 
-            if not isinstance(x, ArrayLike):
+            if not isinstance(x, Pluggable):
                x = y.asarray(x) 
 
-            if not isinstance(y, ArrayLike):
+            if not isinstance(y, Pluggable):
                y = x.asarray(y) 
 
             return fun(x, y, *args, **kwargs)
