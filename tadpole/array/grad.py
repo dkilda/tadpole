@@ -35,7 +35,7 @@ class ZeroGrad(ArrayLike, Pluggable):
        self._backend = backends.get(None)
 
 
-   # --- Gradient-specific functionality --- #
+   # --- Convert to dense --- #
 
    def todense(self):
 
@@ -47,6 +47,13 @@ class ZeroGrad(ArrayLike, Pluggable):
    def pluginto(self, funcall):
 
        return self.todense().pluginto(funcall)
+
+
+   # --- Using in gradient accumulations --- #
+
+   def addto(self, other):
+
+       return other
 
 
    # --- Basic functionality --- #
@@ -171,22 +178,11 @@ class SparseGrad(ArrayLike, Pluggable):
        self._vals    = vals
 
 
-   # --- Gradient-specific functionality --- #
+   # --- Convert to dense --- #
 
    def todense(self):
 
        return op.put(self.space().zeros(), self._idxs, self._vals)
-
-
-   def sparseadd(self, other):
-
-       if isinstance(other, ZeroGrad):
-          other = self.space().zeros()
-
-       def fun(backend, v):
-           return backend.put(v, self._idxs, self._vals, accumulate=True)
-
-       return Args(other).pluginto(TransformCall(fun))
 
 
    # --- Plugging into function calls --- #
@@ -196,6 +192,23 @@ class SparseGrad(ArrayLike, Pluggable):
        return self.todense().pluginto(funcall)
 
 
+   # --- Using in gradient accumulations --- #
+
+   def addto(self, other):
+
+       if isinstance(other, ZeroGrad):
+          other = self.space().zeros()
+
+       if isinstance(other, SparseGrad):
+          other = other.todense()
+
+       data = self._backend.put(
+                 other._data, self._idxs, self._vals, accumulate=True
+              )
+
+       return other.asarray(data)
+
+       
    # --- Basic functionality --- #
 
    def copy(self):
@@ -207,7 +220,7 @@ class SparseGrad(ArrayLike, Pluggable):
 
    def asarray(self, data):
 
-       return core.asarray(self._backend, data)
+       return core.asarray(data, backend=self._backend)
 
 
    def space(self):

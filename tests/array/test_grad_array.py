@@ -54,12 +54,12 @@ class TestSparseGrad:
       data.sparse_grad_dat_001,
       data.sparse_grad_dat_002,
    ])
-   def test_sparseadd_zero(self, backend, graddat):
+   def test_addto_zero(self, backend, graddat):
 
        w = graddat(backend)
 
-       out = w.grad.sparseadd(grad.ZeroGrad())
-       assert core.allclose(out.unpack(), w.dense)
+       out = w.grad.addto(grad.ZeroGrad())
+       assert core.allclose(out, w.dense)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
@@ -67,26 +67,26 @@ class TestSparseGrad:
       data.sparse_grad_dat_001,
       data.sparse_grad_dat_002,
    ])
-   def test_sparseadd_dense(self, backend, graddat):
+   def test_addto_dense(self, backend, graddat):
 
        w = graddat(backend)
        x = data.array_dat(data.randn)(backend, w.shape, dtype=w.dtype)
 
-       out = w.grad.sparseadd(x.array)
-       assert core.allclose(out.unpack(), w.dense + x.array)
+       out = w.grad.addto(x.array)
+       assert core.allclose(out, w.dense + x.array)
 
 
    @pytest.mark.parametrize("backend",            ["numpy"])
    @pytest.mark.parametrize("graddat1, graddat2", [
       (data.sparse_grad_dat_001, data.sparse_grad_dat_001),
    ])
-   def test_sparseadd_sparse(self, backend, graddat1, graddat2):
+   def test_addto_sparse(self, backend, graddat1, graddat2):
 
        x = graddat1(backend)
        y = graddat2(backend)
 
-       out = x.grad.sparseadd(y.grad)
-       assert core.allclose(out.unpack(), x.dense + y.dense)
+       out = x.grad.addto(y.grad)
+       assert core.allclose(out, x.dense + y.dense)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])

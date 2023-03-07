@@ -186,6 +186,7 @@ def reshape(x, shape):
 
 
 @ad.differentiable
+@typecast_unary
 def neg(x):
 
     def fun(backend, v):
@@ -195,6 +196,7 @@ def neg(x):
 
 
 @ad.differentiable
+@typecast_unary
 def sin(x):
 
     def fun(backend, v):
@@ -204,6 +206,7 @@ def sin(x):
 
 
 @ad.differentiable
+@typecast_unary
 def cos(x):
 
     def fun(backend, v):
@@ -214,9 +217,21 @@ def cos(x):
 
 
 
+# --- Array operations: binary (for gradient accumulation) ------------------ #
+
+@ad.differentiable
+@typecast_binary
+def addto(x, y):
+
+    return x.addto(y)
+
+
+
+
 # --- Array operations: binary ---------------------------------------------- #
 
 @ad.differentiable
+@typecast_binary
 def add(x, y):
 
     def fun(backend, v, u):
@@ -226,6 +241,7 @@ def add(x, y):
 
 
 @ad.differentiable
+@typecast_binary
 def sub(x, y):
 
     def fun(backend, v, u):
@@ -235,33 +251,13 @@ def sub(x, y):
 
 
 @ad.differentiable
+@typecast_binary
 def mul(x, y):
 
     def fun(backend, v, u):
         return backend.mul(v, u)
         
     return Args(x, y).pluginto(TransformCall(fun))
-
-
-
-
-# --- Gradient operations --------------------------------------------------- #
-
-def gradadd(x, y):
-
-    if isinstance(y, grad.SparseGrad): return sparseadd(x, y)
-    if isinstance(x, grad.SparseGrad): return sparseadd(y, x)
-
-    if isinstance(x, grad.ZeroGrad): return y
-    if isinstance(y, grad.ZeroGrad): return x
-
-    return add(x, y)
-       
-
-@ad.differentiable
-def sparseadd(x, y):
-
-    return x.sparseadd(y)
 
 
 
@@ -275,6 +271,7 @@ def einsum(equation, *xs, optimize=True):
         return backend.einsum(equation, *xs, optimize=optimize)
 
     return Args(*xs).pluginto(TransformCall(fun))
+
 
 
 

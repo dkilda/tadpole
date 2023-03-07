@@ -379,6 +379,20 @@ class Array(ArrayLike, Pluggable):
        return funcall.attach(self._backend, self._data)
 
 
+   # --- Using in gradient accumulations --- #
+
+   def addto(self, other):
+
+       if isinstance(other, grad.ZeroGrad): 
+          return self
+
+       if isinstance(other, grad.SparseGrad):
+          return other.addto(self)
+
+       data = self._backend.add(self._data, other._data)
+       return self.asarray(data)
+
+
    # --- Basic functionality --- #
 
    def copy(self, deep=True):
@@ -390,7 +404,7 @@ class Array(ArrayLike, Pluggable):
 
    def asarray(self, data):
 
-       return asarray(self._backend, data)
+       return asarray(data, backend=self._backend)
 
 
    def space(self):
@@ -464,26 +478,17 @@ class Array(ArrayLike, Pluggable):
 
    def __add__(self, other):
 
-       if other == 0:
-          return self
-
-       return op.add(self, asarray(other, backend=self._backend))
+       return op.add(self, other)
 
 
    def __sub__(self, other):
 
-       if other == 0:
-          return self
-
-       return op.sub(self, asarray(other, backend=self._backend))
+       return op.sub(self, other)
 
 
    def __mul__(self, other):
 
-       if other == 1:
-          return self
-
-       return op.mul(self, asarray(other, backend=self._backend))
+       return op.mul(self, other)
 
 
    def __radd__(self, other):

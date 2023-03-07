@@ -59,8 +59,7 @@ from .operations import (
 
 
 from .operations import (
-   gradadd,
-   sparseadd,
+   addto,
    add,
    sub,
    mul,   

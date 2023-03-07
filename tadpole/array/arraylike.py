@@ -29,6 +29,13 @@ class Pluggable(abc.ABC):
 
 class ArrayLike(abc.ABC):
 
+   # --- Using in gradient accumulations --- #
+
+   @abc.abstractmethod
+   def addto(self, other):
+       pass
+
+
    # --- Basic functionality --- #
 
    @abc.abstractmethod

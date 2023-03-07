@@ -13,6 +13,7 @@ import tests.array.data  as data
 import tadpole.util           as util
 import tadpole.array.backends as backends
 import tadpole.array.core     as core
+import tadpole.array.grad     as grad
 import tadpole.array.function as function
 
 
@@ -301,21 +302,38 @@ class TestArray:
 
    @pytest.mark.parametrize("backend", ["numpy"])
    @pytest.mark.parametrize("shape",   [(2,3,4)])
-   def test_radd(self, backend, shape):
+   def test_addto_zero(self, backend, shape):
 
        w = data.array_dat(data.randn)(backend, shape)
 
-       assert 0 + w.array is w.array
+       out = w.array.addto(grad.ZeroGrad())
+       assert out is w.array
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
    @pytest.mark.parametrize("shape",   [(2,3,4)])
-   def test_rmul(self, backend, shape):
+   def test_addto_dense(self, backend, shape):
 
-       w = data.array_dat(data.randn)(backend, shape)
+       x = data.array_dat(data.randn)(backend, shape, seed=1)
+       y = data.array_dat(data.randn)(backend, shape, seed=2)
 
-       assert 1 * w.array is w.array
-       
+       out = x.array.addto(y.array)
+       assert core.allclose(out, x.array + y.array)
+
+
+   @pytest.mark.parametrize("backend", ["numpy"])
+   @pytest.mark.parametrize("graddat", [
+      data.sparse_grad_dat_001,
+      data.sparse_grad_dat_002,
+   ])
+   def test_addto_sparse(self, backend, graddat):
+
+       y = graddat(backend)
+       x = data.array_dat(data.randn)(backend, y.grad.shape)
+
+       out = x.array.addto(y.grad)
+       assert core.allclose(out, x.array + y.dense)
+
 
    @pytest.mark.parametrize("backend", ["numpy"])
    @pytest.mark.parametrize("shape",   [(2,3,4)])
