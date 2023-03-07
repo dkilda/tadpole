@@ -4,7 +4,85 @@
 import abc
 
 
-# TODO MOVE ALL IFACE DEFS HERE!
+
+
+###############################################################################
+###                                                                         ###
+###  Array space                                                            ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Space interface ------------------------------------------------------- #
+
+class Space(abc.ABC):
+
+   # --- Factories --- #
+
+   @abc.abstractmethod
+   def sparse(self, idxs, vals):
+       pass
+
+   @abc.abstractmethod
+   def zeros(self):
+       pass
+
+   @abc.abstractmethod
+   def zeros(self):
+       pass
+
+   @abc.abstractmethod
+   def ones(self):
+       pass
+
+   @abc.abstractmethod
+   def unit(self):
+       pass
+
+   @abc.abstractmethod
+   def rand(self, **opts):
+       pass
+
+   @abc.abstractmethod
+   def randn(self, **opts):
+       pass
+
+   @abc.abstractmethod
+   def randuniform(self, boundaries, **opts):
+       pass
+
+   @abc.abstractmethod
+   def units(self):
+       pass
+
+   @abc.abstractmethod
+   def basis(self):
+       pass
+
+
+   # --- Space properties --- #
+
+   @property
+   @abc.abstractmethod
+   def dtype(self):
+       pass
+
+   @property
+   @abc.abstractmethod
+   def size(self):
+       pass
+
+   @property 
+   @abc.abstractmethod
+   def ndim(self):
+       pass
+
+   @property
+   @abc.abstractmethod
+   def shape(self):
+       pass
+
+
 
 
 ###############################################################################

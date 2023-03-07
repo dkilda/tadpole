@@ -13,8 +13,46 @@ import tests.array.data  as data
 import tadpole.util             as util
 import tadpole.array.backends   as backends
 import tadpole.array.core       as core
+import tadpole.array.grad       as grad
 import tadpole.array.function   as function
 import tadpole.array.operations as op
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Helper functions                                                       ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Test type cast functions ---------------------------------------------- #
+
+class TestTypeCast:
+
+   @pytest.mark.parametrize("backend", ["numpy"])
+   @pytest.mark.parametrize("fundat",  [
+       data.unary_wrappedfun_dat_001,
+       data.unary_wrappedfun_dat_002,
+   ])
+   def test_unary(self, backend, fundat):
+
+       w = fundat(backend)
+       assert core.allclose(w.wrappedfun(*w.args), w.out)
+
+
+   @pytest.mark.parametrize("backend", ["numpy"])
+   @pytest.mark.parametrize("fundat",  [
+       data.binary_wrappedfun_dat_001,
+       data.binary_wrappedfun_dat_002,
+       data.binary_wrappedfun_dat_003,
+       data.binary_wrappedfun_dat_004,
+   ])
+   def test_binary(self, backend, fundat):
+
+       w = fundat(backend)
+       assert core.allclose(w.wrappedfun(*w.args), w.out)
 
 
 
@@ -132,6 +170,86 @@ class TestUnaryOperations:
 
        assert core.allclose(out, ans)
 
+
+
+
+# --- Array operations: binary (for gradient accumulation) ------------------ #
+
+class TestBinaryGradOperations:
+
+   @pytest.mark.parametrize("backend", ["numpy"])
+   @pytest.mark.parametrize("shape",   [(2,3,4)])
+   def test_addto_dense_zero(self, backend, shape):
+
+       w = data.array_dat(data.randn)(backend, shape)
+
+       out = op.addto(w.array, grad.ZeroGrad())
+       assert out is w.array
+
+
+   @pytest.mark.parametrize("backend", ["numpy"])
+   @pytest.mark.parametrize("shape",   [(2,3,4)])
+   def test_addto_dense_dense(self, backend, shape):
+
+       x = data.array_dat(data.randn)(backend, shape, seed=1)
+       y = data.array_dat(data.randn)(backend, shape, seed=2)
+
+       out = op.addto(x.array, y.array)
+       assert core.allclose(out, x.array + y.array)
+
+
+   @pytest.mark.parametrize("backend", ["numpy"])
+   @pytest.mark.parametrize("graddat", [
+      data.sparse_grad_dat_001,
+      data.sparse_grad_dat_002,
+   ])
+   def test_addto_dense_sparse(self, backend, graddat):
+
+       y = graddat(backend)
+       x = data.array_dat(data.randn)(backend, y.grad.shape)
+
+       out = op.addto(x.array, y.grad)
+       assert core.allclose(out, x.array + y.dense)
+
+
+   @pytest.mark.parametrize("backend", ["numpy"])
+   @pytest.mark.parametrize("graddat", [
+      data.sparse_grad_dat_001,
+      data.sparse_grad_dat_002,
+   ])
+   def test_addto_sparse_zero(self, backend, graddat):
+
+       w = graddat(backend)
+
+       out = op.addto(w.grad, grad.ZeroGrad())
+       assert core.allclose(out, w.dense)
+
+
+   @pytest.mark.parametrize("backend", ["numpy"])
+   @pytest.mark.parametrize("graddat", [
+      data.sparse_grad_dat_001,
+      data.sparse_grad_dat_002,
+   ])
+   def test_addto_sparse_dense(self, backend, graddat):
+
+       w = graddat(backend)
+       x = data.array_dat(data.randn)(backend, w.shape, dtype=w.dtype)
+
+       out = op.addto(w.grad, x.array)
+       assert core.allclose(out, w.dense + x.array)
+
+
+   @pytest.mark.parametrize("backend",            ["numpy"])
+   @pytest.mark.parametrize("graddat1, graddat2", [
+      (data.sparse_grad_dat_001, data.sparse_grad_dat_001),
+   ])
+   def test_addto_sparse_sparse(self, backend, graddat1, graddat2):
+
+       x = graddat1(backend)
+       y = graddat2(backend)
+
+       out = op.addto(x.grad, y.grad)
+       assert core.allclose(out, x.dense + y.dense)
 
 
 

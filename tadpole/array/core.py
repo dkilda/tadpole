@@ -12,6 +12,7 @@ import tadpole.array.backends   as backends
 import tadpole.array.grad       as grad
 
 from tadpole.array.types import (
+   Space,
    Pluggable,
    ArrayLike,
 )

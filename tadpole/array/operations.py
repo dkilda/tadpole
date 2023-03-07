@@ -223,7 +223,7 @@ def cos(x):
 @typecast_binary
 def addto(x, y):
 
-    return x.addto(y)
+    return util.Outputs(x.addto(y))
 
 
 

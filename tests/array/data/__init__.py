@@ -35,7 +35,15 @@ from .function import (
    transform_dat,
    split_dat,
    visit_dat,
+   unary_wrappedfun_dat_001,
+   unary_wrappedfun_dat_002,
+   binary_wrappedfun_dat_001,
+   binary_wrappedfun_dat_002,
+   binary_wrappedfun_dat_003,
+   binary_wrappedfun_dat_004,
 )
+
+
 
 
 
