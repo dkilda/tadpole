@@ -126,3 +126,55 @@ class ArrayLike(abc.ABC):
 
 
 
+###############################################################################
+###                                                                         ###
+###  General framework for array function calls.                            ###
+###                                                                         ###
+###############################################################################
+
+
+# --- ContentLike interface ------------------------------------------------- #
+
+class ContentLike(abc.ABC):
+
+   @abc.abstractmethod
+   def __iter__(self):
+       pass
+
+   @abc.abstractmethod
+   def __len__(self):
+       pass
+
+   @abc.abstractmethod
+   def attach(self, backend, data):
+       pass
+
+
+
+
+# --- Function call interface ----------------------------------------------- #
+
+class FunCall(abc.ABC):
+
+   @abc.abstractmethod
+   def __iter__(self):
+       pass
+
+   @abc.abstractmethod
+   def __len__(self):
+       pass
+
+   @abc.abstractmethod
+   def attach(self, backend, data):
+       pass
+
+   @abc.abstractmethod
+   def execute(self):
+       pass
+
+
+
+
+
+
+

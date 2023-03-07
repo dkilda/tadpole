@@ -7,6 +7,11 @@ import numpy as np
 import tadpole.util       as util
 import tadpole.array.core as core
 
+from tadpole.array.types import (
+   ContentLike,
+   FunCall,
+)
+
 
 
 ###############################################################################
@@ -14,25 +19,6 @@ import tadpole.array.core as core
 ###  General framework for array function calls.                            ###
 ###                                                                         ###
 ###############################################################################
-
-
-# --- ContentLike interface ------------------------------------------------- #
-
-class ContentLike(abc.ABC):
-
-   @abc.abstractmethod
-   def __iter__(self):
-       pass
-
-   @abc.abstractmethod
-   def __len__(self):
-       pass
-
-   @abc.abstractmethod
-   def attach(self, backend, data):
-       pass
-
-
 
 
 # --- Content --------------------------------------------------------------- #
@@ -76,29 +62,6 @@ class Content:
    def attach(self, backend, data):
 
        return self.__class__(self._content.push((backend, data)))
-
-
-
-
-# --- Function call interface ----------------------------------------------- #
-
-class FunCall(abc.ABC):
-
-   @abc.abstractmethod
-   def __iter__(self):
-       pass
-
-   @abc.abstractmethod
-   def __len__(self):
-       pass
-
-   @abc.abstractmethod
-   def attach(self, backend, data):
-       pass
-
-   @abc.abstractmethod
-   def execute(self):
-       pass
 
 
 

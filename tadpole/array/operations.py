@@ -18,7 +18,7 @@ from tadpole.array.function import (
    TransformCall,
 )
 
-from tadpole.array.arraylike import (
+from tadpole.array.types import (
    Pluggable,
    ArrayLike,
 )

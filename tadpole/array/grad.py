@@ -11,8 +11,15 @@ import tadpole.array.core       as core
 import tadpole.autodiff         as ad
 import tadpole.util             as util
 
-from tadpole.array.arraylike import Pluggable, ArrayLike
-from tadpole.array.function  import Args, TransformCall
+from tadpole.array.function import (
+   Args, 
+   TransformCall,
+)
+
+from tadpole.array.types import (
+   Pluggable,
+   ArrayLike,
+)
 
 
 

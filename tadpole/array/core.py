@@ -11,7 +11,10 @@ import tadpole.array.operations as op
 import tadpole.array.backends   as backends
 import tadpole.array.grad       as grad
 
-from tadpole.array.arraylike import Pluggable, ArrayLike
+from tadpole.array.types import (
+   Pluggable,
+   ArrayLike,
+)
 
 
 
