@@ -60,7 +60,7 @@ class ZeroGrad(ArrayLike, Pluggable):
 
    def addto(self, other):
 
-       return other
+       return other.addto(self)
 
 
    # --- Basic functionality --- #
@@ -72,7 +72,7 @@ class ZeroGrad(ArrayLike, Pluggable):
 
    def asarray(self, data):
 
-       return core.asarray(self._backend, data)
+       return core.asarray(data, backend=self._backend)
 
 
    def space(self):

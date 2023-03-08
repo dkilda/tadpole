@@ -24,6 +24,14 @@ ad.vjpmap.add(op.cos, lambda g, out, x: op.neg(op.mul(g, op.sin(x))))
 
 
 
+# --- Array operations: binary (for gradient accumulation) ------------------ #
+
+ad.vjpmap.add(op.addgrads, lambda g, out, x, y: g, 
+                           lambda g, out, x, y: g)
+
+
+
+
 # --- Array operations: binary ---------------------------------------------- #
 
 ad.vjpmap.add(op.add, lambda g, out, x, y: g, 

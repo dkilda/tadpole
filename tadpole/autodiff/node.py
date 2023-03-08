@@ -4,12 +4,15 @@
 import abc
 import functools
 
-import tadpole.util as util 
-from tadpole.util import TupleLike
-       
+import tadpole.util  as util
+#import tadpole.array as td 
+     
 import tadpole.autodiff.graph   as agraph
 import tadpole.autodiff.map_jvp as jvpmap
 import tadpole.autodiff.map_vjp as vjpmap
+
+from tadpole.util  import TupleLike
+#from tadpole.array import ArrayLike
 
 
 
@@ -409,11 +412,13 @@ class ReverseGate(GateLike):
 
        seed = grads.pick(node)
 
+       """
        try:
           print("\nGATE-1: ", node, seed._data, tuple(x._source._source._data for x in self._op.vjp(seed)), self._parents)
           #tuple(x._data for x in self._op.vjp(seed)), self._parents)
        except AttributeError:
           print("\nGATE-1: ", node, seed, tuple(self._op.vjp(seed)), self._parents)
+       """
 
        return grads.add(self._parents, self._op.vjp(seed))
 
@@ -452,7 +457,9 @@ class NodeLike(abc.ABC):
 
 # --- Node ------------------------------------------------------------------ #
 
-class Node(NodeLike):
+class Node(NodeLike): #, ArrayLike):
+
+   # --- Construction --- #
 
    def __init__(self, source, layer, gate): 
 
@@ -468,6 +475,8 @@ class Node(NodeLike):
        self._gate   = gate
 
 
+   # --- Equality, hashing, representation --- #
+
    def __repr__(self):
 
        rep = util.ReprChain()
@@ -480,25 +489,31 @@ class Node(NodeLike):
        return str(rep)
 
 
-   def __eq__(self, other):
-
-       if type(self) != type(other):
-          return False
-
-       log = util.LogicalChain()
-
-       log.typ(self, other) 
-       log.val(self._source, other._source)
-       log.val(self._layer,  other._layer)
-       log.val(self._gate,   other._gate)
-
-       return bool(log)
-
-
    def __hash__(self):
 
        return id(self)
 
+
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+       log.typ(self, other) 
+
+       if bool(log):
+          log.val(self._source, other._source)
+          log.val(self._layer,  other._layer)
+          log.val(self._gate,   other._gate)
+
+       return bool(log)
+
+
+   """
+   def allclose(self, other, **opts):
+
+       return td.allclose(self, other, **opts)
+   """
+
+   # --- Node methods --- #
 
    def concat(self, concatenable):
 
@@ -520,11 +535,106 @@ class Node(NodeLike):
        return self._gate.grads(self, grads)
 
 
+   """
+   # --- Array methods: gradient accumulation --- #
+
+   def addto(self, other):
+
+       return td.addto(self, other)
+
+
+   # --- Array methods: basic functionality --- #
+
+   def copy(self, **opts):
+
+       source = self._source.copy(**opts)
+
+       return self.__class__(source, self._layer, self._gate)
+
+
+   def asarray(self, data):
+
+       return self._source.asarray(data)
+
+
+   def space(self):
+ 
+       return self._source.space()
+
+
+   def item(self, *idx):
+
+       return self._source.item(*idx)
+
+
+   # --- Array methods: array properties --- #
+
+   @property
+   def dtype(self):
+       return self._source.dtype
+
+   @property 
+   def size(self):
+       return self._source.size
+
+   @property 
+   def ndim(self):
+       return self._source.ndim
+
+   @property
+   def shape(self):
+       return self._source.shape
+
+
+   # --- Array methods: arithmetics and element access --- # 
+
+   def __getitem__(self, idx):
+
+       return td.getitem(self, idx) 
+
+
+   def __neg__(self):
+
+       return td.neg(self)
+
+
+   def __add__(self, other):
+
+       return td.add(self, other)
+
+
+   def __sub__(self, other):
+
+       return td.sub(self, other)
+
+
+   def __mul__(self, other):
+
+       return td.mul(self, other)
+
+
+   def __radd__(self, other):
+
+       return self.__add__(other)
+
+ 
+   def __rsub__(self, other):
+
+       return -self.__sub__(other)
+
+
+   def __rmul__(self, other):
+
+       return self.__mul__(other)
+   """
+          
 
 
 # --- Point (a disconnected node, only carries a value and no logic) -------- #
 
-class Point(NodeLike): 
+class Point(NodeLike): #, ArrayLike):
+
+   # --- Construction --- # 
 
    def __init__(self, source):
 
@@ -532,6 +642,8 @@ class Point(NodeLike):
        self._layer  = agraph.minlayer()
        self._gate   = NullGate()
 
+
+   # --- Equality, hashing, representation --- #
 
    def __repr__(self):
 
@@ -543,23 +655,31 @@ class Point(NodeLike):
        return str(rep)
 
 
+   def __hash__(self):
+
+       return id(self)
+
+
    def __eq__(self, other):
 
        if type(self) != type(other):
           return False
 
        log = util.LogicalChain()
-
        log.typ(self, other) 
-       log.ref(self._source, other._source)
+
+       if bool(log):
+          log.val(self._source, other._source)
 
        return bool(log)
 
+   """
+   def allclose(self, other, **opts):
 
-   def __hash__(self):
+       return td.allclose(self, other, **opts)
+   """
 
-       return id(self)
-
+   # --- Node methods --- #
 
    def concat(self, concatenable):
 
@@ -580,6 +700,96 @@ class Point(NodeLike):
 
        return self._gate.grads(self, grads)
 
+   """
+   # --- Array methods: gradient accumulation --- #
+
+   def addto(self, other):
+
+       return td.addto(self, other)
+
+
+   # --- Array methods: basic functionality --- #
+
+   def copy(self, **opts):
+
+       return self.__class__(self._source.copy(**opts))
+
+
+   def asarray(self, data):
+
+       return self._source.asarray(data)
+
+
+   def space(self):
+ 
+       return self._source.space()
+
+
+   def item(self, *idx):
+
+       return self._source.item(*idx)
+
+
+   # --- Array methods: array properties --- #
+
+   @property
+   def dtype(self):
+       return self._source.dtype
+
+   @property 
+   def size(self):
+       return self._source.size
+
+   @property 
+   def ndim(self):
+       return self._source.ndim
+
+   @property
+   def shape(self):
+       return self._source.shape
+
+
+   # --- Array methods: arithmetics and element access --- # 
+
+   def __getitem__(self, idx):
+
+       return td.getitem(self, idx) 
+
+
+   def __neg__(self):
+
+       return td.neg(self)
+
+
+   def __add__(self, other):
+
+       return td.add(self, other)
+
+
+   def __sub__(self, other):
+
+       return td.sub(self, other)
+
+
+   def __mul__(self, other):
+
+       return td.mul(self, other)
+
+
+   def __radd__(self, other):
+
+       return self.__add__(other)
+
+ 
+   def __rsub__(self, other):
+
+       return -self.__sub__(other)
+
+
+   def __rmul__(self, other):
+
+       return self.__mul__(other)
+   """
 
 
 

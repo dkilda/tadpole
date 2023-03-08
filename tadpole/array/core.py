@@ -372,6 +372,12 @@ class Array(ArrayLike, Pluggable):
 
    def __init__(self, backend, data):
 
+       if not isinstance(backend, backends.backend.Backend):
+          raise ValueError(
+             f"Array: backend must be an instance "
+             f"of Backend, but it is {backend}"
+          )  
+
        self._backend = backend
        self._data    = data
 
@@ -463,7 +469,8 @@ class Array(ArrayLike, Pluggable):
           log.val(self._backend, other._backend)
 
        if bool(log):
-          return util.allequal(self._data, other._data)   
+          return util.allclose(self._data, other._data)  
+          #return util.allequal(self._data, other._data) # FIXME decide what to do with Array equality!  
 
        return False
 

@@ -193,7 +193,8 @@ def nondifferentiable(fun):
         return Envelope(*args, **kwargs)
 
     return NonDifferentiable(fun, envelope)
-
+"""
+"""
 
 
 

@@ -639,7 +639,7 @@ class GradSum(Cumulative):
 
    def add(self, node, grads):
 
-       self._grads[node] = sum(grads)  
+       self._grads[node] = sum(grads) # reduce(td.addto, grads, td.ZeroGrad()) # sum(grads)  
 
        self._last = node
        return self
@@ -697,6 +697,13 @@ class GradAccum(Cumulative):
        return bool(log)
 
 
+
+   def _netgrad(self, node):
+
+       return self._grads.get(node, td.ZeroGrad())
+
+
+
    def add(self, nodes, grads):
 
        for node, grad in zip(nodes, grads):
@@ -708,21 +715,23 @@ class GradAccum(Cumulative):
            except AttributeError:
               pass
 
-           # self._grads[node] = td.gradadd(self._grads.get(node, 0), grad) 
+           # netgrad = self._grads.get(node, td.ZeroGrad())
+
+           self._grads[node] = td.addgrads(self._netgrad(node), grad) 
            
            """
            self._grads[node] = self._grads.get(node, 0) + grad
            """
 
-
+           """
            if   self._grads.get(node, 0) == 0: # FIXME DK we need to take care of gradient addition more properly!
                 self._grads[node] = grad             
            elif isinstance(self._grads.get(node, 0), anode.NodeLike) or isinstance(grad, anode.NodeLike):
                 self._grads[node] = td.add(self._grads.get(node, 0), grad)  
            else:
                 self._grads[node] = self._grads.get(node, 0) + grad 
-
-
+           """
+         
 
        return self
 

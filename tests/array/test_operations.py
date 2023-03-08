@@ -179,22 +179,22 @@ class TestBinaryGradOperations:
 
    @pytest.mark.parametrize("backend", ["numpy"])
    @pytest.mark.parametrize("shape",   [(2,3,4)])
-   def test_addto_dense_zero(self, backend, shape):
+   def test_addgrads_zero_dense(self, backend, shape):
 
        w = data.array_dat(data.randn)(backend, shape)
 
-       out = op.addto(w.array, grad.ZeroGrad())
+       out = op.addgrads(grad.ZeroGrad(), w.array)
        assert out is w.array
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
    @pytest.mark.parametrize("shape",   [(2,3,4)])
-   def test_addto_dense_dense(self, backend, shape):
+   def test_addgrads_dense_dense(self, backend, shape):
 
        x = data.array_dat(data.randn)(backend, shape, seed=1)
        y = data.array_dat(data.randn)(backend, shape, seed=2)
 
-       out = op.addto(x.array, y.array)
+       out = op.addgrads(x.array, y.array)
        assert core.allclose(out, x.array + y.array)
 
 
@@ -203,13 +203,13 @@ class TestBinaryGradOperations:
       data.sparse_grad_dat_001,
       data.sparse_grad_dat_002,
    ])
-   def test_addto_dense_sparse(self, backend, graddat):
+   def test_addgrads_sparse_dense(self, backend, graddat):
 
-       y = graddat(backend)
-       x = data.array_dat(data.randn)(backend, y.grad.shape)
+       x = graddat(backend)
+       y = data.array_dat(data.randn)(backend, x.grad.shape)
 
-       out = op.addto(x.array, y.grad)
-       assert core.allclose(out, x.array + y.dense)
+       out = op.addgrads(x.grad, y.array)
+       assert core.allclose(out, x.dense + y.array)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
@@ -217,11 +217,11 @@ class TestBinaryGradOperations:
       data.sparse_grad_dat_001,
       data.sparse_grad_dat_002,
    ])
-   def test_addto_sparse_zero(self, backend, graddat):
+   def test_addgrads_zero_sparse(self, backend, graddat):
 
        w = graddat(backend)
 
-       out = op.addto(w.grad, grad.ZeroGrad())
+       out = op.addgrads(grad.ZeroGrad(), w.grad)
        assert core.allclose(out, w.dense)
 
 
@@ -230,25 +230,26 @@ class TestBinaryGradOperations:
       data.sparse_grad_dat_001,
       data.sparse_grad_dat_002,
    ])
-   def test_addto_sparse_dense(self, backend, graddat):
+   def test_addgrads_dense_sparse(self, backend, graddat):
 
-       w = graddat(backend)
-       x = data.array_dat(data.randn)(backend, w.shape, dtype=w.dtype)
+       y = graddat(backend)
+       x = data.array_dat(data.randn)(backend, y.shape, dtype=y.dtype)
 
-       out = op.addto(w.grad, x.array)
-       assert core.allclose(out, w.dense + x.array)
+
+       out = op.addgrads(x.array, y.grad)
+       assert core.allclose(out, x.array + y.dense)
 
 
    @pytest.mark.parametrize("backend",            ["numpy"])
    @pytest.mark.parametrize("graddat1, graddat2", [
       (data.sparse_grad_dat_001, data.sparse_grad_dat_001),
    ])
-   def test_addto_sparse_sparse(self, backend, graddat1, graddat2):
+   def test_addgrads_sparse_sparse(self, backend, graddat1, graddat2):
 
        x = graddat1(backend)
        y = graddat2(backend)
 
-       out = op.addto(x.grad, y.grad)
+       out = op.addgrads(x.grad, y.grad)
        assert core.allclose(out, x.dense + y.dense)
 
 

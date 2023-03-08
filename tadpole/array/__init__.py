@@ -23,10 +23,7 @@ from .grad import (
 
 from .core import (
    Array,
-   allequal,
-   allclose,
-   allallequal,
-   allallclose,
+   ArraySpace,
 )
 
 
@@ -46,6 +43,16 @@ from .core import (
 
 
 from .operations import (
+   dtype,
+   size,
+   ndim,
+   shape,
+   allequal,
+   allclose,
+)
+
+
+from .operations import (
    getitem,  
    put,
    reshape,
@@ -59,7 +66,7 @@ from .operations import (
 
 
 from .operations import (
-   addto,
+   addgrads,
    add,
    sub,
    mul,   

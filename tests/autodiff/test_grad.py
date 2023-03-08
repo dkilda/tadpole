@@ -7,6 +7,8 @@ from tests.common import arepeat, arange, amap
 import tests.autodiff.fakes as fake
 import tests.autodiff.data  as data
 
+import tests.array.data as arraydata
+
 import tadpole.autodiff.node  as anode
 import tadpole.autodiff.graph as agraph
 import tadpole.autodiff.grad  as agrad
@@ -373,7 +375,15 @@ class TestGradAccum:
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_add(self, valency):
 
-       x = data.reverse_node_dat(valency)
+       def array(i):
+           return arraydata.array_dat(arraydata.randn)(
+                     "numpy", (2,3,4), seed=i+1
+                  ).array
+
+       grads = arange(array, valency)   
+       seed  = array(valency)
+
+       x = data.reverse_node_dat(valency, grads, seed)
 
        gradmap = {x.node: x.seed} 
        grads   = agrad.GradAccum(gradmap)

@@ -7,6 +7,8 @@ import numpy as np
 import tadpole.util     as util
 import tadpole.autodiff as ad
 
+# import tadpole.autodiff.graph as agraph
+
 import tadpole.array.grad     as grad
 import tadpole.array.core     as core
 import tadpole.array.function as function
@@ -23,6 +25,31 @@ from tadpole.array.types import (
    ArrayLike,
 )
 
+
+
+
+"""
+# --- Shorthand for a differentiable function wrap -------------------------- #
+
+def differentiable(fun):
+
+    def envelope(*args, **kwargs):
+        return agraph.Envelope(*args, **kwargs)
+
+    return agraph.Differentiable(fun, envelope)
+
+
+
+
+# --- Shorthand for a non-differentiable function wrap ---------------------- #
+
+def nondifferentiable(fun):
+
+    def envelope(*args, **kwargs):
+        return agraph.Envelope(*args, **kwargs)
+
+    return agraph.NonDifferentiable(fun, envelope)
+"""
 
 
 
@@ -99,32 +126,49 @@ def equals(x, y):
 
 """
 
-# --- Array properties and basic functionality ------------------------------ #
+# --- Array properties ------------------------------------------------------ #
 
 @ad.nondifferentiable
 def dtype(x):
-
     return util.Outputs(x.dtype)
 
 
 @ad.nondifferentiable
 def size(x):
-
     return util.Outputs(x.size)
 
 
 @ad.nondifferentiable
 def ndim(x):
-
     return util.Outputs(x.ndim)
 
 
 @ad.nondifferentiable
 def shape(x):
-
     return util.Outputs(x.shape)
 
 
+
+
+# --- Array comparisons --- # 
+
+@ad.nondifferentiable
+def allequal(x, y):
+
+    return util.Outputs(core.allequal(x, y))
+
+
+@ad.nondifferentiable
+def allclose(x, y, **opts):
+
+    return util.Outputs(core.allclose(x, y, **opts))
+
+"""
+"""
+
+
+
+"""
 @ad.nondifferentiable
 def asarray(x, data):
 
@@ -141,7 +185,7 @@ def copy(x, **opts):
 def item(self, *idx):
 
     return util.Outputs(x.item(*idx))
-
+"""
 
 
 
@@ -221,9 +265,9 @@ def cos(x):
 
 @ad.differentiable
 @typecast_binary
-def addto(x, y):
+def addgrads(x, y):
 
-    return util.Outputs(x.addto(y))
+    return util.Outputs(y.addto(x))
 
 
 

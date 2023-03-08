@@ -8,6 +8,8 @@ from tests.common import arepeat, arange, amap
 import tests.autodiff.fakes as fake
 import tests.autodiff.data  as data
 
+import tests.array.data as arraydata
+
 import tadpole.autodiff.node  as anode
 import tadpole.autodiff.graph as agraph
 import tadpole.autodiff.grad  as agrad
@@ -410,7 +412,15 @@ class TestReverseGate:
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_grads(self, valency): 
 
-       x    = data.reverse_gate_dat(valency)
+       def array(i):
+           return arraydata.array_dat(arraydata.randn)(
+                     "numpy", (2,3,4), seed=i+1
+                  ).array
+
+       grads = arange(array, valency)   
+       seed  = array(valency)
+
+       x    = data.reverse_node_dat(valency, grads, seed)
        node = fake.NodeLike()
 
        grads  = agrad.GradAccum({node: x.seed})
@@ -504,13 +514,21 @@ class TestNode:
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_reverse_grads(self, valency):
 
-       x = data.reverse_node_dat(valency)
+       def array(i):
+           return arraydata.array_dat(arraydata.randn)(
+                     "numpy", (2,3,4), seed=i+1
+                  ).array
+
+       grads = arange(array, valency)   
+       seed  = array(valency)
+
+       x = data.reverse_node_dat(valency, grads, seed)
 
        grads  = agrad.GradAccum({x.node: x.seed})
        grads1 = agrad.GradAccum({
-                                  None: x.seed, 
-                                  **dict(zip(x.parents, x.grads)),
-                                 })
+                                 None: x.seed, 
+                                 **dict(zip(x.parents, x.grads)),
+                                })
 
        assert x.node.grads(grads) == grads1
 

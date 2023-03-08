@@ -8,6 +8,8 @@ from tests.common import arepeat, arange, amap
 import tests.autodiff.fakes as fake
 import tests.autodiff.data  as data
 
+import tests.array.data as arraydata
+
 import tadpole.autodiff.node  as anode
 import tadpole.autodiff.graph as agraph
 import tadpole.autodiff.grad  as agrad
@@ -218,37 +220,45 @@ def forward_node_network_dat(layer=None):
 
 
 def reverse_node_network_dat(layer=None):
+ 
+    cnt = [0]
+    def array():
+        cnt[0] += 1
+        return arraydata.array_dat(arraydata.randn)(
+                  "numpy", (2,3,4), seed=cnt[0]
+               ).array
+
 
     # --- Grads --- #
 
     gradE = {
-             None: fake.Value(), 
-             "C": fake.Value(), 
-             "1": fake.Value(), 
-             "D": fake.Value(),
+             None: array(), 
+             "C":  array(), 
+             "1":  array(), 
+             "D":  array(),
             } 
 
     gradD = {
              None: gradE["D"], 
-             "1":  fake.Value(), 
-             "B":  fake.Value(),
+             "1":  array(), 
+             "B":  array(),
             }
  
     gradB = {
              None: gradD["B"], 
-             "0": fake.Value(), 
-             "2": fake.Value(),
+             "0":  array(), 
+             "2":  array(),
             }
  
     gradC = {
              None: gradE["C"], 
-             "A": fake.Value(),
+             "A":  array(),
             }
 
     gradA = {
              None: gradC["A"], 
-             "0": fake.Value(), 
-             "1": fake.Value(),
+             "0":  array(), 
+             "1":  array(),
             }
    
     grad0 = {None: gradA["0"] + gradB["0"]}
