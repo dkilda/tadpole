@@ -639,7 +639,9 @@ class GradSum(Cumulative):
 
    def add(self, node, grads):
 
-       self._grads[node] = sum(grads) # reduce(td.addto, grads, td.ZeroGrad()) # sum(grads)  
+       self._grads[node] = reduce(td.addgrads, grads, td.ZeroGrad())
+
+       # self._grads[node] = sum(grads) # reduce(td.addto, grads, td.ZeroGrad()) # sum(grads)  
 
        self._last = node
        return self

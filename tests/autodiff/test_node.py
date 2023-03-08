@@ -343,10 +343,18 @@ class TestForwardGate:
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_grads(self, valency): 
 
-       x    = data.forward_gate_dat(valency)
+       def array(i):
+           return arraydata.array_dat(arraydata.randn)(
+                     "numpy", (2,3,4), seed=i+1
+                  ).array
+
+       grads = amap(array, range(valency))   
+       seed  = amap(array, range(valency, 2*valency))
+
+       x    = data.forward_node_dat(valency, grads, seed)
        node = fake.NodeLike()
        
-       init_seed = fake.Value()
+       init_seed = array(2*valency)
 
        gradmap  = dict(zip(x.parents, x.seed))
        gradmap1 = {**gradmap, node: sum(x.grads)}
@@ -536,9 +544,17 @@ class TestNode:
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_forward_grads(self, valency):
 
-       x = data.forward_node_dat(valency)
+       def array(i):
+           return arraydata.array_dat(arraydata.randn)(
+                     "numpy", (2,3,4), seed=i+1
+                  ).array
 
-       init_seed = fake.Value()
+       grads = amap(array, range(valency))   
+       seed  = amap(array, range(valency, 2*valency))
+
+       x = data.forward_node_dat(valency, grads, seed)
+
+       init_seed = array(2*valency)
 
        gradmap  = dict(zip(x.parents, x.seed))
        gradmap1 = {**gradmap, x.node: sum(x.grads)}

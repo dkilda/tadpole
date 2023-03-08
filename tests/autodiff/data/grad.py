@@ -112,9 +112,17 @@ NodeNetworkData = collections.namedtuple("NodeNetworkData", [
 
 def forward_node_network_dat(layer=None):
 
+    cnt = [0]
+    def array():
+        cnt[0] += 1
+        return arraydata.array_dat(arraydata.randn)(
+                  "numpy", (2,3,4), seed=cnt[0]
+               ).array
+
+
     # --- Grads --- #
 
-    seed = (fake.Value(), )
+    seed = (array(), )
 
     grad0 = {"seed": seed, "grads": seed}
     grad1 = {"seed": seed, "grads": seed}
@@ -122,27 +130,27 @@ def forward_node_network_dat(layer=None):
 
     gradA = {
              "seed":  (sum(grad0["grads"]), sum(grad1["grads"])),
-             "grads": (fake.Value(),        fake.Value()),
+             "grads": (array(),             array()),
             }
 
     gradB = {
              "seed":  (sum(grad0["grads"]), sum(grad2["grads"])),
-             "grads": (fake.Value(),        fake.Value()),
+             "grads": (array(),             array()),
             }
 
     gradC = {
              "seed":  (sum(gradA["grads"]), ),
-             "grads": (fake.Value(),        ),
+             "grads": (array(),             ),
             }
 
     gradD = {
              "seed":  (sum(grad1["grads"]), sum(gradB["grads"])),
-             "grads": (fake.Value(),        fake.Value()),
+             "grads": (array(),             array()),
             }
 
     gradE = {
              "seed":  (sum(gradC["grads"]), sum(grad1["grads"]), sum(gradD["grads"])),
-             "grads": (fake.Value(),        fake.Value(),        fake.Value()),
+             "grads": (array(),             array(),             array()),
             }
 
 

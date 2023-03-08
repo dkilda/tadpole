@@ -317,10 +317,18 @@ class TestGradSum:
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_add(self, valency):
 
-       x = data.forward_node_dat(valency)
+       def array(i):
+           return arraydata.array_dat(arraydata.randn)(
+                     "numpy", (2,3,4), seed=i+1
+                  ).array
+
+       grads = amap(array, range(valency))   
+       seed  = amap(array, range(valency, 2*valency))
+
+       x = data.forward_node_dat(valency, grads, seed)
 
        gradmap = dict(zip(x.parents, x.seed))
-       grads   = agrad.GradSum(fake.Value(), gradmap)
+       grads   = agrad.GradSum(array(2*valency), gradmap)
 
        grads.add(x.node, x.grads)
        assert gradmap == {
@@ -357,10 +365,18 @@ class TestGradSum:
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_result(self, valency):
 
-       x = data.forward_node_dat(valency)
+       def array(i):
+           return arraydata.array_dat(arraydata.randn)(
+                     "numpy", (2,3,4), seed=i+1
+                  ).array
+
+       grads = amap(array, range(valency))   
+       seed  = amap(array, range(valency, 2*valency))
+
+       x = data.forward_node_dat(valency, grads, seed)
 
        gradmap = dict(zip(x.parents, x.seed))
-       grads   = agrad.GradSum(fake.Value(), gradmap)
+       grads   = agrad.GradSum(array(2*valency), gradmap)
        assert grads.result() == x.seed[-1]
 
        grads.add(x.node, x.grads)
