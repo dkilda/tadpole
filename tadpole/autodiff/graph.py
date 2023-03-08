@@ -164,6 +164,7 @@ class NonDifferentiable:
 
 
 
+
 # --- Shorthand for a differentiable function wrap -------------------------- #
 
 def differentiable(fun):

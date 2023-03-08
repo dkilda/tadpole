@@ -3,7 +3,8 @@
 
 
 from .autodiff import *
-from .array    import *
+from .wrapper  import *
+
 
 
 

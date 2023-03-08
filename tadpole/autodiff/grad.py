@@ -13,6 +13,8 @@ import tadpole.autodiff.graph as agraph
 
 import tadpole.array as td
 
+import tadpole.wrapper as td
+
 
 
 

@@ -2,32 +2,14 @@
 # -*- coding: utf-8 -*-
 
 
-#from . import my_vjps
-#from . import my_jvps
+from . import wrap_vjps
+from . import wrap_jvps
 
 
-#from .backends import set_default as set_backend
-
-"""
-from .types import (
-   Pluggable,
-   ArrayLike,
-)
+from tadpole.array.backends import set_default as set_backend
 
 
-from .grad import (
-   ZeroGrad,
-   SparseGrad,
-)
-
-
-from .core import (
-   Array,
-   ArraySpace,
-)
-
-
-from .core import (
+from tadpole.array.core import (
    fromfun,  
    asarray,
    sparse,
@@ -39,6 +21,17 @@ from .core import (
    randuniform,
    units,
    basis,
+)
+
+
+from tadpole.array.grad import (
+   ZeroGrad,
+   SparseGrad,
+)
+
+
+from .node import (
+   Node,
 )
 
 
@@ -76,13 +69,6 @@ from .operations import (
 from .operations import (
    einsum,   
 )
-"""
-
-
-
-
-
-
 
 
 

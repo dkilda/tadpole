@@ -116,11 +116,11 @@ def typecast_binary(fun):
 """
 # --- Generic array operations ---------------------------------------------- #
 
-@ad.nondifferentiable
+
 def floor(x, n):
     return x // n
 
-@ad.nondifferentiable
+
 def equals(x, y):
     return x == y 
 
@@ -128,60 +128,53 @@ def equals(x, y):
 
 # --- Array properties ------------------------------------------------------ #
 
-@ad.nondifferentiable
 def dtype(x):
     return x.dtype
 
 
-@ad.nondifferentiable
 def size(x):
     return x.size
 
 
-@ad.nondifferentiable
 def ndim(x):
     return x.ndim
 
 
-@ad.nondifferentiable
 def shape(x):
     return x.shape
 
 
 
 
-# --- Array comparisons --- # 
+# --- Array comparisons ----------------------------------------------------- # 
 
-@ad.nondifferentiable
 def allequal(x, y):
 
     return core.allequal(x, y)
 
 
-@ad.nondifferentiable
+
 def allclose(x, y, **opts):
 
     return core.allclose(x, y, **opts)
 
-"""
-"""
 
 
 
 """
-@ad.nondifferentiable
+
 def asarray(x, data):
 
     return x.asarray(data)
 
 
-@ad.nondifferentiable
+
 def copy(x, **opts):
 
     return x.copy(**opts)
 
 
-@ad.nondifferentiable
+
 def item(self, *idx):
 
     return x.item(*idx)
@@ -191,7 +184,6 @@ def item(self, *idx):
 
 # --- Generic array operations ---------------------------------------------- #
 
-@ad.nondifferentiable
 def put(x, idxs, vals, accumulate=False): 
 
     def fun(backend, v):
@@ -211,7 +203,6 @@ def put(x, idxs, vals, accumulate=False):
 
 # --- Array operations: unary ----------------------------------------------- #
 
-@ad.differentiable
 def getitem(x, idx):
 
     def fun(backend, v):
@@ -220,7 +211,7 @@ def getitem(x, idx):
     return Args(x).pluginto(TransformCall(fun))
 
 
-@ad.differentiable
+
 def reshape(x, shape):
 
     def fun(backend, v):
@@ -229,7 +220,7 @@ def reshape(x, shape):
     return Args(x).pluginto(TransformCall(fun))
 
 
-@ad.differentiable
+
 @typecast_unary
 def neg(x):
 
@@ -239,7 +230,7 @@ def neg(x):
     return Args(x).pluginto(TransformCall(fun))
 
 
-@ad.differentiable
+
 @typecast_unary
 def sin(x):
 
@@ -249,7 +240,7 @@ def sin(x):
     return Args(x).pluginto(TransformCall(fun))
 
 
-@ad.differentiable
+
 @typecast_unary
 def cos(x):
 
@@ -263,7 +254,6 @@ def cos(x):
 
 # --- Array operations: binary (for gradient accumulation) ------------------ #
 
-@ad.differentiable
 @typecast_binary
 def addgrads(x, y):
 
@@ -274,7 +264,6 @@ def addgrads(x, y):
 
 # --- Array operations: binary ---------------------------------------------- #
 
-@ad.differentiable
 @typecast_binary
 def add(x, y):
 
@@ -284,7 +273,7 @@ def add(x, y):
     return Args(x, y).pluginto(TransformCall(fun))
 
 
-@ad.differentiable
+
 @typecast_binary
 def sub(x, y):
 
@@ -294,7 +283,7 @@ def sub(x, y):
     return Args(x, y).pluginto(TransformCall(fun))
 
 
-@ad.differentiable
+
 @typecast_binary
 def mul(x, y):
 
@@ -308,7 +297,6 @@ def mul(x, y):
 
 # --- Array operations: nary ------------------------------------------------ #
 
-@ad.differentiable
 def einsum(equation, *xs, optimize=True):
 
     def fun(backend, *xs):
