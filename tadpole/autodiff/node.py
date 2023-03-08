@@ -120,7 +120,7 @@ class NullAdjointOp(Adjoint):
 
    def __eq__(self, other):
 
-       return True
+       return type(self) == type(other)
 
 
    def __hash__(self):
@@ -268,6 +268,11 @@ class NullGate(GateLike):
        rep = util.ReprChain()
        rep.typ(self)
        return str(rep)
+
+
+   def __eq__(self, other):
+
+       return type(self) == type(other)
 
 
    def flow(self):
@@ -446,21 +451,14 @@ class NodeLike(abc.ABC):
 
 
 
-# --- Node ------------------------------------------------------------------ #
+# --- Generic NodeLike vertex on a graph ------------------------------------ #
 
-class Node(NodeLike): #, ArrayLike):
+class GenericNodeLike(NodeLike): #, ArrayLike):
 
    # --- Construction --- #
 
    def __init__(self, source, layer, gate): 
-
-       if not (layer > agraph.minlayer()):
-          raise ValueError((f"Node: the input layer {layer} must be higher "
-                            f"than the minimum layer {agraph.minlayer()}."))
-
-       if not isinstance(source, NodeLike):
-          source = Point(source)
-                                            
+                                           
        self._source = source              
        self._layer  = layer 
        self._gate   = gate
@@ -618,11 +616,35 @@ class Node(NodeLike): #, ArrayLike):
 
        return self.__mul__(other)
    """
+
+# --- Node ------------------------------------------------------------------ #
+
+class Node(GenericNodeLike):
+
+   def __init__(self, source, layer, gate):
+
+       if not (layer > agraph.minlayer()):
+          raise ValueError((f"Node: the input layer {layer} must be higher "
+                            f"than the minimum layer {agraph.minlayer()}."))
+
+       if not isinstance(source, NodeLike):
+          source = Point(source)
+
+       super().__init__(source, layer, gate)
           
+
 
 
 # --- Point (a disconnected node, only carries a value and no logic) -------- #
 
+class Point(GenericNodeLike):
+
+   def __init__(self, source):
+
+       super().__init__(source, agraph.minlayer(), NullGate())
+
+
+'''
 class Point(NodeLike): #, ArrayLike):
 
    # --- Construction --- # 
@@ -781,7 +803,7 @@ class Point(NodeLike): #, ArrayLike):
 
        return self.__mul__(other)
    """
-
+'''
 
 
 ###############################################################################
