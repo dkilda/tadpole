@@ -188,12 +188,6 @@ class Fun:
 
    def __call__(self, *args):
 
-       try:
-          print("\nFUN-1: ", args,       args[0]._data)
-          print("\nFUN-2: ", self._args, self._args[0]._data)
-       except (AttributeError, TypeError, IndexError):
-          pass
-
        if self._out is None:
           return Value()
 
@@ -252,6 +246,19 @@ class Op:
           args = (args,)
 
        return fun(*args)
+
+
+
+
+
+"""
+       try:
+          print("\nFUN-1: ", args,       args[0]._data)
+          print("\nFUN-2: ", self._args, self._args[0]._data)
+       except (AttributeError, TypeError, IndexError):
+          pass
+"""
+
 
 
 

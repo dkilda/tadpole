@@ -131,16 +131,7 @@ class Differentiable:
        envelope = self._envelope(*args, **kwargs)
        out      = envelope.applywrap(self, self._fun)
 
-       print("\nDIFFABLE-1: ", self._fun)
-
-       try:
-          print("DIFFABLE-2: ", args) #[arg._data for arg in args])
-          print("DIFFABLE-3: ", out, out._source._source._data)
-       except AttributeError:
-          print("DIFFABLE-2: ", args)
-          print("DIFFABLE-3: ", out)
-
-       return out.unpack() # self._envelope(*args, **kwargs).applywrap(self, self._fun)
+       return out.unpack() 
 
 
 
@@ -193,8 +184,7 @@ def nondifferentiable(fun):
         return Envelope(*args, **kwargs)
 
     return NonDifferentiable(fun, envelope)
-"""
-"""
+
 
 
 
@@ -658,14 +648,7 @@ class Envelope(EnvelopeLike):
        last = self.packs().last()
        args = last.deshell() 
 
-       try:
-          print("\nENVELOPE.APPLY-1: ", fun)
-          print("ENVELOPE.APPLY-2: ", [arg._data for arg in args])
-          print("ENVELOPE.APPLY-3: ", fun(*args, **self._kwargs)._data)
-       except AttributeError:
-          pass
-
-       return fun(*args, **self._kwargs) # TODO solution: require any ops function to return a tuple/TupleLike/Outputs
+       return fun(*args, **self._kwargs) # TODO solution: require any ops function to return a tuple/TupleLike/Outputs?
 
               
    def applywrap(self, funwrap, fun): 

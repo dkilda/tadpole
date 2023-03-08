@@ -411,15 +411,6 @@ class ReverseGate(GateLike):
    def grads(self, node, grads):
 
        seed = grads.pick(node)
-
-       """
-       try:
-          print("\nGATE-1: ", node, seed._data, tuple(x._source._source._data for x in self._op.vjp(seed)), self._parents)
-          #tuple(x._data for x in self._op.vjp(seed)), self._parents)
-       except AttributeError:
-          print("\nGATE-1: ", node, seed, tuple(self._op.vjp(seed)), self._parents)
-       """
-
        return grads.add(self._parents, self._op.vjp(seed))
 
 

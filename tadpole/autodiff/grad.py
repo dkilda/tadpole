@@ -140,18 +140,7 @@ class DifferentialOp(Differential):
 
    def grad(self, seed):
 
-       try:
-          print("\nGRAD-1: ", self.end(), self.end()._source, self.end()._source._source._source._data, seed._data)
-       except AttributeError:
-          try:
-             print("\nGRAD-1: ", self.end(), self.end()._source, seed)
-          except AttributeError:
-             print("\nGRAD-1: ", self.end(), seed)
-
-       grads = self._prop.accum(self.end(), seed)
-
-       print("\nGRAD-2: ", grads.result())
-       
+       grads = self._prop.accum(self.end(), seed)       
        return grads.result()
 
 
@@ -243,11 +232,9 @@ class ReversePropagation(Propagation):
    def accum(self, end, seed):
 
        grads = GradAccum({end: seed})
-       print("\n\nPROPGRADS-BEGIN: ", grads._grads, seed)
 
        for node in toposort(end): 
            grads = node.grads(grads)
-           print("\nPROPGRADS: ", grads._grads)
 
        return grads
 
@@ -325,11 +312,6 @@ class GraphOp(Graphable):
 
        with self.graph() as graph:
           end = graph.build(self._fun, self._x)   
-
-       try:
-          print("\nEVALUATE-1: ", self._fun, end, end._source, end._source._source._data)
-       except AttributeError: 
-          pass
 
        return end
          
@@ -640,10 +622,7 @@ class GradSum(Cumulative):
    def add(self, node, grads):
 
        self._grads[node] = reduce(td.addgrads, grads, td.ZeroGrad())
-
-       # self._grads[node] = sum(grads) # reduce(td.addto, grads, td.ZeroGrad()) # sum(grads)  
-
-       self._last = node
+       self._last        = node
        return self
 
 
@@ -699,42 +678,16 @@ class GradAccum(Cumulative):
        return bool(log)
 
 
-
    def _netgrad(self, node):
 
        return self._grads.get(node, td.ZeroGrad())
 
 
-
    def add(self, nodes, grads):
 
        for node, grad in zip(nodes, grads):
-
-           try:
-              # print("\nGRADACCUM: ", node, node._source, node._source._source._data, grad._data)
-              print("\nGRADACCUM-1: ", node, node._source._source._source._data) 
-              print("GRADACCUM-2: ", grad, grad._source, grad._source._source, grad._source._source._data)
-           except AttributeError:
-              pass
-
-           # netgrad = self._grads.get(node, td.ZeroGrad())
-
            self._grads[node] = td.addgrads(self._netgrad(node), grad) 
-           
-           """
-           self._grads[node] = self._grads.get(node, 0) + grad
-           """
-
-           """
-           if   self._grads.get(node, 0) == 0: # FIXME DK we need to take care of gradient addition more properly!
-                self._grads[node] = grad             
-           elif isinstance(self._grads.get(node, 0), anode.NodeLike) or isinstance(grad, anode.NodeLike):
-                self._grads[node] = td.add(self._grads.get(node, 0), grad)  
-           else:
-                self._grads[node] = self._grads.get(node, 0) + grad 
-           """
-         
-
+      
        return self
 
 
