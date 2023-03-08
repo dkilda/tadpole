@@ -11,9 +11,9 @@ import tests.array.fakes as fake
 import tests.array.data  as data
 
 import tadpole.util             as util
-import tadpole.array.backends   as backends
 import tadpole.array.core       as core
 import tadpole.array.grad       as grad
+import tadpole.array.backends   as backends
 import tadpole.array.function   as function
 import tadpole.array.operations as op
 
@@ -39,7 +39,7 @@ class TestTypeCast:
    def test_unary(self, backend, fundat):
 
        w = fundat(backend)
-       assert core.allclose(w.wrappedfun(*w.args), w.out)
+       assert op.allclose(w.wrappedfun(*w.args), w.out)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
@@ -52,7 +52,7 @@ class TestTypeCast:
    def test_binary(self, backend, fundat):
 
        w = fundat(backend)
-       assert core.allclose(w.wrappedfun(*w.args), w.out)
+       assert op.allclose(w.wrappedfun(*w.args), w.out)
 
 
 
@@ -142,7 +142,7 @@ class TestUnaryOperations:
        ans = -w.data
        ans = core.asarray(ans, **options(backend=backend))
 
-       assert core.allclose(out, ans)
+       assert op.allclose(out, ans)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
@@ -155,7 +155,7 @@ class TestUnaryOperations:
        ans = np.sin(w.data)
        ans = core.asarray(ans, **options(backend=backend))
 
-       assert core.allclose(out, ans)
+       assert op.allclose(out, ans)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
@@ -168,7 +168,7 @@ class TestUnaryOperations:
        ans = np.cos(w.data)
        ans = core.asarray(ans, **options(backend=backend))
 
-       assert core.allclose(out, ans)
+       assert op.allclose(out, ans)
 
 
 
@@ -195,7 +195,7 @@ class TestBinaryGradOperations:
        y = data.array_dat(data.randn)(backend, shape, seed=2)
 
        out = op.addgrads(x.array, y.array)
-       assert core.allclose(out, x.array + y.array)
+       assert op.allclose(out, x.array + y.array)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
@@ -209,7 +209,7 @@ class TestBinaryGradOperations:
        y = data.array_dat(data.randn)(backend, x.grad.shape)
 
        out = op.addgrads(x.grad, y.array)
-       assert core.allclose(out, x.dense + y.array)
+       assert op.allclose(out, x.dense + y.array)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
@@ -222,7 +222,7 @@ class TestBinaryGradOperations:
        w = graddat(backend)
 
        out = op.addgrads(grad.ZeroGrad(), w.grad)
-       assert core.allclose(out, w.dense)
+       assert op.allclose(out, w.dense)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
@@ -237,7 +237,7 @@ class TestBinaryGradOperations:
 
 
        out = op.addgrads(x.array, y.grad)
-       assert core.allclose(out, x.array + y.dense)
+       assert op.allclose(out, x.array + y.dense)
 
 
    @pytest.mark.parametrize("backend",            ["numpy"])
@@ -250,7 +250,7 @@ class TestBinaryGradOperations:
        y = graddat2(backend)
 
        out = op.addgrads(x.grad, y.grad)
-       assert core.allclose(out, x.dense + y.dense)
+       assert op.allclose(out, x.dense + y.dense)
 
 
 
@@ -272,7 +272,7 @@ class TestBinaryOperations:
        ans = x1.data  + x2.data
        ans = core.asarray(ans, **options(backend=backend))
        
-       return core.allclose(out, ans)
+       return op.allclose(out, ans)
 
 
    @pytest.mark.parametrize("backend",        ["numpy"])
@@ -288,7 +288,7 @@ class TestBinaryOperations:
        ans = x1.data  - x2.data
        ans = core.asarray(ans, **options(backend=backend))
        
-       return core.allclose(out, ans)
+       return op.allclose(out, ans)
 
 
    @pytest.mark.parametrize("backend",        ["numpy"])
@@ -304,7 +304,7 @@ class TestBinaryOperations:
        ans = x1.data  * x2.data
        ans = core.asarray(ans, **options(backend=backend))
        
-       return core.allclose(out, ans)
+       return op.allclose(out, ans)
        
 
 
@@ -328,7 +328,7 @@ class TestNaryOperations:
        ans = np.einsum(equation, *(x.data  for x in xs))
        ans = core.asarray(ans, **options(backend=backend))
 
-       assert core.allclose(out, ans) 
+       assert op.allclose(out, ans) 
 
 
 

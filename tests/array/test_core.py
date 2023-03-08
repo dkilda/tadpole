@@ -10,12 +10,12 @@ from tests.common import options
 import tests.array.fakes as fake
 import tests.array.data  as data
 
-import tadpole.util           as util
-import tadpole.array.backends as backends
-import tadpole.array.core     as core
-import tadpole.array.grad     as grad
-import tadpole.array.function as function
-
+import tadpole.util             as util
+import tadpole.array.core       as core
+import tadpole.array.grad       as grad
+import tadpole.array.backends   as backends
+import tadpole.array.function   as function
+import tadpole.array.operations as op
 
 
 
@@ -318,7 +318,7 @@ class TestArray:
        y = data.array_dat(data.randn)(backend, shape, seed=2)
 
        out = x.array.addto(y.array)
-       assert core.allclose(out, x.array + y.array)
+       assert op.allclose(out, x.array + y.array)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
@@ -332,7 +332,7 @@ class TestArray:
        x = data.array_dat(data.randn)(backend, y.grad.shape)
 
        out = x.array.addto(y.grad)
-       assert core.allclose(out, x.array + y.dense)
+       assert op.allclose(out, x.array + y.dense)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])

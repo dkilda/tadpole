@@ -4,8 +4,9 @@
 import abc
 import numpy as np
 
-import tadpole.util       as util
-import tadpole.array.core as core
+import tadpole.util             as util
+import tadpole.array.core       as core
+import tadpole.array.operations as op
 
 from tadpole.array.types import (
    ContentLike,
@@ -235,7 +236,7 @@ class Args:
        log.typ(self, other)
 
        if bool(log):
-          return core.allallclose(self._args, other._args, **opts)    
+          return op.allallclose(self._args, other._args, **opts)    
 
        return False
 
@@ -246,7 +247,7 @@ class Args:
        log.typ(self, other)
 
        if bool(log):
-          return core.allallequal(self._args, other._args)    
+          return op.allallequal(self._args, other._args)    
 
        return False
 

@@ -8,11 +8,12 @@ import numpy as np
 import tests.array.fakes as fake
 import tests.array.data  as data
 
-import tadpole.util           as util
-import tadpole.array.backends as backends
-import tadpole.array.core     as core
-import tadpole.array.grad     as grad
-import tadpole.array.function as function
+import tadpole.util             as util
+import tadpole.array.core       as core
+import tadpole.array.grad       as grad
+import tadpole.array.backends   as backends
+import tadpole.array.function   as function
+import tadpole.array.operations as op
 
 
 
@@ -59,7 +60,7 @@ class TestSparseGrad:
        w = graddat(backend)
 
        out = w.grad.addto(grad.ZeroGrad())
-       assert core.allclose(out, w.dense)
+       assert op.allclose(out, w.dense)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
@@ -73,7 +74,7 @@ class TestSparseGrad:
        x = data.array_dat(data.randn)(backend, w.shape, dtype=w.dtype)
 
        out = w.grad.addto(x.array)
-       assert core.allclose(out, w.dense + x.array)
+       assert op.allclose(out, w.dense + x.array)
 
 
    @pytest.mark.parametrize("backend",            ["numpy"])
@@ -86,7 +87,7 @@ class TestSparseGrad:
        y = graddat2(backend)
 
        out = x.grad.addto(y.grad)
-       assert core.allclose(out, x.dense + y.dense)
+       assert op.allclose(out, x.dense + y.dense)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])

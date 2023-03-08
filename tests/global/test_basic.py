@@ -5,7 +5,7 @@ import pytest
 import data    as data
 import tadpole as td
 
-from tadpole.array.core import allequal, allclose
+from tadpole.array.operations import allequal, allclose
 
 
 
