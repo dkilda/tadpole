@@ -111,8 +111,7 @@ class VisitCall(FunCall):
 
        backends, datas = zip(*self._content)
 
-       out = self._fun(backends[0], *datas)
-       return util.Outputs(out)
+       return self._fun(backends[0], *datas)
 
 
 
@@ -163,9 +162,7 @@ class TransformCall(FunCall):
        backends, datas = zip(*self._content)
 
        out = self._fun(backends[0], *datas)
-       out = core.Array(backends[0], out)
-
-       return util.Outputs(out)
+       return core.Array(backends[0], out)
 
 
 
@@ -215,10 +212,10 @@ class SplitCall(FunCall):
 
        backends, datas = zip(*self._content)
 
-       outputs = iter(self._fun(backends[0], *datas))
+       outputs = self._fun(backends[0], *datas)
        outputs = (core.Array(backends[0], out) for out in outputs)
        
-       return util.Outputs(*outputs)
+       return tuple(outputs) 
 
  
 

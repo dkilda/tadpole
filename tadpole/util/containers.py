@@ -106,6 +106,11 @@ class Outputs(TupleLike):
        return iter(self._outputs)  
 
 
+   def __reversed__(self):
+
+       return reversed(self._outputs)  
+
+
    def __getitem__(self, idx):
 
        return self._outputs[idx]
@@ -122,6 +127,29 @@ class Outputs(TupleLike):
    def apply(self, fun):
 
        return self.__class__(*map(fun, self._outputs)) 
+
+
+
+
+# --- Function decorator that makes it return an Outputs object ------------- #
+
+def return_outputs(fun):
+     
+    def wrap(*args, **kwargs):
+
+        out = fun(*args, **kwargs)
+
+        if isinstance(out, Outputs):
+           return out
+
+        if isinstance(out, tuple):
+           return Outputs(*out) 
+
+        return Outputs(out)
+
+    return wrap
+
+
 
 
 

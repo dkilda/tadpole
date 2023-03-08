@@ -50,7 +50,7 @@ def _function_dat(backend, shape, dtype, nargs, which="function"):
                   backend, shape, dtype=dtype, seed=nargs+1
                ) 
          fun = fake.Fun(out.data, out.backend, *datas)
-         out = out.array
+         out = util.Outputs(out.array)
 
          funcall = function.TransformCall(fun, util.Sequence(seq))
 
@@ -65,15 +65,15 @@ def _function_dat(backend, shape, dtype, nargs, which="function"):
                 ) 
 
          fun = fake.Fun((out1.data, out2.data), out1.backend, *datas)
-         out = (out1.array, out2.array)
+         out = util.Outputs(out1.array, out2.array)
 
          funcall = function.SplitCall(fun, util.Sequence(seq))
 
 
     elif which == "visit":
 
-         out = fake.Value()
-         fun = fake.Fun(out, xs[0].backend, *datas)
+         out = util.Outputs(fake.Value())
+         fun = fake.Fun(out.unpack(), xs[0].backend, *datas)
 
          funcall = function.VisitCall(fun, util.Sequence(seq))
 
@@ -131,9 +131,10 @@ def unary_wrappedfun_dat_001(backend):
         def _fun(backend, v):
             return np.sin(v)
 
-        return function.Args(x).pluginto(
-                  function.TransformCall(_fun)
-               )
+        out = function.Args(x).pluginto(
+                 function.TransformCall(_fun)
+              )
+        return out.unpack()
 
     wrappedfun = op.typecast_unary(fun)
 
@@ -153,9 +154,10 @@ def unary_wrappedfun_dat_002(backend):
         def _fun(backend, v):
             return np.sin(v)
 
-        return function.Args(x).pluginto(
-                  function.TransformCall(_fun)
-               )
+        out = function.Args(x).pluginto(
+                 function.TransformCall(_fun)
+              )
+        return out.unpack()
 
     wrappedfun = op.typecast_unary(fun)
 
@@ -177,9 +179,10 @@ def binary_wrappedfun_dat_001(backend):
         def _fun(backend, u, v):
             return u * v
 
-        return function.Args(x, y).pluginto(
-                  function.TransformCall(_fun)
-               )
+        out = function.Args(x, y).pluginto(
+                 function.TransformCall(_fun)
+              )
+        return out.unpack()
 
     wrappedfun = op.typecast_binary(fun)
 
@@ -201,9 +204,10 @@ def binary_wrappedfun_dat_002(backend):
         def _fun(backend, u, v):
             return u * v
 
-        return function.Args(x, y).pluginto(
-                  function.TransformCall(_fun)
-               )
+        out = function.Args(x, y).pluginto(
+                 function.TransformCall(_fun)
+              )
+        return out.unpack()
 
     wrappedfun = op.typecast_binary(fun)
 
@@ -227,9 +231,10 @@ def binary_wrappedfun_dat_003(backend):
         def _fun(backend, u, v):
             return u * v
 
-        return function.Args(x, y).pluginto(
-                  function.TransformCall(_fun)
-               )
+        out = function.Args(x, y).pluginto(
+                 function.TransformCall(_fun)
+              )
+        return out.unpack()
 
     wrappedfun = op.typecast_binary(fun)
 
@@ -254,9 +259,10 @@ def binary_wrappedfun_dat_004(backend):
         def _fun(backend, u, v):
             return u * v
 
-        return function.Args(x, y).pluginto(
-                  function.TransformCall(_fun)
-               )
+        out = function.Args(x, y).pluginto(
+                 function.TransformCall(_fun)
+              )
+        return out.unpack()
 
     wrappedfun = op.typecast_binary(fun)
 

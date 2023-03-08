@@ -171,7 +171,7 @@ def differentiable(fun):
     def envelope(*args, **kwargs):
         return Envelope(*args, **kwargs)
 
-    return Differentiable(fun, envelope)
+    return Differentiable(util.return_outputs(fun), envelope)
 
 
 
@@ -183,7 +183,7 @@ def nondifferentiable(fun):
     def envelope(*args, **kwargs):
         return Envelope(*args, **kwargs)
 
-    return NonDifferentiable(fun, envelope)
+    return NonDifferentiable(util.return_outputs(fun), envelope)
 
 
 

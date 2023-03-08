@@ -130,22 +130,22 @@ def equals(x, y):
 
 @ad.nondifferentiable
 def dtype(x):
-    return x.dtype
+    return util.Outputs(x.dtype)
 
 
 @ad.nondifferentiable
 def size(x):
-    return x.size
+    return util.Outputs(x.size)
 
 
 @ad.nondifferentiable
 def ndim(x):
-    return x.ndim
+    return util.Outputs(x.ndim)
 
 
 @ad.nondifferentiable
 def shape(x):
-    return x.shape
+    return util.Outputs(x.shape)
 
 
 
@@ -155,13 +155,13 @@ def shape(x):
 @ad.nondifferentiable
 def allequal(x, y):
 
-    return core.allequal(x, y)
+    return util.Outputs(core.allequal(x, y))
 
 
 @ad.nondifferentiable
 def allclose(x, y, **opts):
 
-    return core.allclose(x, y, **opts)
+    return util.Outputs(core.allclose(x, y, **opts))
 
 """
 """
@@ -172,19 +172,19 @@ def allclose(x, y, **opts):
 @ad.nondifferentiable
 def asarray(x, data):
 
-    return x.asarray(data)
+    return util.Outputs(x.asarray(data))
 
 
 @ad.nondifferentiable
 def copy(x, **opts):
 
-    return x.copy(**opts)
+    return util.Outputs(x.copy(**opts))
 
 
 @ad.nondifferentiable
 def item(self, *idx):
 
-    return x.item(*idx)
+    return util.Outputs(x.item(*idx))
 """
 
 
@@ -267,7 +267,7 @@ def cos(x):
 @typecast_binary
 def addgrads(x, y):
 
-    return y.addto(x)
+    return util.Outputs(y.addto(x))
 
 
 
