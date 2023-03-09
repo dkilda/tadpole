@@ -55,6 +55,11 @@ class ZeroGrad(ArrayLike, Pluggable):
        return other.addto(self)
 
 
+   def __bool__(self):
+
+       return False
+
+
    # --- Basic functionality --- #
 
    def copy(self):

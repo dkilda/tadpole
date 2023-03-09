@@ -5,12 +5,13 @@ import abc
 import collections
 from functools import reduce
 
-import tadpole.util    as util
-import tadpole.wrapper as td
+import tadpole.util as util
 
 import tadpole.autodiff.nary  as nary
 import tadpole.autodiff.node  as an
 import tadpole.autodiff.graph as ag
+
+from tadpole.array.grad import ZeroGrad
 
 
 
@@ -576,6 +577,18 @@ class Cumulative(abc.ABC):
 
 
 
+# --- Gradient addition function (a shortcut) ------------------------------- #
+
+def addgrads(x, y):
+
+    if not x:
+       x = ZeroGrad()
+
+    return y.addto(x)
+
+
+
+
 # --- Gradient summation ---------------------------------------------------- #
 
 class GradSum(Cumulative):
@@ -614,7 +627,7 @@ class GradSum(Cumulative):
 
    def add(self, node, grads):
 
-       self._grads[node] = reduce(td.addgrads, grads, td.ZeroGrad())
+       self._grads[node] = reduce(addgrads, grads)  
        self._last        = node
        return self
 
@@ -673,13 +686,13 @@ class GradAccum(Cumulative):
 
    def _netgrad(self, node):
 
-       return self._grads.get(node, td.ZeroGrad())
+       return self._grads.get(node) 
 
 
    def add(self, nodes, grads):
 
        for node, grad in zip(nodes, grads):
-           self._grads[node] = td.addgrads(self._netgrad(node), grad) 
+           self._grads[node] = addgrads(self._netgrad(node), grad) 
       
        return self
 

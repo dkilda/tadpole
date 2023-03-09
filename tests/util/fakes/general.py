@@ -168,6 +168,14 @@ class Value:
        return self.__mul__(other)
 
 
+   def addto(self, other):
+
+       if not other:
+          return self
+
+       return self + other
+
+
 
 
 # --- Fun ------------------------------------------------------------------- #
