@@ -7,8 +7,6 @@ from tests.common import arepeat, arange, amap
 import tests.autodiff.fakes as fake
 import tests.autodiff.data  as data
 
-import tests.array.data as arraydata
-
 import tadpole.util           as util
 import tadpole.autodiff.node  as an
 import tadpole.autodiff.graph as ag
@@ -317,18 +315,10 @@ class TestGradSum:
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_add(self, valency):
 
-       def array(i):
-           return arraydata.array_dat(arraydata.randn)(
-                     "numpy", (2,3,4), seed=i+1
-                  ).array
-
-       grads = amap(array, range(valency))   
-       seed  = amap(array, range(valency, 2*valency))
-
-       x = data.forward_node_dat(valency, grads, seed)
+       x = data.forward_node_dat(valency)
 
        gradmap = dict(zip(x.parents, x.seed))
-       grads   = ad.GradSum(array(2*valency), gradmap)
+       grads   = ad.GradSum(fake.Value(), gradmap)
 
        grads.add(x.node, x.grads)
        assert gradmap == {
@@ -365,18 +355,10 @@ class TestGradSum:
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_result(self, valency):
 
-       def array(i):
-           return arraydata.array_dat(arraydata.randn)(
-                     "numpy", (2,3,4), seed=i+1
-                  ).array
-
-       grads = amap(array, range(valency))   
-       seed  = amap(array, range(valency, 2*valency))
-
-       x = data.forward_node_dat(valency, grads, seed)
+       x = data.forward_node_dat(valency)
 
        gradmap = dict(zip(x.parents, x.seed))
-       grads   = ad.GradSum(array(2*valency), gradmap)
+       grads   = ad.GradSum(fake.Value(), gradmap)
        assert grads.result() == x.seed[-1]
 
        grads.add(x.node, x.grads)
@@ -391,15 +373,7 @@ class TestGradAccum:
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_add(self, valency):
 
-       def array(i):
-           return arraydata.array_dat(arraydata.randn)(
-                     "numpy", (2,3,4), seed=i+1
-                  ).array
-
-       grads = arange(array, valency)   
-       seed  = array(valency)
-
-       x = data.reverse_node_dat(valency, grads, seed)
+       x = data.reverse_node_dat(valency)
 
        gradmap = {x.node: x.seed} 
        grads   = ad.GradAccum(gradmap)

@@ -8,8 +8,6 @@ from tests.common import arepeat, arange, amap
 import tests.autodiff.fakes as fake
 import tests.autodiff.data  as data
 
-import tests.array.data as arraydata
-
 import tadpole.util           as util
 import tadpole.autodiff.node  as an
 import tadpole.autodiff.graph as ag
@@ -343,18 +341,10 @@ class TestForwardGate:
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_grads(self, valency): 
 
-       def array(i):
-           return arraydata.array_dat(arraydata.randn)(
-                     "numpy", (2,3,4), seed=i+1
-                  ).array
-
-       grads = amap(array, range(valency))   
-       seed  = amap(array, range(valency, 2*valency))
-
-       x    = data.forward_node_dat(valency, grads, seed)
+       x    = data.forward_node_dat(valency)
        node = fake.NodeLike()
        
-       init_seed = array(2*valency)
+       init_seed = fake.Value()
 
        gradmap  = dict(zip(x.parents, x.seed))
        gradmap1 = {**gradmap, node: sum(x.grads)}
@@ -420,22 +410,14 @@ class TestReverseGate:
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_grads(self, valency): 
 
-       def array(i):
-           return arraydata.array_dat(arraydata.randn)(
-                     "numpy", (2,3,4), seed=i+1
-                  ).array
-
-       grads = arange(array, valency)   
-       seed  = array(valency)
-
-       x    = data.reverse_node_dat(valency, grads, seed)
+       x    = data.reverse_node_dat(valency)
        node = fake.NodeLike()
 
        grads  = ad.GradAccum({node: x.seed})
        grads1 = ad.GradAccum({
-                                  None: x.seed, 
-                                  **dict(zip(x.parents, x.grads)),
-                                 })
+                              None: x.seed, 
+                              **dict(zip(x.parents, x.grads)),
+                             })
 
        assert x.gate.grads(node, grads) == grads1
 
@@ -522,21 +504,13 @@ class TestNode:
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_reverse_grads(self, valency):
 
-       def array(i):
-           return arraydata.array_dat(arraydata.randn)(
-                     "numpy", (2,3,4), seed=i+1
-                  ).array
-
-       grads = arange(array, valency)   
-       seed  = array(valency)
-
-       x = data.reverse_node_dat(valency, grads, seed)
+       x = data.reverse_node_dat(valency)
 
        grads  = ad.GradAccum({x.node: x.seed})
        grads1 = ad.GradAccum({
-                                 None: x.seed, 
-                                 **dict(zip(x.parents, x.grads)),
-                                })
+                              None: x.seed, 
+                              **dict(zip(x.parents, x.grads)),
+                             })
 
        assert x.node.grads(grads) == grads1
 
@@ -544,17 +518,9 @@ class TestNode:
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_forward_grads(self, valency):
 
-       def array(i):
-           return arraydata.array_dat(arraydata.randn)(
-                     "numpy", (2,3,4), seed=i+1
-                  ).array
+       x = data.forward_node_dat(valency)
 
-       grads = amap(array, range(valency))   
-       seed  = amap(array, range(valency, 2*valency))
-
-       x = data.forward_node_dat(valency, grads, seed)
-
-       init_seed = array(2*valency)
+       init_seed = fake.Value()
 
        gradmap  = dict(zip(x.parents, x.seed))
        gradmap1 = {**gradmap, x.node: sum(x.grads)}

@@ -8,8 +8,6 @@ from tests.common import arepeat, arange, amap
 import tests.autodiff.fakes as fake
 import tests.autodiff.data  as data
 
-import tests.array.data as arraydata
-
 import tadpole.util           as util
 import tadpole.autodiff.node  as an
 import tadpole.autodiff.graph as ag
@@ -112,17 +110,9 @@ NodeNetworkData = collections.namedtuple("NodeNetworkData", [
 
 def forward_node_network_dat(layer=None):
 
-    cnt = [0]
-    def array():
-        cnt[0] += 1
-        return arraydata.array_dat(arraydata.randn)(
-                  "numpy", (2,3,4), seed=cnt[0]
-               ).array
-
-
     # --- Grads --- #
 
-    seed = (array(), )
+    seed = (fake.Value(), )
 
     grad0 = {"seed": seed, "grads": seed}
     grad1 = {"seed": seed, "grads": seed}
@@ -130,27 +120,27 @@ def forward_node_network_dat(layer=None):
 
     gradA = {
              "seed":  (sum(grad0["grads"]), sum(grad1["grads"])),
-             "grads": (array(),             array()),
+             "grads": (fake.Value(),        fake.Value()),
             }
 
     gradB = {
              "seed":  (sum(grad0["grads"]), sum(grad2["grads"])),
-             "grads": (array(),             array()),
+             "grads": (fake.Value(),        fake.Value()),
             }
 
     gradC = {
              "seed":  (sum(gradA["grads"]), ),
-             "grads": (array(),             ),
+             "grads": (fake.Value(),        ),
             }
 
     gradD = {
              "seed":  (sum(grad1["grads"]), sum(gradB["grads"])),
-             "grads": (array(),             array()),
+             "grads": (fake.Value(),        fake.Value()),
             }
 
     gradE = {
              "seed":  (sum(gradC["grads"]), sum(grad1["grads"]), sum(gradD["grads"])),
-             "grads": (array(),             array(),             array()),
+             "grads": (fake.Value(),        fake.Value(),        fake.Value()),
             }
 
 
@@ -229,44 +219,36 @@ def forward_node_network_dat(layer=None):
 
 def reverse_node_network_dat(layer=None):
  
-    cnt = [0]
-    def array():
-        cnt[0] += 1
-        return arraydata.array_dat(arraydata.randn)(
-                  "numpy", (2,3,4), seed=cnt[0]
-               ).array
-
-
     # --- Grads --- #
 
     gradE = {
-             None: array(), 
-             "C":  array(), 
-             "1":  array(), 
-             "D":  array(),
+             None: fake.Value(),
+             "C":  fake.Value(),
+             "1":  fake.Value(),
+             "D":  fake.Value(),
             } 
 
     gradD = {
              None: gradE["D"], 
-             "1":  array(), 
-             "B":  array(),
+             "1":  fake.Value(), 
+             "B":  fake.Value(),
             }
  
     gradB = {
              None: gradD["B"], 
-             "0":  array(), 
-             "2":  array(),
+             "0":  fake.Value(), 
+             "2":  fake.Value(),
             }
  
     gradC = {
              None: gradE["C"], 
-             "A":  array(),
+             "A":  fake.Value(),
             }
 
     gradA = {
              None: gradC["A"], 
-             "0":  array(), 
-             "1":  array(),
+             "0":  fake.Value(), 
+             "1":  fake.Value(),
             }
    
     grad0 = {None: gradA["0"] + gradB["0"]}
