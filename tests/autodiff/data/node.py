@@ -288,7 +288,7 @@ def point_dat():
     layer  = misc.minlayer()
     gate   = an.NullGate()
 
-    point = an.point(source)
+    point = an.Node(source, layer, gate) # an.point(source)
 
     return PointData(point, source, layer, gate)
 

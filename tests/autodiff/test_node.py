@@ -614,6 +614,56 @@ class TestPoint:
 
 
 
+# --- NodeScape: draws new nodes -------------------------------------------- #
+
+class TestNodeScape:
+
+   def test_register(self):
+
+       from tadpole.array.core   import randn
+       from tadpole.array.core   import Array
+       from tadpole.wrapper.node import Node 
+
+       w = data.reverse_node_dat()
+
+       nodescape = an.NodeScape()
+       nodescape.register(Array, Node)
+
+       source = randn((2,3,4))
+       layer  = 0
+       gate   = fake.GateLike()      
+
+       out = nodescape.node(source, layer, gate)
+       ans = Node(Node(source, -1, an.NullGate()), layer, gate) 
+
+       assert isinstance(out, Node)
+       assert out.allclose(ans)
+       assert out == ans
+
+
+   @pytest.mark.parametrize("which",   ["REVERSE", "FORWARD"])
+   @pytest.mark.parametrize("valency", [1,2,3])
+   def test_node(self, which, valency):
+
+       w = {
+            "REVERSE": data.reverse_node_dat, 
+            "FORWARD": data.forward_node_dat,
+           }[which](valency)
+
+       nodescape = an.NodeScape()
+       assert nodescape.node(w.source, w.layer, w.gate) == w.node
+
+       
+   def test_point(self):
+
+       w = data.point_dat()
+
+       nodescape = an.NodeScape()
+       assert nodescape.point(w.source) == w.point
+
+
+
+
 ###############################################################################
 ###                                                                         ###
 ###  Parents of an autodiff Node.                                           ###
