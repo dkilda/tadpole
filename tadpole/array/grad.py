@@ -8,7 +8,6 @@ import tadpole.array.operations as op
 import tadpole.array.function   as function
 import tadpole.array.backends   as backends
 import tadpole.array.core       as core
-import tadpole.autodiff         as ad
 import tadpole.util             as util
 
 from tadpole.array.function import (

@@ -10,7 +10,6 @@ import tadpole.autodiff.node as anode
 
 
 
-
 ###############################################################################
 ###                                                                         ###
 ###  Autodiff computation graph                                             ###

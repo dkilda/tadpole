@@ -4,18 +4,18 @@
 import abc
 import numpy as np
 
-import tadpole.util     as util
-import tadpole.autodiff as ad
-import tadpole.array    as ar
+import tadpole.util  as util
+import tadpole.array as ar
 
-import tadpole.array.operations as op
+import tadpole.autodiff.node      as ad
+import tadpole.wrapper.operations as op
 
 
 
 
 # --- Node-Array wrapper class----------------------------------------------- #
 
-class Node(ad.node.NodeLike, ar.types.ArrayLike):
+class Node(ad.NodeLike, ar.types.ArrayLike): # FIXME causes a circular import: move NodeLike to types, move minlayer to misc
 
    # --- Construction --- #
 

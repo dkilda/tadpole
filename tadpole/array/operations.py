@@ -4,10 +4,7 @@
 import abc
 import numpy as np
 
-import tadpole.util     as util
-import tadpole.autodiff as ad
-
-# import tadpole.autodiff.graph as agraph
+import tadpole.util as util
 
 import tadpole.array.grad     as grad
 import tadpole.array.core     as core
@@ -25,31 +22,6 @@ from tadpole.array.types import (
    ArrayLike,
 )
 
-
-
-
-"""
-# --- Shorthand for a differentiable function wrap -------------------------- #
-
-def differentiable(fun):
-
-    def envelope(*args, **kwargs):
-        return agraph.Envelope(*args, **kwargs)
-
-    return agraph.Differentiable(fun, envelope)
-
-
-
-
-# --- Shorthand for a non-differentiable function wrap ---------------------- #
-
-def nondifferentiable(fun):
-
-    def envelope(*args, **kwargs):
-        return agraph.Envelope(*args, **kwargs)
-
-    return agraph.NonDifferentiable(fun, envelope)
-"""
 
 
 

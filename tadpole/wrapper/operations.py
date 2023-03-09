@@ -4,9 +4,8 @@
 import abc
 import numpy as np
 
-import tadpole.util     as util
-import tadpole.autodiff as ad
-
+import tadpole.util             as util
+import tadpole.autodiff         as ad
 import tadpole.array.operations as op
 
 

@@ -5,15 +5,12 @@ import abc
 import collections
 from functools import reduce
 
-import tadpole.util as util
+import tadpole.util    as util
+import tadpole.wrapper as td
 
 import tadpole.autodiff.nary  as nary
 import tadpole.autodiff.node  as anode
 import tadpole.autodiff.graph as agraph
-
-import tadpole.array as td
-
-import tadpole.wrapper as td
 
 
 

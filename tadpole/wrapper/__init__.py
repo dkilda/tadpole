@@ -6,9 +6,6 @@ from . import wrap_vjps
 from . import wrap_jvps
 
 
-from tadpole.array.backends import set_default as set_backend
-
-
 from tadpole.array.core import (
    fromfun,  
    asarray,
@@ -28,6 +25,7 @@ from tadpole.array.grad import (
    ZeroGrad,
    SparseGrad,
 )
+
 
 
 from .node import (
