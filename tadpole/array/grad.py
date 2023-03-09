@@ -41,13 +41,6 @@ class ZeroGrad(ArrayLike, Pluggable):
        self._backend = backends.get(None)
 
 
-   # --- Convert to dense --- #
-
-   def todense(self):
-
-       return self.space().zeros()
-
-
    # --- Plugging into function calls --- #
 
    def pluginto(self, funcall):
@@ -69,7 +62,12 @@ class ZeroGrad(ArrayLike, Pluggable):
        return self.__class__()
 
 
-   def asarray(self, data):
+   def todense(self):
+
+       return self.space().zeros()
+
+
+   def withdata(self, data):
 
        return core.asarray(data, backend=self._backend)
 
@@ -107,6 +105,14 @@ class ZeroGrad(ArrayLike, Pluggable):
 
    # --- Comparisons --- #
 
+   def allequal(self, other):
+
+       log = util.LogicalChain()
+       log.typ(self, other)
+
+       return bool(log)
+
+
    def allclose(self, other, **opts):
 
        if not isinstance(other, self.__class__):
@@ -120,10 +126,7 @@ class ZeroGrad(ArrayLike, Pluggable):
        
    def __eq__(self, other):
 
-       log = util.LogicalChain()
-       log.typ(self, other)
-
-       return bool(log)
+       return self.allequal(other)
 
 
    # --- Arithmetics and element access --- #
@@ -184,13 +187,6 @@ class SparseGrad(ArrayLike, Pluggable):
        self._vals    = vals
 
 
-   # --- Convert to dense --- #
-
-   def todense(self):
-
-       return op.put(self.space().zeros(), self._idxs, self._vals)
-
-
    # --- Plugging into function calls --- #
 
    def pluginto(self, funcall):
@@ -212,7 +208,7 @@ class SparseGrad(ArrayLike, Pluggable):
                  other._data, self._idxs, self._vals, accumulate=True
               )
 
-       return other.asarray(data)
+       return other.withdata(data)
 
        
    # --- Basic functionality --- #
@@ -224,7 +220,12 @@ class SparseGrad(ArrayLike, Pluggable):
        )
 
 
-   def asarray(self, data):
+   def todense(self):
+
+       return op.put(self.space().zeros(), self._idxs, self._vals)
+
+
+   def withdata(self, data):
 
        return core.asarray(data, backend=self._backend)
 
@@ -262,25 +263,7 @@ class SparseGrad(ArrayLike, Pluggable):
 
    # --- Comparisons --- #
 
-   def allclose(self, other, **opts):
-
-       if not isinstance(other, self.__class__):
-          return self.todense().allclose(other, **opts) 
-
-       log = util.LogicalChain()
-       log.typ(self, other)
-
-       log.val(self._backend, other._backend)
-       log.val(self._shape,   other._shape)
-       log.val(self._idxs,    other._idxs)
-
-       if bool(log):
-          return util.allclose(self._vals, other._vals, **opts)   
-
-       return False
-
-       
-   def __eq__(self, other):
+   def allequal(self, other):
 
        log = util.LogicalChain()
        log.typ(self, other)
@@ -294,6 +277,30 @@ class SparseGrad(ArrayLike, Pluggable):
           return util.allequal(self._vals, other._vals)  
 
        return False
+
+
+   def allclose(self, other, **opts):
+
+       if not isinstance(other, self.__class__):
+          return self.todense().allclose(other, **opts) 
+
+       log = util.LogicalChain()
+       log.typ(self, other)
+
+       if bool(log):
+          log.val(self._backend, other._backend)
+          log.val(self._shape,   other._shape)
+          log.val(self._idxs,    other._idxs)
+
+       if bool(log):
+          return util.allclose(self._vals, other._vals, **opts)   
+
+       return False
+
+       
+   def __eq__(self, other):
+
+       return self.allequal(other)
 
 
    # --- Arithmetics and element access --- # 

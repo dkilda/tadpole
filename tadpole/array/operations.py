@@ -66,10 +66,10 @@ def typecast_binary(fun):
                y = core.asarray(y) 
 
             if not isinstance(x, Pluggable):
-               x = y.asarray(x) 
+               x = y.withdata(x) 
 
             if not isinstance(y, Pluggable):
-               y = x.asarray(y) 
+               y = x.withdata(y) 
 
             return fun(x, y, *args, **kwargs)
          

@@ -525,9 +525,188 @@ class GenericNodeLike(NodeLike): #, ArrayLike):
 
 
 
+# --- Generic NodeLike and ArrayLike vertex on a graph ---------------------- #
+
+GenericNodeArrayLike = GenericNodeLike
+
+
+
+"""
+class GenericNodeArrayLike(GenericNodeLike): #, ArrayLike):
+
+   # --- Construction --- #
+
+   _types = {}
+
+
+   def __init__(self, source, layer, gate):
+
+       self._node = type(self)._create(source, layer, gate)
+
+
+   @classmethod
+   def _create(cls, source, layer, gate):
+
+       '''
+       if layer == -1:
+          return Point(source)
+
+       return Node(source, layer, gate)
+       '''
+
+       return GenericNodeLike(source, layer, gate) # cls._types[type(source)](source, layer, gate)
+
+
+   @classmethod
+   def register_type(cls, valtype, nodetype): 
+
+       cls._types[valtype]  = nodetype
+       cls._types[nodetype] = nodetype
+
+       return cls
+
+
+   # --- Equality, hashing, representation --- #
+
+   def __repr__(self):
+
+       return repr(self._node)
+
+
+   def __hash__(self):
+
+       return hash(self._node)
+
+
+   def __eq__(self, other):
+
+       if isinstance(other, self.__class__):
+          return self._node == other._node
+
+       return self._node == other
+
+
+   # --- Node methods --- #
+
+   def concat(self, concatenable):
+
+       return self._node.concat(concatenable)
+
+
+   def flow(self):
+
+       return self._node.flow()
+
+
+   def trace(self, traceable):
+
+       return self._node.trace(traceable)
+
+
+   def grads(self, grads):
+
+       return self._node.grads(grads)
+
+
+   # --- Array methods: basic functionality --- #
+
+   '''
+   def copy(self, **opts):
+
+       return self._node.copy(**opts)
+
+
+   def withdata(self, data):
+
+       return self._node.withdata(data)
+
+
+   def space(self):
+ 
+       return self._node.space()
+
+
+   def item(self, *idx):
+
+       return self._node.item(*idx)
+   '''
+
+
+   # --- Array methods: array properties --- #
+
+   @property
+   def dtype(self):
+       return self._node.dtype()
+
+   @property 
+   def size(self):
+       return self._node.size()
+
+   @property 
+   def ndim(self):
+       return self._node.ndim()
+
+   @property
+   def shape(self):
+       return self._node.shape()
+
+
+   # --- Array methods: arithmetics and element access --- # 
+
+   def __getitem__(self, idx):
+
+       return self._node[idx]  
+
+
+   def __neg__(self):
+
+       return -self._node
+
+
+   def __add__(self, other):
+
+       if isinstance(other, self.__class__):
+          return self._node + other._node
+
+       return self._node + other 
+
+
+   def __sub__(self, other):
+
+       if isinstance(other, self.__class__):
+          return self._node - other._node
+
+       return self._node - other
+
+
+   def __mul__(self, other):
+
+       if isinstance(other, self.__class__):
+          return self._node * other._node
+
+       return self._node * other
+
+
+   def __radd__(self, other):
+
+       return self.__add__(other)
+
+ 
+   def __rsub__(self, other):
+
+       return -self.__sub__(other)
+
+
+   def __rmul__(self, other):
+
+       return self.__mul__(other)
+
+"""
+
+
 # --- Node ------------------------------------------------------------------ #
 
-class Node(GenericNodeLike):
+class Node(GenericNodeArrayLike):
 
    def __init__(self, source, layer, gate):
 
@@ -545,7 +724,7 @@ class Node(GenericNodeLike):
 
 # --- Point (a disconnected node, only carries a value and no logic) -------- #
 
-class Point(GenericNodeLike):
+class Point(GenericNodeArrayLike):
 
    def __init__(self, source):
 

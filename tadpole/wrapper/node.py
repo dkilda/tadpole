@@ -15,7 +15,7 @@ import tadpole.wrapper.operations as op
 
 # --- Node-Array wrapper class----------------------------------------------- #
 
-class Node(ad.NodeLike, ar.types.ArrayLike): # FIXME causes a circular import: move NodeLike to types, move minlayer to misc
+class Node(ad.NodeLike): #, ar.types.ArrayLike): 
 
    # --- Construction --- #
 
@@ -66,6 +66,14 @@ class Node(ad.NodeLike, ar.types.ArrayLike): # FIXME causes a circular import: m
        return self._node.grads(grads)
 
 
+   # --- Array methods: gradient accumulation --- #
+
+   def addto(self, other):
+
+       return td.addgrads(self, other)
+
+
+
    # --- Array methods: basic functionality --- #
 
    """
@@ -78,10 +86,10 @@ class Node(ad.NodeLike, ar.types.ArrayLike): # FIXME causes a circular import: m
        return self.__class__(source, self._layer, self._gate)
 
 
-   def asarray(self, data):
+   def withdata(self, data):
 
-       return self._source.asarray(data)
-   """
+       return self._source.withdata(data)
+
 
 
    def space(self):
@@ -92,7 +100,7 @@ class Node(ad.NodeLike, ar.types.ArrayLike): # FIXME causes a circular import: m
    def item(self, *idx):
 
        return td.item(self, *idx)
-
+   """
 
    # --- Array methods: array properties --- #
 

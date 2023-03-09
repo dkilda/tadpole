@@ -398,7 +398,7 @@ class Array(ArrayLike, Pluggable):
           return other.addto(self)
 
        data = self._backend.add(self._data, other._data)
-       return self.asarray(data)
+       return self.withdata(data)
 
 
    # --- Basic functionality --- #
@@ -410,7 +410,12 @@ class Array(ArrayLike, Pluggable):
        return self.__class__(self._backend, data)
 
 
-   def asarray(self, data):
+   def todense(self):
+
+       return self
+
+
+   def withdata(self, data):
 
        return asarray(data, backend=self._backend)
 
@@ -446,20 +451,8 @@ class Array(ArrayLike, Pluggable):
 
    # --- Comparisons --- #
 
-   def allclose(self, other, **opts):
+   def allequal(self, other):
 
-       log = util.LogicalChain()
-       log.typ(self, other)
-       log.val(self._backend, other._backend)
-
-       if bool(log):
-          return util.allclose(self._data, other._data, **opts)   
-
-       return False
-
-
-   def __eq__(self, other):
- 
        log = util.LogicalChain()
        log.typ(self, other)
 
@@ -471,6 +464,25 @@ class Array(ArrayLike, Pluggable):
           #return util.allequal(self._data, other._data) # FIXME decide what to do with Array equality!  
 
        return False
+
+
+   def allclose(self, other, **opts):
+
+       log = util.LogicalChain()
+       log.typ(self, other)
+
+       if bool(log):
+          log.val(self._backend, other._backend)
+
+       if bool(log):
+          return util.allclose(self._data, other._data, **opts)   
+
+       return False
+
+
+   def __eq__(self, other):
+ 
+       return self.allequal(other)
 
 
    # --- Arithmetics and element access --- # 

@@ -121,7 +121,11 @@ class ArrayLike(abc.ABC):
        pass
 
    @abc.abstractmethod
-   def asarray(self, data):
+   def todense(self):
+       pass
+
+   @abc.abstractmethod
+   def withdata(self, data):
        pass
 
    @abc.abstractmethod
@@ -157,6 +161,10 @@ class ArrayLike(abc.ABC):
 
 
    # --- Comparisons --- #
+
+   @abc.abstractmethod
+   def allequal(self, other):
+       pass
 
    @abc.abstractmethod
    def allclose(self, other, **opts):
