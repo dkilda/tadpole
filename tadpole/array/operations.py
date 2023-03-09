@@ -17,11 +17,6 @@ from tadpole.array.function import (
    TransformCall,
 )
 
-from tadpole.array.core import (
-   Pluggable,
-   ArrayLike,
-)
-
 
 
 
@@ -61,14 +56,14 @@ def typecast_binary(fun):
  
         except (AttributeError, TypeError):
 
-            if not any(isinstance(v, Pluggable) for v in (x,y)):
+            if not any(isinstance(v, core.Pluggable) for v in (x,y)):
                x = core.asarray(x)
                y = core.asarray(y) 
 
-            if not isinstance(x, Pluggable):
+            if not isinstance(x, core.Pluggable):
                x = y.withdata(x) 
 
-            if not isinstance(y, Pluggable):
+            if not isinstance(y, core.Pluggable):
                y = x.withdata(y) 
 
             return fun(x, y, *args, **kwargs)

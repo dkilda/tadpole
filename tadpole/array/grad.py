@@ -9,17 +9,6 @@ import tadpole.util as util
 import tadpole.array.backends   as backends
 import tadpole.array.operations as op
 import tadpole.array.core       as core
-import tadpole.array.function   as function
-
-from tadpole.array.function import (
-   Args, 
-   TransformCall,
-)
-
-from tadpole.array.core import (
-   Pluggable,
-   ArrayLike,
-)
 
 
 
@@ -33,7 +22,7 @@ from tadpole.array.core import (
 
 # --- Zero gradient --------------------------------------------------------- #
 
-class ZeroGrad(ArrayLike, Pluggable):
+class ZeroGrad(core.ArrayLike, core.Pluggable):
 
    # --- Construction --- #
 
@@ -177,7 +166,7 @@ class ZeroGrad(ArrayLike, Pluggable):
 
 # --- Sparse gradient ------------------------------------------------------- #
 
-class SparseGrad(ArrayLike, Pluggable):
+class SparseGrad(core.ArrayLike, core.Pluggable):
 
    # --- Construction --- #
 
