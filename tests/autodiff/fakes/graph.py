@@ -5,10 +5,10 @@ from tests.common import arepeat, arange, amap
 
 import tests.autodiff.fakes as fake
 
-import tadpole.autodiff.misc  as misc
-import tadpole.autodiff.node  as anode
-import tadpole.autodiff.graph as agraph
 import tadpole.util           as util
+import tadpole.autodiff.misc  as misc
+import tadpole.autodiff.node  as an
+import tadpole.autodiff.graph as ag
 
 
 
@@ -22,7 +22,7 @@ import tadpole.util           as util
 
 # --- ArgsLike interface ---------------------------------------------------- #
 
-class ArgsLike(agraph.ArgsLike):
+class ArgsLike(ag.ArgsLike):
 
    def __init__(self, **data):  
 
@@ -52,7 +52,7 @@ class ArgsLike(agraph.ArgsLike):
 
 # --- Concatenable interface ------------------------------------------------ #
 
-class Concatenable(agraph.Concatenable):
+class Concatenable(ag.Concatenable):
 
    def __init__(self, **data):  
 
@@ -68,7 +68,7 @@ class Concatenable(agraph.Concatenable):
 
 # --- Cohesive interface ---------------------------------------------------- #
 
-class Cohesive(agraph.Cohesive):
+class Cohesive(ag.Cohesive):
 
    def __init__(self, **data):  
 
@@ -112,7 +112,7 @@ class Cohesive(agraph.Cohesive):
 
 # --- Packable interface ---------------------------------------------------- #
 
-class Packable(agraph.Packable):
+class Packable(ag.Packable):
 
    def __init__(self, **data):  
 
@@ -143,7 +143,7 @@ class Packable(agraph.Packable):
 
 # --- EnvelopeLike interface ------------------------------------------------ #
 
-class EnvelopeLike(agraph.EnvelopeLike): 
+class EnvelopeLike(ag.EnvelopeLike): 
 
    def __init__(self, **data):  
 

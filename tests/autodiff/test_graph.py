@@ -8,11 +8,11 @@ from tests.common import arepeat, arange, amap
 import tests.autodiff.fakes as fake
 import tests.autodiff.data  as data
 
-import tadpole.autodiff.misc  as misc
-import tadpole.autodiff.node  as anode
-import tadpole.autodiff.graph as agraph
-import tadpole.autodiff.grad  as agrad
 import tadpole.util           as util
+import tadpole.autodiff.misc  as misc
+import tadpole.autodiff.node  as an
+import tadpole.autodiff.graph as ag
+import tadpole.autodiff.grad  as ad
 
 
 
@@ -42,7 +42,7 @@ class TestGraph:
 
        dat = data.graph_dat(which, 0)
 
-       with agraph.Graph(dat.root) as graph:
+       with ag.Graph(dat.root) as graph:
           assert graph.build(dat.fun, dat.x) == dat.end
 
 
@@ -53,8 +53,8 @@ class TestGraph:
 
        dat = data.graph_dat(which, 1)
 
-       with agraph.Graph(fake.GateLike()) as graph0:
-          with agraph.Graph(dat.root) as graph1:
+       with ag.Graph(fake.GateLike()) as graph0:
+          with ag.Graph(dat.root) as graph1:
              assert graph1.build(dat.fun, dat.x) == dat.end
 
 
@@ -63,9 +63,9 @@ class TestGraph:
 
        dat = data.graph_dat(which, 2)
 
-       with agraph.Graph(fake.GateLike()) as graph0:
-          with agraph.Graph(fake.GateLike()) as graph1:
-             with agraph.Graph(dat.root) as graph2:
+       with ag.Graph(fake.GateLike()) as graph0:
+          with ag.Graph(fake.GateLike()) as graph1:
+             with ag.Graph(dat.root) as graph2:
                 assert graph2.build(dat.fun, dat.x) == dat.end
 
 
@@ -76,8 +76,8 @@ class TestGraph:
 
        dat = data.graph_dat(which, 0)
 
-       with agraph.Graph(dat.root) as graph0:
-          with agraph.Graph(fake.GateLike()) as graph1:
+       with ag.Graph(dat.root) as graph0:
+          with ag.Graph(fake.GateLike()) as graph1:
              pass
           assert graph0.build(dat.fun, dat.x) == dat.end
 
@@ -87,9 +87,9 @@ class TestGraph:
 
        dat = data.graph_dat(which, 0)
 
-       with agraph.Graph(dat.root) as graph0:
-          with agraph.Graph(fake.GateLike()) as graph1:
-             with agraph.Graph(fake.GateLike()) as graph2:
+       with ag.Graph(dat.root) as graph0:
+          with ag.Graph(fake.GateLike()) as graph1:
+             with ag.Graph(fake.GateLike()) as graph2:
                 pass
           assert graph0.build(dat.fun, dat.x) == dat.end
 
@@ -208,8 +208,8 @@ class TestArgs:
 
        x = data.args_dat(n, adxs, layers)
 
-       argsA = agraph.Args(*x.nodes)
-       argsB = agraph.Args(*x.nodes)
+       argsA = ag.Args(*x.nodes)
+       argsB = ag.Args(*x.nodes)
 
        assert argsA == argsB
 
@@ -226,8 +226,8 @@ class TestArgs:
        x = data.args_dat(n, adxs, layers)
        y = data.args_dat(n, adxs, layers)
 
-       argsA = agraph.Args(*x.nodes)
-       argsB = agraph.Args(*y.nodes)
+       argsA = ag.Args(*x.nodes)
+       argsB = ag.Args(*y.nodes)
 
        assert argsA != argsB
 

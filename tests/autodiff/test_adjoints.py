@@ -7,10 +7,10 @@ from tests.common import arepeat, arange, amap
 import tests.autodiff.fakes as fake
 import tests.autodiff.data  as data
 
+import tadpole.util                  as util
 import tadpole.autodiff.map_adjoints as adj
 import tadpole.autodiff.map_jvp      as jvpmap
 import tadpole.autodiff.map_vjp      as vjpmap
-import tadpole.util                  as util
 
 
 

@@ -10,10 +10,10 @@ import tests.autodiff.data  as data
 
 import tests.array.data as arraydata
 
-import tadpole.autodiff.node  as anode
-import tadpole.autodiff.graph as agraph
-import tadpole.autodiff.grad  as agrad
 import tadpole.util           as util
+import tadpole.autodiff.node  as an
+import tadpole.autodiff.graph as ag
+import tadpole.autodiff.grad  as ad
 
 
 
@@ -41,7 +41,7 @@ def diffop_dat(which):
     dat  = data.graph_dat(which)
     prop = fake.Propagation(graphop=fake.Fun(dat.graphop, dat.fun, dat.x))
 
-    diffop = agrad.DifferentialOp(prop, dat.fun, dat.x) 
+    diffop = ad.DifferentialOp(prop, dat.fun, dat.x) 
     return DiffOpData(diffop, prop, *dat) 
 
     
@@ -80,9 +80,9 @@ def childcount_dat(valency=1, **countmaps):
     countmap1 = countmaps.get("countmap1", {})
     countmap2 = countmaps.get("countmap2", {})
 
-    count  = agrad.ChildCount(parentmap,  countmap)
-    count1 = agrad.ChildCount(parentmap1, countmap1)
-    count2 = agrad.ChildCount(parentmap2, countmap2) 
+    count  = ad.ChildCount(parentmap,  countmap)
+    count1 = ad.ChildCount(parentmap1, countmap1)
+    count2 = ad.ChildCount(parentmap2, countmap2) 
 
     return ChildCountData(count, count1, count2,     
                           parentmap, parentmap1, parentmap2, 

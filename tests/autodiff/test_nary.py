@@ -7,8 +7,8 @@ from tests.common import arepeat, arange, amap
 import tests.autodiff.fakes as fake
 import tests.autodiff.data  as data
 
-import tadpole.autodiff.nary as nary
 import tadpole.util          as util
+import tadpole.autodiff.nary as nary
 
 
 

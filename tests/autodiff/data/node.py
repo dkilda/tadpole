@@ -7,9 +7,8 @@ from tests.common import arepeat, arange, amap
 
 import tests.autodiff.fakes as fake
 
-import tadpole.autodiff.misc  as misc
-import tadpole.autodiff.node  as anode
-import tadpole.autodiff.graph as agraph
+import tadpole.autodiff.misc as misc
+import tadpole.autodiff.node as an
 
 
 
@@ -68,7 +67,7 @@ def adjoint_dat(nargs=1, adxs=(0,)):
     args = arepeat(fake.NodeLike, nargs)
 
     fun = fake.Fun(out, args)
-    op  = anode.AdjointOp(fun, adxs, out, args)
+    op  = an.AdjointOp(fun, adxs, out, args)
 
     return AdjointData(
               op, 
@@ -97,10 +96,10 @@ FlowData = collections.namedtuple("FlowData", [
 def null_flow_dat():
 
     def fun(parents, op):
-        return anode.NullGate()
+        return an.NullGate()
 
     name = "NULL"
-    flow = anode.Flow(name, fun)  
+    flow = an.Flow(name, fun)  
     
     return FlowData(flow, name, fun)
 
@@ -110,10 +109,10 @@ def null_flow_dat():
 def forward_flow_dat():
 
     def fun(parents, op):
-        return anode.ForwardGate(parents, op)
+        return an.ForwardGate(parents, op)
 
     name = "FORWARD"
-    flow = anode.Flow(name, fun)  
+    flow = an.Flow(name, fun)  
     
     return FlowData(flow, name, fun)
 
@@ -123,10 +122,10 @@ def forward_flow_dat():
 def reverse_flow_dat():
 
     def fun(parents, op):
-        return anode.ReverseGate(parents, op)
+        return an.ReverseGate(parents, op)
 
     name = "REVERSE"
-    flow = anode.Flow(name, fun)  
+    flow = an.Flow(name, fun)  
     
     return FlowData(flow, name, fun)
 
@@ -154,8 +153,8 @@ def forward_gate_dat(valency=1):
     adjfun = forward_adjfun_dat(valency)
     op     = fake.Adjoint(jvp=fake.Fun(adjfun.grads, adjfun.seed))
 
-    parents = anode.Parents(*arepeat(fake.NodeLike, valency))
-    gate    = anode.ForwardGate(parents, op) 
+    parents = an.Parents(*arepeat(fake.NodeLike, valency))
+    gate    = an.ForwardGate(parents, op) 
 
     return GateData(gate, parents, op, adjfun.grads, adjfun.seed)
 
@@ -167,8 +166,8 @@ def reverse_gate_dat(valency=1):
     adjfun = reverse_adjfun_dat(valency)
     op     = fake.Adjoint(vjp=fake.Fun(adjfun.grads, adjfun.seed))
 
-    parents = anode.Parents(*arepeat(fake.NodeLike, valency))
-    gate    = anode.ReverseGate(parents, op) 
+    parents = an.Parents(*arepeat(fake.NodeLike, valency))
+    gate    = an.ReverseGate(parents, op) 
 
     return GateData(gate, parents, op, adjfun.grads, adjfun.seed)
 
@@ -195,7 +194,7 @@ def node_dat(layer=0, gate=fake.GateLike()):
 
     value  = fake.Value()
     source = fake.NodeLike()
-    node   = anode.draw.node(source, layer, gate)
+    node   = an.node(source, layer, gate)
 
     return NodeData(node, source, layer, gate, value)
 
@@ -230,8 +229,8 @@ def forward_node_dat(parent_nodes=1, grads=None, seed=None, layer=None):
        layer = 0
 
     op      = fake.Adjoint(jvp=fake.Fun(grads, seed))
-    parents = anode.Parents(*parent_nodes)
-    gate    = anode.ForwardGate(parents, op)
+    parents = an.Parents(*parent_nodes)
+    gate    = an.ForwardGate(parents, op)
     nodedat = node_dat(layer, gate)
 
     return DirectedNodeData(
@@ -261,8 +260,8 @@ def reverse_node_dat(parent_nodes=1, grads=None, seed=None, layer=None):
        layer = 0
 
     op      = fake.Adjoint(vjp=fake.Fun(grads, seed))
-    parents = anode.Parents(*parent_nodes)
-    gate    = anode.ReverseGate(parents, op)
+    parents = an.Parents(*parent_nodes)
+    gate    = an.ReverseGate(parents, op)
     nodedat = node_dat(layer, gate)
     
     return DirectedNodeData(
@@ -287,9 +286,9 @@ def point_dat():
 
     source = fake.Value() 
     layer  = misc.minlayer()
-    gate   = anode.NullGate()
+    gate   = an.NullGate()
 
-    point = anode.draw.point(source)
+    point = an.point(source)
 
     return PointData(point, source, layer, gate)
 
@@ -316,13 +315,13 @@ def forward_parents_dat(valency=1):
 
     def pnode():
 
-        flow = anode.Flow("FORWARD", 
-           lambda parents, op: anode.ForwardGate(parents, op))
+        flow = an.Flow("FORWARD", 
+           lambda parents, op: an.ForwardGate(parents, op))
 
         return fake.NodeLike(flow=fake.Fun(flow))
 
     pnodes  = arepeat(pnode, valency)
-    parents = anode.Parents(*pnodes)
+    parents = an.Parents(*pnodes)
 
     return ParentData(parents, pnodes)
 
@@ -333,13 +332,13 @@ def reverse_parents_dat(valency=1):
 
     def pnode():
 
-        flow = anode.Flow("REVERSE", 
-           lambda parents, op: anode.ReverseGate(parents, op))
+        flow = an.Flow("REVERSE", 
+           lambda parents, op: an.ReverseGate(parents, op))
 
         return fake.NodeLike(flow=fake.Fun(flow))
 
     pnodes  = arepeat(pnode, valency)
-    parents = anode.Parents(*pnodes)
+    parents = an.Parents(*pnodes)
 
     return ParentData(parents, pnodes)
 

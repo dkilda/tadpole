@@ -5,10 +5,10 @@ from tests.common import arepeat, arange, amap
 
 import tests.autodiff.fakes as fake
 
-import tadpole.autodiff.node  as anode
-import tadpole.autodiff.graph as agraph
-import tadpole.autodiff.grad  as agrad
 import tadpole.util           as util
+import tadpole.autodiff.node  as an
+import tadpole.autodiff.graph as ag
+import tadpole.autodiff.grad  as ad
 
 
 
@@ -22,7 +22,7 @@ import tadpole.util           as util
 
 # --- Gradient propagation interface ---------------------------------------- #
 
-class Propagation(agrad.Propagation):
+class Propagation(ad.Propagation):
 
    def __init__(self, **data):  
 
@@ -31,7 +31,7 @@ class Propagation(agrad.Propagation):
 
    def graphop(self, fun, x):
 
-       graphop = agrad.GraphOp(fake.GateLike(), fun, x)
+       graphop = ad.GraphOp(fake.GateLike(), fun, x)
 
        return self._fun["graphop", graphop](fun, x)
 
@@ -52,7 +52,7 @@ class Propagation(agrad.Propagation):
 
 # --- Traceable interface --------------------------------------------------- #
 
-class Traceable(agrad.Traceable):
+class Traceable(ad.Traceable):
 
    def __init__(self, **data):  
 
@@ -68,7 +68,7 @@ class Traceable(agrad.Traceable):
 
 # --- Countable interface --------------------------------------------------- #
 
-class Countable(agrad.Countable):
+class Countable(ad.Countable):
 
    def __init__(self, **data):  
 
@@ -101,7 +101,7 @@ class Countable(agrad.Countable):
 
 # --- Cumulative interface -------------------------------------------------- #
 
-class Cumulative(agrad.Cumulative):
+class Cumulative(ad.Cumulative):
 
    def __init__(self, **data):  
 

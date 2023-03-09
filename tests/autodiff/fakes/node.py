@@ -4,7 +4,7 @@
 from tests.common import arepeat, arange, amap
 
 import tests.autodiff.fakes  as fake
-import tadpole.autodiff.node as anode
+import tadpole.autodiff.node as an
 
 
 
@@ -19,7 +19,7 @@ import tadpole.autodiff.node as anode
 
 # --- Adjoint interface ----------------------------------------------------- #
 
-class Adjoint(anode.Adjoint):
+class Adjoint(an.Adjoint):
 
    def __init__(self, **data):  
 
@@ -47,7 +47,7 @@ class Adjoint(anode.Adjoint):
 
 # --- FlowLike interface ---------------------------------------------------- #
 
-class FlowLike(anode.FlowLike):
+class FlowLike(an.FlowLike):
 
    def __init__(self, **data):  
 
@@ -90,7 +90,7 @@ class FlowLike(anode.FlowLike):
 
 # --- GateLike interface ---------------------------------------------------- #
 
-class GateLike(anode.GateLike):
+class GateLike(an.GateLike):
 
    def __init__(self, **data):  
 
@@ -123,7 +123,7 @@ class GateLike(anode.GateLike):
 
 # --- NodeLike interface ---------------------------------------------------- #
 
-class NodeLike(anode.NodeLike):
+class NodeLike(an.NodeLike):
 
    def __init__(self, **data):  
 
@@ -166,7 +166,7 @@ class NodeLike(anode.NodeLike):
 
 # --- Parental interface ---------------------------------------------------- #
 
-class Parental(anode.Parental):
+class Parental(an.Parental):
 
    def __init__(self, **data):  
 

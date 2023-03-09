@@ -9,10 +9,10 @@ import tests.autodiff.data  as data
 
 import tests.array.data as arraydata
 
-import tadpole.autodiff.node  as anode
-import tadpole.autodiff.graph as agraph
-import tadpole.autodiff.grad  as agrad
 import tadpole.util           as util
+import tadpole.autodiff.node  as an
+import tadpole.autodiff.graph as ag
+import tadpole.autodiff.grad  as ad
 
 
 
@@ -65,7 +65,7 @@ class TestForwardPropagation:
    def test_graphop(self):
 
        dat  = data.graph_dat("FORWARD")
-       prop = agrad.ForwardPropagation()
+       prop = ad.ForwardPropagation()
 
        assert prop.graphop(dat.fun, dat.x) == dat.graphop
 
@@ -74,13 +74,13 @@ class TestForwardPropagation:
    def test_accum(self, layer):
 
        network = data.forward_node_network_dat(layer)
-       prop    = agrad.ForwardPropagation()
+       prop    = ad.ForwardPropagation()
 
        end   = network.end
        start = network.leaves[0]
        seed  = network.gradmap[start]
 
-       grads = agrad.GradSum(seed, network.gradmap) 
+       grads = ad.GradSum(seed, network.gradmap) 
 
        assert prop.accum(end, seed) == grads
 
@@ -94,7 +94,7 @@ class TestReversePropagation:
    def test_graphop(self):
 
        dat  = data.graph_dat("REVERSE")
-       prop = agrad.ReversePropagation()
+       prop = ad.ReversePropagation()
 
        assert prop.graphop(dat.fun, dat.x) == dat.graphop
 
@@ -103,13 +103,13 @@ class TestReversePropagation:
    def test_accum(self, layer):
 
        network = data.reverse_node_network_dat(layer)
-       prop    = agrad.ReversePropagation()
+       prop    = ad.ReversePropagation()
 
        end   = network.end
        start = network.leaves[0]
        seed  = network.gradmap[network.end]
 
-       grads = agrad.GradAccum({None: network.gradmap[start]})
+       grads = ad.GradAccum({None: network.gradmap[start]})
 
        assert prop.accum(end, seed) == grads
 
@@ -188,7 +188,7 @@ class TestChildCount:
        w = data.childcount_dat(valency)
 
        countmap = {}
-       count    = agrad.ChildCount(w.parentmap2, countmap)
+       count    = ad.ChildCount(w.parentmap2, countmap)
 
        assert count.increase(w.node) == w.parents
        assert countmap               == {w.node: 1} 
@@ -222,7 +222,7 @@ class TestChildCount:
                     **{p: 0 for p in w.parents1},
                    }
 
-       count = agrad.ChildCount(w.parentmap2, countmap)
+       count = ad.ChildCount(w.parentmap2, countmap)
 
        assert count.decrease(w.node) == tuple()
        assert countmap == countmap1
@@ -246,7 +246,7 @@ class TestTraversal:
    def test_sweep(self):
 
        dat       = data.reverse_node_network_dat()
-       traversal = agrad.Traversal(dat.end)
+       traversal = ad.Traversal(dat.end)
 
        nodes = list(dat.nodes)
 
@@ -263,10 +263,10 @@ class TestTraversal:
    def test_apply(self):
 
        dat       = data.reverse_node_network_dat()
-       traversal = agrad.Traversal(dat.end)
+       traversal = ad.Traversal(dat.end)
 
        parentmap = {}
-       count     = agrad.ChildCount(parentmap)
+       count     = ad.ChildCount(parentmap)
 
        traversal.apply(count.collect)
        assert parentmap == dat.parentmap
@@ -284,10 +284,10 @@ class TestTopoSort:
 
        parentmap = {}
        countmap  = {}
-       count     = agrad.ChildCount(parentmap, countmap) 
-       traversal = agrad.Traversal(dat.end) 
+       count     = ad.ChildCount(parentmap, countmap) 
+       traversal = ad.Traversal(dat.end) 
 
-       toposort = agrad.TopoSort(traversal, count)
+       toposort = ad.TopoSort(traversal, count)
        
        for i, node in enumerate(toposort.traverse()):
            assert node == dat.nodes[i]
@@ -297,7 +297,7 @@ class TestTopoSort:
 
        dat = data.reverse_node_network_dat()
 
-       for i, node in enumerate(agrad.toposort(dat.end)):
+       for i, node in enumerate(ad.toposort(dat.end)):
            assert node == dat.nodes[i]
 
 
@@ -328,7 +328,7 @@ class TestGradSum:
        x = data.forward_node_dat(valency, grads, seed)
 
        gradmap = dict(zip(x.parents, x.seed))
-       grads   = agrad.GradSum(array(2*valency), gradmap)
+       grads   = ad.GradSum(array(2*valency), gradmap)
 
        grads.add(x.node, x.grads)
        assert gradmap == {
@@ -343,7 +343,7 @@ class TestGradSum:
        x = data.forward_node_dat(valency)
 
        gradmap = dict(zip(x.parents, x.seed))
-       grads   = agrad.GradSum(fake.Value(), gradmap)
+       grads   = ad.GradSum(fake.Value(), gradmap)
 
        assert grads.pick(x.parents) == x.seed
        assert gradmap               == dict(zip(x.parents, x.seed))
@@ -356,7 +356,7 @@ class TestGradSum:
 
        init_seed = fake.Value()
        gradmap   = {x.node: sum(x.grads)}
-       grads     = agrad.GradSum(init_seed, gradmap)
+       grads     = ad.GradSum(init_seed, gradmap)
 
        assert grads.pick(tuple()) == (init_seed, )
        assert gradmap             == {x.node: sum(x.grads)}
@@ -376,7 +376,7 @@ class TestGradSum:
        x = data.forward_node_dat(valency, grads, seed)
 
        gradmap = dict(zip(x.parents, x.seed))
-       grads   = agrad.GradSum(array(2*valency), gradmap)
+       grads   = ad.GradSum(array(2*valency), gradmap)
        assert grads.result() == x.seed[-1]
 
        grads.add(x.node, x.grads)
@@ -402,7 +402,7 @@ class TestGradAccum:
        x = data.reverse_node_dat(valency, grads, seed)
 
        gradmap = {x.node: x.seed} 
-       grads   = agrad.GradAccum(gradmap)
+       grads   = ad.GradAccum(gradmap)
 
        grads.add(x.parents, x.grads)
        assert gradmap == {
@@ -417,7 +417,7 @@ class TestGradAccum:
        x = data.reverse_node_dat(valency)
 
        gradmap = {**dict(zip(x.parents, x.grads)), x.node: x.seed} 
-       grads   = agrad.GradAccum(gradmap)
+       grads   = ad.GradAccum(gradmap)
 
        assert grads.pick(x.node) == x.seed
        assert gradmap == {**dict(zip(x.parents, x.grads)), None: x.seed}
@@ -429,7 +429,7 @@ class TestGradAccum:
        x = data.reverse_node_dat(valency)
 
        gradmap = {**dict(zip(x.parents, x.grads)), x.node: x.seed} 
-       grads   = agrad.GradAccum(gradmap)
+       grads   = ad.GradAccum(gradmap)
        assert grads.result() == x.seed
 
        out = grads.pick(x.node)

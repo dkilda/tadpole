@@ -9,8 +9,8 @@ import tadpole.util    as util
 import tadpole.wrapper as td
 
 import tadpole.autodiff.nary  as nary
-import tadpole.autodiff.node  as anode
-import tadpole.autodiff.graph as agraph
+import tadpole.autodiff.node  as an
+import tadpole.autodiff.graph as ag
 
 
 
@@ -196,7 +196,7 @@ class ForwardPropagation(Propagation):
 
    def graphop(self, fun, x):
 
-       return GraphOp(anode.ForwardGate(), fun, x)
+       return GraphOp(an.ForwardGate(), fun, x)
 
 
    def accum(self, end, seed):
@@ -219,7 +219,7 @@ class ReversePropagation(Propagation):
 
    def graphop(self, fun, x):
 
-       return GraphOp(anode.ReverseGate(), fun, x)
+       return GraphOp(an.ReverseGate(), fun, x)
 
 
    def accum(self, end, seed):
@@ -297,7 +297,7 @@ class GraphOp(Graphable):
 
    def graph(self):
 
-       return agraph.Graph(self._root)
+       return ag.Graph(self._root)
 
 
    @util.cacheable
@@ -312,7 +312,7 @@ class GraphOp(Graphable):
    @util.cacheable
    def evaluate(self):
 
-       args = agraph.Args(self.end())
+       args = ag.Args(self.end())
        args = args.deshelled()
 
        return args[0]

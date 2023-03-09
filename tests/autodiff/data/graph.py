@@ -8,11 +8,11 @@ from tests.common import arepeat, arange, amap
 import tests.autodiff.fakes as fake
 import tests.autodiff.data  as data
 
-import tadpole.autodiff.misc  as misc
-import tadpole.autodiff.node  as anode
-import tadpole.autodiff.graph as agraph
-import tadpole.autodiff.grad  as agrad
 import tadpole.util           as util
+import tadpole.autodiff.misc  as misc
+import tadpole.autodiff.node  as an
+import tadpole.autodiff.graph as ag
+import tadpole.autodiff.grad  as ad
 
 
 
@@ -38,8 +38,8 @@ def graph_dat(which="REVERSE", layer=None,
               x=None, out=None, start=None, end=None):
 
     root = {
-            "REVERSE": anode.ReverseGate,
-            "FORWARD": anode.ForwardGate,
+            "REVERSE": an.ReverseGate,
+            "FORWARD": an.ForwardGate,
            }[which]()
 
     if layer is None:
@@ -52,14 +52,14 @@ def graph_dat(which="REVERSE", layer=None,
        out = fake.Value()
 
     if start is None:
-       start = anode.draw.node(x, layer, root) 
+       start = an.node(x, layer, root) 
 
     if end is None:
-       end = anode.draw.node(out, layer, fake.GateLike())
+       end = an.node(out, layer, fake.GateLike())
 
     fun     = fake.Fun(end, start)
-    graph   = agraph.Graph(root)
-    graphop = agrad.GraphOp(root, fun, x)
+    graph   = ag.Graph(root)
+    graphop = ad.GraphOp(root, fun, x)
 
     return GraphData(graphop, graph, layer, root, fun, 
                      x, out, start, end)
@@ -95,7 +95,7 @@ def differentiable_funwrap_dat(args):
     make_envelope = fake.Fun(envelope, *args)
 
     fun     = fake.Fun(None)
-    funwrap = agraph.Differentiable(fun, make_envelope)
+    funwrap = ag.Differentiable(fun, make_envelope)
 
     applywrap.update_args(funwrap, fun)
 
@@ -113,7 +113,7 @@ def nondifferentiable_funwrap_dat(args):
     make_envelope = fake.Fun(envelope, *args)
 
     fun     = fake.Fun(None)
-    funwrap = agraph.NonDifferentiable(fun, make_envelope)
+    funwrap = ag.NonDifferentiable(fun, make_envelope)
 
     return FunWrapData(funwrap, fun, make_envelope, envelope, args, out)
 
@@ -150,26 +150,26 @@ def args_dat(n=1, adxs=(0,), layers=(0,)):
         if   i in adxs: 
              source = fake.NodeLike()
              layer  = layers.pop()
-             node   = anode.draw.node(source, layer, fake.GateLike())
+             node   = an.node(source, layer, fake.GateLike())
              rawarg = node
 
         else:
              source = value
              layer  = misc.minlayer()           
-             node   = anode.draw.point(value)
+             node   = an.point(value)
              rawarg = value
 
         info.append([rawarg, node, source, layer, value])
 
     rawargs, nodes, sources, layers, values = zip(*info)
-    args = agraph.Args(*rawargs)
+    args = ag.Args(*rawargs)
 
-    concat = agraph.Concatenation(
+    concat = ag.Concatenation(
                                    util.Sequence(nodes), 
                                    util.Sequence(sources), 
                                    util.Sequence(layers)
                                   )
-    pack = agraph.Pack(concat)
+    pack = ag.Pack(concat)
 
     return ArgsData(args, concat, pack,
                     adxs, nodes, sources, layers, values, rawargs)
@@ -210,7 +210,7 @@ def concat_dat(n, adxs, layers):
         _sources = util.Sequence(x.sources[:size])
         _layers  = util.Sequence(x.layers[:size])
 
-        _concat  = agraph.Concatenation(_nodes, _sources, _layers)
+        _concat  = ag.Concatenation(_nodes, _sources, _layers)
 
         concat_history.append(_concat)
          
@@ -218,7 +218,7 @@ def concat_dat(n, adxs, layers):
     sources = util.Sequence(x.sources)
     layers  = util.Sequence(x.layers)
 
-    concat  = agraph.Concatenation(nodes, sources, layers)
+    concat  = ag.Concatenation(nodes, sources, layers)
 
     return ConcatData(concat, concat_history, attach_history, 
                       nodes, sources, layers)
@@ -296,7 +296,7 @@ def concat_output_dat(n, adxs, layers):
 
 
     return ConcatOutputData(x.concat, case[0], case[1], 
-                            anode.Parents(*case[2]), agraph.Args(*case[3]))
+                            an.Parents(*case[2]), ag.Args(*case[3]))
 
 
 
@@ -326,14 +326,14 @@ def pack_dat(valency=1, layer=0):
 
     if   layer == misc.minlayer():
          source  = fake.Value()
-         node    = anode.draw.point(source)         
+         node    = an.point(source)         
     else:
          source  = fake.NodeLike()
          node    = fake.NodeLike()
 
     funwrap = fake.Fun(None)
     adxs    = arepeat(fake.Value, valency)
-    op      = anode.AdjointOp(funwrap, adxs, source, deshelled_args)
+    op      = an.AdjointOp(funwrap, adxs, source, deshelled_args)
     parents = fake.Parental(next=fake.Fun(node, source, layer, op))  
 
     concat = fake.Cohesive(
@@ -342,7 +342,7 @@ def pack_dat(valency=1, layer=0):
                            parents=fake.Fun(parents),
                            deshell=fake.Fun(deshelled_args)
                           )
-    pack = agraph.Pack(concat)
+    pack = ag.Pack(concat)
 
     return PackData(
                     pack, 
@@ -377,7 +377,7 @@ def envelope_dat(stackdat):
 
         for _nodes in nodes:
 
-           _args  = agraph.Args(*_nodes)
+           _args  = ag.Args(*_nodes)
            _packs = _args.pack()
 
            packs.append(_packs)
@@ -388,9 +388,9 @@ def envelope_dat(stackdat):
     packs = make_packs()
 
     outnode = stackdat.outnodes[-1]
-    args    = agraph.Args(*stackdat.nodes[-1])
+    args    = ag.Args(*stackdat.nodes[-1])
 
-    envelope = agraph.Envelope(args)
+    envelope = ag.Envelope(args)
 
     return EnvelopeData(
                         envelope, 
@@ -427,11 +427,11 @@ def node_stack_dat_001(gatetype="REVERSE"):
         if op is None:
            op = fake.Adjoint()
 
-        parents = anode.Parents(*parents)
+        parents = an.Parents(*parents)
 
         return {
-                "REVERSE": anode.ReverseGate, 
-                "FORWARD": anode.ForwardGate,
+                "REVERSE": an.ReverseGate, 
+                "FORWARD": an.ForwardGate,
                }[gatetype](parents, op)
 
 
@@ -454,19 +454,19 @@ def node_stack_dat_001(gatetype="REVERSE"):
     parentsC = (parentsB[0],               arepeat(fake.NodeLike, 1), arepeat(fake.NodeLike, 2))
     parentsD = (arepeat(fake.NodeLike, 2), parentsC[1],               parentsC[2])
 
-    nodesA = amap(anode.draw.point, values)
+    nodesA = amap(an.point, values)
     nodesB = (
               nodesA[0],  
-              anode.draw.node(nodesA[1], layersB[1], gate(parentsB[1])), 
+              an.node(nodesA[1], layersB[1], gate(parentsB[1])), 
               nodesA[2], 
              )
     nodesC = (
               nodesB[0],
-              anode.draw.node(nodesB[1], layersC[1], gate(parentsC[1])),          
-              anode.draw.node(nodesB[2], layersC[2], gate(parentsC[2])),       
+              an.node(nodesB[1], layersC[1], gate(parentsC[1])),          
+              an.node(nodesB[2], layersC[2], gate(parentsC[2])),       
              )
     nodesD = (
-              anode.draw.node(nodesC[0], layersD[0], gate(parentsD[0])),  
+              an.node(nodesC[0], layersD[0], gate(parentsD[0])),  
               nodesC[1],
               nodesC[2],
              )
@@ -489,10 +489,10 @@ def node_stack_dat_001(gatetype="REVERSE"):
     fun     = fake.Fun(util.Outputs(outvalue), *values)
     funwrap = fake.Fun(None)
 
-    outnodeA = anode.draw.point(outvalue)
-    outnodeB = anode.draw.node(outnodeA, 0, gate(outparentsB, anode.AdjointOp(funwrap, adxsB, outnodeA, agraph.Args(*nodesA))))
-    outnodeC = anode.draw.node(outnodeB, 1, gate(outparentsC, anode.AdjointOp(funwrap, adxsC, outnodeB, agraph.Args(*nodesB))))
-    outnodeD = anode.draw.node(outnodeC, 2, gate(outparentsD, anode.AdjointOp(funwrap, adxsD, outnodeC, agraph.Args(*nodesC))))
+    outnodeA = an.point(outvalue)
+    outnodeB = an.node(outnodeA, 0, gate(outparentsB, an.AdjointOp(funwrap, adxsB, outnodeA, ag.Args(*nodesA))))
+    outnodeC = an.node(outnodeB, 1, gate(outparentsC, an.AdjointOp(funwrap, adxsC, outnodeB, ag.Args(*nodesB))))
+    outnodeD = an.node(outnodeC, 2, gate(outparentsD, an.AdjointOp(funwrap, adxsD, outnodeC, ag.Args(*nodesC))))
 
     outnodes   = (outnodeA,    outnodeB,    outnodeC,    outnodeD)
     outparents = (outparentsA, outparentsB, outparentsC, outparentsD)
@@ -516,7 +516,7 @@ def node_stack_dat_002(gatetype="REVERSE"):
     layersA  = (-1, -1, -1)
     adxsA    = tuple()
     parentsA = (tuple(), tuple(), tuple())
-    nodesA   = amap(anode.draw.point, values)
+    nodesA   = amap(an.point, values)
 
     nodes   = (nodesA,   )
     parents = (parentsA, )
@@ -527,7 +527,7 @@ def node_stack_dat_002(gatetype="REVERSE"):
 
     outvalue    = fake.Value()
     outparentsA = tuple()
-    outnodeA    = anode.draw.point(outvalue)
+    outnodeA    = an.point(outvalue)
 
     outnodes   = (outnodeA,    )
     outparents = (outparentsA, )

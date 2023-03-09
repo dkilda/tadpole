@@ -459,9 +459,8 @@ class Array(ArrayLike, Pluggable):
        if bool(log):
           log.val(self._backend, other._backend)
 
-       if bool(log):
-          return util.allclose(self._data, other._data)  
-          #return util.allequal(self._data, other._data) # FIXME decide what to do with Array equality!  
+       if bool(log): 
+          return util.allequal(self._data, other._data) 
 
        return False
 
@@ -482,7 +481,7 @@ class Array(ArrayLike, Pluggable):
 
    def __eq__(self, other):
  
-       return self.allequal(other)
+       return self.allclose(other)
 
 
    # --- Arithmetics and element access --- # 
