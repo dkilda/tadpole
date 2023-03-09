@@ -4,18 +4,19 @@
 import abc
 import numpy as np
 
-import tadpole.array.operations as op
-import tadpole.array.function   as function
+import tadpole.util as util
+
 import tadpole.array.backends   as backends
+import tadpole.array.operations as op
 import tadpole.array.core       as core
-import tadpole.util             as util
+import tadpole.array.function   as function
 
 from tadpole.array.function import (
    Args, 
    TransformCall,
 )
 
-from tadpole.array.types import (
+from tadpole.array.core import (
    Pluggable,
    ArrayLike,
 )

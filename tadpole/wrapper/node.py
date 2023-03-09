@@ -4,25 +4,27 @@
 import abc
 import numpy as np
 
-import tadpole.util  as util
-import tadpole.array as ar
+import tadpole.util as util
 
 import tadpole.autodiff.node      as an
 import tadpole.wrapper.operations as op
+
+from tadpole.array.core import ArrayLike, Array
+from tadpole.array.grad import ZeroGrad, SparseGrad
 
 
 
 
 # --- Node-Array wrapper class----------------------------------------------- #
 
-class Node(an.Node, ar.types.ArrayLike): 
+class Node(an.Node, ArrayLike): 
 
    # --- Array methods: gradient accumulation --- #
 
    def addto(self, other):
 
        if not other:
-          other = ar.grad.ZeroGrad()
+          other = ZeroGrad()
 
        return op.addgrads(self, other)
 
@@ -127,9 +129,9 @@ class Node(an.Node, ar.types.ArrayLike):
        return self.__mul__(other)
 
 
-an.register(ar.core.Array,      Node)
-an.register(ar.grad.SparseGrad, Node)
-an.register(ar.grad.ZeroGrad,   Node)
+an.register(Array,      Node)
+an.register(SparseGrad, Node)
+an.register(ZeroGrad,   Node)
 
 
 

@@ -6,7 +6,7 @@ import numpy as np
 
 import tadpole.util as util
 
-import tadpole.array.grad     as grad
+import tadpole.array.grad     as grad # Fixes a circular import error
 import tadpole.array.core     as core
 import tadpole.array.function as function
 
@@ -17,7 +17,7 @@ from tadpole.array.function import (
    TransformCall,
 )
 
-from tadpole.array.types import (
+from tadpole.array.core import (
    Pluggable,
    ArrayLike,
 )
