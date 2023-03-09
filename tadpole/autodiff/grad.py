@@ -11,8 +11,6 @@ import tadpole.autodiff.nary  as nary
 import tadpole.autodiff.node  as an
 import tadpole.autodiff.graph as ag
 
-from tadpole.array.grad import ZeroGrad
-
 
 
 
@@ -580,9 +578,6 @@ class Cumulative(abc.ABC):
 # --- Gradient addition function (a shortcut) ------------------------------- #
 
 def addgrads(x, y):
-
-    if not x:
-       x = ZeroGrad()
 
     return y.addto(x)
 

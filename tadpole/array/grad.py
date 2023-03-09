@@ -55,10 +55,6 @@ class ZeroGrad(ArrayLike, Pluggable):
        return other.addto(self)
 
 
-   def __bool__(self):
-
-       return False
-
 
    # --- Basic functionality --- #
 
@@ -202,6 +198,9 @@ class SparseGrad(ArrayLike, Pluggable):
    # --- Using in gradient accumulations --- #
 
    def addto(self, other):
+
+       if not other:
+          other = ZeroGrad()
 
        if isinstance(other, ZeroGrad):
           other = self.space().zeros()

@@ -391,6 +391,9 @@ class Array(ArrayLike, Pluggable):
 
    def addto(self, other):
 
+       if not other:
+          other = grad.ZeroGrad()
+
        if isinstance(other, grad.ZeroGrad): 
           return self
 

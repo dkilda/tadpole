@@ -17,10 +17,12 @@ import tadpole.wrapper.operations as op
 
 class Node(an.Node, ar.types.ArrayLike): 
 
-
    # --- Array methods: gradient accumulation --- #
 
    def addto(self, other):
+
+       if not other:
+          other = ar.grad.ZeroGrad()
 
        return op.addgrads(self, other)
 
@@ -125,8 +127,9 @@ class Node(an.Node, ar.types.ArrayLike):
        return self.__mul__(other)
 
 
-an.register(ar.core.Array,    Node)
-an.register(ar.grad.ZeroGrad, Node)
+an.register(ar.core.Array,      Node)
+an.register(ar.grad.SparseGrad, Node)
+an.register(ar.grad.ZeroGrad,   Node)
 
 
 
