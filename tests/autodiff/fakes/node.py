@@ -130,6 +130,11 @@ class NodeLike(anode.NodeLike):
        self._fun = fake.FunMap(**data)
 
 
+   def connected(self):
+ 
+       return self._fun["connected", True]()
+
+
    def concat(self, concatenable):
 
        return self._fun["concat", concatenable](concatenable)

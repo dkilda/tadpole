@@ -8,6 +8,7 @@ from tests.common import arepeat, arange, amap
 import tests.autodiff.fakes as fake
 import tests.autodiff.data  as data
 
+import tadpole.autodiff.misc  as misc
 import tadpole.autodiff.node  as anode
 import tadpole.autodiff.graph as agraph
 import tadpole.autodiff.grad  as agrad
@@ -29,9 +30,9 @@ class TestGraph:
 
    # --- Test minilayer --- #
 
-   def test_minilayer(self):
+   def test_minlayer(self):
 
-       assert agraph.minlayer() == -1
+       assert misc.minlayer() == -1
 
 
    # --- Test build --- #

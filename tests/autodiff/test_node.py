@@ -457,8 +457,8 @@ class TestNode:
 
        x = data.node_dat()
 
-       nodeA = anode.Node(x.source, x.layer, x.gate)
-       nodeB = anode.Node(x.source, x.layer, x.gate)
+       nodeA = anode.draw.node(x.source, x.layer, x.gate)
+       nodeB = anode.draw.node(x.source, x.layer, x.gate)
 
        assert nodeA == nodeB
 
@@ -575,8 +575,8 @@ class TestPoint:
 
        x = data.point_dat()
        
-       pointA = anode.Point(x.source)
-       pointB = anode.Point(x.source)
+       pointA = anode.draw.point(x.source)
+       pointB = anode.draw.point(x.source)
 
        assert pointA == pointB
 
@@ -586,8 +586,8 @@ class TestPoint:
        x = data.point_dat()
        y = data.point_dat()
 
-       pointA = anode.Point(x.source)
-       pointB = anode.Point(y.source)
+       pointA = anode.draw.point(x.source)
+       pointB = anode.draw.point(y.source)
 
        assert pointA != pointB
 
@@ -668,7 +668,7 @@ class TestParents:
        source = fake.NodeLike()
        op     = fake.Adjoint()
        gate   = anode.ForwardGate(x.parents, op)
-       node   = anode.Node(source, layer, gate)
+       node   = anode.draw.node(source, layer, gate)
 
        assert x.parents.next(source, layer, op) == node
 
@@ -682,7 +682,7 @@ class TestParents:
        source = fake.NodeLike()
        op     = fake.Adjoint()
        gate   = anode.ReverseGate(x.parents, op)
-       node   = anode.Node(source, layer, gate)
+       node   = anode.draw.node(source, layer, gate)
 
        assert x.parents.next(source, layer, op) == node 
 

@@ -12,6 +12,13 @@ import tadpole.array.operations as op
 
 
 # --- Non-differentiable array operations ----------------------------------- #
+
+copy     = ad.nondifferentiable(op.copy)
+todense  = ad.nondifferentiable(op.todense)
+withdata = ad.nondifferentiable(op.withdata)
+space    = ad.nondifferentiable(op.space)
+item     = ad.nondifferentiable(op.item)
+
  
 dtype = ad.nondifferentiable(op.dtype)
 size  = ad.nondifferentiable(op.size)

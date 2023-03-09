@@ -7,6 +7,7 @@ from tests.common import arepeat, arange, amap
 
 import tests.autodiff.fakes as fake
 
+import tadpole.autodiff.misc  as misc
 import tadpole.autodiff.node  as anode
 import tadpole.autodiff.graph as agraph
 
@@ -194,7 +195,7 @@ def node_dat(layer=0, gate=fake.GateLike()):
 
     value  = fake.Value()
     source = fake.NodeLike()
-    node   = anode.Node(source, layer, gate)
+    node   = anode.draw.node(source, layer, gate)
 
     return NodeData(node, source, layer, gate, value)
 
@@ -285,10 +286,10 @@ PointData = collections.namedtuple("PointData", [
 def point_dat():
 
     source = fake.Value() 
-    layer  = agraph.minlayer()
+    layer  = misc.minlayer()
     gate   = anode.NullGate()
 
-    point = anode.Point(source)
+    point = anode.draw.point(source)
 
     return PointData(point, source, layer, gate)
 

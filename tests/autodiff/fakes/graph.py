@@ -5,6 +5,7 @@ from tests.common import arepeat, arange, amap
 
 import tests.autodiff.fakes as fake
 
+import tadpole.autodiff.misc  as misc
 import tadpole.autodiff.node  as anode
 import tadpole.autodiff.graph as agraph
 import tadpole.util           as util
@@ -76,7 +77,7 @@ class Cohesive(agraph.Cohesive):
 
    def innermost(self):
 
-       return self._fun["innermost", self.layer() == agraph.minlayer()]()
+       return self._fun["innermost", self.layer() == misc.minlayer()]()
 
 
    def layer(self):

@@ -8,6 +8,7 @@ from tests.common import arepeat, arange, amap
 import tests.autodiff.fakes as fake
 import tests.autodiff.data  as data
 
+import tadpole.autodiff.misc  as misc
 import tadpole.autodiff.node  as anode
 import tadpole.autodiff.graph as agraph
 import tadpole.autodiff.grad  as agrad
@@ -51,10 +52,10 @@ def graph_dat(which="REVERSE", layer=None,
        out = fake.Value()
 
     if start is None:
-       start = anode.Node(x, layer, root) 
+       start = anode.draw.node(x, layer, root) 
 
     if end is None:
-       end = anode.Node(out, layer, fake.GateLike())
+       end = anode.draw.node(out, layer, fake.GateLike())
 
     fun     = fake.Fun(end, start)
     graph   = agraph.Graph(root)
@@ -149,13 +150,13 @@ def args_dat(n=1, adxs=(0,), layers=(0,)):
         if   i in adxs: 
              source = fake.NodeLike()
              layer  = layers.pop()
-             node   = anode.Node(source, layer, fake.GateLike())
+             node   = anode.draw.node(source, layer, fake.GateLike())
              rawarg = node
 
         else:
              source = value
-             layer  = agraph.minlayer()           
-             node   = anode.Point(value)
+             layer  = misc.minlayer()           
+             node   = anode.draw.point(value)
              rawarg = value
 
         info.append([rawarg, node, source, layer, value])
@@ -323,9 +324,9 @@ def pack_dat(valency=1, layer=0):
     deshelled_pack = fake.Packable()
     deshelled_args = fake.ArgsLike(pack=fake.Fun(deshelled_pack))
 
-    if   layer == agraph.minlayer():
+    if   layer == misc.minlayer():
          source  = fake.Value()
-         node    = anode.Point(source)         
+         node    = anode.draw.point(source)         
     else:
          source  = fake.NodeLike()
          node    = fake.NodeLike()
@@ -453,19 +454,19 @@ def node_stack_dat_001(gatetype="REVERSE"):
     parentsC = (parentsB[0],               arepeat(fake.NodeLike, 1), arepeat(fake.NodeLike, 2))
     parentsD = (arepeat(fake.NodeLike, 2), parentsC[1],               parentsC[2])
 
-    nodesA = amap(anode.Point, values)
+    nodesA = amap(anode.draw.point, values)
     nodesB = (
               nodesA[0],  
-              anode.Node(nodesA[1], layersB[1], gate(parentsB[1])), 
+              anode.draw.node(nodesA[1], layersB[1], gate(parentsB[1])), 
               nodesA[2], 
              )
     nodesC = (
               nodesB[0],
-              anode.Node(nodesB[1], layersC[1], gate(parentsC[1])),          
-              anode.Node(nodesB[2], layersC[2], gate(parentsC[2])),       
+              anode.draw.node(nodesB[1], layersC[1], gate(parentsC[1])),          
+              anode.draw.node(nodesB[2], layersC[2], gate(parentsC[2])),       
              )
     nodesD = (
-              anode.Node(nodesC[0], layersD[0], gate(parentsD[0])),  
+              anode.draw.node(nodesC[0], layersD[0], gate(parentsD[0])),  
               nodesC[1],
               nodesC[2],
              )
@@ -488,10 +489,10 @@ def node_stack_dat_001(gatetype="REVERSE"):
     fun     = fake.Fun(util.Outputs(outvalue), *values)
     funwrap = fake.Fun(None)
 
-    outnodeA = anode.Point(outvalue)
-    outnodeB = anode.Node(outnodeA, 0, gate(outparentsB, anode.AdjointOp(funwrap, adxsB, outnodeA, agraph.Args(*nodesA))))
-    outnodeC = anode.Node(outnodeB, 1, gate(outparentsC, anode.AdjointOp(funwrap, adxsC, outnodeB, agraph.Args(*nodesB))))
-    outnodeD = anode.Node(outnodeC, 2, gate(outparentsD, anode.AdjointOp(funwrap, adxsD, outnodeC, agraph.Args(*nodesC))))
+    outnodeA = anode.draw.point(outvalue)
+    outnodeB = anode.draw.node(outnodeA, 0, gate(outparentsB, anode.AdjointOp(funwrap, adxsB, outnodeA, agraph.Args(*nodesA))))
+    outnodeC = anode.draw.node(outnodeB, 1, gate(outparentsC, anode.AdjointOp(funwrap, adxsC, outnodeB, agraph.Args(*nodesB))))
+    outnodeD = anode.draw.node(outnodeC, 2, gate(outparentsD, anode.AdjointOp(funwrap, adxsD, outnodeC, agraph.Args(*nodesC))))
 
     outnodes   = (outnodeA,    outnodeB,    outnodeC,    outnodeD)
     outparents = (outparentsA, outparentsB, outparentsC, outparentsD)
@@ -515,7 +516,7 @@ def node_stack_dat_002(gatetype="REVERSE"):
     layersA  = (-1, -1, -1)
     adxsA    = tuple()
     parentsA = (tuple(), tuple(), tuple())
-    nodesA   = amap(anode.Point, values)
+    nodesA   = amap(anode.draw.point, values)
 
     nodes   = (nodesA,   )
     parents = (parentsA, )
@@ -526,7 +527,7 @@ def node_stack_dat_002(gatetype="REVERSE"):
 
     outvalue    = fake.Value()
     outparentsA = tuple()
-    outnodeA    = anode.Point(outvalue)
+    outnodeA    = anode.draw.point(outvalue)
 
     outnodes   = (outnodeA,    )
     outparents = (outparentsA, )

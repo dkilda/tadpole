@@ -85,18 +85,29 @@ def typecast_binary(fun):
 ###############################################################################
 
 
-"""
-# --- Generic array operations ---------------------------------------------- #
+# --- Basic array functionality --------------------------------------------- #
+
+def copy(x, **opts):
+    return x.copy(**opts)
 
 
-def floor(x, n):
-    return x // n
+def todense(x):
+    return x.todense()
 
 
-def equals(x, y):
-    return x == y 
+def withdata(x, data):
+    return x.withdata(data)
 
-"""
+
+def space(x):
+    return x.space()
+
+
+def item(x, *idx):
+    return x.item(*idx)
+
+
+
 
 # --- Array properties ------------------------------------------------------ #
 
@@ -125,17 +136,14 @@ def allequal(x, y):
     return x.allequal(y)
 
 
-
 def allclose(x, y, **opts):
 
     return x.allclose(y, **opts)
 
 
-
 def allallequal(xs, ys):
 
     return all(allequal(x, y) for x, y in zip(xs, ys))
-
 
 
 def allallclose(xs, ys, **opts):
@@ -145,30 +153,7 @@ def allallclose(xs, ys, **opts):
 
 
 
-
-
-"""
-
-def asarray(x, data):
-
-    return x.asarray(data)
-
-
-
-def copy(x, **opts):
-
-    return x.copy(**opts)
-
-
-
-def item(self, *idx):
-
-    return x.item(*idx)
-"""
-
-
-
-# --- Generic array operations ---------------------------------------------- #
+# --- Misc array operations ------------------------------------------------- #
 
 def put(x, idxs, vals, accumulate=False): 
 

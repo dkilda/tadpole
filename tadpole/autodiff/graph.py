@@ -6,7 +6,12 @@ import abc
 import tadpole.util as util
 from tadpole.util import TupleLike
 
+import tadpole.autodiff as ad
+
+"""
+import tadpole.autodiff.misc as misc
 import tadpole.autodiff.node as anode
+"""
 
 
 
@@ -15,13 +20,6 @@ import tadpole.autodiff.node as anode
 ###  Autodiff computation graph                                             ###
 ###                                                                         ###
 ###############################################################################
-
-
-# --- Define the minimum node layer ----------------------------------------- #
-
-def minlayer():
-
-    return -1
 
 
 
@@ -49,7 +47,7 @@ class GraphLike(abc.ABC):
 
 class Graph(GraphLike):
 
-   _layer = minlayer() 
+   _layer = ad.misc.minlayer() 
 
 
    def __init__(self, root):
@@ -90,7 +88,7 @@ class Graph(GraphLike):
 
    def build(self, fun, x):
 
-       start = anode.Node(x, type(self)._layer, self._root) 
+       start = ad.node.draw.node(x, type(self)._layer, self._root) 
 
        return fun(start)
 
@@ -268,11 +266,11 @@ class Args(ArgsLike, TupleLike):
 
        for arg in self._args:
 
-           if isinstance(arg, anode.NodeLike):
+           if isinstance(arg, ad.node.NodeLike):
               yield arg
               continue
 
-           yield anode.Point(arg)
+           yield ad.node.draw.point(arg)
 
 
    @util.cacheable
@@ -398,7 +396,7 @@ class Concatenation(Concatenable, Cohesive):
    @util.cacheable
    def innermost(self):
 
-       return self.layer() == minlayer() 
+       return self.layer() == ad.misc.minlayer() 
 
 
    @util.cacheable
@@ -424,7 +422,7 @@ class Concatenation(Concatenable, Cohesive):
        nodes = list(self._nodes)
        nodes = [nodes[adx] for adx in self.adxs()] 
 
-       return anode.Parents(*nodes)
+       return ad.node.Parents(*nodes)
 
 
    @util.cacheable
@@ -552,9 +550,9 @@ class Pack(Packable):
    def _fold(self, funwrap, outputs, out):
 
        if self.innermost():
-          return anode.Point(out)
+          return ad.node.draw.point(out)
 
-       op = anode.AdjointOp(funwrap, self._adxs, outputs, self._args)
+       op = ad.node.AdjointOp(funwrap, self._adxs, outputs, self._args)
 
        return self._parents.next(out, self._layer, op) 
 

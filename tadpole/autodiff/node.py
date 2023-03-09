@@ -6,13 +6,12 @@ import functools
 
 import tadpole.util as util
      
-import tadpole.autodiff.graph   as agraph
+import tadpole.autodiff.misc    as misc
 import tadpole.autodiff.map_jvp as jvpmap
 import tadpole.autodiff.map_vjp as vjpmap
 
-from tadpole.util        import TupleLike
-from tadpole.array.types import ArrayLike 
-
+from tadpole.util import TupleLike
+ 
 
 
 
@@ -432,6 +431,10 @@ class ReverseGate(GateLike):
 class NodeLike(abc.ABC):
 
    @abc.abstractmethod
+   def connected(self):
+       pass
+
+   @abc.abstractmethod
    def flow(self):
        pass
 
@@ -450,9 +453,9 @@ class NodeLike(abc.ABC):
 
 
 
-# --- Generic NodeLike vertex on a graph ------------------------------------ #
+# --- Node ------------------------------------------------------------------ #
 
-class GenericNodeLike(NodeLike): #, ArrayLike):
+class Node(NodeLike): 
 
    # --- Construction --- #
 
@@ -495,13 +498,12 @@ class GenericNodeLike(NodeLike): #, ArrayLike):
        return bool(log)
 
 
-   """
-   def allclose(self, other, **opts):
-
-       return td.allclose(self, other, **opts)
-   """
-
    # --- Node methods --- #
+
+   def connected(self):
+       
+       return self._layer > misc.minlayer()
+
 
    def concat(self, concatenable):
 
@@ -525,13 +527,194 @@ class GenericNodeLike(NodeLike): #, ArrayLike):
 
 
 
+# --- NodeScape: draws new nodes -------------------------------------------- #
+
+class NodeScape:
+
+   _types = {}
+
+
+   @classmethod
+   def register(cls, valtype, nodetype): 
+
+       cls._types[valtype]  = nodetype
+       cls._types[nodetype] = nodetype
+
+       return cls
+
+
+   @classmethod
+   def _create(cls, source, layer, gate):
+
+       try:
+          return cls._types[type(source)](source, layer, gate)
+       except KeyError:
+          return Node(source, layer, gate)
+
+
+   @classmethod
+   def node(cls, source, layer, gate):
+
+       if not (layer > misc.minlayer()):
+          raise ValueError((
+             f"NodeScape.node(): the input layer {layer} must "
+             f"be higher than the minimum layer {misc.minlayer()}."
+          ))
+
+       if not isinstance(source, NodeLike):
+          source = cls.point(source)
+
+       return cls._create(source, layer, gate) 
+
+
+   @classmethod
+   def point(cls, source):
+
+       return cls._create(source, misc.minlayer(), NullGate()) 
+
+
+draw = NodeScape
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Parents of an autodiff Node.                                           ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Parental interface ---------------------------------------------------- #
+
+class Parental(abc.ABC):
+
+   @abc.abstractmethod
+   def next(self, source, layer, op):
+       pass
+
+
+
+
+# --- Parents --------------------------------------------------------------- #
+
+class Parents(Parental, TupleLike):  
+
+   def __init__(self, *parents):
+
+       if not all(parent.connected() for parent in parents):
+          raise ValueError((f"Parents: all parent nodes {parents} "
+                            f"must be connected nodes. "))
+
+       self._parents = parents
+    
+
+   def __repr__(self):
+
+       rep = util.ReprChain()
+
+       rep.typ(self)
+       rep.ref("parents", self._parents)
+
+       return str(rep)
+
+
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+
+       log.typ(self, other) 
+       log.ref(self._parents, other._parents)
+
+       return bool(log)
+
+
+   def __hash__(self):
+
+       return hash(self._parents)
+
+
+   def __len__(self):
+
+       return len(self._parents)
+
+
+   def __contains__(self, x):
+
+       return x in self._parents
+
+
+   def __iter__(self):
+
+       return iter(self._parents)
+
+
+   def __getitem__(self, idx):
+
+       return self._parents[idx]
+
+
+   def next(self, source, layer, op):
+
+       flow = sum(parent.flow() for parent in self)
+
+       return draw.node(source, layer, flow.gate(self, op))
+
+
+
+
+
+
+"""
+
+# --- Node ------------------------------------------------------------------ #
+
+class Node(GenericNodeArrayLike):
+
+   def __init__(self, source, layer, gate):
+
+       if not (layer > misc.minlayer()):
+          raise ValueError((f"Node: the input layer {layer} must be higher "
+                            f"than the minimum layer {misc.minlayer()}."))
+
+       if not isinstance(source, NodeLike):
+          source = Point(source)
+
+       super().__init__(source, layer, gate)
+          
+
+
+
+# --- Point (a disconnected node, only carries a value and no logic) -------- #
+
+class Point(GenericNodeArrayLike):
+
+   def __init__(self, source):
+
+       super().__init__(source, misc.minlayer(), NullGate())
+
+"""
+
+
+
+"""
+
+
+'''
+       if any(isinstance(parent, Point) for parent in parents):
+          raise ValueError((f"Parents: parent nodes {parents} "
+                            f"must not be Points. "))
+'''
+
+
+
 # --- Generic NodeLike and ArrayLike vertex on a graph ---------------------- #
 
 GenericNodeArrayLike = GenericNodeLike
 
 
 
-"""
+
 class GenericNodeArrayLike(GenericNodeLike): #, ArrayLike):
 
    # --- Construction --- #
@@ -703,117 +886,6 @@ class GenericNodeArrayLike(GenericNodeLike): #, ArrayLike):
 
 """
 
-
-# --- Node ------------------------------------------------------------------ #
-
-class Node(GenericNodeArrayLike):
-
-   def __init__(self, source, layer, gate):
-
-       if not (layer > agraph.minlayer()):
-          raise ValueError((f"Node: the input layer {layer} must be higher "
-                            f"than the minimum layer {agraph.minlayer()}."))
-
-       if not isinstance(source, NodeLike):
-          source = Point(source)
-
-       super().__init__(source, layer, gate)
-          
-
-
-
-# --- Point (a disconnected node, only carries a value and no logic) -------- #
-
-class Point(GenericNodeArrayLike):
-
-   def __init__(self, source):
-
-       super().__init__(source, agraph.minlayer(), NullGate())
-
-
-
-
-###############################################################################
-###                                                                         ###
-###  Parents of an autodiff Node.                                           ###
-###                                                                         ###
-###############################################################################
-
-
-# --- Parental interface ---------------------------------------------------- #
-
-class Parental(abc.ABC):
-
-   @abc.abstractmethod
-   def next(self, source, layer, op):
-       pass
-
-
-
-
-# --- Parents --------------------------------------------------------------- #
-
-class Parents(Parental, TupleLike):  
-
-   def __init__(self, *parents):
-
-       if any(isinstance(parent, Point) for parent in parents):
-          raise ValueError((f"Parents: parent nodes {parents} "
-                            f"must not be Points. "))
-
-       self._parents = parents
-
-    
-   def __repr__(self):
-
-       rep = util.ReprChain()
-
-       rep.typ(self)
-       rep.ref("parents", self._parents)
-
-       return str(rep)
-
-
-   def __eq__(self, other):
-
-       log = util.LogicalChain()
-
-       log.typ(self, other) 
-       log.ref(self._parents, other._parents)
-
-       return bool(log)
-
-
-   def __hash__(self):
-
-       return hash(self._parents)
-
-
-   def __len__(self):
-
-       return len(self._parents)
-
-
-   def __contains__(self, x):
-
-       return x in self._parents
-
-
-   def __iter__(self):
-
-       return iter(self._parents)
-
-
-   def __getitem__(self, idx):
-
-       return self._parents[idx]
-
-
-   def next(self, source, layer, op):
-
-       flow = sum(parent.flow() for parent in self)
-
-       return Node(source, layer, flow.gate(self, op))
 
 
 

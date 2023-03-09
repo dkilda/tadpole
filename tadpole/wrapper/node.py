@@ -8,62 +8,14 @@ import tadpole.util  as util
 import tadpole.array as ar
 
 import tadpole.autodiff.node      as ad
-import tadpole.wrapper.operations as op
+import tadpole.wrapper.operations as td
 
 
 
 
 # --- Node-Array wrapper class----------------------------------------------- #
 
-class Node(ad.NodeLike): #, ar.types.ArrayLike): 
-
-   # --- Construction --- #
-
-   def __init__(self, node):
-
-       self._node = node
-
-
-   # --- Equality, hashing, representation --- #
-
-   def __repr__(self):
-
-       return repr(self._node)
-
-
-   def __hash__(self):
-
-       return hash(self._node)
-
-
-   def __eq__(self, other):
-
-       if isinstance(other, self.__class__):
-          return self._node == other._node
-
-       return self._node == other
-
-
-   # --- Node methods --- #
-
-   def concat(self, concatenable):
-
-       return self._node.concat(concatenable)
-
-
-   def flow(self):
-
-       return self._node.flow()
-
-
-   def trace(self, traceable):
-
-       return self._node.trace(traceable)
-
-
-   def grads(self, grads):
-
-       return self._node.grads(grads)
+class Node(ad.Node, ar.types.ArrayLike): 
 
 
    # --- Array methods: gradient accumulation --- #
@@ -73,23 +25,21 @@ class Node(ad.NodeLike): #, ar.types.ArrayLike):
        return td.addgrads(self, other)
 
 
-
    # --- Array methods: basic functionality --- #
 
-   """
    def copy(self, **opts):
 
-       return self.
+       return td.copy(self, **opts)
 
-       source = self._source.copy(**opts)
+ 
+   def todense(self):
 
-       return self.__class__(source, self._layer, self._gate)
+       return td.todense(self)
 
 
    def withdata(self, data):
 
-       return self._source.withdata(data)
-
+       return td.withdata(self, data)
 
 
    def space(self):
@@ -100,7 +50,7 @@ class Node(ad.NodeLike): #, ar.types.ArrayLike):
    def item(self, *idx):
 
        return td.item(self, *idx)
-   """
+
 
    # --- Array methods: array properties --- #
 
@@ -119,6 +69,18 @@ class Node(ad.NodeLike): #, ar.types.ArrayLike):
    @property
    def shape(self):
        return td.shape(self) 
+
+
+   # --- Array methods: comparisons --- #
+
+   def allequal(self, other):
+
+       return td.allequal(self, other)
+
+
+   def allclose(self, other, **opts):
+
+       return td.allequal(self, other)
 
 
    # --- Array methods: arithmetics and element access --- # 
@@ -163,37 +125,8 @@ class Node(ad.NodeLike): #, ar.types.ArrayLike):
        return self.__mul__(other)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+ad.NodeScape.register(ar.core.Array,    Node)
+ad.NodeScape.register(ar.grad.ZeroGrad, Node)
 
 
 
