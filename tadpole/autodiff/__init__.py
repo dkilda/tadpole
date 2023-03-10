@@ -2,13 +2,20 @@
 # -*- coding: utf-8 -*-
 
 
-from . import map_vjp as vjpmap
-from . import map_jvp as jvpmap
+from . import wrappers as wrappers
 
 
-from .graph import (
+from .wrappers import (
    differentiable,
    nondifferentiable,
+)
+
+
+from .wrappers import (
+   makevjp,
+   makevjp_combo,
+   makejvp,
+   makejvp_combo,
 )
 
 

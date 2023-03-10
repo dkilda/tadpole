@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 
-from . import wrap_vjps
-from . import wrap_jvps
+from . import vjps
+from . import jvps
 
 
 from tadpole.array.core import (

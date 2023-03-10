@@ -4,11 +4,8 @@
 import abc
 import functools
 
-import tadpole.util as util
-     
-import tadpole.autodiff.misc    as misc
-import tadpole.autodiff.map_jvp as jvpmap
-import tadpole.autodiff.map_vjp as vjpmap
+import tadpole.util          as util     
+import tadpole.autodiff.misc as misc
 
 from tadpole.util import TupleLike
  
@@ -23,9 +20,9 @@ from tadpole.util import TupleLike
 ###############################################################################
 
 
-# --- Adjoint interface ----------------------------------------------------- #
+# --- Adjointable interface ------------------------------------------------- #
 
-class Adjoint(abc.ABC):
+class Adjointable(abc.ABC):
 
    @abc.abstractmethod
    def vjp(self, seed):
@@ -40,7 +37,7 @@ class Adjoint(abc.ABC):
 
 # --- Adjoint operator ------------------------------------------------------ #
 
-class AdjointOp(Adjoint):
+class AdjointOp(Adjointable):
 
    def __init__(self, fun, adxs, out, args):
 
@@ -91,23 +88,19 @@ class AdjointOp(Adjoint):
 
    def vjp(self, seed):
 
-       vjpfun = vjpmap.get(self._fun)
-
-       return self._apply(vjpfun)(seed)
+       return self._apply(self._fun.vjp)(seed)
 
 
    def jvp(self, seed):
 
-       jvpfun = jvpmap.get(self._fun)
-
-       return self._apply(jvpfun)(seed)
+       return self._apply(self._fun.jvp)(seed)
 
 
 
 
 # --- Null adjoint operator ------------------------------------------------- #
 
-class NullAdjointOp(Adjoint):
+class NullAdjointOp(Adjointable):
 
    def __repr__(self):
 

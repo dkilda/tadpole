@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import tadpole.util               as util
-import tadpole.autodiff.map_vjp   as vjpmap
-import tadpole.wrapper.operations as td
+import tadpole.util     as util
+import tadpole.autodiff as ad
+
+import tadpole.wrapper.operations as op
 
 
 
@@ -17,16 +18,16 @@ import tadpole.wrapper.operations as td
 
 # --- Array operations: unary ----------------------------------------------- #
 
-vjpmap.add(td.neg, lambda g, out, x: td.neg(g))
-vjpmap.add(td.sin, lambda g, out, x: td.mul(g, td.cos(x)))
-vjpmap.add(td.cos, lambda g, out, x: td.neg(td.mul(g, td.sin(x))))
+ad.makevjp(op.neg, lambda g, out, x: op.neg(g))
+ad.makevjp(op.sin, lambda g, out, x: op.mul(g, op.cos(x)))
+ad.makevjp(op.cos, lambda g, out, x: op.neg(op.mul(g, op.sin(x))))
 
 
 
 
 # --- Array operations: binary (for gradient accumulation) ------------------ #
 
-vjpmap.add(td.addgrads, lambda g, out, x, y: g, 
+ad.makevjp(op.addgrads, lambda g, out, x, y: g, 
                         lambda g, out, x, y: g)
 
 
@@ -34,14 +35,14 @@ vjpmap.add(td.addgrads, lambda g, out, x, y: g,
 
 # --- Array operations: binary ---------------------------------------------- #
 
-vjpmap.add(td.add, lambda g, out, x, y: g, 
+ad.makevjp(op.add, lambda g, out, x, y: g, 
                    lambda g, out, x, y: g)
 
-vjpmap.add(td.sub, lambda g, out, x, y: g, 
-                   lambda g, out, x, y: td.neg(g))
+ad.makevjp(op.sub, lambda g, out, x, y: g, 
+                   lambda g, out, x, y: op.neg(g))
 
-vjpmap.add(td.mul, lambda g, out, x, y: td.mul(y, g), 
-                   lambda g, out, x, y: td.mul(x, g))
+ad.makevjp(op.mul, lambda g, out, x, y: op.mul(y, g), 
+                   lambda g, out, x, y: op.mul(x, g))
 
 
 

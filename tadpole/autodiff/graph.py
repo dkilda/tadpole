@@ -102,10 +102,12 @@ class Graph(GraphLike):
 
 class Differentiable:
 
-   def __init__(self, fun, envelope):
+   def __init__(self, fun, envelope, vjpmap, jvpmap):
 
        self._fun      = fun
        self._envelope = envelope
+       self._vjpmap   = vjpmap
+       self._jvpmap   = jvpmap
 
 
    def __repr__(self):
@@ -124,6 +126,16 @@ class Differentiable:
        out      = envelope.applywrap(self, self._fun)
 
        return out.unpack() 
+
+
+   def vjp(self, *args, **kwargs):
+
+       return self._vjpmap.get(self._fun)(*args, **kwargs)
+
+
+   def jvp(self, *args, **kwargs):
+
+       return self._jvpmap.get(self._fun)(*args, **kwargs)
 
 
 
@@ -153,30 +165,6 @@ class NonDifferentiable:
        out = self._envelope(*args, **kwargs).apply(self._fun)
 
        return out.unpack()
-
-
-
-
-# --- Shorthand for a differentiable function wrap -------------------------- #
-
-def differentiable(fun):
-
-    def envelope(*args, **kwargs):
-        return Envelope(*args, **kwargs)
-
-    return Differentiable(util.return_outputs(fun), envelope)
-
-
-
-
-# --- Shorthand for a non-differentiable function wrap ---------------------- #
-
-def nondifferentiable(fun):
-
-    def envelope(*args, **kwargs):
-        return Envelope(*args, **kwargs)
-
-    return NonDifferentiable(util.return_outputs(fun), envelope)
 
 
 
@@ -641,7 +629,7 @@ class Envelope(EnvelopeLike):
        last = self.packs().last()
        args = last.deshell() 
 
-       return fun(*args, **self._kwargs) # TODO solution: require any ops function to return a tuple/TupleLike/Outputs?
+       return fun(*args, **self._kwargs) 
 
               
    def applywrap(self, funwrap, fun): 

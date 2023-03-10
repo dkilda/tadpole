@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 
-from .autodiff import *
-from .array    import *
-from .wrapper  import *
+from .autodiff  import *
+from .array     import *
+from .arraywrap import *
 
 
 
