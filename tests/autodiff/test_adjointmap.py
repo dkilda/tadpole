@@ -96,7 +96,7 @@ class TestAdjointMap:
        def adjfun(adxs, out, *args):
            return lambda g: arepeat(fake.Value, len(adxs))
 
-       adjmap = adj.AdjMap(fake.Fun(adjfun, adjfun))       
+       adjmap = adj.AdjointMap(fake.Fun(adjfun, adjfun))       
        adjmap.add_raw(fun, adjfun) 
 
        assert adjmap.get(fun) == adjfun
@@ -115,7 +115,7 @@ class TestAdjointMap:
        def fun(*args):
            return fake.Value()
 
-       adjmap = adj.AdjMap(lambda f: f)       
+       adjmap = adj.AdjointMap(lambda f: f)       
        adjmap.add(fun, *adjfuns)
 
        for adx in range(valency):
@@ -130,7 +130,7 @@ class TestAdjointMap:
        def adjfun(adxs, out, *args):
            return lambda g: arepeat(fake.Value, len(adxs))
 
-       adjmap = adj.AdjMap(fake.Fun(adjfun, adjfun))       
+       adjmap = adj.AdjointMap(fake.Fun(adjfun, adjfun))       
        adjmap.add_combo(fun, adjfun) 
 
        assert adjmap.get(fun) == adjfun

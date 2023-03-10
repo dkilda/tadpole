@@ -14,6 +14,8 @@ import tadpole.autodiff.node  as an
 import tadpole.autodiff.graph as ag
 import tadpole.autodiff.grad  as ad
 
+import tadpole.autodiff.wrappers as aw 
+
 
 
 
@@ -89,10 +91,10 @@ FunWrapData = collections.namedtuple("FunWrapData", [
 def differentiable_funwrap_dat(args, vjpmap=None, jvpmap=None):
 
     if vjpmap is None:
-       vjpmap = adjointmap._VJPMAP
+       vjpmap = aw._VJPMAP
 
     if jvpmap is None:
-       jvpmap = adjointmap._JVPMAP
+       jvpmap = aw._JVPMAP
 
     out = fake.NodeLike()
 
@@ -431,7 +433,7 @@ def node_stack_dat_001(gatetype="REVERSE"):
     def gate(parents, op=None):
 
         if op is None:
-           op = fake.Adjoint()
+           op = fake.OpWithAdjoint()
 
         parents = an.Parents(*parents)
 

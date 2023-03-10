@@ -4,7 +4,7 @@
 import tadpole.util     as util
 import tadpole.autodiff as ad
 
-import tadpole.wrapper.operations as op
+import tadpole.arraywrap.operations as op
 
 
 

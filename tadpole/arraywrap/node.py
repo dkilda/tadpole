@@ -6,8 +6,8 @@ import numpy as np
 
 import tadpole.util as util
 
-import tadpole.autodiff.node      as an
-import tadpole.wrapper.operations as op
+import tadpole.autodiff.node        as an
+import tadpole.arraywrap.operations as op
 
 from tadpole.array.core import ArrayLike, Array
 from tadpole.array.grad import ZeroGrad, SparseGrad

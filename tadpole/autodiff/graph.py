@@ -149,12 +149,12 @@ class Differentiable(FunWithAdjoint):
 
    def vjp(self, *args, **kwargs):
 
-       return self._vjpmap.get(self._fun)(*args, **kwargs)
+       return self._vjpmap.get(self)(*args, **kwargs)
 
 
    def jvp(self, *args, **kwargs):
 
-       return self._jvpmap.get(self._fun)(*args, **kwargs)
+       return self._jvpmap.get(self)(*args, **kwargs)
 
 
 

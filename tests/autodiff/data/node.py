@@ -241,7 +241,7 @@ def forward_node_dat(parent_nodes=1, grads=None, seed=None, layer=None):
     if layer is None:
        layer = 0
 
-    op      = fake.Adjoint(jvp=fake.Fun(grads, seed))
+    op      = fake.OpWithAdjoint(jvp=fake.Fun(grads, seed))
     parents = an.Parents(*parent_nodes)
     gate    = an.ForwardGate(parents, op)
     nodedat = node_dat(layer, gate)
@@ -272,7 +272,7 @@ def reverse_node_dat(parent_nodes=1, grads=None, seed=None, layer=None):
     if layer is None:
        layer = 0
 
-    op      = fake.Adjoint(vjp=fake.Fun(grads, seed))
+    op      = fake.OpWithAdjoint(vjp=fake.Fun(grads, seed))
     parents = an.Parents(*parent_nodes)
     gate    = an.ReverseGate(parents, op)
     nodedat = node_dat(layer, gate)

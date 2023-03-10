@@ -47,7 +47,7 @@ class TestAdjointOp:
    ])
    def test_eq(self, nargs, adxs):
 
-       x = data.adjoint_dat(nargs, len(adxs), adxs)
+       x = data.adjointop_dat(nargs, len(adxs), adxs)
 
        opA = an.AdjointOp(x.fun, x.adxs, x.out, x.args)
        opB = an.AdjointOp(x.fun, x.adxs, x.out, x.args)
@@ -70,8 +70,8 @@ class TestAdjointOp:
    ])
    def test_ne(self, nargs, adxs):
 
-       x = data.adjoint_dat(nargs, len(adxs), adxs)
-       y = data.adjoint_dat(nargs, len(adxs), adxs)
+       x = data.adjointop_dat(nargs, len(adxs), adxs)
+       y = data.adjointop_dat(nargs, len(adxs), adxs)
 
        ops = common.combos(an.AdjointOp)(
                 (x.fun, x.adxs, x.out, x.args), 
@@ -102,7 +102,7 @@ class TestAdjointOp:
 
        # vjpmap.add_raw(x.fun, fake.Fun(w.adjfun, x.adxs, x.out, *x.args)) 
                           
-       assert tuple(w.op.vjp(w.seed)) == w.vjpgrads
+       assert tuple(w.op.vjp(w.vjpseed)) == w.vjpgrads
 
 
    @pytest.mark.parametrize("nargs, valency, adxs", [
@@ -124,7 +124,7 @@ class TestAdjointOp:
 
        # jvpmap.add_raw(x.fun, fake.Fun(w.adjfun, x.adxs, x.out, *x.args))
 
-       assert tuple(w.op.jvp(w.seed)) == w.jvpgrads
+       assert tuple(w.op.jvp(w.jvpseed)) == w.jvpgrads
 
 
 
@@ -619,9 +619,9 @@ class TestNodeScape:
 
    def test_register(self):
 
-       from tadpole.array.core   import randn
-       from tadpole.array.core   import Array
-       from tadpole.wrapper.node import Node 
+       from tadpole.array.core     import randn
+       from tadpole.array.core     import Array
+       from tadpole.arraywrap.node import Node 
 
        w = data.reverse_node_dat()
 
