@@ -6,9 +6,10 @@ import numpy as np
 
 import tadpole.util as util
 
-import tadpole.array.backends   as backends
-import tadpole.array.operations as op
-import tadpole.array.core       as core
+import tadpole.array.backends as backends
+import tadpole.array.core     as core
+
+from tadpole.array.types import ArrayLike, Pluggable
 
 
 
@@ -22,7 +23,7 @@ import tadpole.array.core       as core
 
 # --- Zero gradient --------------------------------------------------------- #
 
-class ZeroGrad(core.ArrayLike, core.Pluggable):
+class ZeroGrad(ArrayLike, Pluggable):
 
    # --- Construction --- #
 
@@ -166,7 +167,7 @@ class ZeroGrad(core.ArrayLike, core.Pluggable):
 
 # --- Sparse gradient ------------------------------------------------------- #
 
-class SparseGrad(core.ArrayLike, core.Pluggable):
+class SparseGrad(ArrayLike, Pluggable):
 
    # --- Construction --- #
 
@@ -216,7 +217,10 @@ class SparseGrad(core.ArrayLike, core.Pluggable):
 
    def todense(self):
 
-       return op.put(self.space().zeros(), self._idxs, self._vals)
+       zeros = self._backend.zeros(self.shape, dtype=self.dtype)
+       out   = self._backend.put(zeros, self._idxs, self._vals)
+
+       return core.asarray(out, backend=self._backend)
 
 
    def withdata(self, data):

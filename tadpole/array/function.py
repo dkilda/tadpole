@@ -6,8 +6,8 @@ import numpy as np
 
 import tadpole.util as util
 
-import tadpole.array.operations as op
-import tadpole.array.core       as core
+import tadpole.array.logical as logical
+import tadpole.array.core    as core
 
 
 
@@ -275,7 +275,7 @@ class Args:
        log.typ(self, other)
 
        if bool(log):
-          return op.allallclose(self._args, other._args, **opts)    
+          return logical.allallclose(self._args, other._args, **opts)    
 
        return False
 
@@ -286,7 +286,7 @@ class Args:
        log.typ(self, other)
 
        if bool(log):
-          return op.allallequal(self._args, other._args)    
+          return logical.allallequal(self._args, other._args)    
 
        return False
 

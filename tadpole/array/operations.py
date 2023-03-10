@@ -6,16 +6,8 @@ import numpy as np
 
 import tadpole.util as util
 
-"""
-Move the *implementations* of add/sub/mul/getitem to core.py and 
-comparisons to comparisons.py: that way core.py and function.py 
-won't depend on operations.py anymore! 
-
-"""
-
-
-import tadpole.array.grad     as grad # Fixes a circular import error
 import tadpole.array.core     as core
+import tadpole.array.logical  as logical
 import tadpole.array.function as function
 
 from tadpole.array.function import (
@@ -134,24 +126,11 @@ def shape(x):
 
 # --- Array comparisons ----------------------------------------------------- # 
 
-def allequal(x, y):
+allequal = logical.allequal
+allclose = logical.allclose
 
-    return x.allequal(y)
-
-
-def allclose(x, y, **opts):
-
-    return x.allclose(y, **opts)
-
-
-def allallequal(xs, ys):
-
-    return all(allequal(x, y) for x, y in zip(xs, ys))
-
-
-def allallclose(xs, ys, **opts):
-
-    return all(allclose(x, y, **opts) for x, y in zip(xs, ys))
+allallequal = logical.allallequal
+allallclose = logical.allallclose
 
 
 
@@ -175,31 +154,40 @@ def put(x, idxs, vals, accumulate=False):
 ###############################################################################
 
 
-# --- Array operations: unary ----------------------------------------------- #
+# --- Array member methods: arithmetics and element access ------------------ # 
 
 def getitem(x, idx):
-
-    def fun(backend, v):
-        return v[idx]
-
-    return Args(x).pluginto(TransformCall(fun))
+    return x[idx]
 
 
+@typecast_unary
+def neg(x):
+    return -x
+
+
+@typecast_binary
+def add(x, y):
+    return x + y
+
+
+@typecast_binary
+def sub(x, y):
+    return x - y
+
+
+@typecast_binary
+def mul(x, y):
+    return x * y
+
+
+
+
+# --- Array operations: unary ----------------------------------------------- #
 
 def reshape(x, shape):
 
     def fun(backend, v):
         return backend.reshape(v, shape)
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-@typecast_unary
-def neg(x):
-
-    def fun(backend, v):
-        return backend.neg(v)
 
     return Args(x).pluginto(TransformCall(fun))
 
@@ -238,33 +226,7 @@ def addgrads(x, y):
 
 # --- Array operations: binary ---------------------------------------------- #
 
-@typecast_binary
-def add(x, y):
 
-    def fun(backend, v, u):
-        return backend.add(v, u)
-
-    return Args(x, y).pluginto(TransformCall(fun))
-
-
-
-@typecast_binary
-def sub(x, y):
-
-    def fun(backend, v, u):
-        return backend.sub(v, u)
-
-    return Args(x, y).pluginto(TransformCall(fun))
-
-
-
-@typecast_binary
-def mul(x, y):
-
-    def fun(backend, v, u):
-        return backend.mul(v, u)
-        
-    return Args(x, y).pluginto(TransformCall(fun))
 
 
 

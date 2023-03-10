@@ -6,9 +6,10 @@ import numpy as np
 
 import tadpole.util as util
 
-import tadpole.array.backends   as backends
-import tadpole.array.operations as op
-import tadpole.array.grad       as grad
+import tadpole.array.backends as backends
+import tadpole.array.grad     as grad
+
+from tadpole.array.types import ArrayLike, Pluggable
 
 
 
@@ -356,126 +357,6 @@ class ArraySpace(Space):
 ###############################################################################
 
 
-# --- Pluggable interface --------------------------------------------------- #
-
-class Pluggable(abc.ABC):
-
-   @abc.abstractmethod
-   def pluginto(self, funcall):
-       pass
-
-
-
-
-# --- ArrayLike interface --------------------------------------------------- #
-
-class ArrayLike(abc.ABC):
-
-   # --- Using in gradient accumulations --- #
-
-   @abc.abstractmethod
-   def addto(self, other):
-       pass
-
-
-   # --- Basic functionality --- #
-
-   @abc.abstractmethod
-   def copy(self, **opts):
-       pass
-
-   @abc.abstractmethod
-   def todense(self):
-       pass
-
-   @abc.abstractmethod
-   def withdata(self, data):
-       pass
-
-   @abc.abstractmethod
-   def space(self):
-       pass
-
-   @abc.abstractmethod
-   def item(self, *idx):
-       pass
-
-
-   # --- Array properties --- #
-
-   @property
-   @abc.abstractmethod
-   def dtype(self):
-       pass
-
-   @property
-   @abc.abstractmethod
-   def size(self):
-       pass
-
-   @property
-   @abc.abstractmethod 
-   def ndim(self):
-       pass
-
-   @property
-   @abc.abstractmethod
-   def shape(self):
-       pass
-
-
-   # --- Comparisons --- #
-
-   @abc.abstractmethod
-   def allequal(self, other):
-       pass
-
-   @abc.abstractmethod
-   def allclose(self, other, **opts):
-       pass
-
-   @abc.abstractmethod
-   def __eq__(self, other):
-       pass
-
-
-   # --- Arithmetics and element access --- # 
-
-   @abc.abstractmethod
-   def __getitem__(self, idx):
-       pass
-
-   @abc.abstractmethod
-   def __neg__(self):
-       pass
-
-   @abc.abstractmethod
-   def __add__(self, other):
-       pass
-
-   @abc.abstractmethod
-   def __sub__(self, other):
-       pass
-
-   @abc.abstractmethod
-   def __mul__(self, other):
-       pass
-
-   @abc.abstractmethod
-   def __radd__(self, other):
-       pass
-
-   @abc.abstractmethod
-   def __rsub__(self, other):
-       pass
-
-   @abc.abstractmethod
-   def __rmul__(self, other):
-       pass
-
-
-
-
 # --- Array ----------------------------------------------------------------- #
 
 class Array(ArrayLike, Pluggable):
@@ -598,34 +479,34 @@ class Array(ArrayLike, Pluggable):
 
    def __eq__(self, other):
  
-       return self.allclose(other)
+       return self.allequal(other)
 
 
    # --- Arithmetics and element access --- # 
 
    def __getitem__(self, idx):
 
-       return op.getitem(self, idx)  
+       return asarray(self._data[idx], backend=self._backend) 
 
 
    def __neg__(self):
 
-       return op.neg(self)
+       return asarray(-self._data, backend=self._backend) 
 
 
    def __add__(self, other):
 
-       return op.add(self, other)
+       return self._apply(other, self._backend.add)
 
 
    def __sub__(self, other):
 
-       return op.sub(self, other)
+       return self._apply(other, self._backend.sub)
 
 
    def __mul__(self, other):
 
-       return op.mul(self, other)
+       return self._apply(other, self._backend.mul)
 
 
    def __radd__(self, other):
@@ -641,6 +522,18 @@ class Array(ArrayLike, Pluggable):
    def __rmul__(self, other):
 
        return self.__mul__(other)
+
+
+   # --- Private helper methods --- # 
+
+   def _apply(self, other, fun):
+
+       if not isinstance(other, ArrayLike):
+          other = self.withdata(other)
+
+       out = fun(self._data, other._data)
+
+       return self.__class__(self._backend, out) 
 
 
 
