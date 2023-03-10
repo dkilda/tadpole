@@ -2,9 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import abc
-import numpy as np
-
-import tadpole.util as util
 
 
 
