@@ -20,9 +20,9 @@ from tadpole.util import TupleLike
 ###############################################################################
 
 
-# --- Adjointable interface ------------------------------------------------- #
+# --- OpWithAdjoint interface ----------------------------------------------- #
 
-class Adjointable(abc.ABC):
+class OpWithAdjoint(abc.ABC):
 
    @abc.abstractmethod
    def vjp(self, seed):
@@ -37,7 +37,7 @@ class Adjointable(abc.ABC):
 
 # --- Adjoint operator ------------------------------------------------------ #
 
-class AdjointOp(Adjointable):
+class AdjointOp(OpWithAdjoint):
 
    def __init__(self, fun, adxs, out, args):
 
@@ -100,7 +100,7 @@ class AdjointOp(Adjointable):
 
 # --- Null adjoint operator ------------------------------------------------- #
 
-class NullAdjointOp(Adjointable):
+class NullAdjointOp(OpWithAdjoint):
 
    def __repr__(self):
 

@@ -13,9 +13,10 @@ import tadpole.autodiff.node  as an
 import tadpole.autodiff.graph as ag
 import tadpole.autodiff.grad  as ad
 
+"""
 import tadpole.autodiff.map_jvp as jvpmap
 import tadpole.autodiff.map_vjp as vjpmap
-
+"""
 
 
 
@@ -46,7 +47,7 @@ class TestAdjointOp:
    ])
    def test_eq(self, nargs, adxs):
 
-       x = data.adjoint_dat(nargs, adxs)
+       x = data.adjoint_dat(nargs, len(adxs), adxs)
 
        opA = an.AdjointOp(x.fun, x.adxs, x.out, x.args)
        opB = an.AdjointOp(x.fun, x.adxs, x.out, x.args)
@@ -69,8 +70,8 @@ class TestAdjointOp:
    ])
    def test_ne(self, nargs, adxs):
 
-       x = data.adjoint_dat(nargs, adxs)
-       y = data.adjoint_dat(nargs, adxs)
+       x = data.adjoint_dat(nargs, len(adxs), adxs)
+       y = data.adjoint_dat(nargs, len(adxs), adxs)
 
        ops = common.combos(an.AdjointOp)(
                 (x.fun, x.adxs, x.out, x.args), 
@@ -97,12 +98,11 @@ class TestAdjointOp:
    ])
    def test_vjp(self, nargs, valency, adxs):
 
-       w = data.reverse_adjfun_dat(valency)
-       x = data.adjoint_dat(nargs, adxs)
-    
-       vjpmap.add_raw(x.fun, fake.Fun(w.adjfun, x.adxs, x.out, *x.args)) 
+       w = data.adjointop_dat(nargs, valency, adxs)
+
+       # vjpmap.add_raw(x.fun, fake.Fun(w.adjfun, x.adxs, x.out, *x.args)) 
                           
-       assert tuple(x.op.vjp(w.seed)) == w.grads
+       assert tuple(w.op.vjp(w.seed)) == w.vjpgrads
 
 
    @pytest.mark.parametrize("nargs, valency, adxs", [
@@ -120,12 +120,11 @@ class TestAdjointOp:
    ])
    def test_jvp(self, nargs, valency, adxs):
 
-       w = data.forward_adjfun_dat(valency)
-       x = data.adjoint_dat(nargs, adxs)
+       w = data.adjointop_dat(nargs, valency, adxs)
 
-       jvpmap.add_raw(x.fun, fake.Fun(w.adjfun, x.adxs, x.out, *x.args))
+       # jvpmap.add_raw(x.fun, fake.Fun(w.adjfun, x.adxs, x.out, *x.args))
 
-       assert tuple(x.op.jvp(w.seed)) == w.grads
+       assert tuple(w.op.jvp(w.seed)) == w.jvpgrads
 
 
 
@@ -682,7 +681,7 @@ class TestParents:
        x = data.forward_parents_dat(valency)
         
        source = fake.NodeLike()
-       op     = fake.Adjoint()
+       op     = fake.OpWithAdjoint()
        gate   = an.ForwardGate(x.parents, op)
        node   = an.node(source, layer, gate)
 
@@ -696,7 +695,7 @@ class TestParents:
        x = data.reverse_parents_dat(valency)
         
        source = fake.NodeLike()
-       op     = fake.Adjoint()
+       op     = fake.OpWithAdjoint()
        gate   = an.ReverseGate(x.parents, op)
        node   = an.node(source, layer, gate)
 

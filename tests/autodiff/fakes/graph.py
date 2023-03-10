@@ -15,6 +15,40 @@ import tadpole.autodiff.graph as ag
 
 ###############################################################################
 ###                                                                         ###
+###  Autodiff function wrappers                                             ###
+###  for differentiable and non-differentiable functions                    ###
+###                                                                         ###
+###############################################################################
+
+
+# --- FunWithAdjoint interface ---------------------------------------------- #
+
+class FunWithAdjoint(ag.FunWithAdjoint):
+
+   def __init__(self, **data):  
+
+       self._fun = fake.FunMap(**data)
+
+
+   def __call__(self, *args, **kwargs):
+
+       return self._fun["call", fake.Value()](*args, **kwargs)
+
+
+   def vjp(self, *args, **kwargs):
+
+       return self._fun["vjp", lambda g: fake.Value()](*args, **kwargs)
+
+
+   def jvp(self, *args, **kwargs):
+
+       return self._fun["jvp", lambda g: fake.Value()](*args, **kwargs)
+
+
+
+
+###############################################################################
+###                                                                         ###
 ###  Function arguments and their concatenation                             ###
 ###                                                                         ###
 ###############################################################################

@@ -14,6 +14,8 @@ import tadpole.autodiff.node  as an
 import tadpole.autodiff.graph as ag
 import tadpole.autodiff.grad  as ad
 
+import tadpole.autodiff.adjointmap as adj 
+
 
 
 
@@ -121,7 +123,49 @@ class TestDifferentiable:
        x        = data.differentiable_funwrap_dat(args_dat.nodes)
 
        assert x.funwrap(*x.args) == x.out
- 
+
+
+   @pytest.mark.parametrize("n, adxs, layers", [
+      [1, (0,),  (0,)],
+      [2, (0,),  (1,)],
+      [2, (1,),  (0,)],
+      [2, (0,1), (0,0)],
+      [3, (0,2), (0,1)],
+   ])   
+   def test_vjp(self, n, adxs, layers):
+
+       args_dat = data.args_dat(n, adxs, layers)
+
+       vjpmap = adj.VjpMap()
+
+       x = data.differentiable_funwrap_dat(args_dat.nodes, vjpmap=vjpmap)
+       w = data.adjointop_dat(n, len(adxs), adxs)
+
+       vjpmap.add_raw(x.funwrap, w.fun.vjp) 
+
+       assert x.funwrap.vjp(w.adxs, w.out, *w.args) == w.vjpfun
+
+
+   @pytest.mark.parametrize("n, adxs, layers", [
+      [1, (0,),  (0,)],
+      [2, (0,),  (1,)],
+      [2, (1,),  (0,)],
+      [2, (0,1), (0,0)],
+      [3, (0,2), (0,1)],
+   ])   
+   def test_jvp(self, n, adxs, layers):
+
+       args_dat = data.args_dat(n, adxs, layers)
+
+       jvpmap = adj.JvpMap()
+
+       x = data.differentiable_funwrap_dat(args_dat.nodes, jvpmap=jvpmap)
+       w = data.adjointop_dat(n, len(adxs), adxs)
+
+       jvpmap.add_raw(x.funwrap, w.fun.jvp) 
+
+       assert x.funwrap.jvp(w.adxs, w.out, *w.args) == w.jvpfun
+
 
 
 

@@ -19,7 +19,7 @@ from .nary import (
 
 
 from .node import (
-   forward_adjfun_dat,  reverse_adjfun_dat,  adjoint_dat,
+   forward_adjfun_dat,  reverse_adjfun_dat,  adjointop_dat,
    forward_flow_dat,    reverse_flow_dat,    null_flow_dat,
    forward_gate_dat,    reverse_gate_dat,
    forward_node_dat,    reverse_node_dat,    node_dat, point_dat,

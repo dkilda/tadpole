@@ -86,7 +86,13 @@ FunWrapData = collections.namedtuple("FunWrapData", [
 
 
 
-def differentiable_funwrap_dat(args):
+def differentiable_funwrap_dat(args, vjpmap=None, jvpmap=None):
+
+    if vjpmap is None:
+       vjpmap = adjointmap._VJPMAP
+
+    if jvpmap is None:
+       jvpmap = adjointmap._JVPMAP
 
     out = fake.NodeLike()
 
@@ -95,7 +101,7 @@ def differentiable_funwrap_dat(args):
     make_envelope = fake.Fun(envelope, *args)
 
     fun     = fake.Fun(None)
-    funwrap = ag.Differentiable(fun, make_envelope)
+    funwrap = ag.Differentiable(fun, make_envelope, vjpmap, jvpmap)
 
     applywrap.update_args(funwrap, fun)
 
@@ -165,10 +171,10 @@ def args_dat(n=1, adxs=(0,), layers=(0,)):
     args = ag.Args(*rawargs)
 
     concat = ag.Concatenation(
-                                   util.Sequence(nodes), 
-                                   util.Sequence(sources), 
-                                   util.Sequence(layers)
-                                  )
+                              util.Sequence(nodes), 
+                              util.Sequence(sources), 
+                              util.Sequence(layers)
+                             )
     pack = ag.Pack(concat)
 
     return ArgsData(args, concat, pack,

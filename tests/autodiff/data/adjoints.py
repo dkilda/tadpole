@@ -8,10 +8,8 @@ from tests.common import arepeat, arange, amap
 import tests.autodiff.fakes as fake
 import tests.autodiff.data  as data
 
-import tadpole.autodiff.map_adjoints as adj
-import tadpole.autodiff.map_jvp      as jvpmap
-import tadpole.autodiff.map_vjp      as vjpmap
-import tadpole.util                  as util
+import tadpole.util                as util
+import tadpole.autodiff.adjointmap as adj
 
 
 
@@ -54,10 +52,10 @@ def jvpmap_dat(valency=1):
     def fun(*args):
         return fake.Value()
 
-    netjvpfun = jvpmap.NetJvpFun(concat_jvpfun)
-    _jvpmap   = jvpmap.JvpMap()
+    netjvpfun = adj.NetJvpFun(concat_jvpfun)
+    jvpmap    = adj.JvpMap()
 
-    return JvpMapData(_jvpmap, netjvpfun, 
+    return JvpMapData(jvpmap, netjvpfun, 
                       concat_jvpfun, jvpfuns, fun, 
                       out, adxs, grads, args, outputs)
 
@@ -95,64 +93,12 @@ def vjpmap_dat(valency=1):
     def fun(*args):
         return fake.Value()
 
-    netvjpfun = vjpmap.NetVjpFun(concat_vjpfun)
-    _vjpmap   = vjpmap.VjpMap()
+    netvjpfun = adj.NetVjpFun(concat_vjpfun)
+    vjpmap    = adj.VjpMap()
 
-    return VjpMapData(_vjpmap, netvjpfun, 
+    return VjpMapData(vjpmap, netvjpfun, 
                       concat_vjpfun, vjpfuns, fun, 
                       out, adxs, grad, args, outputs)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

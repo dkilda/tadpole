@@ -98,9 +98,28 @@ class Graph(GraphLike):
 ###############################################################################
 
 
+# --- FunWithAdjoint interface ---------------------------------------------- #
+
+class FunWithAdjoint(abc.ABC):
+
+   @abc.abstractmethod
+   def __call__(self, *args, **kwargs):
+       pass
+
+   @abc.abstractmethod
+   def vjp(self, *args, **kwargs): 
+       pass
+
+   @abc.abstractmethod
+   def jvp(self, *args, **kwargs):
+       pass
+
+
+
+
 # --- Differentiable function wrap ------------------------------------------ #
 
-class Differentiable:
+class Differentiable(FunWithAdjoint):
 
    def __init__(self, fun, envelope, vjpmap, jvpmap):
 

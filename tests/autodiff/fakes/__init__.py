@@ -17,7 +17,7 @@ from .nary import (
 
 
 from .node import (
-   Adjoint,
+   OpWithAdjoint,
    FlowLike,
    GateLike,
    NodeLike,
@@ -26,6 +26,7 @@ from .node import (
 
 
 from .graph import (
+   FunWithAdjoint,
    ArgsLike,
    Concatenable,
    Cohesive,

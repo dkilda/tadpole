@@ -17,9 +17,9 @@ import tadpole.autodiff.node as an
 ###############################################################################
 
 
-# --- Adjoint interface ----------------------------------------------------- #
+# --- OpWithAdjoint interface ----------------------------------------------- #
 
-class Adjoint(an.Adjoint):
+class OpWithAdjoint(an.OpWithAdjoint):
 
    def __init__(self, **data):  
 

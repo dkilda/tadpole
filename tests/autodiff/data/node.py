@@ -54,24 +54,37 @@ def reverse_adjfun_dat(valency=1):
 
 # --- Adjoint data ---------------------------------------------------------- #
 
-AdjointData = collections.namedtuple("AdjointData", [
-                 "op", "fun", "adxs", "out", "args", 
-              ])
+AdjointOpData = collections.namedtuple("AdjointOpData", [
+                   "op", 
+                   "fun", "adxs", "out", "args", 
+                   "vjpfun", "vjpgrads", "vjpseed",
+                   "jvpfun", "jvpgrads", "jvpseed",
+                ])
 
 
 
 
-def adjoint_dat(nargs=1, adxs=(0,)):  
+def adjointop_dat(nargs=1, valency=1, adxs=(0,)):  
+
+    vjpdat = reverse_adjfun_dat(valency)
+    jvpdat = forward_adjfun_dat(valency)
 
     out  = fake.NodeLike()
     args = arepeat(fake.NodeLike, nargs)
 
-    fun = fake.Fun(out, args)
-    op  = an.AdjointOp(fun, adxs, out, args)
+    fun = fake.FunWithAdjoint(
+             call=fake.Fun(out, args), 
+             vjp=fake.Fun(vjpdat.adjfun, adxs, out, *args),
+             jvp=fake.Fun(jvpdat.adjfun, adxs, out, *args),
+          )
 
-    return AdjointData(
+    op = an.AdjointOp(fun, adxs, out, args)
+
+    return AdjointOpData(
               op, 
               fun, adxs, out, args, 
+              vjpdat.adjfun, vjpdat.grads, vjpdat.seed,
+              jvpdat.adjfun, jvpdat.grads, jvpdat.seed,
            )
 
 
@@ -151,7 +164,7 @@ GateData = collections.namedtuple("GateData", [
 def forward_gate_dat(valency=1):
 
     adjfun = forward_adjfun_dat(valency)
-    op     = fake.Adjoint(jvp=fake.Fun(adjfun.grads, adjfun.seed))
+    op     = fake.OpWithAdjoint(jvp=fake.Fun(adjfun.grads, adjfun.seed))
 
     parents = an.Parents(*arepeat(fake.NodeLike, valency))
     gate    = an.ForwardGate(parents, op) 
@@ -164,7 +177,7 @@ def forward_gate_dat(valency=1):
 def reverse_gate_dat(valency=1):
 
     adjfun = reverse_adjfun_dat(valency)
-    op     = fake.Adjoint(vjp=fake.Fun(adjfun.grads, adjfun.seed))
+    op     = fake.OpWithAdjoint(vjp=fake.Fun(adjfun.grads, adjfun.seed))
 
     parents = an.Parents(*arepeat(fake.NodeLike, valency))
     gate    = an.ReverseGate(parents, op) 
