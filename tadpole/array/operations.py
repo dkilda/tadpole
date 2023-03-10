@@ -6,6 +6,14 @@ import numpy as np
 
 import tadpole.util as util
 
+"""
+Move the *implementations* of add/sub/mul/getitem to core.py and 
+comparisons to comparisons.py: that way core.py and function.py 
+won't depend on operations.py anymore! 
+
+"""
+
+
 import tadpole.array.grad     as grad # Fixes a circular import error
 import tadpole.array.core     as core
 import tadpole.array.function as function
