@@ -199,9 +199,6 @@ class Fun:
        if self._out is None:
           return Value()
 
-       if not self._args:
-          return self._out
-
        if isinstance(self._out, Map):
           return self._out[args]
 

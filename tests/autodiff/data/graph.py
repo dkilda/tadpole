@@ -122,6 +122,8 @@ def nondifferentiable_funwrap_dat(args):
 
     fun     = fake.Fun(None)
     funwrap = ag.NonDifferentiable(fun, make_envelope)
+ 
+    applyfun.update_args(fun)
 
     return FunWrapData(funwrap, fun, make_envelope, envelope, args, out)
 
