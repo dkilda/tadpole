@@ -11,21 +11,52 @@ import tadpole.arraywrap.operations as op
 
 ###############################################################################
 ###                                                                         ###
-###  JVP's of array operations                                              ###
+###  JVP's of non-differentiable array operations                           ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- Array operations: unary ----------------------------------------------- #
-
-ad.makejvp(op.neg, lambda g, out, x: op.neg(g))
-ad.makejvp(op.sin, lambda g, out, x: op.mul(g, op.cos(x)))
-ad.makejvp(op.cos, lambda g, out, x: op.neg(op.mul(g, op.sin(x))))
+# --- Array member methods: basic functionality ----------------------------- #
 
 
+# --- Array member methods: properties -------------------------------------- #
 
 
-# --- Array operations: binary (for gradient accumulation) ------------------ #
+# --- Logical functions: array comparisons ---------------------------------- # 
+
+
+# --- Array value methods --------------------------------------------------- #
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  JVP's of differentiable array operations                               ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Array member methods: arithmetics and element access ------------------ # 
+
+ad.makejvp(op.neg, lambda g, out, x: -g)
+
+
+ad.makejvp(op.add, lambda g, out, x, y: g, 
+                   lambda g, out, x, y: g)
+
+
+ad.makejvp(op.sub, lambda g, out, x, y:  g, 
+                   lambda g, out, x, y: -g)
+
+
+ad.makejvp(op.mul, lambda g, out, x, y: y * g, 
+                   lambda g, out, x, y: x * g)
+
+
+
+
+# --- Array methods: for gradient accumulation ------------------------------ #
 
 ad.makejvp(op.addgrads, lambda g, out, x, y: g, 
                         lambda g, out, x, y: g)
@@ -33,16 +64,30 @@ ad.makejvp(op.addgrads, lambda g, out, x, y: g,
 
 
 
-# --- Array operations: binary ---------------------------------------------- #
+# --- Array shape methods --------------------------------------------------- #
 
-ad.makejvp(op.add, lambda g, out, x, y: g, 
-                   lambda g, out, x, y: g)
 
-ad.makejvp(op.sub, lambda g, out, x, y: g, 
-                   lambda g, out, x, y: op.neg(g))
+# --- Array value methods --------------------------------------------------- #
 
-ad.makejvp(op.mul, lambda g, out, x, y: op.mul(y, g), 
-                   lambda g, out, x, y: op.mul(x, g))
+
+# --- Simple math operations ------------------------------------------------ #
+
+ad.makejvp(op.sin, lambda g, out, x:  g * op.cos(x))
+ad.makejvp(op.cos, lambda g, out, x: -g * op.sin(x))
+
+
+
+# --- Linear algebra: multiplication methods -------------------------------- #
+
+
+# --- Linear algebra: decomposition methods --------------------------------- #
+
+
+# --- Linear algebra: matrix exponential ------------------------------------ #
+
+
+# --- Linear algebra: misc methods ------------------------------------------ #
+
 
 
 

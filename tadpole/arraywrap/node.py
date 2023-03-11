@@ -19,6 +19,7 @@ from tadpole.array.grad import ZeroGrad, SparseGrad
 
 class Node(an.Node, ArrayLike): 
 
+
    # --- Array methods: gradient accumulation --- #
 
    def addto(self, other):
