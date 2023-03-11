@@ -124,13 +124,32 @@ def shape(x):
 
 
 
-# --- Logical functions: array comparisons ---------------------------------- # 
+# --- Logical functions ----------------------------------------------------- # 
 
 allequal = logical.allequal
 allclose = logical.allclose
 
 allallequal = logical.allallequal
 allallclose = logical.allallclose
+
+
+@typecast_binary
+def logical_and(x, y):
+
+    def fun(backend, u, v):
+        return backend.logical_and(u, v)
+
+    return Args(x, y).pluginto(TransformCall(fun))
+
+
+
+@typecast_binary
+def not_equal(x, y):
+
+    def fun(backend, u, v):
+        return backend.not_equal(u, v)
+
+    return Args(x, y).pluginto(TransformCall(fun))
 
 
 
@@ -187,6 +206,15 @@ def put(x, idxs, vals, accumulate=False):
 
 
 
+def argsort(x, axis=-1, **opts):
+
+    def fun(backend, v):
+        return backend.argsort(v, axis, **opts)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
 
 ###############################################################################
 ###                                                                         ###
@@ -229,11 +257,6 @@ def div(x, y):
 @typecast_binary
 def power(x, y):
     return x**y
-
-
-@typecast_unary
-def npower(x, n):
-    return x**n
 
 
 
@@ -340,6 +363,15 @@ def clip(x, minval, maxval, **opts):
         return backend.clip(v, minval, maxval, **opts)
 
     return Args(x).pluginto(TransformCall(fun))
+
+
+
+def where(condition, x, y):
+
+    def fun(backend, cond_uv, u, v): 
+        return backend.where(cond_uv, u, v)
+
+    return Args(condition, x, y).pluginto(TransformCall(fun))
 
 
 

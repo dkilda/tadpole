@@ -294,6 +294,28 @@ class TorchBackend(backend.Backend):
    def put(self, array, idxs, vals, accumulate=False):
 
        return array.index_put(idxs, vals, accumulate=accumulate)
+
+
+   def where(self, condition, x, y):
+       
+       return torch.where(condition, x, y)
+
+
+   def argsort(self, array, axis=-1, **opts):
+
+       return torch.argsort(array, axis=axis, **opts)
+
+
+   # --- Logical operations --- #
+
+   def logical_and(self, x, y):
+
+       return torch.logical_and(x, y)
+
+
+   def not_equal(self, x, y):
+
+       return torch.ne(x, y)
        
 
    # --- Simple math operations --- #

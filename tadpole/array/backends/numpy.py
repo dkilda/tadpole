@@ -251,6 +251,28 @@ class NumpyBackend(backend.Backend):
        return out
 
 
+   def where(self, condition, x, y):
+       
+       return np.where(condition, x, y)
+
+
+   def argsort(self, array, axis=-1, **opts):
+
+       return np.argsort(array, axis=axis, **opts)
+
+
+   # --- Logical operations --- #
+
+   def logical_and(self, x, y):
+
+       return np.logical_and(x, y)
+
+
+   def not_equal(self, x, y):
+
+       return np.not_equal(x, y)
+
+
    # --- Simple math operations --- #
 
    def conj(self, array, **opts):

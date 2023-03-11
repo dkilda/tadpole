@@ -160,6 +160,25 @@ class Backend(abc.ABC):
    def put(self, array, idxs, vals, accumulate=False):
        pass
 
+   @abc.abstractmethod
+   def where(self, condition, x, y):
+       pass
+
+   @abc.abstractmethod
+   def argsort(self, array, axis=-1, **opts):
+       pass
+
+
+   # --- Logical operations --- #
+
+   @abc.abstractmethod
+   def logical_and(self, x, y):
+       pass
+
+   @abc.abstractmethod
+   def not_equal(self, x, y):
+       pass
+
 
    # --- Simple math operations --- #
 

@@ -35,7 +35,10 @@ ndim  = ad.nondifferentiable(op.ndim)
 shape = ad.nondifferentiable(op.shape)
 
 
-# --- Logical functions: array comparisons ---------------------------------- # 
+# --- Logical functions ----------------------------------------------------- # 
+
+logical_and = ad.nondifferentiable(op.logical_and)
+not_equal   = ad.nondifferentiable(op.not_equal)
 
 allequal = ad.nondifferentiable(op.allequal)
 allclose = ad.nondifferentiable(op.allclose)
@@ -51,6 +54,7 @@ anyof         = ad.nondifferentiable(op.anyof)
 sign          = ad.nondifferentiable(op.sign)
 count_nonzero = ad.nondifferentiable(op.count_nonzero)
 put           = ad.nondifferentiable(op.put)
+argsort       = ad.nondifferentiable(op.argsort)
 
 
 
@@ -73,7 +77,6 @@ mul = ad.differentiable(op.mul)
 div = ad.differentiable(op.div)
 
 power  = ad.differentiable(op.power)
-npower = ad.differentiable(op.npower)
 
 
 # --- Array methods: for gradient accumulation ------------------------------ #
@@ -99,6 +102,8 @@ absolute = ad.differentiable(op.absolute)
 
 flip = ad.differentiable(op.flip)
 clip = ad.differentiable(op.clip)
+
+where = ad.differentiable(op.where)
 
 
 # --- Simple math operations ------------------------------------------------ #
