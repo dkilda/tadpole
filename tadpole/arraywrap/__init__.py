@@ -33,41 +33,7 @@ from .node import (
 )
 
 
-from .operations import (
-   dtype,
-   size,
-   ndim,
-   shape,
-   allequal,
-   allclose,
-)
-
-
-from .operations import (
-   getitem,  
-   put,
-   reshape,
-)
-
-
-from .operations import (
-   sin,
-   cos,   
-)
-
-
-from .operations import (
-   addgrads,
-   add,
-   sub,
-   mul,   
-)
-
-
-from .operations import (
-   einsum,   
-)
-
+from .operations import *
 
 
 

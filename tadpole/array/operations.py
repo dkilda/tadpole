@@ -80,7 +80,7 @@ def typecast_binary(fun):
 ###############################################################################
 
 
-# --- Basic array functionality --------------------------------------------- #
+# --- Array member methods: basic functionality ----------------------------- #
 
 def copy(x, **opts):
     return x.copy(**opts)
@@ -104,7 +104,7 @@ def item(x, *idx):
 
 
 
-# --- Array properties ------------------------------------------------------ #
+# --- Array member methods: properties -------------------------------------- #
 
 def dtype(x):
     return x.dtype
@@ -124,7 +124,7 @@ def shape(x):
 
 
 
-# --- Array comparisons ----------------------------------------------------- # 
+# --- Logical functions: array comparisons ---------------------------------- # 
 
 allequal = logical.allequal
 allclose = logical.allclose
@@ -135,7 +135,48 @@ allallclose = logical.allallclose
 
 
 
-# --- Misc array operations ------------------------------------------------- #
+# --- Array shape methods --------------------------------------------------- #
+
+
+
+
+# --- Array value methods --------------------------------------------------- #
+
+def allof(x, axis=None, **opts):
+
+    def fun(backend, v): 
+        return backend.all(v, axis, **opts)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+def anyof(x, axis=None, **opts):
+
+    def fun(backend, v): 
+        return backend.any(v, axis, **opts)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+def sign(x, **opts):
+
+    def fun(backend, v): 
+        return backend.sign(v, **opts)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+def count_nonzero(x, axis=None, **opts):
+
+    def fun(backend, v): 
+        return backend.count_nonzero(v, axis, **opts)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
 
 def put(x, idxs, vals, accumulate=False): 
 
@@ -180,14 +221,166 @@ def mul(x, y):
     return x * y
 
 
+@typecast_binary
+def div(x, y):
+    return x / y
 
 
-# --- Array operations: unary ----------------------------------------------- #
+@typecast_binary
+def power(x, y):
+    return x**y
+
+
+@typecast_unary
+def npower(x, n):
+    return x**n
+
+
+
+
+# --- Array methods: for gradient accumulation ------------------------------ #
+
+@typecast_binary
+def addgrads(x, y):
+
+    return y.addto(x)
+
+
+
+
+# --- Array shape methods --------------------------------------------------- #
 
 def reshape(x, shape):
 
     def fun(backend, v):
         return backend.reshape(v, shape)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+def transpose(x, axes):
+
+    def fun(backend, v):
+        return backend.transpose(v, axes)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+def moveaxis(x, source, destination):
+
+    def fun(backend, v): 
+        return backend.moveaxis(v, source, destination)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+def squeeze(x, axis=None):
+
+    def fun(backend, v): 
+        return backend.squeeze(v, axis)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+def unsqueeze(x, axis):
+
+    def fun(backend, v): 
+        return backend.unsqueeze(v, axis)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+
+# --- Array value methods --------------------------------------------------- #
+ 
+def amax(x, axis=None, **opts):
+
+    def fun(backend, v): 
+        return backend.max(v, axis, **opts)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+def amin(x, axis=None, **opts):
+
+    def fun(backend, v): 
+        return backend.min(v, axis, **opts)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+def absolute(x, **opts):
+
+    def fun(backend, v): 
+        return backend.abs(v, **opts)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+def flip(x, axis=None):
+
+    def fun(backend, v): 
+        return backend.flip(v, axis)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+def clip(x, minval, maxval, **opts):
+
+    def fun(backend, v): 
+        return backend.clip(v, minval, maxval, **opts)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+
+# --- Simple math operations ------------------------------------------------ #
+
+@typecast_unary
+def conj(x, **opts):
+
+    def fun(backend, v):
+        return backend.conj(v, **opts)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+@typecast_unary
+def sqrt(x):
+
+    def fun(backend, v):
+        return backend.sqrt(v)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+@typecast_unary
+def log(x):
+
+    def fun(backend, v):
+        return backend.log(v)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+@typecast_unary
+def exp(x):
+
+    def fun(backend, v):
+        return backend.exp(v)
 
     return Args(x).pluginto(TransformCall(fun))
 
@@ -213,25 +406,128 @@ def cos(x):
 
 
 
+@typecast_unary
+def tan(x):
 
-# --- Array operations: binary (for gradient accumulation) ------------------ #
+    def fun(backend, v):
+        return backend.tan(v)
 
-@typecast_binary
-def addgrads(x, y):
-
-    return y.addto(x)
-
-
-
-
-# --- Array operations: binary ---------------------------------------------- #
+    return Args(x).pluginto(TransformCall(fun))
 
 
 
+@typecast_unary
+def arcsin(x):
+
+    def fun(backend, v):
+        return backend.arcsin(v)
+
+    return Args(x).pluginto(TransformCall(fun))
 
 
 
-# --- Array operations: nary ------------------------------------------------ #
+@typecast_unary
+def arccos(x):
+
+    def fun(backend, v):
+        return backend.arccos(v)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+@typecast_unary
+def arctan(x):
+
+    def fun(backend, v):
+        return backend.arctan(v)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+@typecast_unary
+def sinh(x):
+
+    def fun(backend, v):
+        return backend.sinh(v)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+@typecast_unary
+def cosh(x):
+
+    def fun(backend, v):
+        return backend.cosh(v)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+@typecast_unary
+def tanh(x):
+
+    def fun(backend, v):
+        return backend.tanh(v)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+@typecast_unary
+def arcsinh(x):
+
+    def fun(backend, v):
+        return backend.arcsinh(v)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+@typecast_unary
+def arccosh(x):
+
+    def fun(backend, v):
+        return backend.arccosh(v)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+@typecast_unary
+def arctanh(x):
+
+    def fun(backend, v):
+        return backend.arctanh(v)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+@typecast_unary
+def sumover(x, axis=None, dtype=None, **opts):
+
+    def fun(backend, v):
+        return backend.sumover(v, axis, dtype, **opts)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+@typecast_unary
+def cumsum(x, axis=None, dtype=None, **opts):
+
+    def fun(backend, v):
+        return backend.cumsum(v, axis, dtype, **opts)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+
+# --- Linear algebra: multiplication methods -------------------------------- #
 
 def einsum(equation, *xs, optimize=True):
 
@@ -239,6 +535,104 @@ def einsum(equation, *xs, optimize=True):
         return backend.einsum(equation, *xs, optimize=optimize)
 
     return Args(*xs).pluginto(TransformCall(fun))
+
+
+
+def dot(x, y):
+
+    def fun(backend, u, v):
+        return backend.dot(u, v)
+
+    return Args(x, y).pluginto(TransformCall(fun))
+
+
+
+def kron(x, y):
+
+    def fun(backend, u, v):
+        return backend.kron(u, v)
+
+    return Args(x, y).pluginto(TransformCall(fun))
+
+
+
+
+# --- Linear algebra: decomposition methods --------------------------------- #
+
+def svd(x):
+
+    def fun(backend, v):
+        return backend.svd(v)
+
+    return Args(x).pluginto(SplitCall(fun))
+
+
+
+def qr(x):
+
+    def fun(backend, v):
+        return backend.qr(v)
+
+    return Args(x).pluginto(SplitCall(fun))
+
+
+
+def eig(x):
+
+    def fun(backend, v):
+        return backend.eig(v)
+
+    return Args(x).pluginto(SplitCall(fun))
+
+
+
+def eigh(x):
+
+    def fun(backend, v):
+        return backend.eigh(v)
+
+    return Args(x).pluginto(SplitCall(fun))
+       
+
+
+
+# --- Linear algebra: matrix exponential ------------------------------------ #
+
+def expm(x):
+
+    def fun(backend, v):
+        return backend.expm(v)
+
+    return Args(x).pluginto(TransformCall(fun))
+       
+
+
+
+# --- Linear algebra: misc methods ------------------------------------------ #
+
+def htranspose(x, axes):
+
+    def fun(backend, v):
+        return backend.htranspose(v, axes)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+def norm(x, order=None, axis=None, **opts):
+
+    def fun(backend, v):
+        return backend.htranspose(v, order, axis, **opts)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+
+
+
+
+
 
 
 

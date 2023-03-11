@@ -130,7 +130,7 @@ class ZeroGrad(ArrayLike, Pluggable):
 
    def __neg__(self):
 
-       return -self.todense()
+       return self.todense()
 
 
    def __add__(self, other): 
@@ -145,22 +145,47 @@ class ZeroGrad(ArrayLike, Pluggable):
 
    def __mul__(self, other):
 
-       return self.todense().item()
+       return self.todense()
+
+
+   def __truediv__(self, other):
+
+       return self.todense()
+
+
+   def __pow__(self, other):
+
+       return self.todense() 
 
 
    def __radd__(self, other): 
 
-       return self.__add__(other)  
+       return other  
 
 
    def __rsub__(self, other): 
 
-       return -self.__sub__(other)  
+       return other
 
 
    def __rmul__(self, other):
 
-       return self.__mul__(other)
+       return self.todense()
+
+
+   def __rtruediv__(self, other):
+
+       raise ValueError(
+          "ZeroGrad.__rtruediv__: division by zero encountered!"
+       )
+
+
+   def __rpow__(self, other):
+
+       if not isinstance(other, ArrayLike):
+          other = core.asarray(other)
+
+       return other.space().ones()
 
 
 
@@ -328,19 +353,53 @@ class SparseGrad(ArrayLike, Pluggable):
        return self.todense() * other 
 
 
+   def __truediv__(self, other):
+
+       return self.todense() / other 
+
+
+   def __pow__(self, other):
+
+       return self.todense() ** other 
+
+
    def __radd__(self, other): 
 
-       return self.__add__(other)  
+       return other + self.todense() 
 
 
    def __rsub__(self, other): 
 
-       return -self.__sub__(other)  
+       return other - self.todense() 
 
 
    def __rmul__(self, other):
 
-       return self.__mul__(other)
+       return other * self.todense()
+
+
+   def __rtruediv__(self, other):
+
+       return other / self.todense()
+
+
+   def __rpow__(self, other):
+
+       return other ** self.todense() 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -258,9 +258,19 @@ class NumpyBackend(backend.Backend):
        return np.conj(array, **opts) 
        
 
-   def sqrt(self, array, **opts):
+   def sqrt(self, array):
 
-       return np.sqrt(array, **opts) 
+       return np.sqrt(array) 
+
+
+   def log(self, array): 
+
+       return np.log(array)
+
+
+   def exp(self, array): 
+
+       return np.exp(array)
 
 
    def neg(self, array):
@@ -276,6 +286,56 @@ class NumpyBackend(backend.Backend):
    def cos(self, array):
 
        return np.cos(array)
+
+
+   def tan(self, array):
+
+       return np.tan(array)
+
+
+   def arcsin(self, array):
+       
+       return np.arcsin(array)
+
+
+   def arccos(self, array):
+
+       return np.arccos(array)
+
+
+   def arctan(self, array):
+
+       return np.arctan(array)
+
+
+   def sinh(self, array):
+
+       return np.sinh(array)
+
+
+   def cosh(self, array):
+
+       return np.cosh(array)
+
+
+   def tanh(self, array):
+
+       return np.tanh(array)
+
+
+   def arcsinh(self, array):
+
+       return np.arcsinh(array)
+
+
+   def arccosh(self, array):
+
+       return np.arccosh(array)
+
+
+   def arctanh(self, array):
+
+       return np.arctanh(array)
        
 
    def sumover(self, array, axis=None, dtype=None, **opts):
@@ -308,6 +368,11 @@ class NumpyBackend(backend.Backend):
    def div(self, x, y):
 
        return x / y
+
+
+   def power(self, x, y):
+
+       return np.power(x, y)
        
 
    # --- Linear algebra: multiplication methods --- #

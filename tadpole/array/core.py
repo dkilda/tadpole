@@ -509,31 +509,73 @@ class Array(ArrayLike, Pluggable):
        return self._apply(other, self._backend.mul)
 
 
+   def __truediv__(self, other):
+
+       return self._apply(other, self._backend.div)
+
+
+   def __pow__(self, other):
+
+       return self._apply(other, self._backend.power)
+
+
    def __radd__(self, other):
 
-       return self.__add__(other)
+       return self._apply(other, self._backend.add, reverse=True)
 
  
    def __rsub__(self, other):
 
-       return -self.__sub__(other)
+       return self._apply(other, self._backend.sub, reverse=True)
 
 
    def __rmul__(self, other):
 
-       return self.__mul__(other)
+       return self._apply(other, self._backend.mul, reverse=True)
+
+
+   def __rtruediv__(self, other):
+
+       return self._apply(other, self._backend.div, reverse=True) 
+
+
+   def __rpow__(self, other):
+
+       return self._apply(other, self._backend.power, reverse=True)
 
 
    # --- Private helper methods --- # 
 
-   def _apply(self, other, fun):
+   def _apply(self, other, fun, reverse=False):
 
        if not isinstance(other, ArrayLike):
           other = self.withdata(other)
 
-       out = fun(self._data, other._data)
+       out = fun(*self._args(other))
 
        return self.__class__(self._backend, out) 
+
+
+   def _args(self, other, reverse=False):
+
+       if reverse:
+          return other._data, self._data   
+
+       return self._data, other._data
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

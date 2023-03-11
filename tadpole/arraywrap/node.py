@@ -114,19 +114,41 @@ class Node(an.Node, ArrayLike):
        return op.mul(self, other)
 
 
+   def __truediv__(self, other):
+
+       return op.div(self, other)
+
+
+   def __pow__(self, other):
+
+       return op.power(self, other)
+
+
    def __radd__(self, other):
 
-       return self.__add__(other)
+       return op.add(other, self)
 
  
    def __rsub__(self, other):
 
-       return -self.__sub__(other)
+       return op.sub(other, self)
 
 
    def __rmul__(self, other):
 
-       return self.__mul__(other)
+       return op.mul(other, self)
+
+
+   def __rtruediv__(self, other):
+
+       return op.div(other, self)
+
+
+   def __rpow__(self, other):
+
+       return op.power(other, self)
+
+
 
 
 an.register(Array,      Node)

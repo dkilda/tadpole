@@ -168,7 +168,15 @@ class Backend(abc.ABC):
        pass
 
    @abc.abstractmethod
-   def sqrt(self, array, **opts):
+   def sqrt(self, array):
+       pass
+
+   @abc.abstractmethod
+   def log(self, array):
+       pass
+
+   @abc.abstractmethod
+   def exp(self, array):
        pass
 
    @abc.abstractmethod
@@ -181,6 +189,46 @@ class Backend(abc.ABC):
 
    @abc.abstractmethod
    def cos(self, array):
+       pass
+
+   @abc.abstractmethod
+   def tan(self, array):
+       pass
+
+   @abc.abstractmethod
+   def arcsin(self, array):
+       pass
+
+   @abc.abstractmethod
+   def arccos(self, array):
+       pass
+
+   @abc.abstractmethod
+   def arctan(self, array):
+       pass
+
+   @abc.abstractmethod
+   def sinh(self, array):
+       pass
+
+   @abc.abstractmethod
+   def cosh(self, array):
+       pass
+
+   @abc.abstractmethod
+   def tanh(self, array):
+       pass
+
+   @abc.abstractmethod
+   def arcsinh(self, array):
+       pass
+
+   @abc.abstractmethod
+   def arccosh(self, array):
+       pass
+
+   @abc.abstractmethod
+   def arctanh(self, array):
        pass
 
    @abc.abstractmethod
@@ -208,6 +256,10 @@ class Backend(abc.ABC):
 
    @abc.abstractmethod
    def div(self, x, y):
+       pass
+
+   @abc.abstractmethod
+   def power(self, x, y):
        pass
 
 

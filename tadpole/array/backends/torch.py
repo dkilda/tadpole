@@ -303,9 +303,19 @@ class TorchBackend(backend.Backend):
        return torch.conj(array) 
        
 
-   def sqrt(self, array, **opts):
+   def sqrt(self, array):
 
-       return torch.sqrt(array, **opts) 
+       return torch.sqrt(array)
+
+
+   def log(self, array): 
+
+       return torch.log(array) 
+
+
+   def exp(self, array): 
+
+       return torch.exp(array) 
 
 
    def neg(self, array):
@@ -321,7 +331,57 @@ class TorchBackend(backend.Backend):
    def cos(self, array):
 
        return torch.cos(array)
+
+
+   def tan(self, array):
+
+       return torch.tan(array)
+
+
+   def arcsin(self, array):
        
+       return torch.arcsin(array)
+
+
+   def arccos(self, array):
+
+       return torch.arccos(array)
+
+
+   def arctan(self, array):
+
+       return torch.arctan(array)
+
+
+   def sinh(self, array):
+
+       return torch.sinh(array)
+
+
+   def cosh(self, array):
+
+       return torch.cosh(array)
+
+
+   def tanh(self, array):
+
+       return torch.tanh(array)
+
+
+   def arcsinh(self, array):
+
+       return torch.arcsinh(array)
+
+
+   def arccosh(self, array):
+
+       return torch.arccosh(array)
+
+
+   def arctanh(self, array):
+
+       return torch.arctanh(array)
+
 
    def sumover(self, array, axis=None, dtype=None, **opts):
 
@@ -361,7 +421,12 @@ class TorchBackend(backend.Backend):
 
    def div(self, x, y):
 
-       return torch.div(x, y)       
+       return torch.div(x, y) 
+
+
+   def power(self, x, y):
+
+       return torch.pow(x, y)      
 
 
    # --- Linear algebra: multiplication methods --- #
