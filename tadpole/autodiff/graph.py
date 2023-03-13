@@ -200,11 +200,19 @@ class NonDifferentiable:
 class ArgsLike(abc.ABC):
 
    @abc.abstractmethod
+   def nodify(self):
+       pass
+
+   @abc.abstractmethod
    def concat(self):
        pass
 
    @abc.abstractmethod
-   def pack(self):
+   def pack(self, **kwargs):
+       pass
+
+   @abc.abstractmethod
+   def deshelled(self):
        pass
 
 
@@ -286,10 +294,9 @@ class Args(ArgsLike, TupleLike):
        return concat
 
  
-   @util.cacheable
-   def pack(self):
+   def pack(self, **kwargs):
 
-       return Pack(self.concat())
+       return Pack(self.concat(), **kwargs)
 
 
    def deshelled(self):
@@ -479,9 +486,10 @@ class Packable(abc.ABC):
 
 class Pack(Packable):
 
-   def __init__(self, concat):
+   def __init__(self, concat, **kwargs):
 
        self._concat = concat
+       self._kwargs = kwargs
 
 
    def __repr__(self):
@@ -546,23 +554,25 @@ class Pack(Packable):
 
    def deshelled(self):
 
-       return self._args.pack()
+       return self._args.pack(**self._kwargs)
 
 
-   def _fold(self, funwrap, outputs, out, **kwargs):
+   def _fold(self, funwrap, outputs, out):
 
        if self.innermost():
           return an.point(out)
 
-       op = an.AdjointOp(funwrap, self._adxs, outputs, self._args, kwargs)
+       op = an.AdjointOp(
+          funwrap, self._adxs, outputs, self._args, self._kwargs
+       )
 
        return self._parents.next(out, self._layer, op) 
 
 
-   def fold(self, funwrap, outputs, **kwargs):
+   def fold(self, funwrap, outputs):
 
        def _fold(out):
-           return self._fold(funwrap, outputs, out, **kwargs)
+           return self._fold(funwrap, outputs, out)
 
        return outputs.apply(_fold)
 
@@ -637,7 +647,7 @@ class Envelope(EnvelopeLike):
    def packs(self):
 
        return util.Loop(
-                        self._args.pack(),  
+                        self._args.pack(**self._kwargs),  
                         lambda x: x.deshelled(), 
                         lambda x: x.innermost()
                        )
@@ -659,7 +669,7 @@ class Envelope(EnvelopeLike):
        out = self.apply(fun)
 
        for pack in reversed(self.packs()): 
-           out = pack.fold(funwrap, out, **self._kwargs)
+           out = pack.fold(funwrap, out)
 
        return out
 
