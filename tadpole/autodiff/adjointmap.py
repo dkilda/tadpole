@@ -17,7 +17,7 @@
 def make_adjfun(adjfun):
 
     if adjfun is None: 
-       adjfun = lambda g, out, *args: 0
+       adjfun = lambda g, out, *args, **kwargs: 0
 
     assert callable(adjfun), f"make_adjfun(): invalid adjfun {adjfun}"
 
@@ -35,8 +35,8 @@ def concatenate_adjfuns(*adjfuns, adxs=None):
 
     adjfun_by_adx = {adx: make_adjfun(adjfuns[adx]) for adx in adxs}
 
-    def adjfun(g, adx, out, *args):
-        return adjfun_by_adx[adx](g, out, *args)
+    def adjfun(g, adx, out, *args, **kwargs):
+        return adjfun_by_adx[adx](g, out, *args, **kwargs)
 
     return adjfun  
 
@@ -98,9 +98,12 @@ class NetVjpFun:
        self._vjpfun = vjpfun
 
 
-   def __call__(self, adxs, out, *args):
+   def __call__(self, adxs, out, *args, **kwargs):
 
-       return lambda g: (self._vjpfun(g, adx, out, *args) for adx in adxs)
+       return lambda g: (
+          self._vjpfun(g, adx, out, *args, **kwargs) 
+             for adx in adxs
+       )
 
 
 
@@ -132,10 +135,12 @@ class NetJvpFun:
        self._jvpfun = jvpfun
 
 
-   def __call__(self, adxs, out, *args):
+   def __call__(self, adxs, out, *args, **kwargs):
 
-       return lambda gs: (self._jvpfun(g, adx, out, *args) 
-                                       for g, adx in zip(gs, adxs))
+       return lambda gs: (
+          self._jvpfun(g, adx, out, *args, **kwargs) 
+             for g, adx in zip(gs, adxs)
+       )
 
 
 

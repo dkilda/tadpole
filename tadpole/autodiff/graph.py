@@ -549,20 +549,20 @@ class Pack(Packable):
        return self._args.pack()
 
 
-   def _fold(self, funwrap, outputs, out):
+   def _fold(self, funwrap, outputs, out, **kwargs):
 
        if self.innermost():
           return an.point(out)
 
-       op = an.AdjointOp(funwrap, self._adxs, outputs, self._args)
+       op = an.AdjointOp(funwrap, self._adxs, outputs, self._args, kwargs)
 
        return self._parents.next(out, self._layer, op) 
 
 
-   def fold(self, funwrap, outputs):
+   def fold(self, funwrap, outputs, **kwargs):
 
        def _fold(out):
-           return self._fold(funwrap, outputs, out)
+           return self._fold(funwrap, outputs, out, **kwargs)
 
        return outputs.apply(_fold)
 
@@ -659,7 +659,7 @@ class Envelope(EnvelopeLike):
        out = self.apply(fun)
 
        for pack in reversed(self.packs()): 
-           out = pack.fold(funwrap, out)
+           out = pack.fold(funwrap, out, **self._kwargs)
 
        return out
 

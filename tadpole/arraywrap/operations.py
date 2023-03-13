@@ -86,12 +86,16 @@ space    = ad.nondifferentiable(op.space)
 item     = ad.nondifferentiable(op.item)
 
 
+
+
 # --- Array member methods: properties -------------------------------------- #
 
 dtype = ad.nondifferentiable(op.dtype)
 size  = ad.nondifferentiable(op.size)
 ndim  = ad.nondifferentiable(op.ndim)
 shape = ad.nondifferentiable(op.shape)
+
+
 
 
 # --- Logical functions ----------------------------------------------------- # 
@@ -105,6 +109,8 @@ allclose = ad.nondifferentiable(op.allclose)
 
 allallequal = ad.nondifferentiable(op.allallequal)
 allallclose = ad.nondifferentiable(op.allallclose)
+
+
 
 
 # --- Array value methods --------------------------------------------------- #
@@ -139,9 +145,13 @@ div = ad.differentiable(op.div)
 power  = ad.differentiable(op.power)
 
 
+
+
 # --- Array methods: for gradient accumulation ------------------------------ #
 
 addgrads = ad.differentiable(op.addgrads)
+
+
 
 
 # --- Array shape methods --------------------------------------------------- #
@@ -151,6 +161,8 @@ transpose = ad.differentiable(op.transpose)
 moveaxis  = ad.differentiable(op.moveaxis)
 squeeze   = ad.differentiable(op.squeeze)
 unsqueeze = ad.differentiable(op.unsqueeze)
+
+
 
 
 # --- Array value methods --------------------------------------------------- #
@@ -164,6 +176,8 @@ flip = ad.differentiable(op.flip)
 clip = ad.differentiable(op.clip)
 
 where = ad.differentiable(op.where)
+
+
 
 
 # --- Simple math operations ------------------------------------------------ #
@@ -196,11 +210,15 @@ sumover = ad.differentiable(op.sumover)
 cumsum  = ad.differentiable(op.cumsum)
 
 
+
+
 # --- Linear algebra: multiplication methods -------------------------------- #
 
 einsum = ad.differentiable(op.einsum)
 dot    = ad.differentiable(op.dot)
 kron   = ad.differentiable(op.kron)
+
+
 
 
 # --- Linear algebra: decomposition methods --------------------------------- #
@@ -211,9 +229,13 @@ eig  = ad.differentiable(op.eig)
 eigh = ad.differentiable(op.eigh)
 
 
+
+
 # --- Linear algebra: matrix exponential ------------------------------------ #
 
 expm = ad.differentiable(op.expm)
+
+
 
 
 # --- Linear algebra: misc methods ------------------------------------------ #

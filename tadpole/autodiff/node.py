@@ -39,15 +39,19 @@ class OpWithAdjoint(abc.ABC):
 
 class AdjointOp(OpWithAdjoint):
 
-   def __init__(self, fun, adxs, out, args):
+   def __init__(self, fun, adxs, out, args, kwargs=None):
 
        if not isinstance(out, util.Outputs):
           out = util.Outputs(out)
+
+       if kwargs is None:
+          kwargs = {} 
  
-       self._fun  = fun
-       self._adxs = adxs 
-       self._out  = out
-       self._args = args
+       self._fun    = fun
+       self._adxs   = adxs 
+       self._out    = out
+       self._args   = args
+       self._kwargs = kwargs
 
 
    def __repr__(self):
@@ -55,10 +59,11 @@ class AdjointOp(OpWithAdjoint):
        rep = util.ReprChain()
 
        rep.typ(self)
-       rep.val("fun",  self._fun)
-       rep.val("adxs", self._adxs)
-       rep.val("out",  self._out)
-       rep.val("args", self._args)
+       rep.val("fun",    self._fun)
+       rep.val("adxs",   self._adxs)
+       rep.val("out",    self._out)
+       rep.val("args",   self._args)
+       rep.val("kwargs", self._kwargs)
 
        return str(rep)
 
@@ -68,10 +73,11 @@ class AdjointOp(OpWithAdjoint):
        log = util.LogicalChain()
 
        log.typ(self, other) 
-       log.val(self._fun,  other._fun)
-       log.val(self._adxs, other._adxs)
-       log.val(self._out,  other._out)
-       log.val(self._args, other._args)
+       log.val(self._fun,    other._fun)
+       log.val(self._adxs,   other._adxs)
+       log.val(self._out,    other._out)
+       log.val(self._args,   other._args)
+       log.val(self._kwargs, other._kwargs)
 
        return bool(log)
 
@@ -83,7 +89,7 @@ class AdjointOp(OpWithAdjoint):
 
    def _apply(self, fun):
 
-       return fun(self._adxs, self._out.unpack(), *self._args)
+       return fun(self._adxs, self._out.unpack(), *self._args, **self._kwargs)
 
 
    def vjp(self, seed):
