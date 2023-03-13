@@ -11,6 +11,65 @@ import tadpole.array.operations as op
 
 
 
+
+def extend(x, target, axis):
+
+    if target.ndim == 0:
+       return x
+      
+    return unsqueeze(x, axis) + target.space().zeros()
+
+        
+
+def unreduce(x, target, axis=None):
+
+    def fun(g):
+
+        g1 = extend(g, target, axis)
+        x1 = extend(x, target, axis)
+
+        mask = equal(target, x1)
+        
+        return g1 * mask / op.sumover(mask, axis=axis, keepdims=True)
+
+    return fun
+
+
+
+def match_shape(x, target, default_axis=0):
+
+    while ndim(x) > ndim(target):
+       x = sumover(x, axis=default_axis)
+
+    for axis, size in enumerate(target.shape):
+        if size == 1:
+           x = sumover(x, axis=axis, keepdims=True)
+
+    return x
+
+
+
+def match_type(x, target):
+
+    if iscomplex(x) and not iscomplex(target):
+       return real(x)
+
+    if not iscomplex(x) and iscomplex(target):
+       return x + 0j
+
+    return x
+
+
+
+def match(x, target, **opts):
+
+    return match_type(match_shape(x, target, **opts), target)
+    
+
+
+
+
+
 ###############################################################################
 ###                                                                         ###
 ###  Definitions of non-differentiable array operations                     ###
@@ -37,8 +96,9 @@ shape = ad.nondifferentiable(op.shape)
 
 # --- Logical functions ----------------------------------------------------- # 
 
-logical_and = ad.nondifferentiable(op.logical_and)
+equal       = ad.nondifferentiable(op.equal)
 not_equal   = ad.nondifferentiable(op.not_equal)
+logical_and = ad.nondifferentiable(op.logical_and)
 
 allequal = ad.nondifferentiable(op.allequal)
 allclose = ad.nondifferentiable(op.allclose)
@@ -55,7 +115,7 @@ sign          = ad.nondifferentiable(op.sign)
 count_nonzero = ad.nondifferentiable(op.count_nonzero)
 put           = ad.nondifferentiable(op.put)
 argsort       = ad.nondifferentiable(op.argsort)
-
+iscomplex     = ad.nondifferentiable(op.iscomplex)
 
 
 
@@ -109,6 +169,9 @@ where = ad.differentiable(op.where)
 # --- Simple math operations ------------------------------------------------ #
 
 conj = ad.differentiable(op.conj)
+real = ad.differentiable(op.real)
+imag = ad.differentiable(op.imag)
+
 sqrt = ad.differentiable(op.sqrt)
 log  = ad.differentiable(op.log)
 exp  = ad.differentiable(op.exp)
@@ -155,8 +218,22 @@ expm = ad.differentiable(op.expm)
 
 # --- Linear algebra: misc methods ------------------------------------------ #
 
-htranspose = ad.differentiable(op.htranspose)
-norm       = ad.differentiable(op.norm)
+norm = ad.differentiable(op.norm)
+
+
+def htranspose(x, axes): 
+    return transpose(conj(x), axes)
+
+
+
+
+
+
+
+
+
+
+
 
 
 

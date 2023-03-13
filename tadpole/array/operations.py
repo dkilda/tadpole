@@ -133,11 +133,12 @@ allallequal = logical.allallequal
 allallclose = logical.allallclose
 
 
+
 @typecast_binary
-def logical_and(x, y):
+def equal(x, y):
 
     def fun(backend, u, v):
-        return backend.logical_and(u, v)
+        return backend.equal(u, v)
 
     return Args(x, y).pluginto(TransformCall(fun))
 
@@ -150,6 +151,17 @@ def not_equal(x, y):
         return backend.not_equal(u, v)
 
     return Args(x, y).pluginto(TransformCall(fun))
+
+
+
+@typecast_binary
+def logical_and(x, y):
+
+    def fun(backend, u, v):
+        return backend.logical_and(u, v)
+
+    return Args(x, y).pluginto(TransformCall(fun))
+
 
 
 
@@ -212,6 +224,15 @@ def argsort(x, axis=-1, **opts):
         return backend.argsort(v, axis, **opts)
 
     return Args(x).pluginto(TransformCall(fun))
+
+
+@typecast_unary
+def iscomplex(x):
+
+    def fun(backend, v):
+        return backend.iscomplex(v)
+
+    return Args(x).pluginto(VisitCall(fun))  
 
 
 
@@ -386,6 +407,26 @@ def conj(x, **opts):
 
     return Args(x).pluginto(TransformCall(fun))
 
+
+
+@typecast_unary
+def real(x):
+
+    def fun(backend, v):
+        return backend.real(v)
+
+    return Args(x).pluginto(TransformCall(fun))     
+
+
+
+@typecast_unary
+def imag(x):
+
+    def fun(backend, v):
+        return backend.imag(v)
+
+    return Args(x).pluginto(TransformCall(fun))
+  
 
 
 @typecast_unary

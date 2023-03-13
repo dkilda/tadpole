@@ -49,8 +49,8 @@ class NumpyBackend(backend.Backend):
        dtypes = (np.complex64, np.complex128, np.complex256)
 
        return tuple(map(np.dtype, dtypes))
-       
 
+       
    # --- Array creation methods --- #
 
    def asarray(self, array, **opts):
@@ -261,16 +261,27 @@ class NumpyBackend(backend.Backend):
        return np.argsort(array, axis=axis, **opts)
 
 
+   def iscomplex(self, array):
+
+       return self.dtype(array) in self.complex_dtypes()
+
+
    # --- Logical operations --- #
+
+   def equal(self, x, y):
+
+       return x == y
+
+
+   def not_equal(self, x, y):
+
+       return x != y
+
 
    def logical_and(self, x, y):
 
        return np.logical_and(x, y)
 
-
-   def not_equal(self, x, y):
-
-       return np.not_equal(x, y)
 
 
    # --- Simple math operations --- #
@@ -278,6 +289,16 @@ class NumpyBackend(backend.Backend):
    def conj(self, array, **opts):
 
        return np.conj(array, **opts) 
+
+
+   def real(self, array):
+
+       return np.real(array)
+
+
+   def imag(self, array):
+
+       return np.imag(array)
        
 
    def sqrt(self, array):
@@ -455,11 +476,6 @@ class NumpyBackend(backend.Backend):
 
 
    # --- Linear algebra: misc methods --- #
-
-   def htranspose(self, x, axes):
-
-       return self.transpose(self.conj(x), axes)
-       
 
    def norm(self, x, order=None, axis=None, **opts):
 

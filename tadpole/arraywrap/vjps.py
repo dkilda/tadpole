@@ -7,9 +7,6 @@ import tadpole.autodiff as ad
 import tadpole.arraywrap.operations as op
 
 
-# TODO remember unbroadcast/match function!
-
-
 
 
 ###############################################################################
@@ -22,34 +19,50 @@ import tadpole.arraywrap.operations as op
 # --- Array member methods: arithmetics and element access ------------------ # 
 
 # FIXME what happens if x = Node? We must wrap sparse() with @differentiable!
-ad.makevjp(op.getitem, lambda g, out, x, idx: x.space().sparse(idx, out.item())
-
-# TODO also wrap diag() with @differentiable!
+ad.makevjp(op.getitem, lambda g, out, x, idx: x.space().sparse(idx, out.item()))
 
 
-
+"""
 ad.makevjp(op.neg, lambda g, out, x: -g)
 
 
-ad.makevjp(op.add, lambda g, out, x, y: g, 
-                   lambda g, out, x, y: g)
-
-
-ad.makevjp(op.sub, lambda g, out, x, y:  g, 
-                   lambda g, out, x, y: -g)
+ad.makevjp(op.add, lambda g, out, x, y: op.match(g, x), 
+                   lambda g, out, x, y: op.match(g, y)
+)
 
 
 ad.makevjp(op.mul, lambda g, out, x, y: y * g, 
-                   lambda g, out, x, y: x * g)
+                   lambda g, out, x, y: x * g
+)
 
 
-ad.makevjp(op.div, lambda g, out, x, y:  g / y, 
-                   lambda g, out, x, y: -g * x / y**2)
+"""
+
+
+ad.makevjp(op.add, lambda g, out, x, y: op.match(g, x), 
+                   lambda g, out, x, y: op.match(g, y)
+)
+
+
+ad.makevjp(op.sub, lambda g, out, x, y: op.match( g, x), 
+                   lambda g, out, x, y: op.match(-g, y)
+)
+
+
+ad.makevjp(op.mul, lambda g, out, x, y: op.match(y * g, x), 
+                   lambda g, out, x, y: op.match(x * g, y)
+)
+
+
+ad.makevjp(op.div, lambda g, out, x, y: op.match( g / y,        x), 
+                   lambda g, out, x, y: op.match(-g * x / y**2, y)
+)
+
 
 
 ad.makevjp(op.power, 
-   lambda g, out, x, y: g * y   * (x ** op.where(y, y-1, 1.)),
-   lambda g, out, x, y: g * out * op.log(op.where(x, x, 1.))
+   lambda g, out, x, y: op.match(g * y   * (x ** op.where(y, y-1, 1.)), x),
+   lambda g, out, x, y: op.match(g * out * op.log(op.where(x, x, 1.)),  y)
 )   
 
 
@@ -70,17 +83,9 @@ ad.makevjp(op.reshape,
 )
 
 
-
-def argsort(xs):
-
-    return sorted(range(len(xs)), key=xs.__getitem__)
-
-
-
-
 ad.makevjp(op.transpose, 
-   lambda g, out, x, axes: op.transpose(g, argsort(axes)) # FIXME define your own argsort, cuz we're only
-)                                                         #       applying to axes, not actual array
+   lambda g, out, x, axes: op.transpose(g, util.argsort(axes)) 
+)
 
 
 ad.makevjp(op.moveaxis,
@@ -90,7 +95,7 @@ ad.makevjp(op.moveaxis,
 
 ad.makevjp(op.squeeze,
    lambda g, out, x, axis: op.reshape(g, op.shape(x))
-) # FIXME enable kwargs in Envelope/Pack/AdjointOp/etc?
+) 
 
 
 ad.makevjp(op.unsqueeze,
@@ -103,12 +108,12 @@ ad.makevjp(op.unsqueeze,
 # --- Array value methods --------------------------------------------------- #
 
 ad.makevjp(op.amax,
-   lambda g, out, axis: # TODO
+   lambda g, out, x, axis=None, **opts: op.unreduce(g, x, axis=axis)
 )
 
 
 ad.makevjp(op.amin,
-   lambda g, out, axis: # TODO
+   lambda g, out, x, axis=None, **opts: op.unreduce(g, x, axis=axis)
 )
 
 
@@ -168,13 +173,24 @@ ad.makevjp(op.arccosh, lambda g, out, x: -g / op.sqrt(x**2 - 1))
 ad.makevjp(op.arctanh, lambda g, out, x:  g / (1 - x**2))
 
 
-ad.makevjp(op.sumover, 
-   lambda g, out, x: # TODO, we need repeat_to_match_shape!
-)
 
-ad.makevjp(op.cumsum, 
-   lambda g, out, x, axis, dtype: # TODO we need reverse_axis, grad_cumsum!
-)
+def vjp_sumover(g, out, x, axis=None, **opts): # FIXME enable kwargs in Envelope/Pack/AdjointOp/etc
+
+    return extend(g, x, axis)
+
+
+def vjp_cumsum(g, out, x, axis=None):
+
+    g1 = op.flip(op.cumsum(op.flip(g, axis), axis), axis) 
+
+    if axis:
+       return g1
+
+    return op.reshape(g1, x.shape)
+
+
+ad.makevjp(op.sumover, vjp_sumover) 
+ad.makevjp(op.cumsum,  vjp_cumsum)
 
 
 
@@ -193,15 +209,17 @@ ad.makevjp(op.cumsum,
 
 # --- Linear algebra: misc methods ------------------------------------------ #
 
-ad.makevjp(op.htranspose,
-   lambda g, out, x, axes: op.transpose(op.conj(g), op.argsort(axes))
-) 
 
 
 
 
 
 
+
+
+
+    
+    
 
 
 

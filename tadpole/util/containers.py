@@ -143,6 +143,10 @@ def return_outputs(fun):
            return out
 
         if isinstance(out, tuple):
+
+           if len(out) == 0:
+              return Outputs(out)
+
            return Outputs(*out) 
 
         return Outputs(out)

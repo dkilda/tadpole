@@ -90,8 +90,8 @@ class TorchBackend(backend.Backend):
    def complex_dtypes(self):
 
        return (torch.complex64, torch.complex128)
-       
 
+       
    # --- Array creation methods --- #
 
    def asarray(self, array, **opts):
@@ -306,23 +306,43 @@ class TorchBackend(backend.Backend):
        return torch.argsort(array, axis=axis, **opts)
 
 
+   def iscomplex(self, array):
+
+       return self.dtype(array) in self.complex_dtypes()
+
+
    # --- Logical operations --- #
+
+   def equal(self, x, y):
+
+       return x == y
+
+
+   def not_equal(self, x, y):
+
+       return x != y
+
 
    def logical_and(self, x, y):
 
        return torch.logical_and(x, y)
 
-
-   def not_equal(self, x, y):
-
-       return torch.ne(x, y)
        
-
    # --- Simple math operations --- #
 
    def conj(self, array, **opts):
 
        return torch.conj(array) 
+
+
+   def real(self, array):
+
+       return torch.real(array)
+
+
+   def imag(self, array):
+
+       return torch.imag(array)
        
 
    def sqrt(self, array):
@@ -405,12 +425,14 @@ class TorchBackend(backend.Backend):
        return torch.arctanh(array)
 
 
-   def sumover(self, array, axis=None, dtype=None, **opts):
+   def sumover(self, array, axis=None, keepdims=False, dtype=None, **opts):
 
        if axis is None:
-          return torch.sum(array, dtype)
+          return torch.sum(array, dtype=dtype)
 
-       return torch.sum(array, axis, dtype, **opts) 
+       keepdims = opts.pop("keepdims", False)
+
+       return torch.sum(array, axis, keepdim=keepdims, dtype=dtype, **opts) 
        
 
    def cumsum(self, array, axis=None, dtype=None, **opts):
@@ -498,11 +520,6 @@ class TorchBackend(backend.Backend):
        
 
    # --- Linear algebra: misc methods --- #
-
-   def htranspose(self, x, axes):
-
-       return self.transpose(self.conj(x), axes)
-       
 
    def norm(self, x, order=None, axis=None, **opts):
 

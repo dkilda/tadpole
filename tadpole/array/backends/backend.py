@@ -168,15 +168,23 @@ class Backend(abc.ABC):
    def argsort(self, array, axis=-1, **opts):
        pass
 
+   @abc.abstractmethod 
+   def iscomplex(self, array):
+       pass
+
 
    # --- Logical operations --- #
 
    @abc.abstractmethod
-   def logical_and(self, x, y):
+   def equal(self, x, y):
        pass
 
    @abc.abstractmethod
    def not_equal(self, x, y):
+       pass
+
+   @abc.abstractmethod
+   def logical_and(self, x, y):
        pass
 
 
@@ -184,6 +192,14 @@ class Backend(abc.ABC):
 
    @abc.abstractmethod
    def conj(self, array, **opts):
+       pass
+
+   @abc.abstractmethod
+   def real(self, array):
+       pass
+
+   @abc.abstractmethod
+   def imag(self, array):
        pass
 
    @abc.abstractmethod
@@ -324,10 +340,6 @@ class Backend(abc.ABC):
 
 
    # --- Linear algebra: misc methods --- #
-
-   @abc.abstractmethod
-   def htranspose(self, x, axes):
-       pass
 
    @abc.abstractmethod
    def norm(self, x, order=None, axis=None, **opts):

@@ -8,6 +8,7 @@ from tadpole.util.cache import (
 
 
 from tadpole.util.itertools import (
+   argsort,
    Loop,
    Sequence,
 )
