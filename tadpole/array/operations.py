@@ -4,7 +4,8 @@
 import abc
 import numpy as np
 
-import tadpole.util as util
+import tadpole.util     as util
+import tadpole.autodiff as ad
 
 import tadpole.array.core     as core
 import tadpole.array.logical  as logical
@@ -17,58 +18,10 @@ from tadpole.array.function import (
    TransformCall,
 )
 
-
-
-
-###############################################################################
-###                                                                         ###
-###  Helper functions                                                       ###
-###                                                                         ###
-###############################################################################
-
-
-# --- Type cast for unary functions ----------------------------------------- #
-
-def typecast_unary(fun):
-
-    def wrap(x, *args, **kwargs):
-
-        try:
-            return fun(x, *args, **kwargs)       
- 
-        except (AttributeError, TypeError):
-
-            return fun(core.asarray(x), *args, **kwargs)
-         
-    return wrap
-
-
-
-
-# --- Type cast for binary functions ---------------------------------------- #
-
-def typecast_binary(fun):
-
-    def wrap(x, y, *args, **kwargs):
-
-        try:
-            return fun(x, y, *args, **kwargs)       
- 
-        except (AttributeError, TypeError):
-
-            if not any(isinstance(v, core.Pluggable) for v in (x,y)):
-               x = core.asarray(x)
-               y = core.asarray(y) 
-
-            if not isinstance(x, core.Pluggable):
-               x = y.withdata(x) 
-
-            if not isinstance(y, core.Pluggable):
-               y = x.withdata(y) 
-
-            return fun(x, y, *args, **kwargs)
-         
-    return wrap
+from tadpole.array.core import (
+   typecast_unary,
+   typecast_binary,
+)
 
 
 
@@ -80,99 +33,9 @@ def typecast_binary(fun):
 ###############################################################################
 
 
-# --- Array member methods: basic functionality ----------------------------- #
-
-def copy(x, **opts):
-    return x.copy(**opts)
-
-
-def todense(x):
-    return x.todense()
-
-
-def withdata(x, data):
-    return x.withdata(data)
-
-
-def space(x):
-    return x.space()
-
-
-def item(x, *idx):
-    return x.item(*idx)
-
-
-
-
-# --- Array member methods: properties -------------------------------------- #
-
-def dtype(x):
-    return x.dtype
-
-
-def size(x):
-    return x.size
-
-
-def ndim(x):
-    return x.ndim
-
-
-def shape(x):
-    return x.shape
-
-
-
-
-# --- Logical functions ----------------------------------------------------- # 
-
-allequal = logical.allequal
-allclose = logical.allclose
-
-allallequal = logical.allallequal
-allallclose = logical.allallclose
-
-
-
-@typecast_binary
-def equal(x, y):
-
-    def fun(backend, u, v):
-        return backend.equal(u, v)
-
-    return Args(x, y).pluginto(TransformCall(fun))
-
-
-
-@typecast_binary
-def not_equal(x, y):
-
-    def fun(backend, u, v):
-        return backend.not_equal(u, v)
-
-    return Args(x, y).pluginto(TransformCall(fun))
-
-
-
-@typecast_binary
-def logical_and(x, y):
-
-    def fun(backend, u, v):
-        return backend.logical_and(u, v)
-
-    return Args(x, y).pluginto(TransformCall(fun))
-
-
-
-
-
-# --- Array shape methods --------------------------------------------------- #
-
-
-
-
 # --- Array value methods --------------------------------------------------- #
 
+@ad.nondifferentiable
 def allof(x, axis=None, **opts):
 
     def fun(backend, v): 
@@ -182,6 +45,7 @@ def allof(x, axis=None, **opts):
 
 
 
+@ad.nondifferentiable
 def anyof(x, axis=None, **opts):
 
     def fun(backend, v): 
@@ -191,6 +55,7 @@ def anyof(x, axis=None, **opts):
 
 
 
+@ad.nondifferentiable
 def sign(x, **opts):
 
     def fun(backend, v): 
@@ -200,6 +65,7 @@ def sign(x, **opts):
 
 
 
+@ad.nondifferentiable
 def count_nonzero(x, axis=None, **opts):
 
     def fun(backend, v): 
@@ -209,6 +75,7 @@ def count_nonzero(x, axis=None, **opts):
 
 
 
+@ad.nondifferentiable
 def put(x, idxs, vals, accumulate=False): 
 
     def fun(backend, v):
@@ -218,6 +85,7 @@ def put(x, idxs, vals, accumulate=False):
 
 
 
+@ad.nondifferentiable
 def argsort(x, axis=-1, **opts):
 
     def fun(backend, v):
@@ -226,6 +94,7 @@ def argsort(x, axis=-1, **opts):
     return Args(x).pluginto(TransformCall(fun))
 
 
+@ad.nondifferentiable
 @typecast_unary
 def iscomplex(x):
 
@@ -244,56 +113,9 @@ def iscomplex(x):
 ###############################################################################
 
 
-# --- Array member methods: arithmetics and element access ------------------ # 
-
-def getitem(x, idx):
-    return x[idx]
-
-
-@typecast_unary
-def neg(x):
-    return -x
-
-
-@typecast_binary
-def add(x, y):
-    return x + y
-
-
-@typecast_binary
-def sub(x, y):
-    return x - y
-
-
-@typecast_binary
-def mul(x, y):
-    return x * y
-
-
-@typecast_binary
-def div(x, y):
-    return x / y
-
-
-@typecast_binary
-def power(x, y):
-    return x**y
-
-
-
-
-# --- Array methods: for gradient accumulation ------------------------------ #
-
-@typecast_binary
-def addgrads(x, y):
-
-    return y.addto(x)
-
-
-
-
 # --- Array shape methods --------------------------------------------------- #
 
+@ad.differentiable
 def reshape(x, shape):
 
     def fun(backend, v):
@@ -303,6 +125,7 @@ def reshape(x, shape):
 
 
 
+@ad.differentiable
 def transpose(x, axes):
 
     def fun(backend, v):
@@ -312,6 +135,7 @@ def transpose(x, axes):
 
 
 
+@ad.differentiable
 def moveaxis(x, source, destination):
 
     def fun(backend, v): 
@@ -321,6 +145,7 @@ def moveaxis(x, source, destination):
 
 
 
+@ad.differentiable
 def squeeze(x, axis=None):
 
     def fun(backend, v): 
@@ -330,6 +155,7 @@ def squeeze(x, axis=None):
 
 
 
+@ad.differentiable
 def unsqueeze(x, axis):
 
     def fun(backend, v): 
@@ -342,6 +168,7 @@ def unsqueeze(x, axis):
 
 # --- Array value methods --------------------------------------------------- #
  
+@ad.differentiable
 def amax(x, axis=None, **opts):
 
     def fun(backend, v): 
@@ -351,6 +178,7 @@ def amax(x, axis=None, **opts):
 
 
 
+@ad.differentiable
 def amin(x, axis=None, **opts):
 
     def fun(backend, v): 
@@ -360,6 +188,7 @@ def amin(x, axis=None, **opts):
 
 
 
+@ad.differentiable
 def absolute(x, **opts):
 
     def fun(backend, v): 
@@ -369,6 +198,7 @@ def absolute(x, **opts):
 
 
 
+@ad.differentiable
 def flip(x, axis=None):
 
     def fun(backend, v): 
@@ -378,6 +208,7 @@ def flip(x, axis=None):
 
 
 
+@ad.differentiable
 def clip(x, minval, maxval, **opts):
 
     def fun(backend, v): 
@@ -387,6 +218,8 @@ def clip(x, minval, maxval, **opts):
 
 
 
+@ad.differentiable
+@typecast_binary
 def where(condition, x, y):
 
     def fun(backend, cond_uv, u, v): 
@@ -399,6 +232,7 @@ def where(condition, x, y):
 
 # --- Simple math operations ------------------------------------------------ #
 
+@ad.differentiable
 @typecast_unary
 def conj(x, **opts):
 
@@ -409,6 +243,7 @@ def conj(x, **opts):
 
 
 
+@ad.differentiable
 @typecast_unary
 def real(x):
 
@@ -419,6 +254,7 @@ def real(x):
 
 
 
+@ad.differentiable
 @typecast_unary
 def imag(x):
 
@@ -429,6 +265,7 @@ def imag(x):
   
 
 
+@ad.differentiable
 @typecast_unary
 def sqrt(x):
 
@@ -439,6 +276,7 @@ def sqrt(x):
 
 
 
+@ad.differentiable
 @typecast_unary
 def log(x):
 
@@ -449,6 +287,7 @@ def log(x):
 
 
 
+@ad.differentiable
 @typecast_unary
 def exp(x):
 
@@ -459,6 +298,7 @@ def exp(x):
 
 
 
+@ad.differentiable
 @typecast_unary
 def sin(x):
 
@@ -469,6 +309,7 @@ def sin(x):
 
 
 
+@ad.differentiable
 @typecast_unary
 def cos(x):
 
@@ -479,6 +320,7 @@ def cos(x):
 
 
 
+@ad.differentiable
 @typecast_unary
 def tan(x):
 
@@ -489,6 +331,7 @@ def tan(x):
 
 
 
+@ad.differentiable
 @typecast_unary
 def arcsin(x):
 
@@ -499,6 +342,7 @@ def arcsin(x):
 
 
 
+@ad.differentiable
 @typecast_unary
 def arccos(x):
 
@@ -509,6 +353,7 @@ def arccos(x):
 
 
 
+@ad.differentiable
 @typecast_unary
 def arctan(x):
 
@@ -519,6 +364,7 @@ def arctan(x):
 
 
 
+@ad.differentiable
 @typecast_unary
 def sinh(x):
 
@@ -529,6 +375,7 @@ def sinh(x):
 
 
 
+@ad.differentiable
 @typecast_unary
 def cosh(x):
 
@@ -539,6 +386,7 @@ def cosh(x):
 
 
 
+@ad.differentiable
 @typecast_unary
 def tanh(x):
 
@@ -549,6 +397,7 @@ def tanh(x):
 
 
 
+@ad.differentiable
 @typecast_unary
 def arcsinh(x):
 
@@ -559,6 +408,7 @@ def arcsinh(x):
 
 
 
+@ad.differentiable
 @typecast_unary
 def arccosh(x):
 
@@ -569,6 +419,7 @@ def arccosh(x):
 
 
 
+@ad.differentiable
 @typecast_unary
 def arctanh(x):
 
@@ -579,6 +430,7 @@ def arctanh(x):
 
 
 
+@ad.differentiable
 @typecast_unary
 def sumover(x, axis=None, dtype=None, **opts):
 
@@ -589,6 +441,7 @@ def sumover(x, axis=None, dtype=None, **opts):
 
 
 
+@ad.differentiable
 @typecast_unary
 def cumsum(x, axis=None, dtype=None, **opts):
 
@@ -599,6 +452,8 @@ def cumsum(x, axis=None, dtype=None, **opts):
 
 
 
+
+"""
 
 # --- Linear algebra: multiplication methods -------------------------------- #
 
@@ -699,14 +554,7 @@ def norm(x, order=None, axis=None, **opts):
 
     return Args(x).pluginto(TransformCall(fun))
 
-
-
-
-
-
-
-
-
+"""
 
 
 

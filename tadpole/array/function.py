@@ -8,6 +8,27 @@ import tadpole.util as util
 
 import tadpole.array.logical as logical
 import tadpole.array.core    as core
+ 
+
+
+
+###############################################################################
+###                                                                         ###
+###  Helper functions                                                       ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Comparison of iterables of arrays ------------------------------------- #
+
+def allallequal(xs, ys):
+
+    return all(logical.allequal(x, y) for x, y in zip(xs, ys))
+
+
+def allallclose(xs, ys, **opts):
+
+    return all(logical.allclose(x, y, **opts) for x, y in zip(xs, ys))
 
 
 
@@ -60,8 +81,7 @@ class Content:
           arrays1, datas1 = zip(*self._content)
           arrays2, datas2 = zip(*other._content)
 
-          return ((arrays1 == arrays2) 
-                  and util.allallequal(datas1, datas2))
+          return (arrays1 == arrays2) and allallequal(datas1, datas2)
 
        return False
 
@@ -269,24 +289,13 @@ class Args:
        self._args = args
 
 
-   def allclose(self, other, **opts):
-
-       log = util.LogicalChain()
-       log.typ(self, other)
-
-       if bool(log):
-          return logical.allallclose(self._args, other._args, **opts)    
-
-       return False
-
-
    def __eq__(self, other):
 
        log = util.LogicalChain()
        log.typ(self, other)
 
        if bool(log):
-          return logical.allallequal(self._args, other._args)    
+          return allallequal(self._args, other._args)    
 
        return False
 

@@ -176,15 +176,31 @@ class Backend(abc.ABC):
    # --- Logical operations --- #
 
    @abc.abstractmethod
-   def equal(self, x, y):
+   def allclose(self, x, y, **opts):
        pass
 
    @abc.abstractmethod
-   def not_equal(self, x, y):
+   def isclose(self, x, y, **opts):
+       pass
+
+   @abc.abstractmethod
+   def allequal(self, x, y):
+       pass
+
+   @abc.abstractmethod
+   def isequal(self, x, y):
+       pass
+
+   @abc.abstractmethod
+   def notequal(self, x, y):
        pass
 
    @abc.abstractmethod
    def logical_and(self, x, y):
+       pass
+
+   @abc.abstractmethod
+   def logical_or(self, x, y):
        pass
 
 

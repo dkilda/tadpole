@@ -4,9 +4,12 @@
 import abc
 import numpy as np
 
-import tadpole.util as util
+import tadpole.util     as util
+import tadpole.autodiff as ad
 
 import tadpole.array.backends as backends
+import tadpole.array.function as function
+import tadpole.array.logical  as logical
 import tadpole.array.grad     as grad
 
 from tadpole.array.types import ArrayLike, Pluggable
@@ -16,121 +19,62 @@ from tadpole.array.types import ArrayLike, Pluggable
 
 ###############################################################################
 ###                                                                         ###
-###  Array creation functions                                               ###
+###  Helper functions                                                       ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- Array generators ------------------------------------------------------ #
+# --- Type cast for unary functions ----------------------------------------- #
 
-def units(shape, dtype=None, backend=None):
+def typecast_unary(fun):
 
-    for idx in np.ndindex(*shape):
-        yield unit(shape, idx, dtype=dtype, backend=backend)
+    def wrap(x, *args, **kwargs):
 
+        try:
+            return fun(x, *args, **kwargs)       
+ 
+        except (AttributeError, TypeError):
 
-
-def basis(shape, dtype=None, backend=None): 
-
-    backend   = backends.get(backend)
-    dtype     = backend.get_dtype(dtype)
-    gen_units = units(shape, dtype=dtype, backend=backend)
-
-    if  dtype in backend.complex_dtypes():
-
-        for unit in gen_units:
-            yield unit
-            yield 1j * unit
-
-    else:
-        for unit in gen_units:
-            yield unit
+            return fun(asarray(x), *args, **kwargs)
+         
+    return wrap
 
 
 
 
-# --- Array factories (from data) ------------------------------------------- #
+# --- Type cast for binary functions ---------------------------------------- #
 
-def fromfun(fun, *datas, **opts):
+def typecast_binary(fun):
 
-    backend = backends.get_from(opts)
-                                        
-    outdata = fun(backend, *datas)
-    outdata = backend.asarray(outdata, **opts)
+    def wrap(x, y, *args, **kwargs):
 
-    return Array(backend, outdata)
+        try:
+            return fun(x, y, *args, **kwargs)       
+ 
+        except (AttributeError, TypeError):
 
+            if not any(isinstance(v, Pluggable) for v in (x,y)):
+               x = asarray(x)
+               y = asarray(y) 
 
-def asarray(data, **opts):
+            if not isinstance(x, Pluggable):
+               x = y.withdata(x) 
 
-    if isinstance(data, ArrayLike):
-       return data
+            if not isinstance(y, Pluggable):
+               y = x.withdata(y) 
 
-    backend = backends.get_from(opts)                            
-    data    = backend.asarray(data, **opts)
-
-    return Array(backend, data)
-
-
-
-
-# --- Array factories (from shape) ------------------------------------------ #
-
-def sparse(shape, idxs, vals, **opts):
-
-    backend = backends.get_from(opts)
-
-    if "dtype" in opts:
-       vals = backend.asarray(vals)
-       vals = backend.astype(vals, **opts)
-
-    return grad.SparseGrad(
-              backend, shape, idxs, vals
-           )
+            return fun(x, y, *args, **kwargs)
+         
+    return wrap
 
 
-def zeros(shape, **opts):
-
-    return ArrayFromShape("zeros")(
-              shape, **opts
-           )
 
 
-def ones(shape, **opts):
-
-    return ArrayFromShape("ones")(
-              shape, **opts
-           )
-
-
-def unit(shape, idx, **opts):
-
-    return ArrayFromShape("unit")(
-              shape, idx, **opts
-           )
-
-
-def rand(shape, **opts):
-
-    return ArrayFromShape("rand")(
-              shape, **opts
-           )
-
-
-def randn(shape, **opts):
-
-    return ArrayFromShape("randn")(
-              shape, **opts
-           )
-
-
-def randuniform(shape, boundaries, **opts):
-
-    return ArrayFromShape("randuniform")(
-              shape, boundaries, **opts
-           )
-
-
+###############################################################################
+###                                                                         ###
+###  Array creation functions                                               ###
+###                                                                         ###
+###############################################################################
 
 
 # --- Generic factory that constructs an Array from shape input ------------- #
@@ -162,6 +106,126 @@ class ArrayFromShape:
 
        data = fun(shape, *args, **opts)
        return Array(backend, data)  
+
+
+
+
+# --- Array factories (from shape) ------------------------------------------ #
+
+@ad.differentiable
+def sparse(shape, idxs, vals, **opts):
+
+    backend = backends.get_from(opts)
+
+    if "dtype" in opts:
+       vals = backend.asarray(vals)
+       vals = backend.astype(vals, **opts)
+
+    return grad.SparseGrad(
+              backend, shape, idxs, vals
+           )
+
+
+@ad.nondifferentiable
+def zeros(shape, **opts):
+
+    return ArrayFromShape("zeros")(
+              shape, **opts
+           )
+
+
+@ad.nondifferentiable
+def ones(shape, **opts):
+
+    return ArrayFromShape("ones")(
+              shape, **opts
+           )
+
+
+@ad.nondifferentiable
+def unit(shape, idx, **opts):
+
+    return ArrayFromShape("unit")(
+              shape, idx, **opts
+           )
+
+
+@ad.nondifferentiable
+def rand(shape, **opts):
+
+    return ArrayFromShape("rand")(
+              shape, **opts
+           )
+
+
+@ad.nondifferentiable
+def randn(shape, **opts):
+
+    return ArrayFromShape("randn")(
+              shape, **opts
+           )
+
+
+@ad.nondifferentiable
+def randuniform(shape, boundaries, **opts):
+
+    return ArrayFromShape("randuniform")(
+              shape, boundaries, **opts
+           )
+
+
+
+
+# --- Array factories (from data) ------------------------------------------- #
+
+def fromfun(fun, *datas, **opts):
+
+    backend = backends.get_from(opts)
+                                        
+    outdata = fun(backend, *datas)
+    outdata = backend.asarray(outdata, **opts)
+
+    return Array(backend, outdata)
+
+
+def asarray(data, **opts):
+
+    if isinstance(data, ArrayLike):
+       return data
+
+    backend = backends.get_from(opts)                            
+    data    = backend.asarray(data, **opts)
+
+    return Array(backend, data)
+
+
+
+
+# --- Array generators ------------------------------------------------------ #
+
+@ad.nondifferentiable
+def units(shape, dtype=None, backend=None):
+
+    for idx in np.ndindex(*shape):
+        yield unit(shape, idx, dtype=dtype, backend=backend)
+
+
+@ad.nondifferentiable
+def basis(shape, dtype=None, backend=None): 
+
+    backend   = backends.get(backend)
+    dtype     = backend.get_dtype(dtype)
+    gen_units = units(shape, dtype=dtype, backend=backend)
+
+    if  dtype in backend.complex_dtypes():
+
+        for unit in gen_units:
+            yield unit
+            yield 1j * unit
+
+    else:
+        for unit in gen_units:
+            yield unit
 
 
 
@@ -343,8 +407,11 @@ class ArraySpace(Space):
    def _create(self, fun, *args, **opts):
 
        return fun(
-          self._shape, *args, 
-          dtype=self._dtype, backend=self._backend, **opts
+          self._shape, 
+          *args, 
+          dtype=self._dtype, 
+          backend=self._backend, 
+          **opts
        )
 
 
@@ -355,6 +422,149 @@ class ArraySpace(Space):
 ###  Definition of array.                                                   ###
 ###                                                                         ###
 ###############################################################################
+
+
+# --- Array member methods: basic functionality ----------------------------- #
+
+@ad.nondifferentiable
+def copy(x, **opts):
+    return x.copy(**opts)
+
+
+@ad.nondifferentiable
+def todense(x):
+    return x.todense()
+
+
+@ad.nondifferentiable
+def withdata(x, data):
+    return x.withdata(data)
+
+
+@ad.nondifferentiable
+def space(x):
+    return x.space()
+
+
+@ad.nondifferentiable
+def item(x, *idx):
+    return x.item(*idx)
+
+
+
+
+# --- Array member methods: properties -------------------------------------- #
+
+@ad.nondifferentiable
+def dtype(x):
+    return x.dtype
+
+
+@ad.nondifferentiable
+def size(x):
+    return x.size
+
+
+@ad.nondifferentiable
+def ndim(x):
+    return x.ndim
+
+
+@ad.nondifferentiable
+def shape(x):
+    return x.shape
+
+
+
+
+# --- Array methods: gradient accumulation ---------------------------------- #
+
+@ad.differentiable
+@typecast_binary
+def addgrads(x, y):
+
+    return y.addto(x)
+
+
+
+
+# --- Array methods: arithmetics and element access ------------------------- # 
+
+@ad.differentiable
+def getitem(x, idx):
+
+    def fun(backend, v):
+        return v[idx]
+
+    return function.Args(x).pluginto(function.TransformCall(fun))
+
+
+
+@ad.differentiable
+@typecast_unary
+def neg(x):
+
+    def fun(backend, v):
+        return -v
+
+    return function.Args(x).pluginto(function.TransformCall(fun))
+
+
+
+@ad.differentiable
+@typecast_binary
+def add(x, y):
+
+    def fun(backend, u, v):
+        return backend.add(u, v)
+
+    return function.Args(x, y).pluginto(function.TransformCall(fun))
+
+
+
+@ad.differentiable
+@typecast_binary
+def sub(x, y):
+
+    def fun(backend, u, v):
+        return backend.sub(u, v)
+
+    return function.Args(x, y).pluginto(function.TransformCall(fun))
+
+
+
+@ad.differentiable
+@typecast_binary
+def mul(x, y):
+
+    def fun(backend, u, v):
+        return backend.mul(u, v)
+
+    return function.Args(x, y).pluginto(function.TransformCall(fun))
+
+
+
+@ad.differentiable
+@typecast_binary
+def div(x, y):
+
+    def fun(backend, u, v):
+        return backend.div(u, v)
+
+    return function.Args(x, y).pluginto(function.TransformCall(fun))
+
+
+
+@ad.differentiable
+@typecast_binary
+def power(x, y):
+
+    def fun(backend, u, v):
+        return backend.power(u, v)
+
+    return function.Args(x, y).pluginto(function.TransformCall(fun))
+
+
 
 
 # --- Array ----------------------------------------------------------------- #
@@ -449,133 +659,80 @@ class Array(ArrayLike, Pluggable):
 
    # --- Comparisons --- #
 
-   def allequal(self, other):
-
-       log = util.LogicalChain()
-       log.typ(self, other)
-
-       if bool(log):
-          log.val(self._backend, other._backend)
-
-       if bool(log): 
-          return util.allequal(self._data, other._data) 
-
-       return False
-
-
-   def allclose(self, other, **opts):
-
-       log = util.LogicalChain()
-       log.typ(self, other)
-
-       if bool(log):
-          log.val(self._backend, other._backend)
-
-       if bool(log):
-          return util.allclose(self._data, other._data, **opts)   
-
-       return False
-
-
    def __eq__(self, other):
+
+       log = util.LogicalChain()
+       log.typ(self, other)
+
+       if bool(log):
+          log.val(self._backend, other._backend)
  
-       return self.allequal(other)
+       if bool(log):
+          return logical.allequal(self, other)
+
+       return False
 
 
    # --- Arithmetics and element access --- # 
 
    def __getitem__(self, idx):
 
-       return asarray(self._data[idx], backend=self._backend) 
+       return getitem(self, idx)
 
 
    def __neg__(self):
 
-       return asarray(-self._data, backend=self._backend) 
+       return neg(self)
 
-
+ 
    def __add__(self, other):
 
-       return self._apply(other, self._backend.add)
+       return add(self, other)
 
 
    def __sub__(self, other):
 
-       return self._apply(other, self._backend.sub)
+       return sub(self, other)
 
 
    def __mul__(self, other):
 
-       return self._apply(other, self._backend.mul)
+       return mul(self, other)
 
 
    def __truediv__(self, other):
 
-       return self._apply(other, self._backend.div)
+       return div(self, other)
 
 
    def __pow__(self, other):
 
-       return self._apply(other, self._backend.power)
+       return power(self, other)
 
 
    def __radd__(self, other):
 
-       return self._apply(other, self._backend.add, reverse=True)
+       return add(other, self)
 
  
    def __rsub__(self, other):
 
-       return self._apply(other, self._backend.sub, reverse=True)
+       return sub(other, self)
 
 
    def __rmul__(self, other):
 
-       return self._apply(other, self._backend.mul, reverse=True)
+       return mul(other, self)
 
 
    def __rtruediv__(self, other):
 
-       return self._apply(other, self._backend.div, reverse=True) 
+       return div(other, self)
 
 
    def __rpow__(self, other):
 
-       return self._apply(other, self._backend.power, reverse=True)
-
-
-   # --- Private helper methods --- # 
-
-   def _apply(self, other, fun, reverse=False):
-
-       if not isinstance(other, ArrayLike):
-          other = self.withdata(other)
-
-       out = fun(*self._args(other))
-
-       return self.__class__(self._backend, out) 
-
-
-   def _args(self, other, reverse=False):
-
-       if reverse:
-          return other._data, self._data   
-
-       return self._data, other._data
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+       return power(other, self)
 
 
 

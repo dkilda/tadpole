@@ -28,7 +28,7 @@ class Pluggable(abc.ABC):
 
 class ArrayLike(abc.ABC):
 
-   # --- Using in gradient accumulations --- #
+   # --- Gradient accumulation --- #
 
    @abc.abstractmethod
    def addto(self, other):
@@ -84,14 +84,6 @@ class ArrayLike(abc.ABC):
    # --- Comparisons --- #
 
    @abc.abstractmethod
-   def allequal(self, other):
-       pass
-
-   @abc.abstractmethod
-   def allclose(self, other, **opts):
-       pass
-
-   @abc.abstractmethod
    def __eq__(self, other):
        pass
 
@@ -119,6 +111,14 @@ class ArrayLike(abc.ABC):
        pass
 
    @abc.abstractmethod
+   def __truediv__(self, other):
+       pass
+
+   @abc.abstractmethod
+   def __pow__(self, other):
+       pass
+
+   @abc.abstractmethod
    def __radd__(self, other):
        pass
 
@@ -128,6 +128,14 @@ class ArrayLike(abc.ABC):
 
    @abc.abstractmethod
    def __rmul__(self, other):
+       pass
+
+   @abc.abstractmethod
+   def __rtruediv__(self, other):
+       pass
+
+   @abc.abstractmethod
+   def __rpow__(self, other):
        pass
 
 

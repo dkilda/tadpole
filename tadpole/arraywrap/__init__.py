@@ -2,30 +2,8 @@
 # -*- coding: utf-8 -*-
 
 
-from . import vjps
-from . import jvps
-
-
-from tadpole.array.core import (
-   fromfun,  
-   asarray,
-   sparse,
-   zeros,
-   ones,
-   unit,
-   rand, 
-   randn,
-   randuniform,
-   units,
-   basis,
-)
-
-
-from tadpole.array.grad import (
-   ZeroGrad,
-   SparseGrad,
-)
-
+from . import array_vjps
+from . import array_jvps
 
 
 from .node import (
@@ -33,7 +11,6 @@ from .node import (
 )
 
 
-from .operations import *
 
 
 

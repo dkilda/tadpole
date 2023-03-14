@@ -313,19 +313,40 @@ class TorchBackend(backend.Backend):
 
    # --- Logical operations --- #
 
-   def equal(self, x, y):
+   def allclose(self, x, y, **opts):
 
-       return x == y
+       return torch.allclose(x, y, **opts)
 
 
-   def not_equal(self, x, y):
+   def isclose(self, x, y, **opts):
 
-       return x != y
+       return torch.isclose(x, y, **opts)
+
+
+   def allequal(self, x, y):
+
+       return torch.equal(x, y)
+
+
+   def isequal(self, x, y):
+
+       return torch.eq(x, y)
+
+
+   def notequal(self, x, y):
+
+       return torch.ne(x, y)
 
 
    def logical_and(self, x, y):
 
        return torch.logical_and(x, y)
+
+
+   def logical_or(self, x, y):
+
+       return torch.logical_or(x, y)
+
 
        
    # --- Simple math operations --- #

@@ -39,7 +39,7 @@ class ZeroGrad(ArrayLike, Pluggable):
        return self.todense().pluginto(funcall)
 
 
-   # --- Using in gradient accumulations --- #
+   # --- Gradient accumulation --- #
 
    def addto(self, other):
 
@@ -71,6 +71,7 @@ class ZeroGrad(ArrayLike, Pluggable):
                               tuple(), 
                               self._backend.get_dtype(None)
                              )
+
    def item(self):
 
        return self.todense().item() 
@@ -96,29 +97,13 @@ class ZeroGrad(ArrayLike, Pluggable):
 
 
    # --- Comparisons --- #
-
-   def allequal(self, other):
-
-       log = util.LogicalChain()
-       log.typ(self, other)
-
-       return bool(log)
-
-
-   def allclose(self, other, **opts):
-
-       if not isinstance(other, self.__class__):
-          return self.todense().allclose(other, **opts) 
-
-       log = util.LogicalChain()
-       log.typ(self, other)
-
-       return bool(log)
-
        
    def __eq__(self, other):
 
-       return self.allequal(other)
+       log = util.LogicalChain()
+       log.typ(self, other)
+
+       return bool(log)
 
 
    # --- Arithmetics and element access --- #
@@ -211,7 +196,7 @@ class SparseGrad(ArrayLike, Pluggable):
        return self.todense().pluginto(funcall)
 
 
-   # --- Using in gradient accumulations --- #
+   # --- Gradient accumulation --- #
 
    def addto(self, other):
 
@@ -285,45 +270,21 @@ class SparseGrad(ArrayLike, Pluggable):
 
 
    # --- Comparisons --- #
-
-   def allequal(self, other):
-
-       log = util.LogicalChain()
-       log.typ(self, other)
-
-       if bool(log):
-          log.val(self._backend, other._backend)
-          log.val(self._shape,   other._shape)
-          log.val(self._idxs,    other._idxs)
-
-       if bool(log):
-          return util.allequal(self._vals, other._vals)  
-
-       return False
-
-
-   def allclose(self, other, **opts):
-
-       if not isinstance(other, self.__class__):
-          return self.todense().allclose(other, **opts) 
-
-       log = util.LogicalChain()
-       log.typ(self, other)
-
-       if bool(log):
-          log.val(self._backend, other._backend)
-          log.val(self._shape,   other._shape)
-          log.val(self._idxs,    other._idxs)
-
-       if bool(log):
-          return util.allclose(self._vals, other._vals, **opts)   
-
-       return False
-
        
    def __eq__(self, other):
 
-       return self.allequal(other)
+       log = util.LogicalChain()
+       log.typ(self, other)
+
+       if bool(log):
+          log.val(self._backend, other._backend)
+          log.val(self._shape,   other._shape)
+          log.val(self._idxs,    other._idxs)
+
+       if bool(log):
+          return self._backend.allequal(self._vals, other._vals)  
+
+       return False
 
 
    # --- Arithmetics and element access --- # 
@@ -386,20 +347,6 @@ class SparseGrad(ArrayLike, Pluggable):
    def __rpow__(self, other):
 
        return other ** self.todense() 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

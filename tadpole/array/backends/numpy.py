@@ -268,12 +268,27 @@ class NumpyBackend(backend.Backend):
 
    # --- Logical operations --- #
 
-   def equal(self, x, y):
+   def allclose(self, x, y, **opts):
+
+       return np.allclose(x, y, **opts)
+
+
+   def isclose(self, x, y, **opts):
+
+       return np.isclose(x, y, **opts)
+
+
+   def allequal(self, x, y):
+
+       return np.array_equal(x, y)
+
+
+   def isequal(self, x, y):
 
        return x == y
 
 
-   def not_equal(self, x, y):
+   def notequal(self, x, y):
 
        return x != y
 
@@ -282,6 +297,10 @@ class NumpyBackend(backend.Backend):
 
        return np.logical_and(x, y)
 
+
+   def logical_or(self, x, y):
+
+       return np.logical_or(x, y)
 
 
    # --- Simple math operations --- #
