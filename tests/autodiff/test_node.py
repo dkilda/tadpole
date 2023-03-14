@@ -619,14 +619,14 @@ class TestNodeScape:
 
    def test_register(self):
 
-       from tadpole.array.core     import randn
-       from tadpole.array.core     import Array
-       from tadpole.arraywrap.node import Node 
+       from tadpole.tensor.core     import randn
+       from tadpole.tensor.core     import Tensor
+       from tadpole.tensorwrap.node import Node 
 
        w = data.reverse_node_dat()
 
        nodescape = an.NodeScape()
-       nodescape.register(Array, Node)
+       nodescape.register(Tensor, Node)
 
        source = randn((2,3,4))
        layer  = 0

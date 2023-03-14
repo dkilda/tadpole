@@ -5,7 +5,7 @@ import pytest
 import data    as data
 import tadpole as td
 
-from tadpole.array import allequal, allclose
+from tadpole.tensor import allequal, allclose
 
 
 

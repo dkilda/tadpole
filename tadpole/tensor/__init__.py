@@ -6,7 +6,7 @@ from .backends import set_default as set_backend
 
 
 from .types import (
-   ArrayLike,
+   TensorLike,
    Pluggable,
 )
 
@@ -28,13 +28,13 @@ from .core import (
    units,
    basis,
    fromfun,  
-   asarray,
+   astensor,
 )
 
 
 from .core import (
-   Array,
-   ArraySpace,
+   Tensor,
+   TensorSpace,
 )
 
 

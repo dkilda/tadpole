@@ -4,12 +4,12 @@
 import collections
 import numpy as np
 
-import tests.array.fakes as fake
-import tests.array.data  as data
+import tests.tensor.fakes as fake
+import tests.tensor.data  as data
 
-import tadpole.array.core     as core
-import tadpole.array.grad     as grad
-import tadpole.array.backends as backends
+import tadpole.tensor.core     as core
+import tadpole.tensor.grad     as grad
+import tadpole.tensor.backends as backends
 
 
 
@@ -17,9 +17,9 @@ import tadpole.array.backends as backends
 # --- Sparse gradient data -------------------------------------------------- #
 
 SparseGradData = collections.namedtuple("SparseGradData", [
-                    "grad", "dense", "densedata",
-                    "space", "idxs", "vals", 
-                    "backend", "dtype", "shape",
+                    "grad",     "dense",  "densedata",
+                    "space",    "idxs",   "vals", 
+                    "backend",  "dtype",  "shape",
                  ])
 
 
@@ -27,7 +27,7 @@ SparseGradData = collections.namedtuple("SparseGradData", [
 
 def sparse_grad_dat(backend, shape, dtype, idxs, vals):
 
-    space = core.ArraySpace(backend, shape, dtype)
+    space = core.TensorSpace(backend, shape, dtype)
     g     = space.sparse(idxs, vals)
 
     def densefun(shape, dtype): 
@@ -35,12 +35,12 @@ def sparse_grad_dat(backend, shape, dtype, idxs, vals):
         data[idxs] = vals
         return data
 
-    x = data.array_dat(densefun)(backend, shape, dtype=dtype)
+    x = data.tensor_dat(densefun)(backend, shape, dtype=dtype)
 
     return SparseGradData(
-                          g, x.array, x.data,
-                          space, idxs, vals,
-                          x.backend, dtype, shape,
+                          g,         x.tensor, x.data,
+                          space,     idxs,     vals,
+                          x.backend, dtype,    shape,
                          )
  
 
@@ -65,18 +65,18 @@ def sparse_grad_dat_001(backend):
     dense[0,2,1] = vals[1]
     dense[1,0,3] = vals[2]
 
-    space = core.ArraySpace(backend, shape, dtype)
+    space = core.TensorSpace(backend, shape, dtype)
     g     = space.sparse(idxs, vals)
 
     def densefun(shape, dtype): 
         return dense
 
-    x = data.array_dat(densefun)(backend, shape, dtype=dtype)
+    x = data.tensor_dat(densefun)(backend, shape, dtype=dtype)
 
     return SparseGradData(
-                          g, x.array, x.data,
-                          space, idxs, vals,
-                          x.backend, dtype, shape,
+                          g,         x.tensor, x.data,
+                          space,     idxs,     vals,
+                          x.backend, dtype,    shape,
                          )
  
 
@@ -102,18 +102,18 @@ def sparse_grad_dat_002(backend):
     dense[0,2,1] = vals[1]
     dense[1,0,3] = vals[2]
 
-    space = core.ArraySpace(backend, shape, dtype)
+    space = core.TensorSpace(backend, shape, dtype)
     g     = space.sparse(idxs, vals)
 
     def densefun(shape, dtype): 
         return dense
 
-    x = data.array_dat(densefun)(backend, shape, dtype=dtype)
+    x = data.tensor_dat(densefun)(backend, shape, dtype=dtype)
 
     return SparseGradData(
-                          g, x.array, x.data,
-                          space, idxs, vals,
-                          x.backend, dtype, shape,
+                          g,         x.tensor, x.data,
+                          space,     idxs,     vals,
+                          x.backend, dtype,    shape,
                          )
 
 

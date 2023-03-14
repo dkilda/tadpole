@@ -19,8 +19,8 @@ from .core import (
 from .core import (
    randn,
    randn_pos,
-   array_dat,
-   array_space_dat,
+   tensor_dat,
+   tensor_space_dat,
 )
 
 
@@ -42,43 +42,6 @@ from .function import (
    binary_wrappedfun_dat_003,
    binary_wrappedfun_dat_004,
 )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

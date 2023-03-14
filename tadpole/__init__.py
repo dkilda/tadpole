@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 
-from .autodiff  import *
-from .array     import *
-from .arraywrap import *
+from .autodiff   import *
+from .tensor     import *
+from .tensorwrap import *
 
 
 

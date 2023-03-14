@@ -5,11 +5,11 @@ import pytest
 import itertools
 import numpy as np
 
-import tests.array.fakes as fake
-import tests.array.data  as data
+import tests.tensor.fakes as fake
+import tests.tensor.data  as data
 
-import tadpole.util           as util
-import tadpole.array.backends as backends
+import tadpole.util            as util
+import tadpole.tensor.backends as backends
 
 
 
@@ -96,7 +96,7 @@ class TestRegistry:
    @pytest.mark.parametrize("backend", ["numpy"])
    def test_get_str(self, backend):
 
-       x = data.array_dat(data.randn)(backend, (2,3,4))
+       x = data.tensor_dat(data.randn)(backend, (2,3,4))
        assert backends.get_str(x.data) == backend
 
 

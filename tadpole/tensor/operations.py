@@ -7,17 +7,17 @@ import numpy as np
 import tadpole.util     as util
 import tadpole.autodiff as ad
 
-import tadpole.array.core     as core
-import tadpole.array.function as function
+import tadpole.tensor.core     as core
+import tadpole.tensor.function as function
 
-from tadpole.array.function import (
+from tadpole.tensor.function import (
    Args, 
    VisitCall, 
    SplitCall, 
    TransformCall,
 )
 
-from tadpole.array.core import (
+from tadpole.tensor.core import (
    typecast_unary,
    typecast_binary,
 )
@@ -27,12 +27,12 @@ from tadpole.array.core import (
 
 ###############################################################################
 ###                                                                         ###
-###  Definitions of non-differentiable array operations                     ###
+###  Definitions of non-differentiable tensor operations                    ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- Array value methods --------------------------------------------------- #
+# --- Tensor value methods -------------------------------------------------- #
 
 @ad.nondifferentiable
 def allof(x, axis=None, **opts):
@@ -107,12 +107,12 @@ def iscomplex(x):
 
 ###############################################################################
 ###                                                                         ###
-###  Definitions of differentiable array operations                         ###
+###  Definitions of differentiable tensor operations                        ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- Array shape methods --------------------------------------------------- #
+# --- Tensor shape methods -------------------------------------------------- #
 
 @ad.differentiable
 def reshape(x, shape):
@@ -165,7 +165,7 @@ def unsqueeze(x, axis):
 
 
 
-# --- Array value methods --------------------------------------------------- #
+# --- Tensor value methods -------------------------------------------------- #
  
 @ad.differentiable
 def amax(x, axis=None, **opts):

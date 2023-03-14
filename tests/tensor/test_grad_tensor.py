@@ -5,24 +5,24 @@ import pytest
 import itertools
 import numpy as np
 
-import tests.array.fakes as fake
-import tests.array.data  as data
+import tests.tensor.fakes as fake
+import tests.tensor.data  as data
 
-import tadpole.util             as util
-import tadpole.array.core       as core
-import tadpole.array.grad       as grad
-import tadpole.array.backends   as backends
-import tadpole.array.function   as function
-import tadpole.array.operations as op
+import tadpole.util              as util
+import tadpole.tensor.core       as core
+import tadpole.tensor.grad       as grad
+import tadpole.tensor.backends   as backends
+import tadpole.tensor.function   as function
+import tadpole.tensor.operations as op
 
-import tadpole.array as td
+import tadpole.tensor as tn
 
 
 
 
 ###############################################################################
 ###                                                                         ###
-###  A general framework for array gradients.                               ###
+###  A general framework for tensor gradients.                              ###
 ###                                                                         ###
 ###############################################################################
 
@@ -62,7 +62,7 @@ class TestSparseGrad:
        w = graddat(backend)
 
        out = w.grad.addto(grad.ZeroGrad())
-       assert td.allclose(out, w.dense)
+       assert tn.allclose(out, w.dense)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
@@ -73,10 +73,10 @@ class TestSparseGrad:
    def test_addto_dense(self, backend, graddat):
 
        w = graddat(backend)
-       x = data.array_dat(data.randn)(backend, w.shape, dtype=w.dtype)
+       x = data.tensor_dat(data.randn)(backend, w.shape, dtype=w.dtype)
 
-       out = w.grad.addto(x.array)
-       assert td.allclose(out, w.dense + x.array)
+       out = w.grad.addto(x.tensor)
+       assert tn.allclose(out, w.dense + x.tensor)
 
 
    @pytest.mark.parametrize("backend",            ["numpy"])
@@ -89,7 +89,7 @@ class TestSparseGrad:
        y = graddat2(backend)
 
        out = x.grad.addto(y.grad)
-       assert td.allclose(out, x.dense + y.dense)
+       assert tn.allclose(out, x.dense + y.dense)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])

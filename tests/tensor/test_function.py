@@ -5,20 +5,20 @@ import pytest
 import itertools
 import numpy as np
 
-import tests.array.fakes as fake
-import tests.array.data  as data
+import tests.tensor.fakes as fake
+import tests.tensor.data  as data
 
-import tadpole.util           as util
-import tadpole.array.backends as backends
-import tadpole.array.core     as core
-import tadpole.array.function as function
+import tadpole.util            as util
+import tadpole.tensor.backends as backends
+import tadpole.tensor.core     as core
+import tadpole.tensor.function as function
 
 
 
 
 ###############################################################################
 ###                                                                         ###
-###  General framework for array function calls.                            ###
+###  General framework for tensor function calls.                           ###
 ###                                                                         ###
 ###############################################################################
 
@@ -111,7 +111,7 @@ class TestArgs:
        w = data.transform_dat(backend, nargs)
 
        funcall = function.TransformCall(w.fun)
-       args    = function.Args(*w.arrays)
+       args    = function.Args(*w.tensors)
 
        assert w.args.pluginto(funcall) == w.out
 
@@ -121,7 +121,7 @@ class TestArgs:
    def test_iter(self, backend, nargs):
 
        w = data.transform_dat(backend, nargs)
-       assert tuple(w.args) == tuple(w.arrays)
+       assert tuple(w.args) == tuple(w.tensors)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
@@ -129,7 +129,7 @@ class TestArgs:
    def test_reversed(self, backend, nargs):
 
        w = data.transform_dat(backend, nargs)
-       assert tuple(reversed(w.args)) == tuple(reversed(w.arrays))
+       assert tuple(reversed(w.args)) == tuple(reversed(w.tensors))
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
@@ -146,7 +146,7 @@ class TestArgs:
 
        w = data.transform_dat(backend, nargs)
 
-       for x in w.arrays:
+       for x in w.tensors:
            assert x in w.args
 
 
@@ -157,7 +157,7 @@ class TestArgs:
        w = data.transform_dat(backend, nargs)
 
        for i in range(nargs):
-           assert w.args[i] == w.arrays[i]
+           assert w.args[i] == w.tensors[i]
 
 
 

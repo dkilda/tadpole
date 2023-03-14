@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 
-from . import array_vjps
-from . import array_jvps
+from . import tensor_vjps
+from . import tensor_jvps
 
 
 from .node import (

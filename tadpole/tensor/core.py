@@ -7,11 +7,11 @@ import numpy as np
 import tadpole.util     as util
 import tadpole.autodiff as ad
 
-import tadpole.array.backends as backends
-import tadpole.array.function as function
-import tadpole.array.grad     as grad
+import tadpole.tensor.backends as backends
+import tadpole.tensor.function as function
+import tadpole.tensor.grad     as grad
 
-from tadpole.array.types import ArrayLike, Pluggable
+from tadpole.tensor.types import TensorLike, Pluggable
 
 
 
@@ -34,7 +34,7 @@ def typecast_unary(fun):
  
         except (AttributeError, TypeError):
 
-            return fun(asarray(x), *args, **kwargs)
+            return fun(astensor(x), *args, **kwargs)
          
     return wrap
 
@@ -53,8 +53,8 @@ def typecast_binary(fun):
         except (AttributeError, TypeError):
 
             if not any(isinstance(v, Pluggable) for v in (x,y)):
-               x = asarray(x)
-               y = asarray(y) 
+               x = astensor(x)
+               y = astensor(y) 
 
             if not isinstance(x, Pluggable):
                x = y.withdata(x) 
@@ -71,14 +71,14 @@ def typecast_binary(fun):
 
 ###############################################################################
 ###                                                                         ###
-###  Array creation functions                                               ###
+###  Tensor creation functions                                               ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- Generic factory that constructs an Array from shape input ------------- #
+# --- Generic factory that constructs an Tensor from shape input ------------- #
 
-class ArrayFromShape:
+class TensorFromShape:
 
    def __init__(self, fun):
 
@@ -104,12 +104,12 @@ class ArrayFromShape:
                 }[fun]
 
        data = fun(shape, *args, **opts)
-       return Array(backend, data)  
+       return Tensor(backend, data)  
 
 
 
 
-# --- Array factories (from shape) ------------------------------------------ #
+# --- Tensor factories (from shape) ------------------------------------------ #
 
 @ad.differentiable
 def sparse(shape, idxs, vals, **opts):
@@ -128,7 +128,7 @@ def sparse(shape, idxs, vals, **opts):
 @ad.nondifferentiable
 def zeros(shape, **opts):
 
-    return ArrayFromShape("zeros")(
+    return TensorFromShape("zeros")(
               shape, **opts
            )
 
@@ -136,7 +136,7 @@ def zeros(shape, **opts):
 @ad.nondifferentiable
 def ones(shape, **opts):
 
-    return ArrayFromShape("ones")(
+    return TensorFromShape("ones")(
               shape, **opts
            )
 
@@ -144,7 +144,7 @@ def ones(shape, **opts):
 @ad.nondifferentiable
 def unit(shape, idx, **opts):
 
-    return ArrayFromShape("unit")(
+    return TensorFromShape("unit")(
               shape, idx, **opts
            )
 
@@ -152,7 +152,7 @@ def unit(shape, idx, **opts):
 @ad.nondifferentiable
 def rand(shape, **opts):
 
-    return ArrayFromShape("rand")(
+    return TensorFromShape("rand")(
               shape, **opts
            )
 
@@ -160,7 +160,7 @@ def rand(shape, **opts):
 @ad.nondifferentiable
 def randn(shape, **opts):
 
-    return ArrayFromShape("randn")(
+    return TensorFromShape("randn")(
               shape, **opts
            )
 
@@ -168,14 +168,14 @@ def randn(shape, **opts):
 @ad.nondifferentiable
 def randuniform(shape, boundaries, **opts):
 
-    return ArrayFromShape("randuniform")(
+    return TensorFromShape("randuniform")(
               shape, boundaries, **opts
            )
 
 
 
 
-# --- Array factories (from data) ------------------------------------------- #
+# --- Tensor factories (from data) ------------------------------------------ #
 
 def fromfun(fun, *datas, **opts):
 
@@ -184,23 +184,23 @@ def fromfun(fun, *datas, **opts):
     outdata = fun(backend, *datas)
     outdata = backend.asarray(outdata, **opts)
 
-    return Array(backend, outdata)
+    return Tensor(backend, outdata)
 
 
-def asarray(data, **opts):
+def astensor(data, **opts):
 
-    if isinstance(data, ArrayLike):
+    if isinstance(data, TensorLike):
        return data
 
     backend = backends.get_from(opts)                            
     data    = backend.asarray(data, **opts)
 
-    return Array(backend, data)
+    return Tensor(backend, data)
 
 
 
 
-# --- Array generators ------------------------------------------------------ #
+# --- Tensor generators ----------------------------------------------------- #
 
 @ad.nondifferentiable
 def units(shape, dtype=None, backend=None):
@@ -231,7 +231,7 @@ def basis(shape, dtype=None, backend=None):
 
 ###############################################################################
 ###                                                                         ###
-###  Array space                                                            ###
+###  Tensor space                                                           ###
 ###                                                                         ###
 ###############################################################################
 
@@ -308,9 +308,9 @@ class Space(abc.ABC):
        
 
 
-# --- ArraySpace ------------------------------------------------------------ #
+# --- TensorSpace ----------------------------------------------------------- #
 
-class ArraySpace(Space):
+class TensorSpace(Space):
 
    # --- Construction --- #
 
@@ -520,12 +520,12 @@ def logical_or(x, y):
 
 ###############################################################################
 ###                                                                         ###
-###  Array methods                                                          ###
+###  Tensor methods                                                         ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- Array member methods: basic functionality ----------------------------- #
+# --- Tensor member methods: basic functionality ---------------------------- #
 
 @ad.nondifferentiable
 def copy(x, **opts):
@@ -554,7 +554,7 @@ def item(x, *idx):
 
 
 
-# --- Array member methods: properties -------------------------------------- #
+# --- Tensor member methods: properties ------------------------------------- #
 
 @ad.nondifferentiable
 def dtype(x):
@@ -578,7 +578,7 @@ def shape(x):
 
 
 
-# --- Array methods: gradient accumulation ---------------------------------- #
+# --- Tensor methods: gradient accumulation --------------------------------- #
 
 @ad.differentiable
 @typecast_binary
@@ -589,7 +589,7 @@ def addgrads(x, y):
 
 
 
-# --- Array methods: arithmetics and element access ------------------------- # 
+# --- Tensor methods: arithmetics and element access ------------------------ # 
 
 @ad.differentiable
 def getitem(x, idx):
@@ -670,14 +670,14 @@ def power(x, y):
 
 ###############################################################################
 ###                                                                         ###
-###  Definition of array.                                                   ###
+###  Definition of tensor                                                   ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- Array ----------------------------------------------------------------- #
+# --- Tensor ---------------------------------------------------------------- #
 
-class Array(ArrayLike, Pluggable):
+class Tensor(TensorLike, Pluggable):
 
    # --- Construction --- #
 
@@ -685,7 +685,7 @@ class Array(ArrayLike, Pluggable):
 
        if not isinstance(backend, backends.backend.Backend):
           raise ValueError(
-             f"Array: backend must be an instance "
+             f"Tensor: backend must be an instance "
              f"of Backend, but it is {backend}"
           )  
 
@@ -733,12 +733,12 @@ class Array(ArrayLike, Pluggable):
 
    def withdata(self, data):
 
-       return asarray(data, backend=self._backend)
+       return astensor(data, backend=self._backend)
 
 
    def space(self):
 
-       return ArraySpace(self._backend, self.shape, self.dtype)
+       return TensorSpace(self._backend, self.shape, self.dtype)
 
 
    def item(self, *idx): 
@@ -746,7 +746,7 @@ class Array(ArrayLike, Pluggable):
        return self._backend.item(self._data, *idx)
 
 
-   # --- Array properties --- #
+   # --- Tensor properties --- #
 
    @property
    def dtype(self):

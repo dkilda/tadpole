@@ -7,31 +7,31 @@ import numpy as np
 
 from tests.common import options
 
-import tests.array.fakes as fake
-import tests.array.data  as data
+import tests.tensor.fakes as fake
+import tests.tensor.data  as data
 
-import tadpole.util             as util
-import tadpole.array.core       as core
-import tadpole.array.grad       as grad
-import tadpole.array.backends   as backends
-import tadpole.array.function   as function
-import tadpole.array.operations as op
+import tadpole.util              as util
+import tadpole.tensor.core       as core
+import tadpole.tensor.grad       as grad
+import tadpole.tensor.backends   as backends
+import tadpole.tensor.function   as function
+import tadpole.tensor.operations as op
 
-import tadpole.array as td
+import tadpole.tensor as tn
 
 
 
 
 ###############################################################################
 ###                                                                         ###
-###  Array creation functions                                               ###
+###  Tensor creation functions                                              ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- Array generators ------------------------------------------------------ #
+# --- Tensor generators ----------------------------------------------------- #
 
-class TestArrayGenerators:
+class TestTensorGenerators:
 
    @pytest.mark.parametrize("backend",  ["numpy"])
    @pytest.mark.parametrize("basisdat", [
@@ -42,7 +42,7 @@ class TestArrayGenerators:
        x    = basisdat(backend)
        opts = options(dtype=x.dtype, backend=backend)
 
-       ans = list(x.arrays)
+       ans = list(x.tensors)
        out = list(core.units(x.shape, **opts))
 
        assert out == ans
@@ -58,7 +58,7 @@ class TestArrayGenerators:
        x    = basisdat(backend)
        opts = options(dtype=x.dtype, backend=backend)
 
-       ans = list(x.arrays)
+       ans = list(x.tensors)
        out = list(core.basis(x.shape, **opts))
 
        assert out == ans
@@ -66,22 +66,22 @@ class TestArrayGenerators:
 
 
 
-# --- Array factories (from data) ------------------------------------------- #
+# --- Tensor factories (from data) ------------------------------------------ #
 
-class TestArraysFromData:
+class TestTensorsFromData:
 
    @pytest.mark.parametrize("backend", ["numpy"])
    @pytest.mark.parametrize("shape",   [(2,3,4)])
    @pytest.mark.parametrize("dtype",   ["complex128"])
    def test_fromfun(self, backend, shape, dtype):
        
-       x1 = data.array_dat(data.randn)(
+       x1 = data.tensor_dat(data.randn)(
               backend, shape, dtype=dtype, seed=1
             )
-       x2 = data.array_dat(data.randn)(
+       x2 = data.tensor_dat(data.randn)(
               backend, shape, dtype=dtype, seed=2
             )   
-       ans = data.array_dat(data.randn)(
+       ans = data.tensor_dat(data.randn)(
               backend, shape, dtype=dtype, seed=3
             ) 
 
@@ -90,29 +90,29 @@ class TestArraysFromData:
        fun = fake.Fun(ans.data, ans.backend, x1.data, x2.data)
        out = core.fromfun(fun, x1.data, x2.data, **opts)
 
-       assert out == ans.array
+       assert out == ans.tensor
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
    @pytest.mark.parametrize("shape",   [(2,3,4)])
    @pytest.mark.parametrize("dtype",   ["complex128"])
-   def test_asarray(self, backend, shape, dtype):
+   def test_astensor(self, backend, shape, dtype):
 
-       x = data.array_dat(data.randn)(
+       x = data.tensor_dat(data.randn)(
               backend, shape, dtype=dtype, seed=1
            )
 
        opts = options(dtype=dtype, backend=backend)
-       out  = core.asarray(x.data, **opts) 
+       out  = core.astensor(x.data, **opts) 
 
-       assert out == x.array
-
-
+       assert out == x.tensor
 
 
-# --- Array factories (from shape) ------------------------------------------ #
 
-class TestArraysFromShape:
+
+# --- Tensor factories (from shape) ----------------------------------------- #
+
+class TestTensorsFromShape:
 
    @pytest.mark.parametrize("backend",  ["numpy"])
    @pytest.mark.parametrize("basisdat", [
@@ -123,7 +123,7 @@ class TestArraysFromShape:
        x    = basisdat(backend)
        opts = options(dtype=x.dtype, backend=backend)
 
-       for idx, ans in zip(x.idxs, x.arrays):
+       for idx, ans in zip(x.idxs, x.tensors):
 
            out = core.unit(x.shape, idx, **opts)
            assert out == ans
@@ -140,7 +140,7 @@ class TestArraysFromShape:
 
        out = core.zeros(x.shape, **opts)
 
-       assert out == x.array
+       assert out == x.tensor
 
 
    @pytest.mark.parametrize("backend",   ["numpy"])
@@ -154,7 +154,7 @@ class TestArraysFromShape:
 
        out = core.ones(x.shape, **opts)
 
-       assert out == x.array
+       assert out == x.tensor
 
 
    @pytest.mark.parametrize("backend",   ["numpy"])
@@ -170,7 +170,7 @@ class TestArraysFromShape:
 
        out = core.rand(x.shape, **opts)
 
-       assert out == x.array
+       assert out == x.tensor
 
 
    @pytest.mark.parametrize("backend",   ["numpy"])
@@ -186,7 +186,7 @@ class TestArraysFromShape:
 
        out = core.randn(x.shape, **opts)
 
-       assert out == x.array
+       assert out == x.tensor
 
 
    @pytest.mark.parametrize("backend",   ["numpy"])
@@ -204,28 +204,28 @@ class TestArraysFromShape:
                 x.shape, x.opts["boundaries"], **opts
              )
 
-       assert out == x.array
+       assert out == x.tensor
 
 
 
 
 ###############################################################################
 ###                                                                         ###
-###  Array space                                                            ###
+###  Tensor space                                                           ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- ArraySpace ------------------------------------------------------------ #
+# --- TensorSpace ----------------------------------------------------------- #
 
-class TestArraySpace:
+class TestTensorSpace:
 
    @pytest.mark.parametrize("backend", ["numpy"])
    @pytest.mark.parametrize("shape",   [(2,3,4)])
    @pytest.mark.parametrize("dtype",   ["complex128"])  
    def test_dtype(self, backend, shape, dtype):
 
-       w = data.array_space_dat(
+       w = data.tensor_space_dat(
               backend, shape, dtype
            )
 
@@ -237,7 +237,7 @@ class TestArraySpace:
    @pytest.mark.parametrize("dtype",   ["complex128"])  
    def test_size(self, backend, shape, dtype):
 
-       w = data.array_space_dat(
+       w = data.tensor_space_dat(
               backend, shape, dtype
            )
 
@@ -249,7 +249,7 @@ class TestArraySpace:
    @pytest.mark.parametrize("dtype",   ["complex128"])  
    def test_ndim(self, backend, shape, dtype):
 
-       w = data.array_space_dat(
+       w = data.tensor_space_dat(
               backend, shape, dtype
            )
 
@@ -261,7 +261,7 @@ class TestArraySpace:
    @pytest.mark.parametrize("dtype",   ["complex128"])  
    def test_shape(self, backend, shape, dtype):
 
-       w = data.array_space_dat(
+       w = data.tensor_space_dat(
               backend, shape, dtype
            )
 
@@ -272,14 +272,14 @@ class TestArraySpace:
 
 ###############################################################################
 ###                                                                         ###
-###  Definition of array.                                                   ###
+###  Definition of tensor                                                   ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- Array ----------------------------------------------------------------- #
+# --- Tensor ---------------------------------------------------------------- #
 
-class TestArray:
+class TestTensor:
 
    @pytest.mark.parametrize("backend", ["numpy"])
    @pytest.mark.parametrize("shapes",  [
@@ -288,9 +288,9 @@ class TestArray:
    ])
    def test_pluginto(self, backend, shapes):
 
-       array_dat = data.array_dat(data.randn)
+       tensor_dat = data.tensor_dat(data.randn)
 
-       ws  = [array_dat(backend, shape) for shape in shapes] 
+       ws  = [tensor_dat(backend, shape) for shape in shapes] 
        seq = [(w.backend, w.data)       for w     in ws]
 
        fun     = fake.Fun(None)
@@ -298,7 +298,7 @@ class TestArray:
        funcall = function.TransformCall(fun)
 
        for w in ws:
-           funcall = w.array.pluginto(funcall)
+           funcall = w.tensor.pluginto(funcall)
         
        assert funcall == ans
 
@@ -307,21 +307,21 @@ class TestArray:
    @pytest.mark.parametrize("shape",   [(2,3,4)])
    def test_addto_zero(self, backend, shape):
 
-       w = data.array_dat(data.randn)(backend, shape)
+       w = data.tensor_dat(data.randn)(backend, shape)
 
-       out = w.array.addto(grad.ZeroGrad())
-       assert out is w.array
+       out = w.tensor.addto(grad.ZeroGrad())
+       assert out is w.tensor
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
    @pytest.mark.parametrize("shape",   [(2,3,4)])
    def test_addto_dense(self, backend, shape):
 
-       x = data.array_dat(data.randn)(backend, shape, seed=1)
-       y = data.array_dat(data.randn)(backend, shape, seed=2)
+       x = data.tensor_dat(data.randn)(backend, shape, seed=1)
+       y = data.tensor_dat(data.randn)(backend, shape, seed=2)
 
-       out = x.array.addto(y.array)
-       assert td.allclose(out, x.array + y.array)
+       out = x.tensor.addto(y.tensor)
+       assert tn.allclose(out, x.tensor + y.tensor)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
@@ -332,21 +332,21 @@ class TestArray:
    def test_addto_sparse(self, backend, graddat):
 
        y = graddat(backend)
-       x = data.array_dat(data.randn)(backend, y.grad.shape)
+       x = data.tensor_dat(data.randn)(backend, y.grad.shape)
 
-       out = x.array.addto(y.grad)
-       assert td.allclose(out, x.array + y.dense)
+       out = x.tensor.addto(y.grad)
+       assert tn.allclose(out, x.tensor + y.dense)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
    @pytest.mark.parametrize("shape",   [(2,3,4)])
    def test_copy(self, backend, shape):
 
-       w   = data.array_dat(data.randn)(backend, shape)   
-       out = w.array.copy()
+       w   = data.tensor_dat(data.randn)(backend, shape)   
+       out = w.tensor.copy()
 
-       assert out == w.array
-       assert out is not w.array
+       assert out == w.tensor
+       assert out is not w.tensor
       
 
    @pytest.mark.parametrize("backend", ["numpy"])
@@ -358,11 +358,11 @@ class TestArray:
    ])
    def test_space(self, backend, shape, dtype):
 
-       w = data.array_dat(data.randn)(
+       w = data.tensor_dat(data.randn)(
               backend, shape, dtype=dtype)     
 
-       space = core.ArraySpace(w.backend, shape, dtype)  
-       assert w.array.space() == space
+       space = core.TensorSpace(w.backend, shape, dtype)  
+       assert w.tensor.space() == space
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
@@ -373,64 +373,64 @@ class TestArray:
    ])
    def test_dtype(self, backend, dtype):
 
-       w = data.array_dat(data.randn)(
+       w = data.tensor_dat(data.randn)(
               backend, (2,3,4), dtype=dtype)
 
-       assert w.array.dtype == dtype 
+       assert w.tensor.dtype == dtype 
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
    @pytest.mark.parametrize("shape",   [(2,3,4)])
    def test_size(self, backend, shape):
 
-       w = data.array_dat(data.randn)(backend, shape)
-       assert w.array.size == np.prod(shape)
+       w = data.tensor_dat(data.randn)(backend, shape)
+       assert w.tensor.size == np.prod(shape)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
    @pytest.mark.parametrize("shape",   [(2,3,4)])
    def test_ndim(self, backend, shape):
 
-       w = data.array_dat(data.randn)(backend, shape)
-       assert w.array.ndim == len(shape)
+       w = data.tensor_dat(data.randn)(backend, shape)
+       assert w.tensor.ndim == len(shape)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
    @pytest.mark.parametrize("shape",   [(2,3,4)])
    def test_shape(self, backend, shape):
 
-       w = data.array_dat(data.randn)(backend, shape)
-       assert w.array.shape == shape
+       w = data.tensor_dat(data.randn)(backend, shape)
+       assert w.tensor.shape == shape
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
    @pytest.mark.parametrize("shape",   [(2,3,4)])
    def test_getitem(self, backend, shape):
 
-       w = data.array_dat(data.randn)(backend, shape)
+       w = data.tensor_dat(data.randn)(backend, shape)
 
        def elem(idx):
-           return core.asarray(w.data[idx], backend=w.backend)
+           return core.astensor(w.data[idx], backend=w.backend)
 
        for idx in itertools.product(*map(range, shape)):
-           assert w.array[idx] == elem(idx)
+           assert w.tensor[idx] == elem(idx)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
    @pytest.mark.parametrize("shape",   [(2,3,4)])
    def test_item(self, backend, shape):
 
-       w = data.array_dat(data.randn)(backend, shape)
+       w = data.tensor_dat(data.randn)(backend, shape)
 
        for idx in itertools.product(*map(range, shape)):
-           assert w.array.item(*idx) == w.data[idx]
+           assert w.tensor.item(*idx) == w.data[idx]
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
    def test_item_zerodim(self, backend):
 
-       w = data.array_dat(data.randn)(backend, (1,))
-       assert w.array.item() == w.data[0]
+       w = data.tensor_dat(data.randn)(backend, (1,))
+       assert w.tensor.item() == w.data[0]
 
 
 

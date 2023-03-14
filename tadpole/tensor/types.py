@@ -8,7 +8,7 @@ import abc
 
 ###############################################################################
 ###                                                                         ###
-###  Definition of array interfaces                                         ###
+###  Definition of tensor interfaces                                        ###
 ###                                                                         ###
 ###############################################################################
 
@@ -24,9 +24,9 @@ class Pluggable(abc.ABC):
 
 
 
-# --- ArrayLike interface --------------------------------------------------- #
+# --- TensorLike interface -------------------------------------------------- #
 
-class ArrayLike(abc.ABC):
+class TensorLike(abc.ABC):
 
    # --- Gradient accumulation --- #
 
@@ -58,7 +58,7 @@ class ArrayLike(abc.ABC):
        pass
 
 
-   # --- Array properties --- #
+   # --- Tensor properties --- #
 
    @property
    @abc.abstractmethod

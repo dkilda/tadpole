@@ -3,55 +3,55 @@
 
 import tadpole.util     as util
 import tadpole.autodiff as ad
-import tadpole.array    as td
+import tadpole.tensor   as tn
 
 
 
 
 ###############################################################################
 ###                                                                         ###
-###  JVP's of differentiable array operations                               ###
+###  JVP's of differentiable tensor operations                              ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- Array member methods: arithmetics and element access ------------------ # 
+# --- Tensor member methods: arithmetics and element access ----------------- # 
 
-ad.makejvp(td.neg, lambda g, out, x: -g)
+ad.makejvp(tn.neg, lambda g, out, x: -g)
 
 
-ad.makejvp(td.add, lambda g, out, x, y: g, 
+ad.makejvp(tn.add, lambda g, out, x, y: g, 
                    lambda g, out, x, y: g)
 
 
-ad.makejvp(td.sub, lambda g, out, x, y:  g, 
+ad.makejvp(tn.sub, lambda g, out, x, y:  g, 
                    lambda g, out, x, y: -g)
 
 
-ad.makejvp(td.mul, lambda g, out, x, y: y * g, 
+ad.makejvp(tn.mul, lambda g, out, x, y: y * g, 
                    lambda g, out, x, y: x * g)
 
 
 
 
-# --- Array methods: for gradient accumulation ------------------------------ #
+# --- Tensor methods: for gradient accumulation ----------------------------- #
 
-ad.makejvp(td.addgrads, lambda g, out, x, y: g, 
+ad.makejvp(tn.addgrads, lambda g, out, x, y: g, 
                         lambda g, out, x, y: g)
 
 
 
 
-# --- Array shape methods --------------------------------------------------- #
+# --- Tensor shape methods -------------------------------------------------- #
 
 
-# --- Array value methods --------------------------------------------------- #
+# --- Tensor value methods -------------------------------------------------- #
 
 
 # --- Simple math operations ------------------------------------------------ #
 
-ad.makejvp(td.sin, lambda g, out, x:  g * td.cos(x))
-ad.makejvp(td.cos, lambda g, out, x: -g * td.sin(x))
+ad.makejvp(tn.sin, lambda g, out, x:  g * tn.cos(x))
+ad.makejvp(tn.cos, lambda g, out, x: -g * tn.sin(x))
 
 
 

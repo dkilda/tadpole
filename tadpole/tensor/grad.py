@@ -6,24 +6,24 @@ import numpy as np
 
 import tadpole.util as util
 
-import tadpole.array.backends as backends
-import tadpole.array.core     as core
+import tadpole.tensor.backends as backends
+import tadpole.tensor.core     as core
 
-from tadpole.array.types import ArrayLike, Pluggable
+from tadpole.tensor.types import TensorLike, Pluggable
 
 
 
 
 ###############################################################################
 ###                                                                         ###
-###  A general framework for array gradients                                ###
+###  A general framework for tensor gradients                               ###
 ###                                                                         ###
 ###############################################################################
 
 
 # --- Zero gradient --------------------------------------------------------- #
 
-class ZeroGrad(ArrayLike, Pluggable):
+class ZeroGrad(TensorLike, Pluggable):
 
    # --- Construction --- #
 
@@ -46,7 +46,6 @@ class ZeroGrad(ArrayLike, Pluggable):
        return other.addto(self)
 
 
-
    # --- Basic functionality --- #
 
    def copy(self):
@@ -61,12 +60,12 @@ class ZeroGrad(ArrayLike, Pluggable):
 
    def withdata(self, data):
 
-       return core.asarray(data, backend=self._backend)
+       return core.astensor(data, backend=self._backend)
 
 
    def space(self):
 
-       return core.ArraySpace(
+       return core.TensorSpace(
                               self._backend.name(), 
                               tuple(), 
                               self._backend.get_dtype(None)
@@ -77,7 +76,7 @@ class ZeroGrad(ArrayLike, Pluggable):
        return self.todense().item() 
 
 
-   # --- Array properties --- #
+   # --- Tensor properties --- #
 
    @property
    def dtype(self):
@@ -167,8 +166,8 @@ class ZeroGrad(ArrayLike, Pluggable):
 
    def __rpow__(self, other):
 
-       if not isinstance(other, ArrayLike):
-          other = core.asarray(other)
+       if not isinstance(other, TensorLike):
+          other = core.astensor(other)
 
        return other.space().ones()
 
@@ -177,7 +176,7 @@ class ZeroGrad(ArrayLike, Pluggable):
 
 # --- Sparse gradient ------------------------------------------------------- #
 
-class SparseGrad(ArrayLike, Pluggable):
+class SparseGrad(TensorLike, Pluggable):
 
    # --- Construction --- #
 
@@ -230,17 +229,17 @@ class SparseGrad(ArrayLike, Pluggable):
        zeros = self._backend.zeros(self.shape, dtype=self.dtype)
        out   = self._backend.put(zeros, self._idxs, self._vals)
 
-       return core.asarray(out, backend=self._backend)
+       return core.astensor(out, backend=self._backend)
 
 
    def withdata(self, data):
 
-       return core.asarray(data, backend=self._backend)
+       return core.astensor(data, backend=self._backend)
 
 
    def space(self):
 
-       return core.ArraySpace(
+       return core.TensorSpace(
           self._backend.name(), self.shape, self.dtype
        )
 
@@ -250,7 +249,7 @@ class SparseGrad(ArrayLike, Pluggable):
        return self.todense().item(*idx)  
 
 
-   # --- Array properties --- #
+   # --- Tensor properties --- #
 
    @property
    def dtype(self):

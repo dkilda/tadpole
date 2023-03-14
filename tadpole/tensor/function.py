@@ -5,7 +5,7 @@ import abc
 import numpy as np
 
 import tadpole.util       as util
-import tadpole.array.core as core
+import tadpole.tensor.core as core
  
 
 
@@ -17,7 +17,7 @@ import tadpole.array.core as core
 ###############################################################################
 
 
-# --- Comparison of iterables of arrays ------------------------------------- #
+# --- Comparison of iterables of tensors ------------------------------------ #
 
 def allallequal(xs, ys):
 
@@ -33,7 +33,7 @@ def allallclose(xs, ys, **opts):
 
 ###############################################################################
 ###                                                                         ###
-###  General framework for array function calls.                            ###
+###  General framework for tensor function calls.                           ###
 ###                                                                         ###
 ###############################################################################
 
@@ -76,10 +76,10 @@ class Content:
 
        if bool(log):
 
-          arrays1, datas1 = zip(*self._content)
-          arrays2, datas2 = zip(*other._content)
+          backends1, datas1 = zip(*self._content)
+          backends2, datas2 = zip(*other._content)
 
-          return (arrays1 == arrays2) and allallequal(datas1, datas2)
+          return (backends1 == backends2) and allallequal(datas1, datas2)
 
        return False
 
@@ -220,7 +220,7 @@ class TransformCall(FunCall):
        backends, datas = zip(*self._content)
 
        out = self._fun(backends[0], *datas)
-       return core.Array(backends[0], out)
+       return core.Tensor(backends[0], out)
 
 
 
@@ -271,7 +271,7 @@ class SplitCall(FunCall):
        backends, datas = zip(*self._content)
 
        outputs = self._fun(backends[0], *datas)
-       outputs = (core.Array(backends[0], out) for out in outputs)
+       outputs = (core.Tensor(backends[0], out) for out in outputs)
        
        return tuple(outputs) 
 

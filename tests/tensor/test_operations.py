@@ -7,17 +7,17 @@ import numpy as np
 
 from tests.common import options
 
-import tests.array.fakes as fake
-import tests.array.data  as data
+import tests.tensor.fakes as fake
+import tests.tensor.data  as data
 
-import tadpole.util             as util
-import tadpole.array.core       as core
-import tadpole.array.grad       as grad
-import tadpole.array.backends   as backends
-import tadpole.array.function   as function
-import tadpole.array.operations as op
+import tadpole.util              as util
+import tadpole.tensor.core       as core
+import tadpole.tensor.grad       as grad
+import tadpole.tensor.backends   as backends
+import tadpole.tensor.function   as function
+import tadpole.tensor.operations as op
 
-import tadpole.array as td
+import tadpole.tensor as tn
 
 
 
@@ -41,7 +41,7 @@ class TestTypeCast:
    def test_unary(self, backend, fundat):
 
        w = fundat(backend)
-       assert td.allclose(w.wrappedfun(*w.args), w.out)
+       assert tn.allclose(w.wrappedfun(*w.args), w.out)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
@@ -54,19 +54,19 @@ class TestTypeCast:
    def test_binary(self, backend, fundat):
 
        w = fundat(backend)
-       assert td.allclose(w.wrappedfun(*w.args), w.out)
+       assert tn.allclose(w.wrappedfun(*w.args), w.out)
 
 
 
 
 ###############################################################################
 ###                                                                         ###
-###  Definitions of differentiable array operations                         ###
+###  Definitions of differentiable tensor operations                        ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- Array operations: unary ----------------------------------------------- #
+# --- Tensor operations: unary ---------------------------------------------- #
 
 class TestUnaryOperations:
 
@@ -74,13 +74,13 @@ class TestUnaryOperations:
    @pytest.mark.parametrize("shape",   [(2,3,4)])
    def test_getitem(self, backend, shape):
 
-       w = data.array_dat(data.randn)(backend, shape)
+       w = data.tensor_dat(data.randn)(backend, shape)
 
        def elem(idx):
-           return core.asarray(w.data[idx], backend=w.backend)
+           return core.astensor(w.data[idx], backend=w.backend)
 
        for idx in itertools.product(*map(range, shape)):
-           assert td.getitem(w.array, idx) == elem(idx)
+           assert tn.getitem(w.tensor, idx) == elem(idx)
 
 
    @pytest.mark.parametrize("backend",     ["numpy"])
@@ -92,11 +92,11 @@ class TestUnaryOperations:
        np.random.seed(1)
        vals = np.random.randn(len(idxs))
 
-       w   = data.array_dat(data.randn)(backend, shape)
-       out = td.put(w.array, idxs, vals)
+       w   = data.tensor_dat(data.randn)(backend, shape)
+       out = tn.put(w.tensor, idxs, vals)
 
        w.data[idxs] = vals
-       ans = core.asarray(w.data, **options(backend=backend))
+       ans = core.astensor(w.data, **options(backend=backend))
 
        assert out == ans
 
@@ -110,11 +110,11 @@ class TestUnaryOperations:
        np.random.seed(1)
        vals = np.random.randn(len(idxs))
 
-       w   = data.array_dat(data.randn)(backend, shape)
-       out = td.put(w.array, idxs, vals, accumulate=True)
+       w   = data.tensor_dat(data.randn)(backend, shape)
+       out = tn.put(w.tensor, idxs, vals, accumulate=True)
 
        np.add.at(w.data, idxs, vals) 
-       ans = core.asarray(w.data, **options(backend=backend))
+       ans = core.astensor(w.data, **options(backend=backend))
 
        assert out == ans
 
@@ -125,11 +125,11 @@ class TestUnaryOperations:
    ])
    def test_reshape(self, backend, shape, shape1):
 
-       w = data.array_dat(data.randn)(backend, shape)
+       w = data.tensor_dat(data.randn)(backend, shape)
 
-       out = td.reshape(w.array, shape1)
+       out = tn.reshape(w.tensor, shape1)
        ans = np.reshape(w.data,  shape1)
-       ans = core.asarray(ans, **options(backend=backend))
+       ans = core.astensor(ans, **options(backend=backend))
 
        assert out == ans
 
@@ -138,44 +138,44 @@ class TestUnaryOperations:
    @pytest.mark.parametrize("shape",   [(2,3,4)])
    def test_neg(self, backend, shape):
 
-       w = data.array_dat(data.randn)(backend, shape)
+       w = data.tensor_dat(data.randn)(backend, shape)
 
-       out = -w.array 
+       out = -w.tensor 
        ans = -w.data
-       ans = core.asarray(ans, **options(backend=backend))
+       ans = core.astensor(ans, **options(backend=backend))
 
-       assert td.allclose(out, ans)
+       assert tn.allclose(out, ans)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
    @pytest.mark.parametrize("shape",   [(2,3,4)])
    def test_sin(self, backend, shape):
 
-       w = data.array_dat(data.randn)(backend, shape)
+       w = data.tensor_dat(data.randn)(backend, shape)
 
-       out = td.sin(w.array)
+       out = tn.sin(w.tensor)
        ans = np.sin(w.data)
-       ans = core.asarray(ans, **options(backend=backend))
+       ans = core.astensor(ans, **options(backend=backend))
 
-       assert td.allclose(out, ans)
+       assert tn.allclose(out, ans)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
    @pytest.mark.parametrize("shape",   [(2,3,4)])
    def test_cos(self, backend, shape):
 
-       w = data.array_dat(data.randn)(backend, shape)
+       w = data.tensor_dat(data.randn)(backend, shape)
 
-       out = td.cos(w.array)
+       out = tn.cos(w.tensor)
        ans = np.cos(w.data)
-       ans = core.asarray(ans, **options(backend=backend))
+       ans = core.astensor(ans, **options(backend=backend))
 
-       assert td.allclose(out, ans)
-
-
+       assert tn.allclose(out, ans)
 
 
-# --- Array operations: binary (for gradient accumulation) ------------------ #
+
+
+# --- Tensor operations: binary (for gradient accumulation) ----------------- #
 
 class TestBinaryGradOperations:
 
@@ -183,21 +183,21 @@ class TestBinaryGradOperations:
    @pytest.mark.parametrize("shape",   [(2,3,4)])
    def test_addgrads_zero_dense(self, backend, shape):
 
-       w = data.array_dat(data.randn)(backend, shape)
+       w = data.tensor_dat(data.randn)(backend, shape)
 
-       out = td.addgrads(grad.ZeroGrad(), w.array)
-       assert out is w.array
+       out = tn.addgrads(grad.ZeroGrad(), w.tensor)
+       assert out is w.tensor
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
    @pytest.mark.parametrize("shape",   [(2,3,4)])
    def test_addgrads_dense_dense(self, backend, shape):
 
-       x = data.array_dat(data.randn)(backend, shape, seed=1)
-       y = data.array_dat(data.randn)(backend, shape, seed=2)
+       x = data.tensor_dat(data.randn)(backend, shape, seed=1)
+       y = data.tensor_dat(data.randn)(backend, shape, seed=2)
 
-       out = td.addgrads(x.array, y.array)
-       assert td.allclose(out, x.array + y.array)
+       out = tn.addgrads(x.tensor, y.tensor)
+       assert tn.allclose(out, x.tensor + y.tensor)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
@@ -208,10 +208,10 @@ class TestBinaryGradOperations:
    def test_addgrads_sparse_dense(self, backend, graddat):
 
        x = graddat(backend)
-       y = data.array_dat(data.randn)(backend, x.grad.shape)
+       y = data.tensor_dat(data.randn)(backend, x.grad.shape)
 
-       out = td.addgrads(x.grad, y.array)
-       assert td.allclose(out, x.dense + y.array)
+       out = tn.addgrads(x.grad, y.tensor)
+       assert tn.allclose(out, x.dense + y.tensor)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
@@ -223,8 +223,8 @@ class TestBinaryGradOperations:
 
        w = graddat(backend)
 
-       out = td.addgrads(grad.ZeroGrad(), w.grad)
-       assert td.allclose(out, w.dense)
+       out = tn.addgrads(grad.ZeroGrad(), w.grad)
+       assert tn.allclose(out, w.dense)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
@@ -235,11 +235,11 @@ class TestBinaryGradOperations:
    def test_addgrads_dense_sparse(self, backend, graddat):
 
        y = graddat(backend)
-       x = data.array_dat(data.randn)(backend, y.shape, dtype=y.dtype)
+       x = data.tensor_dat(data.randn)(backend, y.shape, dtype=y.dtype)
 
 
-       out = td.addgrads(x.array, y.grad)
-       assert td.allclose(out, x.array + y.dense)
+       out = tn.addgrads(x.tensor, y.grad)
+       assert tn.allclose(out, x.tensor + y.dense)
 
 
    @pytest.mark.parametrize("backend",            ["numpy"])
@@ -251,13 +251,13 @@ class TestBinaryGradOperations:
        x = graddat1(backend)
        y = graddat2(backend)
 
-       out = td.addgrads(x.grad, y.grad)
-       assert td.allclose(out, x.dense + y.dense)
+       out = tn.addgrads(x.grad, y.grad)
+       assert tn.allclose(out, x.dense + y.dense)
 
 
 
 
-# --- Array operations: binary ---------------------------------------------- #
+# --- Tensor operations: binary --------------------------------------------- #
 
 class TestBinaryOperations:
 
@@ -267,14 +267,14 @@ class TestBinaryOperations:
    ])
    def test_add(self, backend, shape1, shape2):
 
-       x1 = data.array_dat(data.randn)(backend, shape1)
-       x2 = data.array_dat(data.randn)(backend, shape2)
+       x1 = data.tensor_dat(data.randn)(backend, shape1)
+       x2 = data.tensor_dat(data.randn)(backend, shape2)
 
-       out = x1.array + x2.array
+       out = x1.tensor + x2.tensor
        ans = x1.data  + x2.data
-       ans = core.asarray(ans, **options(backend=backend))
+       ans = core.astensor(ans, **options(backend=backend))
        
-       return td.allclose(out, ans)
+       return tn.allclose(out, ans)
 
 
    @pytest.mark.parametrize("backend",        ["numpy"])
@@ -283,14 +283,14 @@ class TestBinaryOperations:
    ])
    def test_sub(self, backend, shape1, shape2):
 
-       x1 = data.array_dat(data.randn)(backend, shape1)
-       x2 = data.array_dat(data.randn)(backend, shape2)
+       x1 = data.tensor_dat(data.randn)(backend, shape1)
+       x2 = data.tensor_dat(data.randn)(backend, shape2)
 
-       out = x1.array - x2.array
+       out = x1.tensor - x2.tensor
        ans = x1.data  - x2.data
-       ans = core.asarray(ans, **options(backend=backend))
+       ans = core.astensor(ans, **options(backend=backend))
        
-       return td.allclose(out, ans)
+       return tn.allclose(out, ans)
 
 
    @pytest.mark.parametrize("backend",        ["numpy"])
@@ -299,19 +299,19 @@ class TestBinaryOperations:
    ])
    def test_mul(self, backend, shape1, shape2):
 
-       x1 = data.array_dat(data.randn)(backend, shape1)
-       x2 = data.array_dat(data.randn)(backend, shape2)
+       x1 = data.tensor_dat(data.randn)(backend, shape1)
+       x2 = data.tensor_dat(data.randn)(backend, shape2)
 
-       out = x1.array * x2.array
+       out = x1.tensor * x2.tensor
        ans = x1.data  * x2.data
-       ans = core.asarray(ans, **options(backend=backend))
+       ans = core.astensor(ans, **options(backend=backend))
        
-       return td.allclose(out, ans)
+       return tn.allclose(out, ans)
        
 
 
 
-# --- Array operations: nary ------------------------------------------------ #
+# --- Tensor operations: nary ----------------------------------------------- #
 
 class TestNaryOperations:
 
@@ -323,14 +323,14 @@ class TestNaryOperations:
 
        xs = []
        for shape in shapes:
-           x = data.array_dat(data.randn)(backend, shape)
+           x = data.tensor_dat(data.randn)(backend, shape)
            xs.append(x)
 
-       out = td.einsum(equation, *(x.array for x in xs))
+       out = tn.einsum(equation, *(x.tensor for x in xs))
        ans = np.einsum(equation, *(x.data  for x in xs))
-       ans = core.asarray(ans, **options(backend=backend))
+       ans = core.astensor(ans, **options(backend=backend))
 
-       assert td.allclose(out, ans) 
+       assert tn.allclose(out, ans) 
 
 
 
