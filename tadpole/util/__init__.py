@@ -27,10 +27,3 @@ from tadpole.util.misc import (
 )
 
 
-from tadpole.util.logic import (
-   allequal,
-   allclose,
-   allallequal,
-   allallclose,
-)
-

@@ -4,10 +4,8 @@
 import abc
 import numpy as np
 
-import tadpole.util as util
-
-import tadpole.array.logical as logical
-import tadpole.array.core    as core
+import tadpole.util       as util
+import tadpole.array.core as core
  
 
 
@@ -23,12 +21,12 @@ import tadpole.array.core    as core
 
 def allallequal(xs, ys):
 
-    return all(logical.allequal(x, y) for x, y in zip(xs, ys))
+    return all(core.allequal(x, y) for x, y in zip(xs, ys))
 
 
 def allallclose(xs, ys, **opts):
 
-    return all(logical.allclose(x, y, **opts) for x, y in zip(xs, ys))
+    return all(core.allclose(x, y, **opts) for x, y in zip(xs, ys))
 
 
 

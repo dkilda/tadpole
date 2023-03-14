@@ -17,6 +17,9 @@ import tadpole.array.backends   as backends
 import tadpole.array.function   as function
 import tadpole.array.operations as op
 
+import tadpole.array as td
+
+
 
 
 ###############################################################################
@@ -318,7 +321,7 @@ class TestArray:
        y = data.array_dat(data.randn)(backend, shape, seed=2)
 
        out = x.array.addto(y.array)
-       assert op.allclose(out, x.array + y.array)
+       assert td.allclose(out, x.array + y.array)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
@@ -332,7 +335,7 @@ class TestArray:
        x = data.array_dat(data.randn)(backend, y.grad.shape)
 
        out = x.array.addto(y.grad)
-       assert op.allclose(out, x.array + y.dense)
+       assert td.allclose(out, x.array + y.dense)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])

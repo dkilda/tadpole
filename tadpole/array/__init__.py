@@ -5,6 +5,18 @@
 from .backends import set_default as set_backend
 
 
+from .types import (
+   ArrayLike,
+   Pluggable,
+)
+
+
+from .grad import (
+   ZeroGrad,
+   SparseGrad,
+)
+
+
 from .core import (
    sparse,
    zeros,
@@ -26,13 +38,53 @@ from .core import (
 )
 
 
-from .grad import (
-   ZeroGrad,
-   SparseGrad,
+from .core import (
+   allclose,
+   allequal,
+   isclose,
+   isequal,
+   notequal,
+   logical_and,
+   logical_or,
 )
 
 
-from .logical    import *
+from .core import (
+   allclose,
+   allequal,
+   isclose,
+   isequal,
+   notequal,
+   logical_and,
+   logical_or,
+)
+
+
+from .core import (
+   copy,
+   todense,
+   withdata,
+   space,
+   item,
+   dtype,
+   size,
+   ndim,
+   shape,
+)
+
+
+from .core import (
+   addgrads,
+   getitem,
+   neg,
+   add,
+   sub,
+   mul,
+   div,
+   power,
+)
+
+
 from .operations import *
 
 

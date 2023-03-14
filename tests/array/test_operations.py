@@ -17,6 +17,8 @@ import tadpole.array.backends   as backends
 import tadpole.array.function   as function
 import tadpole.array.operations as op
 
+import tadpole.array as td
+
 
 
 
@@ -39,7 +41,7 @@ class TestTypeCast:
    def test_unary(self, backend, fundat):
 
        w = fundat(backend)
-       assert op.allclose(w.wrappedfun(*w.args), w.out)
+       assert td.allclose(w.wrappedfun(*w.args), w.out)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
@@ -52,7 +54,7 @@ class TestTypeCast:
    def test_binary(self, backend, fundat):
 
        w = fundat(backend)
-       assert op.allclose(w.wrappedfun(*w.args), w.out)
+       assert td.allclose(w.wrappedfun(*w.args), w.out)
 
 
 
@@ -78,7 +80,7 @@ class TestUnaryOperations:
            return core.asarray(w.data[idx], backend=w.backend)
 
        for idx in itertools.product(*map(range, shape)):
-           assert op.getitem(w.array, idx) == elem(idx)
+           assert td.getitem(w.array, idx) == elem(idx)
 
 
    @pytest.mark.parametrize("backend",     ["numpy"])
@@ -91,7 +93,7 @@ class TestUnaryOperations:
        vals = np.random.randn(len(idxs))
 
        w   = data.array_dat(data.randn)(backend, shape)
-       out = op.put(w.array, idxs, vals)
+       out = td.put(w.array, idxs, vals)
 
        w.data[idxs] = vals
        ans = core.asarray(w.data, **options(backend=backend))
@@ -109,7 +111,7 @@ class TestUnaryOperations:
        vals = np.random.randn(len(idxs))
 
        w   = data.array_dat(data.randn)(backend, shape)
-       out = op.put(w.array, idxs, vals, accumulate=True)
+       out = td.put(w.array, idxs, vals, accumulate=True)
 
        np.add.at(w.data, idxs, vals) 
        ans = core.asarray(w.data, **options(backend=backend))
@@ -125,7 +127,7 @@ class TestUnaryOperations:
 
        w = data.array_dat(data.randn)(backend, shape)
 
-       out = op.reshape(w.array, shape1)
+       out = td.reshape(w.array, shape1)
        ans = np.reshape(w.data,  shape1)
        ans = core.asarray(ans, **options(backend=backend))
 
@@ -142,7 +144,7 @@ class TestUnaryOperations:
        ans = -w.data
        ans = core.asarray(ans, **options(backend=backend))
 
-       assert op.allclose(out, ans)
+       assert td.allclose(out, ans)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
@@ -151,11 +153,11 @@ class TestUnaryOperations:
 
        w = data.array_dat(data.randn)(backend, shape)
 
-       out = op.sin(w.array)
+       out = td.sin(w.array)
        ans = np.sin(w.data)
        ans = core.asarray(ans, **options(backend=backend))
 
-       assert op.allclose(out, ans)
+       assert td.allclose(out, ans)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
@@ -164,11 +166,11 @@ class TestUnaryOperations:
 
        w = data.array_dat(data.randn)(backend, shape)
 
-       out = op.cos(w.array)
+       out = td.cos(w.array)
        ans = np.cos(w.data)
        ans = core.asarray(ans, **options(backend=backend))
 
-       assert op.allclose(out, ans)
+       assert td.allclose(out, ans)
 
 
 
@@ -183,7 +185,7 @@ class TestBinaryGradOperations:
 
        w = data.array_dat(data.randn)(backend, shape)
 
-       out = op.addgrads(grad.ZeroGrad(), w.array)
+       out = td.addgrads(grad.ZeroGrad(), w.array)
        assert out is w.array
 
 
@@ -194,8 +196,8 @@ class TestBinaryGradOperations:
        x = data.array_dat(data.randn)(backend, shape, seed=1)
        y = data.array_dat(data.randn)(backend, shape, seed=2)
 
-       out = op.addgrads(x.array, y.array)
-       assert op.allclose(out, x.array + y.array)
+       out = td.addgrads(x.array, y.array)
+       assert td.allclose(out, x.array + y.array)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
@@ -208,8 +210,8 @@ class TestBinaryGradOperations:
        x = graddat(backend)
        y = data.array_dat(data.randn)(backend, x.grad.shape)
 
-       out = op.addgrads(x.grad, y.array)
-       assert op.allclose(out, x.dense + y.array)
+       out = td.addgrads(x.grad, y.array)
+       assert td.allclose(out, x.dense + y.array)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
@@ -221,8 +223,8 @@ class TestBinaryGradOperations:
 
        w = graddat(backend)
 
-       out = op.addgrads(grad.ZeroGrad(), w.grad)
-       assert op.allclose(out, w.dense)
+       out = td.addgrads(grad.ZeroGrad(), w.grad)
+       assert td.allclose(out, w.dense)
 
 
    @pytest.mark.parametrize("backend", ["numpy"])
@@ -236,8 +238,8 @@ class TestBinaryGradOperations:
        x = data.array_dat(data.randn)(backend, y.shape, dtype=y.dtype)
 
 
-       out = op.addgrads(x.array, y.grad)
-       assert op.allclose(out, x.array + y.dense)
+       out = td.addgrads(x.array, y.grad)
+       assert td.allclose(out, x.array + y.dense)
 
 
    @pytest.mark.parametrize("backend",            ["numpy"])
@@ -249,8 +251,8 @@ class TestBinaryGradOperations:
        x = graddat1(backend)
        y = graddat2(backend)
 
-       out = op.addgrads(x.grad, y.grad)
-       assert op.allclose(out, x.dense + y.dense)
+       out = td.addgrads(x.grad, y.grad)
+       assert td.allclose(out, x.dense + y.dense)
 
 
 
@@ -272,7 +274,7 @@ class TestBinaryOperations:
        ans = x1.data  + x2.data
        ans = core.asarray(ans, **options(backend=backend))
        
-       return op.allclose(out, ans)
+       return td.allclose(out, ans)
 
 
    @pytest.mark.parametrize("backend",        ["numpy"])
@@ -288,7 +290,7 @@ class TestBinaryOperations:
        ans = x1.data  - x2.data
        ans = core.asarray(ans, **options(backend=backend))
        
-       return op.allclose(out, ans)
+       return td.allclose(out, ans)
 
 
    @pytest.mark.parametrize("backend",        ["numpy"])
@@ -304,7 +306,7 @@ class TestBinaryOperations:
        ans = x1.data  * x2.data
        ans = core.asarray(ans, **options(backend=backend))
        
-       return op.allclose(out, ans)
+       return td.allclose(out, ans)
        
 
 
@@ -324,11 +326,11 @@ class TestNaryOperations:
            x = data.array_dat(data.randn)(backend, shape)
            xs.append(x)
 
-       out = op.einsum(equation, *(x.array for x in xs))
+       out = td.einsum(equation, *(x.array for x in xs))
        ans = np.einsum(equation, *(x.data  for x in xs))
        ans = core.asarray(ans, **options(backend=backend))
 
-       assert op.allclose(out, ans) 
+       assert td.allclose(out, ans) 
 
 
 

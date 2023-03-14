@@ -21,7 +21,7 @@ ScalarData = collections.namedtuple("ScalarData", [
 def scalar_dat_001():
 
     def fun(x, y):
-        return td.add(td.mul(td.sin(td.cos(x)), td.cos(y)), td.sin(x)) 
+        return td.sin(td.cos(x)) * td.cos(y) + td.sin(x) 
 
     x = td.asarray(2.7)
     y = td.asarray(5.1)
@@ -43,7 +43,7 @@ def scalar_dat_002():
 
     def fun(x, x1=x1):
       def fun1(y):
-          return td.mul(x, td.mul(y, y))
+          return x * (y * y)
       return td.gradient(fun1)(x1)
 
     x    = td.asarray(5.0)
@@ -59,7 +59,7 @@ def scalar_dat_003():
 
     def fun(x):
       def fun1(y):
-          return td.mul(x, y)
+          return x * y
       return td.gradient(fun1)(x)
 
     x    = td.asarray(5.0)

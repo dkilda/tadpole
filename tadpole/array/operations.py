@@ -8,7 +8,6 @@ import tadpole.util     as util
 import tadpole.autodiff as ad
 
 import tadpole.array.core     as core
-import tadpole.array.logical  as logical
 import tadpole.array.function as function
 
 from tadpole.array.function import (
@@ -453,10 +452,11 @@ def cumsum(x, axis=None, dtype=None, **opts):
 
 
 
-"""
+
 
 # --- Linear algebra: multiplication methods -------------------------------- #
 
+@ad.differentiable
 def einsum(equation, *xs, optimize=True):
 
     def fun(backend, *xs):
@@ -466,6 +466,7 @@ def einsum(equation, *xs, optimize=True):
 
 
 
+@ad.differentiable
 def dot(x, y):
 
     def fun(backend, u, v):
@@ -475,6 +476,7 @@ def dot(x, y):
 
 
 
+@ad.differentiable
 def kron(x, y):
 
     def fun(backend, u, v):
@@ -487,6 +489,7 @@ def kron(x, y):
 
 # --- Linear algebra: decomposition methods --------------------------------- #
 
+@ad.differentiable
 def svd(x):
 
     def fun(backend, v):
@@ -496,6 +499,7 @@ def svd(x):
 
 
 
+@ad.differentiable
 def qr(x):
 
     def fun(backend, v):
@@ -505,6 +509,7 @@ def qr(x):
 
 
 
+@ad.differentiable
 def eig(x):
 
     def fun(backend, v):
@@ -514,6 +519,7 @@ def eig(x):
 
 
 
+@ad.differentiable
 def eigh(x):
 
     def fun(backend, v):
@@ -526,6 +532,7 @@ def eigh(x):
 
 # --- Linear algebra: matrix exponential ------------------------------------ #
 
+@ad.differentiable
 def expm(x):
 
     def fun(backend, v):
@@ -540,13 +547,11 @@ def expm(x):
 
 def htranspose(x, axes):
 
-    def fun(backend, v):
-        return backend.htranspose(v, axes)
-
-    return Args(x).pluginto(TransformCall(fun))
+    return transpose(conj(x), axes)
 
 
 
+@ad.differentiable
 def norm(x, order=None, axis=None, **opts):
 
     def fun(backend, v):
@@ -555,7 +560,7 @@ def norm(x, order=None, axis=None, **opts):
     return Args(x).pluginto(TransformCall(fun))
 
 """
-
+"""
 
 
 
