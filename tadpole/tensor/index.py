@@ -21,6 +21,13 @@ import tadpole.tensor.uuids as uuids
 
 class IndexLike(abc.ABC):
 
+   # --- String representation --- #
+
+   @abc.abstractmethod
+   def __repr__(self):
+       pass
+
+
    # --- Equality and hashing --- #
 
    @abc.abstractmethod
@@ -32,14 +39,16 @@ class IndexLike(abc.ABC):
        pass
 
 
-   # --- String representation --- #
+   # --- Index properties --- #
 
    @abc.abstractmethod
-   def __repr__(self):
+   @property
+   def name(self):
        pass
 
    @abc.abstractmethod
-   def __str__(self):
+   @property
+   def size(self):
        pass
 
 
@@ -101,6 +110,20 @@ class Index(IndexLike):
        return self
 
 
+   # --- String representation --- #
+
+   def __repr__(self):
+
+       rep = util.ReprChain()
+       rep.typ(self)
+
+       rep.val("name", self._name)
+       rep.val("size", self._size)
+       rep.val("uuid", self._uuid)
+
+       return str(rep)
+
+
    # --- Equality and hashing --- #
 
    def __eq__(self, other):
@@ -124,35 +147,27 @@ class Index(IndexLike):
        return hash(self._uuid)  
 
 
-   # --- String representation --- #
+   # --- Index properties --- #
 
-   def __repr__(self):
-
-       rep = util.ReprChain()
-       rep.typ(self)
-
-       rep.val("name", self._name)
-       rep.val("size", self._size)
-       rep.val("uuid", self._uuid)
-
-       return str(rep)
-
-
-   def __str__(self):
-
+   @property
+   def name(self):
        return self._name
+
+   @property
+   def size(self):
+       return self._size
 
 
    # --- Index space --- #
 
    def __len__(self):
  
-       return self._size
+       return self.size
 
 
    def __iter__(self):
 
-       return iter(range(self._size))
+       return iter(range(self.size))
 
 
    def __reversed__(self):
@@ -177,7 +192,7 @@ class Index(IndexLike):
 ###############################################################################
 ###                                                                         ###
 ###  Collections of tensor indices with extra functionality                 ###
-###  acting on groups of Index objects.                                     ###
+###  (operations acting on groups of Index objects).                        ###
 ###                                                                         ###
 ###############################################################################
 
@@ -344,7 +359,7 @@ class Indices(util.TupleLike):
 
    def inds(self, name):
 
-       return tuple(filter(lambda x: str(x) == name, self._inds))  
+       return tuple(filter(lambda x: x.name == name, self._inds))  
 
 
    def ind(self, name):
@@ -376,6 +391,116 @@ class Indices(util.TupleLike):
    def push(self, *inds):
 
        return self.add(*inds, axis=len(self))
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Index operations                                                       ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Basic index info ------------------------------------------------------ #
+
+def shapeof(*inds):
+
+    return ShapeFromInds(*inds)
+
+
+def sizeof(*inds):
+
+    return shapeof(*inds).prod()
+
+
+
+
+# --- Index transformations (preserving the number of inds) ----------------- #
+
+def reindex(inds, indmap):
+
+    newinds = list(inds)
+
+    for i, ind in enumerate(inds):
+
+        try:
+            newinds[i] = indmap[ind]
+        except KeyError:
+            pass
+
+    return type(inds)(*newinds) 
+
+
+
+
+def transpose(inds, *order):
+
+    assert set(inds) == set(order),
+       f"index.transpose(): input and output must contain the same "
+       f"set of indices, but input {inds} does not match output {order}."
+
+    return type(inds)(*order)
+
+
+
+
+# --- Index transformations: (changing the number of inds) ------------------ #
+
+def fuse(inds, fusemap):
+
+    if isinstance(fusemap, dict):
+       fusemap = fusemap.items()
+
+    for inp, out in fusemap:
+
+        if not isinstance(inp, Index):
+           inp = Index(inp, sizeof(*inp))
+
+        assert sizeof(*inp) == sizeof(out), (
+           f"index.fuse(): input {inp} and output {out} must have "
+           f"matching sizes, but output size {sizeof(out)} != net "
+           f"input size {sizeof(*inp)} = prod({shapeof(*inp)})." 
+        )
+
+        inds = inds.remove(*inp).add(out)
+
+    return inds
+
+       
+
+ 
+def split(inds, splitmap):
+
+    if isinstance(splitmap, dict):
+       splitmap = splitmap.items()
+
+    for inp, out in splitmap:
+
+        assert sizeof(inp) == sizeof(*out), (
+           f"index.split(): input {inp} and output {out} must have "
+           f"matching sizes, but output size {sizeof(inp)} != net input "
+           f"size {sizeof(*out)} = prod({shapeof(*out)})." 
+        )
+
+        axis = inds.axis(inp)
+        inds = inds.remove(inp).add(*out, axis=axis)
+
+    return inds
+
+
+
+
+def squeeze(inds):
+
+    return inds.remove(*filter(lambda x: x.size() == 1, inds))
+
+
+
+
+def unsqueeze(inds, names):
+
+    return inds.add(*(Index(name) for name in names))
 
 
 

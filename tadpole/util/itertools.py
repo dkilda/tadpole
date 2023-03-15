@@ -3,7 +3,25 @@
 
 import abc
 import itertools
+import cytoolz
+
 import tadpole.util as util
+
+
+
+###############################################################################
+###                                                                         ###
+### Concatenation tools.                                                    ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Concatenate an iterable of iterables ---------------------------------- #
+
+def concat(xs):
+
+    return cytoolz.concat(xs)
+
 
 
 
