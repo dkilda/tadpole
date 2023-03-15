@@ -39,19 +39,6 @@ class IndexLike(abc.ABC):
        pass
 
 
-   # --- Index properties --- #
-
-   @abc.abstractmethod
-   @property
-   def name(self):
-       pass
-
-   @abc.abstractmethod
-   @property
-   def size(self):
-       pass
-
-
    # --- Index space --- #
 
    @abc.abstractmethod
@@ -67,7 +54,11 @@ class IndexLike(abc.ABC):
        pass
 
 
-   # --- Out of place modifiers --- #
+   # --- General methods --- #
+
+   @abc.abstractmethod
+   def answers(self, name):
+       pass
 
    @abc.abstractmethod
    def resized(self, size, **opts):
@@ -147,27 +138,16 @@ class Index(IndexLike):
        return hash(self._uuid)  
 
 
-   # --- Index properties --- #
-
-   @property
-   def name(self):
-       return self._name
-
-   @property
-   def size(self):
-       return self._size
-
-
    # --- Index space --- #
 
    def __len__(self):
  
-       return self.size
+       return self._size
 
 
    def __iter__(self):
 
-       return iter(range(self.size))
+       return iter(range(self._size))
 
 
    def __reversed__(self):
@@ -175,7 +155,12 @@ class Index(IndexLike):
        return reversed(iter(self))
 
 
-   # --- Out of place modifiers --- #
+   # --- General methods --- #
+
+   def answers(self, name):
+
+       return self._name == name
+
 
    def resized(self, size, **opts):
 
@@ -359,7 +344,7 @@ class Indices(util.TupleLike):
 
    def inds(self, name):
 
-       return tuple(filter(lambda x: x.name == name, self._inds))  
+       return tuple(filter(lambda x: x.answers(name), self._inds))  
 
 
    def ind(self, name):
@@ -410,6 +395,9 @@ def shapeof(*inds):
 
 
 def sizeof(*inds):
+
+    if len(inds) == 1:
+       return len(inds[0])
 
     return shapeof(*inds).prod()
 
@@ -493,7 +481,7 @@ def split(inds, splitmap):
 
 def squeeze(inds):
 
-    return inds.remove(*filter(lambda x: x.size() == 1, inds))
+    return inds.remove(*filter(lambda x: len(x) == 1, inds))
 
 
 
