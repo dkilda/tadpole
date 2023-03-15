@@ -2,10 +2,19 @@
 # -*- coding: utf-8 -*-
 
 import abc
-import tadpole.tensor.identifiers as identifiers
-import tadpole.util as util
+import numpy as np
+
+import tadpole.util         as util
+import tadpole.tensor.uuids as uuids
 
 
+
+
+###############################################################################
+###                                                                         ###
+###  Tensor index                                                           ###
+###                                                                         ###
+###############################################################################
 
 
 # --- IndexLike interface --------------------------------------------------- #
@@ -73,7 +82,7 @@ class Index(IndexLike):
    def __init__(self, name, size=1, uuid=None):
 
        if uuid is None:
-          uuid = identifiers.new_uuid()
+          uuid = uuids.next()
 
        self._name = name
        self._size = size
@@ -165,21 +174,46 @@ class Index(IndexLike):
 
 
 
+###############################################################################
+###                                                                         ###
+###  Collections of tensor indices with extra functionality                 ###
+###  acting on groups of Index objects.                                     ###
+###                                                                         ###
+###############################################################################
+
+
 # --- ShapeFromInds --------------------------------------------------------- #
 
 class ShapeFromInds(util.TupleLike):
+
+   # --- Construction --- #
 
    def __init__(self, *inds):
 
        self._inds = inds
 
 
+   # --- Internal handling --- #
+
    @property
    @util.cacheable
    def _sizes(self):
 
-       return tuple(map(len, self._inds)) 
+       return tuple(map(len, self._inds))
 
+
+   # --- String representation --- #
+
+   def __repr__(self):
+
+       rep = util.ReprChain()
+       rep.typ(self)
+       rep.val("sizes", self._sizes)
+
+       return str(rep) 
+
+
+   # --- TupleLike methods --- #
 
    def __eq__(self, other):
 
@@ -222,6 +256,12 @@ class ShapeFromInds(util.TupleLike):
        return self._sizes[idx]
 
 
+   # --- Shape behavior --- #
+
+   def prod(self):
+
+       return np.prod(self._sizes)
+
 
 
 
@@ -229,34 +269,43 @@ class ShapeFromInds(util.TupleLike):
 
 class Indices(util.TupleLike):
 
-   def __init__(self, *inds):
-
-       self._inds = inds
-       self._axis_by_name = {}
-
-
-
-
-
-
-
-
-
-
-"""
-class ShapeFromInds(util.TupleLike):
+   # --- Construction --- #
 
    def __init__(self, *inds):
 
        self._inds = inds
 
+
+   # --- Copying --- #
+
+   def copy(self):
+
+       return self.__class__(*self._inds)
+
+
+   __copy__ = copy
+
+
+   # --- String representation --- #
+
+   def __repr__(self):
+
+       rep = util.ReprChain()
+       rep.typ(self)
+       rep.val("inds", self._inds)
+
+       return str(rep) 
+
+
+   # --- TupleLike methods --- #
 
    def __eq__(self, other):
 
        log = util.LogicalChain()
-
        log.typ(self, other) 
-       log.val(self._inds, other._inds)
+
+       if bool(log):
+          log.val(self._inds, other._inds)
 
        return bool(log)
 
@@ -289,36 +338,44 @@ class ShapeFromInds(util.TupleLike):
    def __getitem__(self, idx):
 
        return self._inds[idx]
-"""
 
 
+   # --- Index container behavior --- #
+
+   def inds(self, name):
+
+       return tuple(filter(lambda x: str(x) == name, self._inds))  
 
 
+   def ind(self, name):
+
+       return self.inds(name)[0]
 
 
+   def axis(self, ind):
+
+       return self._inds.index(ind)
 
 
+   # --- Out-of-place modifications --- #
+
+   def remove(self, *inds):
+
+       return self.__class__(*(for ind in self if ind not in inds))
 
 
+   def add(self, *inds, axis=0):
+
+       newinds = list(self)
+       for ind in reversed(inds):
+           newinds.insert(axis, ind)
+
+       return self.__class__(*newinds)
 
 
+   def push(self, *inds):
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+       return self.add(*inds, axis=len(self))
 
 
 
