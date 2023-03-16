@@ -27,9 +27,13 @@ class ZeroGrad(TensorLike, Pluggable):
 
    # --- Construction --- #
 
-   def __init__(self):
+   def __init__(self, inds=None):
+
+       if inds is None:
+          inds = index.Indices()
 
        self._backend = backends.get(None)
+       self._inds    = inds
 
 
    # --- Plugging into function calls --- #
@@ -67,7 +71,7 @@ class ZeroGrad(TensorLike, Pluggable):
 
        return core.TensorSpace(
                               self._backend.name(), 
-                              tuple(), 
+                              self._inds, 
                               self._backend.get_dtype(None)
                              )
 
@@ -107,9 +111,9 @@ class ZeroGrad(TensorLike, Pluggable):
 
    # --- Arithmetics and element access --- #
 
-   def __getitem__(self, idx):
+   def __getitem__(self, pos):
 
-       return self.todense()[idx]
+       return self.todense()[pos]
 
 
    def __neg__(self):
@@ -180,11 +184,11 @@ class SparseGrad(TensorLike, Pluggable):
 
    # --- Construction --- #
 
-   def __init__(self, backend, shape, idxs, vals):
+   def __init__(self, backend, inds, pos, vals):
 
        self._backend = backend
-       self._shape   = shape
-       self._idxs    = idxs
+       self._inds    = inds
+       self._pos     = pos
        self._vals    = vals
 
 
@@ -209,7 +213,7 @@ class SparseGrad(TensorLike, Pluggable):
           other = other.todense()
 
        data = self._backend.put(
-                 other._data, self._idxs, self._vals, accumulate=True
+                 other._data, self._pos, self._vals, accumulate=True
               )
 
        return other.withdata(data)
@@ -220,33 +224,33 @@ class SparseGrad(TensorLike, Pluggable):
    def copy(self):
 
        return self.__class__(
-          self._backend, self._shape, self._idxs, self._vals
+          self._backend, self._shape, self._pos, self._vals
        )
 
 
    def todense(self):
 
        zeros = self._backend.zeros(self.shape, dtype=self.dtype)
-       out   = self._backend.put(zeros, self._idxs, self._vals)
+       data  = self._backend.put(zeros, self._pos, self._vals)
 
-       return core.astensor(out, backend=self._backend)
+       return core.astensor(data, self._inds, backend=self._backend)
 
 
    def withdata(self, data):
 
-       return core.astensor(data, backend=self._backend)
+       return core.astensor(data, self._inds, backend=self._backend)
 
 
    def space(self):
 
        return core.TensorSpace(
-          self._backend.name(), self.shape, self.dtype
+          self._backend.name(), self._inds, self.dtype
        )
 
 
-   def item(self, *idx):
+   def item(self, *pos):
 
-       return self.todense().item(*idx)  
+       return self.todense().item(*pos)  
 
 
    # --- Tensor properties --- #
@@ -257,15 +261,15 @@ class SparseGrad(TensorLike, Pluggable):
 
    @property 
    def size(self):
-       return len(self._vals) 
+       return self._inds.size
 
    @property 
    def ndim(self):
-       return len(self._shape) 
+       return self._inds.ndim 
 
    @property 
    def shape(self):
-       return self._shape
+       return self._inds.shape
 
 
    # --- Comparisons --- #
@@ -277,8 +281,8 @@ class SparseGrad(TensorLike, Pluggable):
 
        if bool(log):
           log.val(self._backend, other._backend)
-          log.val(self._shape,   other._shape)
-          log.val(self._idxs,    other._idxs)
+          log.val(self._inds,    other._inds)
+          log.val(self._pos,     other._pos)
 
        if bool(log):
           return self._backend.allequal(self._vals, other._vals)  
@@ -288,9 +292,9 @@ class SparseGrad(TensorLike, Pluggable):
 
    # --- Arithmetics and element access --- # 
 
-   def __getitem__(self, idx):
+   def __getitem__(self, pos):
 
-       return self.todense()[idx]
+       return self.todense()[pos]
 
 
    def __neg__(self):

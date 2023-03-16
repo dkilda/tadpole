@@ -176,93 +176,10 @@ class Index(IndexLike):
 
 ###############################################################################
 ###                                                                         ###
-###  Collections of tensor indices with extra functionality                 ###
+###  Collection of tensor indices with extra functionality                  ###
 ###  (operations acting on groups of Index objects).                        ###
 ###                                                                         ###
 ###############################################################################
-
-
-# --- ShapeFromInds --------------------------------------------------------- #
-
-class ShapeFromInds(util.TupleLike):
-
-   # --- Construction --- #
-
-   def __init__(self, *inds):
-
-       self._inds = inds
-
-
-   # --- Internal handling --- #
-
-   @property
-   @util.cacheable
-   def _sizes(self):
-
-       return tuple(map(len, self._inds))
-
-
-   # --- String representation --- #
-
-   def __repr__(self):
-
-       rep = util.ReprChain()
-       rep.typ(self)
-       rep.val("sizes", self._sizes)
-
-       return str(rep) 
-
-
-   # --- TupleLike methods --- #
-
-   def __eq__(self, other):
-
-       log = util.LogicalChain()
-       log.typ(self, other) 
-
-       if bool(log):
-          log.val(self._sizes, other._sizes)
-
-       return bool(log)
-
-
-   def __hash__(self):
-
-       return hash(self._sizes)
-
-
-   def __len__(self):
-
-       return len(self._sizes)
-
-
-   def __contains__(self, x):
-
-       return x in self._sizes
-
-
-   def __iter__(self):
-
-       return iter(self._sizes)  
-
-
-   def __reversed__(self):
-
-       return reversed(self._sizes)  
-
-
-   def __getitem__(self, idx):
-
-       return self._sizes[idx]
-
-
-   # --- Shape behavior --- #
-
-   def prod(self):
-
-       return np.prod(self._sizes)
-
-
 
 
 # --- Indices --------------------------------------------------------------- #
@@ -340,6 +257,21 @@ class Indices(util.TupleLike):
        return self._inds[idx]
 
 
+   # --- Properties --- #
+
+   @property
+   def size(self):
+       return np.prod(self.shape)
+
+   @property
+   def ndim(self):
+       return len(self._inds)
+
+   @property
+   def shape(self):
+       return tuple(map(len, self._inds))
+
+
    # --- Index container behavior --- #
 
    def inds(self, name):
@@ -391,7 +323,8 @@ class Indices(util.TupleLike):
 
 def shapeof(*inds):
 
-    return ShapeFromInds(*inds)
+    return Indices(*inds).shape
+
 
 
 def sizeof(*inds):
@@ -399,7 +332,7 @@ def sizeof(*inds):
     if len(inds) == 1:
        return len(inds[0])
 
-    return shapeof(*inds).prod()
+    return Indices(*inds).size
 
 
 

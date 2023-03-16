@@ -33,40 +33,56 @@ def allallclose(xs, ys, **opts):
 
 ###############################################################################
 ###                                                                         ###
-###  General framework for tensor function calls.                           ###
+###  Engine for tensor function calls                                       ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- ContentLike interface ------------------------------------------------- #
+# --- EngineLike interface -------------------------------------------------- #
 
-class ContentLike(abc.ABC):
+class EngineLike(abc.ABC):
 
    @abc.abstractmethod
-   def __iter__(self):
+   def nargs(self):
        pass
 
    @abc.abstractmethod
-   def __len__(self):
+   def backends(self):
        pass
 
    @abc.abstractmethod
-   def attach(self, backend, data):
+   def datas(self):
+       pass
+
+   @abc.abstractmethod
+   def inds(self):
+       pass
+
+   @abc.abstractmethod
+   def attach(self, backend, data, inds):
+       pass
+
+   @abc.abstractmethod
+   def execute(self, *args, **kwargs):
        pass
 
 
 
 
-# --- Content --------------------------------------------------------------- #
+# --- Engine ---------------------------------------------------------------- #
 
-class Content:
+class Engine(EngineLike):
 
-   def __init__(self, content=None):
+   def __init__(self, fun, backends=None, datas=None, inds=None):
    
-       if content is None:
-          content = util.Sequence()
+       if backends is None: backends = util.Sequence()
+       if datas    is None: datas    = util.Sequence()
+       if inds     is None: inds     = util.Sequence()
 
-       self._content = content
+       self._fun      = fun
+       self._backends = backends
+       self._datas    = datas
+       self._inds     = inds
 
 
    def __eq__(self, other):
@@ -76,29 +92,61 @@ class Content:
 
        if bool(log):
 
-          backends1, datas1 = zip(*self._content)
-          backends2, datas2 = zip(*other._content)
+          log.val(self._fun, other._fun)
 
-          return (backends1 == backends2) and allallequal(datas1, datas2)
+       if bool(log):
+
+          log.val(self._backends, other._backends)
+          log.val(self._inds,     other._inds)
+
+          if bool(log):
+             return allallequal(self._datas, other._datas)
 
        return False
 
 
-   def __iter__(self):
+   def nargs(self):
 
-       return iter(self._content)
-
-
-   def __len__(self):
-
-       return len(self._content)
-
-         
-   def attach(self, backend, data):
-
-       return self.__class__(self._content.push((backend, data)))
+       return len(self._datas)
 
 
+   def backends(self):
+
+       return iter(self._backends)
+
+
+   def datas(self):
+
+       return iter(self._datas)
+
+
+   def inds(self):
+
+       return iter(self._inds)
+
+  
+   def attach(self, backend, data, inds):
+
+       return self.__class__(
+                             self._fun,
+                             self._backends.push(backend),
+                             self._datas.push(data),
+                             self._inds.push(inds)
+                            ) 
+
+
+   def execute(self, *args, **kwargs):
+
+       return self._fun(*args, **kwargs)
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Tensor function calls: various call types                              ###
+###                                                                         ###
+###############################################################################
 
 
 # --- Function call interface ----------------------------------------------- #
@@ -106,176 +154,242 @@ class Content:
 class FunCall(abc.ABC):
 
    @abc.abstractmethod
-   def __iter__(self):
-       pass
-
-   @abc.abstractmethod
-   def __len__(self):
-       pass
-
-   @abc.abstractmethod
-   def attach(self, backend, data):
+   def attach(self, backend, data, inds):
        pass
 
    @abc.abstractmethod
    def execute(self):
        pass
+
+
+
+
+# --- Reindexing call ------------------------------------------------------- #
+
+class ReindexCall(FunCall):
+
+   def __init__(self, engine):
+
+       if not isinstance(engine, EngineLike):
+          engine = Engine(engine)
+
+       self._engine = engine
+
+
+   def attach(self, backend, data, inds):
+
+       return self.__class__(self._engine.attach(backend, data, inds))
+
+
+   def execute(self):
+
+       backend, = self._engine.backends()
+       data,    = self._engine.datas()
+       inds,    = self._engine.inds()
+
+       outinds = self._engine.execute(inds) 
+
+       if outinds.shape == inds.shape: 
+          return core.Tensor(backend, data, outinds)
+
+       try:
+          outdata = backend.reshape(data, outinds.shape)
+       except ValueError:
+          print((
+             f"\nReindexCall.execute(): "
+             f"output indices shape {outinds.shape} "
+             f"is not compatible with data shape {data.shape}."
+          ))
+          raise 
+
+       return core.Tensor(backend, outdata, outinds)  
+       
+
+
+
+# --- Transform call -------------------------------------------------------- #
+
+class TransformCall(FunCall): # TODO NB identical to a generic DecompCall
+
+   def __init__(self, engine):
+
+       if not isinstance(engine, Engine):
+          engine = Engine(engine)
+
+       self._engine = engine
+
+
+   def attach(self, backend, data, inds):
+
+       return self.__class__(self._engine.attach(backend, data, inds))
+
+
+   def execute(self):
+
+       backend, = self._engine.backends()
+       data,    = self._engine.datas()
+       inds,    = self._engine.inds()
+
+       return self._engine.execute(backend, data, inds)
 
 
 
 
 # --- Visit call ------------------------------------------------------------ #
 
-class VisitCall(FunCall):
+class VisitCall(FunCall): 
 
-   def __init__(self, fun, content=None):
+   def __init__(self, engine):
 
-       if not isinstance(content, Content):
-          content = Content(content)
+       if not isinstance(engine, Engine):
+          engine = Engine(engine)
 
-       self._fun     = fun
-       self._content = content
-
-
-   def __eq__(self, other):
-
-       log = util.LogicalChain()
-
-       log.typ(self,          other)
-       log.val(self._fun,     other._fun)
-       log.val(self._content, other._content)
-
-       return bool(log)
+       self._engine = engine
 
 
-   def __iter__(self):
+   def attach(self, backend, data, inds):
 
-       return iter(self._content)
+       return self.__class__(self._engine.attach(backend, data, inds))
 
-
-   def __len__(self):
-
-       return len(self._content)
-
-
-   def attach(self, backend, data):
-
-       return self.__class__(
-                             self._fun, 
-                             self._content.attach(backend, data)
-                            ) 
 
    def execute(self):
 
-       backends, datas = zip(*self._content)
+       backend = next(self._engine.backends())
 
-       return self._fun(backends[0], *datas)
-
-
+       return self._engine.execute(backend, *self._engine.datas())
 
 
-# --- Transform call -------------------------------------------------------- #
-
-class TransformCall(FunCall):
-
-   def __init__(self, fun, content=None):
-
-       if not isinstance(content, Content):
-          content = Content(content)
-
-       self._fun     = fun
-       self._content = content
 
 
-   def __eq__(self, other):
+# --- Unary elementwise call ------------------------------------------------ #
 
-       log = util.LogicalChain()
+class UnaryElemWiseCall(FunCall):
 
-       log.typ(self,          other)
-       log.val(self._fun,     other._fun)
-       log.val(self._content, other._content)
+   def __init__(self, engine):
 
-       return bool(log)
+       if not isinstance(engine, Engine):
+          engine = Engine(engine)
 
-
-   def __iter__(self):
-
-       return iter(self._content)
+       self._engine = engine
 
 
-   def __len__(self):
+   def attach(self, backend, data, inds):
 
-       return len(self._content)
+       return self.__class__(self._engine.attach(backend, data, inds))
 
-
-   def attach(self, backend, data):
-
-       return self.__class__(
-                             self._fun, 
-                             self._content.attach(backend, data)
-                            ) 
 
    def execute(self):
 
-       backends, datas = zip(*self._content)
+       backend, = self._engine.backends()
+       data,    = self._engine.datas()
+       inds,    = self._engine.inds()
 
-       out = self._fun(backends[0], *datas)
-       return core.Tensor(backends[0], out)
+       outdata = self._engine.execute(backend, data, inds)
 
-
-
-
-# --- Split call ------------------------------------------------------------ #
-
-class SplitCall(FunCall):
-
-   def __init__(self, fun, content=None):
-
-       if not isinstance(content, Content):
-          content = Content(content)
-
-       self._fun     = fun
-       self._content = content
+       return core.Tensor(backend, outdata, inds)
 
 
-   def __eq__(self, other):
-
-       log = util.LogicalChain()
-
-       log.typ(self,          other)
-       log.val(self._fun,     other._fun)
-       log.val(self._content, other._content)
-
-       return bool(log)
 
 
-   def __iter__(self):
+# --- Binary elementwise call ----------------------------------------------- #
 
-       return iter(self._content)
+class BinaryElemWiseCall(FunCall):
+
+   def __init__(self, engine):
+
+       if not isinstance(engine, Engine):
+          engine = Engine(engine)
+
+       self._engine = engine
 
 
-   def __len__(self):
+   def attach(self, backend, data, inds):
 
-       return len(self._content)
+       return self.__class__(self._engine.attach(backend, data, inds))
 
-
-   def attach(self, backend, data):
-
-       return self.__class__(
-                             self._fun, 
-                             self._content.attach(backend, data)
-                            ) 
 
    def execute(self):
 
-       backends, datas = zip(*self._content)
+       backend = next(self._engine.backends())
 
-       outputs = self._fun(backends[0], *datas)
-       outputs = (core.Tensor(backends[0], out) for out in outputs)
-       
-       return tuple(outputs) 
+       dataA, dataB = self._engine.datas()
+       indsA, indsB = self._engine.inds()
 
- 
+       assert indsA == indsB, 
+          f"BinaryElemWiseCall.execute(): an elementwise operation "
+          f"cannot be performed for tensors "
+          f"with non-matching indices {indsA} != {indsB}"
+
+       outdata = self._engine.execute(backend, dataA, dataB)
+
+       return core.Tensor(backend, outdata, indsA)
+
+
+
+
+# --- Dot call -------------------------------------------------------------- #
+
+class DotCall(FunCall):
+
+   def __init__(self, engine):
+
+       if not isinstance(engine, Engine):
+          engine = Engine(engine)
+
+       self._engine = engine
+
+
+   def attach(self, backend, data, inds):
+
+       return self.__class__(self._engine.attach(backend, data, inds))
+
+
+   def execute(self):
+
+       backend = next(self._engine.backends())
+
+       dataA, dataB = self._engine.datas()
+       indsA, indsB = self._engine.inds()
+
+       outinds = contract.make_output_inds((indsA, indsB))
+       outdata = self._engine.execute(backend, dataA, dataB)
+
+       return core.Tensor(backend, outdata, outinds)
+
+
+
+
+# --- Einsum call ----------------------------------------------------------- #
+
+class EinsumCall(FunCall):
+
+   def __init__(self, engine):
+
+       if not isinstance(engine, Engine):
+          engine = Engine(engine)
+
+       self._engine = engine
+
+
+   def attach(self, backend, data, inds):
+
+       return self.__class__(self._engine.attach(backend, data, inds))
+
+
+   def execute(self):
+
+       backend = next(self._engine.backends())
+       datas   = self._engine.datas()
+       inds    = self._engine.inds()
+
+       outinds  = contract.make_output_inds(inds) 
+       equation = contract.make_einsum_equation(inds, outinds)
+
+       outdata = self._engine.execute(backend, equation, *datas)
+
+       return core.Tensor(backend, outdata, outinds)  
+
+
 
 
 # --- Args ------------------------------------------------------------------ #
@@ -329,6 +443,193 @@ class Args:
            funcall = arg.pluginto(funcall)
 
        return funcall.execute()
+
+
+
+
+
+
+
+
+
+
+"""
+
+# --- Function call interface ----------------------------------------------- #
+
+class Call(abc.ABC):
+
+   @abc.abstractmethod
+   def __iter__(self):
+       pass
+
+   @abc.abstractmethod
+   def __len__(self):
+       pass
+
+   @abc.abstractmethod
+   def attach(self, backend, data, inds):
+       pass
+
+   @abc.abstractmethod
+   def execute(self):
+       pass
+
+
+
+
+# --- Visit call ------------------------------------------------------------ #
+
+class VisitCall(FunCall):
+
+   def __init__(self, fun, content=None):
+
+       if not isinstance(content, Content):
+          content = Content(content)
+
+       self._fun     = fun
+       self._content = content
+
+
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+
+       log.typ(self,          other)
+       log.val(self._fun,     other._fun)
+       log.val(self._content, other._content)
+
+       return bool(log)
+
+
+   def __iter__(self):
+
+       return iter(self._content)
+
+
+   def __len__(self):
+
+       return len(self._content)
+
+
+   def attach(self, backend, data, inds):
+
+       return self.__class__(
+                             self._fun, 
+                             self._content.attach(backend, data, inds)
+                            ) 
+
+   def execute(self):
+
+       backends, datas, inds = zip(*self._content)
+
+       return self._fun(backends[0], *datas)
+
+
+
+
+# --- Transform call -------------------------------------------------------- #
+
+class TransformCall(FunCall):
+
+   def __init__(self, fun, content=None):
+
+       if not isinstance(content, Content):
+          content = Content(content)
+
+       self._fun     = fun
+       self._content = content
+
+
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+
+       log.typ(self,          other)
+       log.val(self._fun,     other._fun)
+       log.val(self._content, other._content)
+
+       return bool(log)
+
+
+   def __iter__(self):
+
+       return iter(self._content)
+
+
+   def __len__(self):
+
+       return len(self._content)
+
+
+   def attach(self, backend, data):
+
+       return self.__class__(
+                             self._fun, 
+                             self._content.attach(backend, data, inds)
+                            ) 
+
+   def execute(self):
+
+       backends, datas, inds = zip(*self._content)
+
+       out, inds = self._fun(backends[0], *datas, *inds)
+       return core.Tensor(backends[0], out, inds)
+
+
+
+
+# --- Split call ------------------------------------------------------------ #
+
+class SplitCall(FunCall):
+
+   def __init__(self, fun, content=None):
+
+       if not isinstance(content, Content):
+          content = Content(content)
+
+       self._fun     = fun
+       self._content = content
+
+
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+
+       log.typ(self,          other)
+       log.val(self._fun,     other._fun)
+       log.val(self._content, other._content)
+
+       return bool(log)
+
+
+   def __iter__(self):
+
+       return iter(self._content)
+
+
+   def __len__(self):
+
+       return len(self._content)
+
+
+   def attach(self, backend, data):
+
+       return self.__class__(
+                             self._fun, 
+                             self._content.attach(backend, data)
+                            ) 
+
+   def execute(self):
+
+       backends, datas, inds = zip(*self._content)
+
+       outputs = self._fun(backends[0], *datas)
+       outputs = (core.Tensor(backends[0], out) for out in outputs)
+       
+       return tuple(outputs) 
+
+"""
 
 
 

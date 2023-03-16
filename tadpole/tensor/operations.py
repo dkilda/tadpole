@@ -112,6 +112,182 @@ def iscomplex(x):
 ###############################################################################
 
 
+
+# --- Unary, couples data and inds (acts on data but inds used as options) --- #
+
+def amax(x, ind=None, **opts):
+
+    def fun(backend, inds, v):
+ 
+        axis = None if ind is None else inds.axis(ind)
+        data = backend.max(v, axis, **opts)
+
+        return core.Tensor(backend, data, tuple())
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+def transpose(x, *order):
+
+    def fun(backend, inds, v):
+
+        inds = index.transpose(inds, *order)
+        data = backend.transpose(v, tuple(map(inds.axis, order)))
+
+        return core.Tensor(backend, data, inds)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+def sumover(x, *suminds):
+
+    def fun(backend, inds, v):
+
+        axes = tuple(map(inds.axis, suminds))
+        inds = inds.remove(suminds)
+        data = backend.sumover(v, axes)
+
+        return core.Tensor(backend, data, inds)
+
+    return Args(x).pluginto(TransformCall(fun))   
+
+
+
+def reindex(x, indmap):
+
+    def fun(backend, inds, v):
+
+        inds = index.reindex(inds, indmap)
+
+        assert v.shape == index.shapeof(*inds)
+
+        return core.Tensor(backend, v, inds)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+
+# --- Unary, data-only --- #
+
+def sin(x):
+
+    def fun(backend, inds, v):
+        data = backend.sin(v)
+        return core.Tensor(backend, data, inds)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+
+def conj(x, **opts):
+
+    def fun(backend, inds, v):
+
+        data = backend.conj(v, **opts)
+        return core.Tensor(backend, data, inds)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+
+# --- Unary, inds-only --- #
+
+def unsqueeze(x, names):
+
+    def fun(backend, inds, v):
+
+        inds  = index.unsqueeze(inds, names)
+        shape = index.shapeof(*inds)
+        data  = backend.reshape(v, shape) 
+
+        return core.Tensor(backend, data, inds)
+
+    return Args(x).pluginto(TransformCall(fun))   
+
+
+
+
+def squeeze(x):
+
+    def fun(backend, inds, v):
+
+        inds  = index.squeeze(inds)
+        shape = index.shapeof(*inds)
+        data  = backend.reshape(v, shape)
+
+        return core.Tensor(backend, data, inds)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+
+def split(x, splitmap):
+
+    def fun(backend, inds, v):
+
+        inds  = index.split(inds, splitmap)
+        shape = index.shapeof(*inds) 
+        data  = backend.reshape(v, shape)
+
+        return core.Tensor(backend, data, inds)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+
+def fuse(x, fusemap):
+
+    def fun(backend, inds, v):
+
+        inds  = index.fuse(inds, fusemap)
+        shape = index.shapeof(*inds) 
+        data  = backend.reshape(v, shape)
+
+        return core.Tensor(backend, data, inds)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+
+# --- Binary elementwise --- #
+
+def add(x, y):
+
+    def fun(backend, inds, u, v):
+
+        assert inds[0] == inds[1]
+        data = backend.add(u, v)
+
+        return core.Tensor(backend, data, inds[0])
+
+    return function.Args(x, y).pluginto(function.TransformCall(fun))
+
+
+
+# --- Unary decompose --- #
+
+def svd(x):
+
+    def fun(backend, v):
+        return backend.svd(v) # TODO def all decomp steps in DecompCall, we only inject method (svd/qr/etc)
+
+    return Args(x).pluginto(DecompCall(fun)) # Perhaps make DoubleDecomp / TripleDecomp? (DecompDouble, DecompTriple) 
+
+
+
+
+
+
+
+
 # --- Tensor shape methods -------------------------------------------------- #
 
 @ad.differentiable
