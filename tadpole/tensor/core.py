@@ -428,7 +428,7 @@ def allclose(x, y, **opts):
     def fun(backend, u, v):
         return backend.allclose(u, v, **close_opts(opts))
 
-    return function.Args(x, y).pluginto(function.VisitCall(fun))
+    return function.Args(x, y).pluginto(function.ExtractCall(fun))
 
 
 
@@ -439,7 +439,7 @@ def isclose(x, y, **opts):
     def fun(backend, u, v):
         return backend.isclose(u, v, **close_opts(opts))
 
-    return function.Args(x, y).pluginto(function.BinaryElemWiseCall(fun))
+    return function.Args(x, y).pluginto(function.ElemwiseCall(fun))
 
 
 
@@ -453,7 +453,7 @@ def allequal(x, y):
     def fun(backend, u, v):
         return backend.allequal(u, v)
 
-    return function.Args(x, y).pluginto(function.VisitCall(fun))
+    return function.Args(x, y).pluginto(function.ExtractCall(fun))
 
 
 
@@ -464,7 +464,7 @@ def isequal(x, y):
     def fun(backend, u, v):
         return backend.isequal(u, v)
 
-    return function.Args(x, y).pluginto(function.BinaryElemWiseCall(fun))
+    return function.Args(x, y).pluginto(function.ElemwiseCall(fun))
 
 
 
@@ -475,7 +475,7 @@ def notequal(x, y):
     def fun(backend, u, v):
         return backend.notequal(u, v)
 
-    return function.Args(x, y).pluginto(function.BinaryElemWiseCall(fun))
+    return function.Args(x, y).pluginto(function.ElemwiseCall(fun))
 
 
 
@@ -489,7 +489,7 @@ def logical_and(x, y):
     def fun(backend, u, v):
         return backend.logical_and(u, v)
 
-    return function.Args(x, y).pluginto(function.BinaryElemWiseCall(fun))
+    return function.Args(x, y).pluginto(function.ElemwiseCall(fun))
 
 
 
@@ -500,7 +500,7 @@ def logical_or(x, y):
     def fun(backend, u, v):
         return backend.logical_or(u, v)
 
-    return function.Args(x, y).pluginto(function.BinaryElemWiseCall(fun))
+    return function.Args(x, y).pluginto(function.ElemwiseCall(fun))
 
 
 
@@ -595,7 +595,7 @@ def neg(x):
     def fun(backend, v):
         return -v
 
-    return function.Args(x).pluginto(function.UnaryElemWiseCall(fun))
+    return function.Args(x).pluginto(function.ElemwiseCall(fun))
 
 
 
@@ -606,7 +606,7 @@ def add(x, y):
     def fun(backend, u, v):
         return backend.add(u, v)
 
-    return function.Args(x, y).pluginto(function.BinaryElemWiseCall(fun))
+    return function.Args(x, y).pluginto(function.ElemwiseCall(fun))
 
 
 
@@ -617,7 +617,7 @@ def sub(x, y):
     def fun(backend, u, v):
         return backend.sub(u, v)
 
-    return function.Args(x, y).pluginto(function.BinaryElemWiseCall(fun))
+    return function.Args(x, y).pluginto(function.ElemwiseCall(fun))
 
 
 
@@ -628,7 +628,7 @@ def mul(x, y):
     def fun(backend, u, v):
         return backend.mul(u, v)
 
-    return function.Args(x, y).pluginto(function.BinaryElemWiseCall(fun))
+    return function.Args(x, y).pluginto(function.ElemwiseCall(fun))
 
 
 
@@ -639,7 +639,7 @@ def div(x, y):
     def fun(backend, u, v):
         return backend.div(u, v)
 
-    return function.Args(x, y).pluginto(function.BinaryElemWiseCall(fun))
+    return function.Args(x, y).pluginto(function.ElemwiseCall(fun))
 
 
 
@@ -650,7 +650,7 @@ def power(x, y):
     def fun(backend, u, v):
         return backend.power(u, v)
 
-    return function.Args(x, y).pluginto(function.BinaryElemWiseCall(fun))
+    return function.Args(x, y).pluginto(function.ElemwiseCall(fun))
 
 
 

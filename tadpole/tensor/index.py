@@ -279,6 +279,11 @@ class Indices(util.TupleLike):
        return tuple(filter(lambda x: x.answers(name), self._inds))  
 
 
+   def axes(self, *inds):
+
+       return tuple(self._inds.index(ind) for ind in inds)
+
+
    def ind(self, name):
 
        return self.inds(name)[0]
@@ -286,7 +291,7 @@ class Indices(util.TupleLike):
 
    def axis(self, ind):
 
-       return self._inds.index(ind)
+       return self.axes(ind)[0]
 
 
    # --- Out-of-place modifications --- #

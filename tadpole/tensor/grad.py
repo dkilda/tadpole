@@ -212,15 +212,15 @@ class SparseGrad(TensorLike, Pluggable):
        if isinstance(other, SparseGrad):
           other = other.todense()
 
-       data = self._backend.put(
-                 other._data, self._pos, self._vals, accumulate=True
-              )
-
        assert self._inds == other._inds, (
           f"SparseGrad.addto(): "
           f"gradient accumulation cannot be performed for tensors "
           f"with non-matching indices {self._inds} != {other._inds}"
        )
+
+       data = self._backend.put(
+                 other._data, self._pos, self._vals, accumulate=True
+              )
 
        return other.withdata(data)
 

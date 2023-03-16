@@ -159,52 +159,9 @@ class FunCall(abc.ABC):
 
 
 
-# --- Reindexing call ------------------------------------------------------- #
-
-class ReindexCall(FunCall):
-
-   def __init__(self, engine):
-
-       if not isinstance(engine, EngineLike):
-          engine = Engine(engine)
-
-       self._engine = engine
-
-
-   def attach(self, backend, data, inds):
-
-       return self.__class__(self._engine.attach(backend, data, inds))
-
-
-   def execute(self):
-
-       backend, = self._engine.backends()
-       data,    = self._engine.datas()
-       inds,    = self._engine.inds()
-
-       outinds = self._engine.execute(inds) 
-
-       if outinds.shape == inds.shape: 
-          return core.Tensor(backend, data, outinds)
-
-       try:
-          outdata = backend.reshape(data, outinds.shape)
-       except ValueError:
-          print((
-             f"\nReindexCall.execute(): "
-             f"output indices shape {outinds.shape} "
-             f"is not compatible with data shape {data.shape}."
-          ))
-          raise 
-
-       return core.Tensor(backend, outdata, outinds)  
-       
-
-
-
 # --- Transform call -------------------------------------------------------- #
 
-class TransformCall(FunCall): # TODO NB identical to a generic DecompCall
+class TransformCall(FunCall): 
 
    def __init__(self, engine):
 
@@ -230,9 +187,9 @@ class TransformCall(FunCall): # TODO NB identical to a generic DecompCall
 
 
 
-# --- Visit call ------------------------------------------------------------ #
+# --- Extract call ---------------------------------------------------------- #
 
-class VisitCall(FunCall): 
+class ExtractCall(FunCall): 
 
    def __init__(self, engine):
 
@@ -256,13 +213,95 @@ class VisitCall(FunCall):
 
 
 
-# --- Unary elementwise call ------------------------------------------------ #
+# --- Reduce call ----------------------------------------------------------- #
 
-class UnaryElemWiseCall(FunCall):
+class ReduceCall(FunCall):
+
+   def __init__(self, engine, inds):
+
+       if not isinstance(engine, Engine):
+          engine = Engine(engine)
+
+       if inds is None:
+          inds = tuple()
+
+       if not isinstance(inds, (tuple, util.TupleLike)):
+          inds = (inds,)
+
+       self._engine = engine
+       self._inds   = inds
+
+
+   def attach(self, backend, data, inds):
+
+       return self.__class__(self._engine.attach(backend, data, inds))
+
+
+   def execute(self):
+
+       backend, = self._engine.backends()
+       data,    = self._engine.datas()
+       inds,    = self._engine.inds()
+       
+       outinds = inds.remove(*self._inds)
+       outdata = self._engine.execute(backend, data, self._axes(inds))
+
+       return core.Tensor(backend, outdata, outinds)
+
+
+   def _axes(self, inds):
+
+       if len(self._inds) == 0:
+          return None
+
+       if len(self._inds) == 1:
+          return inds.axis(self._inds)
+
+       return inds.axes(self._inds)
+
+
+
+
+# --- Elementwise call ------------------------------------------------------ #
+
+class ElemwiseCall(FunCall):
 
    def __init__(self, engine):
 
        if not isinstance(engine, Engine):
+          engine = Engine(engine)
+
+       self._engine = engine
+
+
+   def attach(self, backend, data, inds):
+
+       return self.__class__(self._engine.attach(backend, data, inds))
+
+
+   def execute(self):
+
+       assert len(set(self._engine.inds())) == 1,
+          f"ElemwiseCall.execute(): "
+          f"an elementwise operation cannot be performed for tensors "
+          f"with non-matching indices {tuple(self._engine.inds())}" 
+
+       backend = next(self._engine.backends())
+       outinds = next(self._engine.inds())
+       outdata = self._engine.execute(backend, *self._engine.datas())
+
+       return core.Tensor(backend, outdata, outinds)
+
+
+
+
+# --- Reindex call ---------------------------------------------------------- #
+
+class ReindexCall(FunCall):
+
+   def __init__(self, engine):
+
+       if not isinstance(engine, EngineLike):
           engine = Engine(engine)
 
        self._engine = engine
@@ -279,20 +318,26 @@ class UnaryElemWiseCall(FunCall):
        data,    = self._engine.datas()
        inds,    = self._engine.inds()
 
-       outdata = self._engine.execute(backend, data, inds)
+       outinds = self._engine.execute(inds)
+       
+       assert outinds.shape == inds.shape, (
+          f"\nReindexCall.execute(): "
+          f"the output shape {outinds.shape} is not compatible "
+          f"with the original shape {inds.shape}."
+       )
+       
+       return core.Tensor(backend, data, outinds)
 
-       return core.Tensor(backend, outdata, inds)
 
 
 
+# --- Reshape call ---------------------------------------------------------- #
 
-# --- Binary elementwise call ----------------------------------------------- #
-
-class BinaryElemWiseCall(FunCall):
+class ReshapeCall(FunCall):
 
    def __init__(self, engine):
 
-       if not isinstance(engine, Engine):
+       if not isinstance(engine, EngineLike):
           engine = Engine(engine)
 
        self._engine = engine
@@ -300,24 +345,25 @@ class BinaryElemWiseCall(FunCall):
 
    def attach(self, backend, data, inds):
 
-       return self.__class__(self._engine.attach(backend, data, inds))
+       return self.__class__(self._engine.attach(backend, data, inds))  
 
 
    def execute(self):
 
-       backend = next(self._engine.backends())
+       backend, = self._engine.backends()
+       data,    = self._engine.datas()
+       inds,    = self._engine.inds()
 
-       dataA, dataB = self._engine.datas()
-       indsA, indsB = self._engine.inds()
-
-       assert indsA == indsB, 
-          f"BinaryElemWiseCall.execute(): an elementwise operation "
-          f"cannot be performed for tensors "
-          f"with non-matching indices {indsA} != {indsB}"
-
-       outdata = self._engine.execute(backend, dataA, dataB)
-
-       return core.Tensor(backend, outdata, indsA)
+       outinds = self._engine.execute(inds)
+       outdata = backend.reshape(data, outinds.shape)
+       
+       assert outinds.shape == inds.shape, (
+          f"\nReindexCall.execute(): "
+          f"the output shape {outinds.shape} is not compatible "
+          f"with the original shape {inds.shape}."
+       )
+       
+       return core.Tensor(backend, data, outinds)
 
 
 
@@ -384,6 +430,59 @@ class EinsumCall(FunCall):
 
        return core.Tensor(backend, outdata, outinds)  
 
+
+
+
+
+
+"""
+
+###############################################################################
+###############################################################################
+###############################################################################
+
+
+# --- Reindexing call ------------------------------------------------------- #
+
+class ReindexCall(FunCall):
+
+   def __init__(self, engine):
+
+       if not isinstance(engine, EngineLike):
+          engine = Engine(engine)
+
+       self._engine = engine
+
+
+   def attach(self, backend, data, inds):
+
+       return self.__class__(self._engine.attach(backend, data, inds))
+
+
+   def execute(self):
+
+       backend, = self._engine.backends()
+       data,    = self._engine.datas()
+       inds,    = self._engine.inds()
+
+       outinds = self._engine.execute(inds) 
+
+       if outinds.shape == inds.shape: 
+          return core.Tensor(backend, data, outinds)
+
+       try:
+          outdata = backend.reshape(data, outinds.shape)
+       except ValueError:
+          print((
+             f"\nReindexCall.execute(): "
+             f"output indices shape {outinds.shape} "
+             f"is not compatible with data shape {data.shape}."
+          ))
+          raise 
+
+       return core.Tensor(backend, outdata, outinds)  
+       
+"""
 
 
 
