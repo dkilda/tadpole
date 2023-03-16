@@ -216,6 +216,12 @@ class SparseGrad(TensorLike, Pluggable):
                  other._data, self._pos, self._vals, accumulate=True
               )
 
+       assert self._inds == other._inds, (
+          f"SparseGrad.addto(): "
+          f"gradient accumulation cannot be performed for tensors "
+          f"with non-matching indices {self._inds} != {other._inds}"
+       )
+
        return other.withdata(data)
 
        

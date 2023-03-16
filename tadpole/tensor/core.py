@@ -710,12 +710,14 @@ class Tensor(TensorLike, Pluggable):
        if isinstance(other, grad.SparseGrad):
           return other.addto(self)
 
-       assert self._inds == other._inds, 
-          f"Tensor.addto(): gradient accumulation cannot be performed for "
-          f"tensors with non-matching indices {self._inds} != {other._inds}"
+       assert self._inds == other._inds, (
+          f"Tensor.addto(): "
+          f"gradient accumulation cannot be performed for tensors "
+          f"with non-matching indices {self._inds} != {other._inds}"
+       )
 
        data = self._backend.add(self._data, other._data)
-       return self.withdata(data)
+       return other.withdata(data)
 
 
    # --- Basic functionality --- #
