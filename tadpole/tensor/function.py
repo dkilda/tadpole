@@ -4,7 +4,7 @@
 import abc
 import numpy as np
 
-import tadpole.util       as util
+import tadpole.util        as util
 import tadpole.tensor.core as core
  
 
@@ -21,12 +21,7 @@ import tadpole.tensor.core as core
 
 def allallequal(xs, ys):
 
-    return all(core.allequal(x, y) for x, y in zip(xs, ys))
-
-
-def allallclose(xs, ys, **opts):
-
-    return all(core.allclose(x, y, **opts) for x, y in zip(xs, ys))
+    return all(map(core.allequal(x, y) for x, y in zip(xs, ys))
 
 
 
@@ -390,6 +385,13 @@ class EinsumCall(FunCall):
        return core.Tensor(backend, outdata, outinds)  
 
 
+
+
+###############################################################################
+###                                                                         ###
+###  Arguments for tensor function calls                                    ###
+###                                                                         ###
+###############################################################################
 
 
 # --- Args ------------------------------------------------------------------ #
