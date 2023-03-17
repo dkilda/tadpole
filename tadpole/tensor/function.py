@@ -12,22 +12,6 @@ import tadpole.tensor.core as core
 
 ###############################################################################
 ###                                                                         ###
-###  Helper functions                                                       ###
-###                                                                         ###
-###############################################################################
-
-
-# --- Comparison of iterables of tensors ------------------------------------ #
-
-def allallequal(xs, ys):
-
-    return all(map(core.allequal(x, y) for x, y in zip(xs, ys))
-
-
-
-
-###############################################################################
-###                                                                         ###
 ###  Engine for tensor function calls                                       ###
 ###                                                                         ###
 ###############################################################################
@@ -95,7 +79,9 @@ class Engine(EngineLike):
           log.val(self._inds,     other._inds)
 
           if bool(log):
-             return allallequal(self._datas, other._datas)
+             return all(bn.allequal(x, y) 
+                for bn, x, y in zip(self._backends, self._datas, other._datas)
+             )
 
        return False
 
@@ -217,7 +203,7 @@ class ExtractCall(FunCall):
 
 class ReduceCall(FunCall):
 
-   def __init__(self, engine, inds):
+   def __init__(self, engine, inds=None):
 
        if not isinstance(engine, Engine):
           engine = Engine(engine)
@@ -244,12 +230,15 @@ class ReduceCall(FunCall):
        inds,    = self._engine.inds()
        
        outinds = inds.remove(*self._inds)
-       outdata = self._engine.execute(backend, data, self._axes(inds))
+       outdata = self._engine.execute(backend, data, self._axes)
 
        return core.Tensor(backend, outdata, outinds)
 
 
-   def _axes(self, inds):
+   @property
+   def _axes(self):
+
+       inds, = self._engine.inds()
 
        if len(self._inds) == 0:
           return None
@@ -368,7 +357,7 @@ class ReshapeCall(FunCall):
 
 
 
-# --- Dot call -------------------------------------------------------------- #
+# --- Dot product call ------------------------------------------------------ #
 
 class DotCall(FunCall):
 
@@ -385,17 +374,18 @@ class DotCall(FunCall):
        return self.__class__(self._engine.attach(backend, data, inds))
 
 
+   @util.cacheable
+   def outinds(self):
+
+       return contract.make_output_inds(self._engine.inds())
+
+
    def execute(self):
 
        backend = next(self._engine.backends())
+       outdata = self._engine.execute(backend, *self._engine.datas())
 
-       dataA, dataB = self._engine.datas()
-       indsA, indsB = self._engine.inds()
-
-       outinds = contract.make_output_inds((indsA, indsB))
-       outdata = self._engine.execute(backend, dataA, dataB)
-
-       return core.Tensor(backend, outdata, outinds)
+       return core.Tensor(backend, outdata, self.outinds())
 
 
 
@@ -404,17 +394,27 @@ class DotCall(FunCall):
 
 class EinsumCall(FunCall):
 
-   def __init__(self, engine):
+   def __init__(self, engine, outinds=None):
 
        if not isinstance(engine, Engine):
           engine = Engine(engine)
 
-       self._engine = engine
+       self._engine  = engine
+       self._outinds = outinds
 
 
    def attach(self, backend, data, inds):
 
        return self.__class__(self._engine.attach(backend, data, inds))
+
+
+   @util.cacheable
+   def outinds(self):
+
+       if self._outinds is None: 
+          return contract.make_output_inds(inds)
+
+       return self._outinds
 
 
    def execute(self):
@@ -423,12 +423,55 @@ class EinsumCall(FunCall):
        datas   = self._engine.datas()
        inds    = self._engine.inds()
 
-       outinds  = contract.make_output_inds(inds) 
-       equation = contract.make_einsum_equation(inds, outinds)
+       equation = contract.make_einsum_equation(inds, self.outinds())
+       outdata  = self._engine.execute(backend, equation, *datas)
 
-       outdata = self._engine.execute(backend, equation, *datas)
+       return core.Tensor(backend, outdata, self.outinds()  
 
-       return core.Tensor(backend, outdata, outinds)  
+
+
+
+# --- Decomposition call ---------------------------------------------------- #
+
+class DecompCall(FunCall):
+
+   def __init__(self, engine, outinds=None):
+
+       if not isinstance(engine, Engine):
+          engine = Engine(engine)
+
+       self._engine  = engine
+       self._outinds = outinds
+
+
+   def attach(self, backend, data, inds):
+
+       return self.__class__(self._engine.attach(backend, data, inds))
+
+
+   @util.cacheable
+   def outinds(self):
+
+       if self._outinds is None: 
+          return contract.make_output_inds(inds)
+
+       return self._outinds
+
+
+   def execute(self):
+
+       backend = next(self._engine.backends())
+       datas   = self._engine.datas()
+       inds    = self._engine.inds()
+
+       equation = contract.make_einsum_equation(inds, self.outinds())
+       outdata  = self._engine.execute(backend, equation, *datas)
+
+       return core.Tensor(backend, outdata, self.outinds() 
+
+
+
+
 
 
 
@@ -508,7 +551,7 @@ class Args:
        log.typ(self, other)
 
        if bool(log):
-          return allallequal(self._args, other._args)    
+          return all(x == y for x, y in zip(self._args, other._args))    
 
        return False
 

@@ -256,6 +256,345 @@ def cumsum(x, inds=None, dtype=None, **opts):
 
 # --- Tensor value methods -------------------------------------------------- #
 
+@ad.differentiable
+def amax(x, inds=None, **opts):
+
+    def fun(backend, data, axis): 
+        return backend.max(data, axis, **opts)
+
+    return Args(x).pluginto(ReduceCall(fun, inds))
+
+
+
+@ad.differentiable
+def amin(x, inds=None, **opts):
+
+    def fun(backend, data, axis): 
+        return backend.min(data, axis, **opts)
+
+    return Args(x).pluginto(ReduceCall(fun, inds))
+
+
+
+@ad.differentiable
+def absolute(x, **opts):
+
+    def fun(backend, data): 
+        return backend.abs(data, **opts)
+
+    return Args(x).pluginto(ElemwiseCall(fun))
+
+
+
+@ad.differentiable
+def flip(x, flipinds=None):
+
+    def fun(backend, data, inds): 
+
+        axes = None
+        if flipinds is not None:
+           axes = inds.axes(*flipinds)
+
+        outdata = backend.flip(data, axes)
+        return core.Tensor(backend, outdata, inds)
+
+    return Args(x).pluginto(TransformCall(fun))
+
+
+
+@ad.differentiable
+def clip(x, minval, maxval, **opts):
+
+    def fun(backend, data): 
+        return backend.clip(data, minval, maxval, **opts)
+
+    return Args(x).pluginto(ElemwiseCall(fun))
+
+
+
+@ad.differentiable
+@typecast_binary
+def where(condition, x, y):
+
+    def fun(backend, cond_uv, u, v): 
+        return backend.where(cond_uv, u, v)
+
+    return Args(condition, x, y).pluginto(ElemwiseCall(fun))
+
+
+
+
+# --- Standard math operations ---------------------------------------------- #
+
+@ad.differentiable
+@typecast_unary
+def conj(x, **opts):
+
+    def fun(backend, v):
+        return backend.conj(v, **opts)
+
+    return Args(x).pluginto(ElemwiseCall(fun))
+
+
+
+@ad.differentiable
+@typecast_unary
+def real(x):
+
+    def fun(backend, v):
+        return backend.real(v)
+
+    return Args(x).pluginto(ElemwiseCall(fun))     
+
+
+
+@ad.differentiable
+@typecast_unary
+def imag(x):
+
+    def fun(backend, v):
+        return backend.imag(v)
+
+    return Args(x).pluginto(ElemwiseCall(fun))
+  
+
+
+@ad.differentiable
+@typecast_unary
+def sqrt(x):
+
+    def fun(backend, v):
+        return backend.sqrt(v)
+
+    return Args(x).pluginto(ElemwiseCall(fun))
+
+
+
+@ad.differentiable
+@typecast_unary
+def log(x):
+
+    def fun(backend, v):
+        return backend.log(v)
+
+    return Args(x).pluginto(ElemwiseCall(fun))
+
+
+
+@ad.differentiable
+@typecast_unary
+def exp(x):
+
+    def fun(backend, v):
+        return backend.exp(v)
+
+    return Args(x).pluginto(ElemwiseCall(fun))
+
+
+
+@ad.differentiable
+@typecast_unary
+def sin(x):
+
+    def fun(backend, v):
+        return backend.sin(v)
+
+    return Args(x).pluginto(ElemwiseCall(fun))
+
+
+
+@ad.differentiable
+@typecast_unary
+def cos(x):
+
+    def fun(backend, v):
+        return backend.cos(v)
+
+    return Args(x).pluginto(ElemwiseCall(fun))
+
+
+
+@ad.differentiable
+@typecast_unary
+def tan(x):
+
+    def fun(backend, v):
+        return backend.tan(v)
+
+    return Args(x).pluginto(ElemwiseCall(fun))
+
+
+
+@ad.differentiable
+@typecast_unary
+def arcsin(x):
+
+    def fun(backend, v):
+        return backend.arcsin(v)
+
+    return Args(x).pluginto(ElemwiseCall(fun))
+
+
+
+@ad.differentiable
+@typecast_unary
+def arccos(x):
+
+    def fun(backend, v):
+        return backend.arccos(v)
+
+    return Args(x).pluginto(ElemwiseCall(fun))
+
+
+
+@ad.differentiable
+@typecast_unary
+def arctan(x):
+
+    def fun(backend, v):
+        return backend.arctan(v)
+
+    return Args(x).pluginto(ElemwiseCall(fun))
+
+
+
+@ad.differentiable
+@typecast_unary
+def sinh(x):
+
+    def fun(backend, v):
+        return backend.sinh(v)
+
+    return Args(x).pluginto(ElemwiseCall(fun))
+
+
+
+@ad.differentiable
+@typecast_unary
+def cosh(x):
+
+    def fun(backend, v):
+        return backend.cosh(v)
+
+    return Args(x).pluginto(ElemwiseCall(fun))
+
+
+
+@ad.differentiable
+@typecast_unary
+def tanh(x):
+
+    def fun(backend, v):
+        return backend.tanh(v)
+
+    return Args(x).pluginto(ElemwiseCall(fun))
+
+
+
+@ad.differentiable
+@typecast_unary
+def arcsinh(x):
+
+    def fun(backend, v):
+        return backend.arcsinh(v)
+
+    return Args(x).pluginto(ElemwiseCall(fun))
+
+
+
+@ad.differentiable
+@typecast_unary
+def arccosh(x):
+
+    def fun(backend, v):
+        return backend.arccosh(v)
+
+    return Args(x).pluginto(ElemwiseCall(fun))
+
+
+
+@ad.differentiable
+@typecast_unary
+def arctanh(x):
+
+    def fun(backend, v):
+        return backend.arctanh(v)
+
+    return Args(x).pluginto(ElemwiseCall(fun))
+
+
+
+
+# --- Linear algebra: multiplication methods -------------------------------- #
+
+@ad.differentiable
+def einsum(*xs, outinds=None, optimize=True):
+
+    def fun(backend, equation, *datas):
+        return backend.einsum(equation, *datas, optimize=optimize)
+
+    return Args(*xs).pluginto(EinsumCall(fun, outinds))
+
+
+
+@ad.differentiable
+def dot(x, y):
+
+    def fun(backend, u, v):
+        return backend.dot(u, v)
+
+    return Args(x, y).pluginto(DotCall(fun))
+
+
+
+
+# --- Linear algebra: decomposition methods --------------------------------- #
+
+@ad.differentiable
+def svd(x, mind, linds=None, rinds=None, **opts):
+
+    def fun(backend, v):
+        return backend.svd(v)
+
+    return Args(x).pluginto(SplitCall(fun))
+
+
+
+@ad.differentiable
+def qr(x):
+
+    def fun(backend, v):
+        return backend.qr(v)
+
+    return Args(x).pluginto(DoubleDecompCall(fun))
+
+
+
+@ad.differentiable
+def eig(x):
+
+    def fun(backend, v):
+        return backend.eig(v)
+
+    return Args(x).pluginto(DoubleDecompCall(fun))
+
+
+
+@ad.differentiable
+def eigh(x):
+
+    def fun(backend, v):
+        return backend.eigh(v)
+
+    return Args(x).pluginto(DoubleDecompCall(fun))
+       
+
+
+
+
+
+
+
 
 
 
@@ -301,7 +640,7 @@ def unsqueeze(x, axis):
 
     return Args(x).pluginto(TransformCall(fun))
 
-"""
+
 
 
 # --- Tensor value methods -------------------------------------------------- #
@@ -365,307 +704,16 @@ def where(condition, x, y):
 
     return Args(condition, x, y).pluginto(TransformCall(fun))
 
+"""
 
 
 
-# --- Simple math operations ------------------------------------------------ #
 
-@ad.differentiable
-@typecast_unary
-def conj(x, **opts):
 
-    def fun(backend, v):
-        return backend.conj(v, **opts)
 
-    return Args(x).pluginto(TransformCall(fun))
 
 
 
-@ad.differentiable
-@typecast_unary
-def real(x):
-
-    def fun(backend, v):
-        return backend.real(v)
-
-    return Args(x).pluginto(TransformCall(fun))     
-
-
-
-@ad.differentiable
-@typecast_unary
-def imag(x):
-
-    def fun(backend, v):
-        return backend.imag(v)
-
-    return Args(x).pluginto(TransformCall(fun))
-  
-
-
-@ad.differentiable
-@typecast_unary
-def sqrt(x):
-
-    def fun(backend, v):
-        return backend.sqrt(v)
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-@ad.differentiable
-@typecast_unary
-def log(x):
-
-    def fun(backend, v):
-        return backend.log(v)
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-@ad.differentiable
-@typecast_unary
-def exp(x):
-
-    def fun(backend, v):
-        return backend.exp(v)
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-@ad.differentiable
-@typecast_unary
-def sin(x):
-
-    def fun(backend, v):
-        return backend.sin(v)
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-@ad.differentiable
-@typecast_unary
-def cos(x):
-
-    def fun(backend, v):
-        return backend.cos(v)
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-@ad.differentiable
-@typecast_unary
-def tan(x):
-
-    def fun(backend, v):
-        return backend.tan(v)
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-@ad.differentiable
-@typecast_unary
-def arcsin(x):
-
-    def fun(backend, v):
-        return backend.arcsin(v)
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-@ad.differentiable
-@typecast_unary
-def arccos(x):
-
-    def fun(backend, v):
-        return backend.arccos(v)
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-@ad.differentiable
-@typecast_unary
-def arctan(x):
-
-    def fun(backend, v):
-        return backend.arctan(v)
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-@ad.differentiable
-@typecast_unary
-def sinh(x):
-
-    def fun(backend, v):
-        return backend.sinh(v)
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-@ad.differentiable
-@typecast_unary
-def cosh(x):
-
-    def fun(backend, v):
-        return backend.cosh(v)
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-@ad.differentiable
-@typecast_unary
-def tanh(x):
-
-    def fun(backend, v):
-        return backend.tanh(v)
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-@ad.differentiable
-@typecast_unary
-def arcsinh(x):
-
-    def fun(backend, v):
-        return backend.arcsinh(v)
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-@ad.differentiable
-@typecast_unary
-def arccosh(x):
-
-    def fun(backend, v):
-        return backend.arccosh(v)
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-@ad.differentiable
-@typecast_unary
-def arctanh(x):
-
-    def fun(backend, v):
-        return backend.arctanh(v)
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-@ad.differentiable
-@typecast_unary
-def sumover(x, axis=None, dtype=None, **opts):
-
-    def fun(backend, v):
-        return backend.sumover(v, axis, dtype, **opts)
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-@ad.differentiable
-@typecast_unary
-def cumsum(x, axis=None, dtype=None, **opts):
-
-    def fun(backend, v):
-        return backend.cumsum(v, axis, dtype, **opts)
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-
-
-
-# --- Linear algebra: multiplication methods -------------------------------- #
-
-@ad.differentiable
-def einsum(equation, *xs, optimize=True):
-
-    def fun(backend, *xs):
-        return backend.einsum(equation, *xs, optimize=optimize)
-
-    return Args(*xs).pluginto(TransformCall(fun))
-
-
-
-@ad.differentiable
-def dot(x, y):
-
-    def fun(backend, u, v):
-        return backend.dot(u, v)
-
-    return Args(x, y).pluginto(TransformCall(fun))
-
-
-
-@ad.differentiable
-def kron(x, y):
-
-    def fun(backend, u, v):
-        return backend.kron(u, v)
-
-    return Args(x, y).pluginto(TransformCall(fun))
-
-
-
-
-# --- Linear algebra: decomposition methods --------------------------------- #
-
-@ad.differentiable
-def svd(x):
-
-    def fun(backend, v):
-        return backend.svd(v)
-
-    return Args(x).pluginto(SplitCall(fun))
-
-
-
-@ad.differentiable
-def qr(x):
-
-    def fun(backend, v):
-        return backend.qr(v)
-
-    return Args(x).pluginto(SplitCall(fun))
-
-
-
-@ad.differentiable
-def eig(x):
-
-    def fun(backend, v):
-        return backend.eig(v)
-
-    return Args(x).pluginto(SplitCall(fun))
-
-
-
-@ad.differentiable
-def eigh(x):
-
-    def fun(backend, v):
-        return backend.eigh(v)
-
-    return Args(x).pluginto(SplitCall(fun))
-       
 
 
 

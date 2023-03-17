@@ -340,7 +340,7 @@ def sizeof(*inds):
     return Indices(*inds).size
 
 
-
+"""
 
 # --- Index transformations (preserving the number of inds) ----------------- #
 
@@ -428,6 +428,6 @@ def unsqueeze(inds, names):
 
     return inds.add(*(Index(name) for name in names))
 
-
+"""
 
 
