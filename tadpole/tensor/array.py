@@ -4,9 +4,20 @@
 import abc
 import numpy as np
 
+import operator
+from functools import reduce
+
 import tadpole.util     as util
 import tadpole.autodiff as ad
 
+
+
+
+###############################################################################
+###                                                                         ###
+###  General ArrayLike interface for OneArray/TwoArray/NArray/etc objects   ###
+###                                                                         ###
+###############################################################################
 
 
 # --- ArrayLike interface --------------------------------------------------- #
@@ -24,7 +35,15 @@ class ArrayLike(abc.ABC):
 
 
 
-# --- Single Array (supports unary operations) ------------------------------ #
+
+###############################################################################
+###                                                                         ###
+###  Definition of Single Array (supports unary operations)                 ###
+###                                                                         ###
+###############################################################################
+
+
+# --- One-Array ------------------------------------------------------------- #
 
 class OneArray(ArrayLike):
 
@@ -166,26 +185,26 @@ class OneArray(ArrayLike):
        return self._backend.item(self._data, *idx)
 
 
-   def all(self, axis=None, **opts):
+   def allof(self, axis=None, **opts):
 
        data = self._backend.all(self._data, axis, **opts)
 
        return self.new(data) 
 
 
-   def any(self, axis=None, **opts):
+   def anyof(self, axis=None, **opts):
 
        data = self._backend.any(self._data, axis, **opts)
 
        return self.new(data) 
 
 
-   def max(self, axis=None, **opts):
+   def amax(self, axis=None, **opts):
 
        return self._backend.max(self._data, axis, **opts)
 
 
-   def min(self, axis=None, **opts):
+   def amin(self, axis=None, **opts):
 
        return self._backend.min(self._data, axis, **opts)
 
@@ -197,7 +216,7 @@ class OneArray(ArrayLike):
        return self.new(data) 
 
 
-   def abs(self, **opts):
+   def absolute(self, **opts):
 
        data = self._backend.abs(self._data, **opts)
 
@@ -426,7 +445,309 @@ class OneArray(ArrayLike):
 
 
 
-# --- Double Array (supports binary operations) ----------------------------- #
+
+###############################################################################
+###                                                                         ###
+###  Standalone functions corresponding to OneArray methods                 ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Core methods ---------------------------------------------------------- #
+
+def copy(x, **opts):
+
+    return x.copy(**opts)
+
+
+
+# --- Data type methods ----------------------------------------------------- #
+
+def astype(x, **opts):
+
+    return x.astype(**opts)
+
+
+def dtype(x):
+
+    return x.dtype()
+
+
+def iscomplex(x):
+
+    return x.iscomplex()
+
+
+
+
+# --- Shape methods --------------------------------------------------------- #
+
+def size(x):
+
+    return x.size() 
+
+
+def ndim(x):
+
+    return x.ndim()
+
+
+def shape(x):
+
+    return x.shape()
+
+
+def reshape(x, shape, **opts):
+
+    return x.reshape(shape, **opts)
+
+
+def transpose(x, axes):
+
+    return x.transpose(axes)
+
+
+def moveaxis(x, source, destination):
+
+    return x.moveaxis(source, destination)
+
+
+def squeeze(x, axis=None):
+
+    return x.squeeze(axis)
+    
+
+def unsqueeze(x, axis):
+
+    return x.unsqueeze(axis)
+
+
+def sumover(x, axis=None, dtype=None, **opts):
+
+    return x.sumover(axis, dtype, **opts)
+
+
+def cumsum(x, axis=None, dtype=None, **opts):
+
+    return x.cumsum(axis, dtype, **opts)
+
+
+
+
+# --- Value methods --------------------------------------------------------- #
+
+def item(x, *idx):
+
+    return x.item(*idx)
+
+
+def allof(x, axis=None, **opts):
+
+    return x.allof(axis, **opts)
+
+
+def anyof(x, axis=None, **opts):
+
+    return x.anyof(axis, **opts) 
+
+
+def amax(x, axis=None, **opts):
+
+    return x.amax(axis, **opts)
+
+
+def amin(x, axis=None, **opts):
+
+    return x.amin(axis, **opts)  
+
+
+def sign(x, **opts):
+
+    return x.sign(**opts)  
+
+
+def absolute(x, **opts):
+
+    return x.absolute(**opts)
+
+
+def flip(x, axis=None):
+
+    return x.flip(axis)
+
+
+def clip(x, minval, maxval, **opts):
+
+    return x.clip(minval, maxval, **opts)
+
+
+def count_nonzero(x, axis=None, **opts):
+
+    return x.count_nonzero(axis, **opts)
+
+
+def put(x, idxs, vals, accumulate=False):
+
+    return x.put(idxs, vals, accumulate=accumulate)
+
+
+def argsort(x, axis=-1, **opts):
+
+    return x.argsort(axis, **opts)
+
+    
+
+
+# --- Standard math --------------------------------------------------------- #
+
+def conj(x):
+
+    return x.conj()
+
+
+def real(x):
+
+    return x.real()
+
+
+def imag(x):
+
+    return x.imag()
+       
+
+def sqrt(x):
+
+    return x.sqrt()
+
+
+def log(x): 
+
+    return x.log()
+
+
+def exp(x): 
+
+    return x.exp()
+
+
+def neg(x):
+
+    return x.neg()
+
+
+def sin(x):
+
+    return x.sin()
+
+
+def cos(x):
+
+    return x.cos()
+
+
+def tan(x):
+
+    return x.tan()
+
+
+def arcsin(x):
+
+    return x.arcsin()
+
+
+def arccos(x):
+
+    return x.arccos()
+
+
+def arctan(x):
+
+    return x.arctan()
+
+
+def sinh(x):
+
+    return x.sinh()
+
+
+def cosh(x):
+
+    return x.cosh()
+
+
+def tanh(x):
+
+    return x.tanh()
+
+
+def arcsinh(x):
+
+    return x.arcsinh()
+
+
+def arccosh(x):
+
+    return x.arccosh()
+
+
+def arctanh(x):
+
+    return x.arctanh()
+
+
+
+
+# --- Linear algebra: decompositions ---------------------------------------- #
+
+def svd(x):
+
+    return x.svd()
+
+
+def qr(x):
+
+    return x.qr()
+
+
+def eig(x):
+
+    return x.eig()
+
+
+def eigh(x):
+
+    return x.eigh()
+
+
+
+
+# --- Linear algebra: matrix exponential ------------------------------------ #
+
+def expm(x):
+
+    return x.expm()
+
+
+
+
+# --- Linear algebra: norm -------------------------------------------------- #
+
+def norm(x, order=None, axis=None, **opts):
+
+    return x.norm(order, axis, **opts)
+
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Definition of Double Array (supports binary operations)                ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Two-Array ------------------------------------------------------------- #
 
 class TwoArray(ArrayLike):
 
@@ -554,9 +875,104 @@ class TwoArray(ArrayLike):
 
 
 
+###############################################################################
+###                                                                         ###
+###  Standalone functions corresponding to TwoArray methods                 ###
+###                                                                         ###
+###############################################################################
 
 
-# --- NTuple Array (supports nary operations) ------------------------------- #
+# --- Logical operations ---------------------------------------------------- #
+
+def allclose(x, y, **opts):
+
+    return (x | y).allclose(**opts) 
+
+
+def allequal(x, y):
+
+    return (x | y).allequal()
+
+
+def isclose(x, y, **opts):
+
+    return (x | y).isclose()
+
+
+def isequal(x, y):
+
+    return (x | y).isequal()
+
+
+def notequal(x, y):
+
+    return (x | y).notequal()
+
+
+def logical_and(x, y):
+
+    return (x | y).logical_and()
+
+
+def logical_or(x, y):
+
+    return (x | y).logical_or()
+
+
+
+
+# --- Elementwise binary algebra -------------------------------------------- #
+
+def add(x, y):
+
+    return (x | y).add()
+
+
+def sub(x, y):
+
+    return (x | y).sub()
+
+
+def mul(x, y):
+
+    return (x | y).mul()
+
+       
+def div(x, y):
+
+    return (x | y).div()
+
+
+def power(x, y):
+
+    return (x | y).power()
+
+
+
+
+# --- Linear algebra: products ---------------------------------------------- #
+
+def dot(x, y):
+
+    return (x | y).dot()
+
+       
+def kron(x, y):
+
+    return (x | y).kron()
+
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Definition of N-tuple Array (supports nary operations)                 ###
+###                                                                         ###
+###############################################################################
+
+
+# --- N-Array --------------------------------------------------------------- #
 
 class NArray(ArrayLike):
 
@@ -602,61 +1018,29 @@ class NArray(ArrayLike):
 
 
 
+###############################################################################
+###                                                                         ###
+###  Standalone functions corresponding to NArray methods                   ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Value methods --------------------------------------------------------- #
+
+def where(condition, x, y): 
+
+    return (condition | x | y).where()
 
 
 
 
+# --- Linear algebra: products ---------------------------------------------- #
 
+def einsum(equation, *xs, optimize=True):
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    array = reduce(operator.or_, xs) 
+            
+    return array.einsum(equation, optimize=optimize)
 
 
 
