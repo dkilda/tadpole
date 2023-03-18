@@ -135,8 +135,8 @@ def fuse(x, fusemap):
 
         for inp, out in fusemap:
 
-            if not isinstance(inp, Index):
-               inp = Index(inp, sizeof(*inp))
+            if not isinstance(out, Index):
+               out = Index(out, sizeof(*inp))
 
             assert sizeof(*inp) == sizeof(out), (
                f"fuse(): sizes of "
@@ -547,6 +547,14 @@ def dot(x, y):
 
 
 
+def kron(x, y, kronmap):
+
+    out = einsum(x, y)
+
+    return fuse(out, kronmap)
+
+
+
 
 # --- Linear algebra: decomposition methods --------------------------------- #
 
@@ -590,6 +598,35 @@ def eigh(x):
        
 
 
+
+# --- Linear algebra: matrix exponential ------------------------------------ #
+
+@ad.differentiable
+def expm(x):
+
+    def fun(backend, data):
+        return backend.expm(data)
+
+    return Args(x).pluginto(ElemwiseCall(fun))
+       
+
+
+
+# --- Linear algebra: misc methods ------------------------------------------ #
+
+def htranspose(x, *order):
+
+    return transpose(conj(x), *order)
+
+
+
+@ad.differentiable
+def norm(x, order=None, inds=None, **opts):
+
+    def fun(backend, data, axis):
+        return backend.norm(data, order, axis, **opts)
+
+    return Args(x).pluginto(ReduceCall(fun, inds))
 
 
 
@@ -704,7 +741,7 @@ def where(condition, x, y):
 
     return Args(condition, x, y).pluginto(TransformCall(fun))
 
-"""
+
 
 
 
@@ -931,7 +968,7 @@ def svd(x):
 
 
 
-
+"""
 
 """
 """
