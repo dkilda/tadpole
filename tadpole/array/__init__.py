@@ -11,7 +11,17 @@ from tadpole.array.nary   import Array as NaryArray
 
 
 from .void import (
-   asarray,
+   asvoid,
+)
+
+
+from .void import (
+   iscomplex_type,
+   get_dtype,
+)
+
+
+from .void import (
    zeros,
    ones,
    unit,
@@ -19,10 +29,11 @@ from .void import (
    rand,
    randn,
    randuniform,
-   )
+)
 
 
 from .unary import (
+   asarray,
    copy,
    astype,
    dtype,

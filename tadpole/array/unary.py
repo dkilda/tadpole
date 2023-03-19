@@ -16,7 +16,7 @@ from tadpole.array.core import ArrayLike
 
 ###############################################################################
 ###                                                                         ###
-###  Helper methods                                                         ###
+###  Misc methods                                                           ###
 ###                                                                         ###
 ###############################################################################
 
@@ -38,6 +38,21 @@ def adjust_axis(fun):
         return fun(x, axis, *args, **kwargs)
 
     return wrap
+
+
+
+
+# --- Array factory --------------------------------------------------------- #
+
+def asarray(data, **opts):
+
+    if isinstance(data, ArrayLike):
+       return data
+
+    backend = backends.get_from(opts)                            
+    data    = backend.asarray(data, **opts)
+
+    return Array(backend, data)
 
 
 
@@ -118,6 +133,13 @@ class Array(ArrayLike):
    def iscomplex(self):
 
        return self._backend.iscomplex(self._data)
+
+
+   # --- Element access --- #
+
+   def __getitem__(self, idx):
+
+       return self._data[idx]
 
 
    # --- Shape methods --- #

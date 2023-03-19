@@ -15,6 +15,36 @@ from tadpole.array.core import ArrayLike
 
 ###############################################################################
 ###                                                                         ###
+###  Misc methods                                                           ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Void Array factory ---------------------------------------------------- #
+
+def asvoid(backend=None):
+
+    return Array(backends.get(backend))
+
+
+
+
+# --- Decorator that creates a Void Array with an appropriate backend ------- #
+
+def fromvoid(fun):
+
+    def wrap(*args, **opts):
+
+        x = Array(backends.get_from(opts))
+        return fun(x, *args, **opts)
+
+    return wrap
+
+
+
+
+###############################################################################
+###                                                                         ###
 ###  Definition of Void Array (supports array creation)                     ###
 ###                                                                         ###
 ###############################################################################
@@ -22,7 +52,7 @@ from tadpole.array.core import ArrayLike
 
 # --- Void Array ------------------------------------------------------------ #
 
-class Array(ArrayLike):
+class Array(ArrayLike): # TODO should we include dtype, shape in there? so that it becomes more like space?
 
    # --- Construction --- #
 
@@ -49,17 +79,21 @@ class Array(ArrayLike):
        return other 
 
 
+   # --- Data type methods  --- #
+ 
+   def iscomplex_type(self, dtype):
+
+       dtype = self._backend.get_dtype(dtype)
+
+       return dtype in self._backend.complex_dtypes()
+
+
+   def get_dtype(self, dtype=None):
+
+       return self._backend.get_dtype(dtype)
+
+
    # --- Array creation methods --- #
-
-   def asarray(self, array, **opts):
-
-       if isinstance(array, ArrayLike):
-          return array
-
-       data = self._backend.asarray(array, **opts)
-
-       return self.new(data)
-
 
    def zeros(self, shape, **opts):
 
@@ -119,43 +153,61 @@ class Array(ArrayLike):
 ###############################################################################
 
 
+# --- Data type methods ----------------------------------------------------- #
+
+@fromvoid 
+def iscomplex_type(x, dtype):
+
+    return x.iscomplex_type(dtype)
+
+
+@fromvoid 
+def get_dtype(x, dtype=None):
+
+    return x.get_dtype(dtype)
+
+
+
+
 # --- Array creation methods ------------------------------------------------ #
-
-def asarray(x, array, **opts):
-
-    return x.asarray(array, **opts)
-
-
+    
+@fromvoid
 def zeros(x, shape, **opts):
 
     return x.zeros(shape, **opts)
 
 
+@fromvoid
 def ones(x, shape, **opts):
 
     return x.ones(shape, **opts)
 
 
+@fromvoid
 def unit(x, shape, idx, **opts):
 
     return x.unit(shape, idx, **opts)
 
 
+@fromvoid
 def eye(x, N, M=None, **opts):
 
     return x.eye(N, M=None, **opts)
 
 
+@fromvoid
 def rand(x, shape, **opts):
 
     return x.rand(shape, **opts)
 
 
+@fromvoid
 def randn(x, shape, **opts):
 
     return x.randn(shape, **opts)
        
 
+@fromvoid
 def randuniform(x, shape, boundaries, **opts):
 
     return x.randn(shape, boundaries, **opts)

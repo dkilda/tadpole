@@ -11,7 +11,7 @@ import tadpole.array.nary  as nary
 
 from tadpole.array.core import ArrayLike
 
-
+# TODO TODO TODO need typecast! put it in core!
 
 
 ###############################################################################
