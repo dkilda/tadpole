@@ -3,7 +3,7 @@
 
 import numpy as np
 
-import tadpole.tensor.backends.common  as common
+import tadpole.tensor.backends.util    as util
 import tadpole.tensor.backends.backend as backend 
 
 torch = None
@@ -42,12 +42,23 @@ class TorchBackend(backend.Backend):
 
    # --- Data type methods --- #
 
+   def astype(self, array, **opts):
+
+       dtype = self.get_dtype(opts.pop("dtype", None))
+       return array.type(dtype, **opts)
+
+
    def dtype(self, array):
 
        try:   
           return array.dtype
        except AttributeError:
           return torch.result_type(array)
+
+
+   def iscomplex(self, array):
+
+       return self.dtype(array) in self.complex_dtypes()
 
 
    def _get_dtype(self, dtype):
@@ -99,12 +110,6 @@ class TorchBackend(backend.Backend):
        return torch.as_tensor(array, **opts)
        
 
-   def astype(self, array, **opts):
-
-       dtype = self.get_dtype(opts.pop("dtype", None))
-       return array.type(dtype, **opts)
-       
-
    def zeros(self, shape, **opts):
 
        dtype = self.get_dtype(opts.pop("dtype", None))
@@ -119,7 +124,7 @@ class TorchBackend(backend.Backend):
 
    def unit(self, shape, idx, **opts):
 
-       return common.unit(self, shape, idx, **opts)
+       return util.unit(self, shape, idx, **opts)
        
 
    def eye(self, N, M=None, **opts):
@@ -130,11 +135,6 @@ class TorchBackend(backend.Backend):
            M = N
 
        return torch.eye(n=N, m=M, dtype=dtype, **opts)
-       
-
-   def diag(self, array, **opts):
-
-       return torch.diag(array, **opts)
 
 
    def _rand_helper(self, fun, **opts):
@@ -213,6 +213,27 @@ class TorchBackend(backend.Backend):
    def unsqueeze(self, array, axis):
 
        return torch.unsqueeze(array, axis)
+
+
+   def sumover(self, array, axis=None, keepdims=False, dtype=None, **opts):
+
+       if axis is None:
+          return torch.sum(array, dtype=dtype)
+
+       keepdims = opts.pop("keepdims", False)
+
+       return torch.sum(array, axis, keepdim=keepdims, dtype=dtype, **opts) 
+       
+
+   def cumsum(self, array, axis=None, dtype=None, **opts):
+
+       if axis is None:
+
+          flat_array = torch.reshape(array, (-1))
+
+          return torch.cumsum(flat_array, 0, dtype, **opts)
+
+       return torch.cumsum(array, axis, dtype, **opts) 
        
 
    # --- Array value methods --- #
@@ -301,14 +322,17 @@ class TorchBackend(backend.Backend):
        return torch.where(condition, x, y)
 
 
-   def argsort(self, array, axis=-1, **opts):
+   def argsort(self, array, axis=None, **opts):
+
+       if axis is None:
+          axis = -1
 
        return torch.argsort(array, axis=axis, **opts)
 
 
-   def iscomplex(self, array):
+   def diag(self, array, **opts):
 
-       return self.dtype(array) in self.complex_dtypes()
+       return torch.diag(array, **opts)
 
 
    # --- Logical operations --- #
@@ -348,8 +372,7 @@ class TorchBackend(backend.Backend):
        return torch.logical_or(x, y)
 
 
-       
-   # --- Simple math operations --- #
+   # --- Standard math --- #
 
    def conj(self, array, **opts):
 
@@ -445,27 +468,6 @@ class TorchBackend(backend.Backend):
 
        return torch.arctanh(array)
 
-
-   def sumover(self, array, axis=None, keepdims=False, dtype=None, **opts):
-
-       if axis is None:
-          return torch.sum(array, dtype=dtype)
-
-       keepdims = opts.pop("keepdims", False)
-
-       return torch.sum(array, axis, keepdim=keepdims, dtype=dtype, **opts) 
-       
-
-   def cumsum(self, array, axis=None, dtype=None, **opts):
-
-       if axis is None:
-
-          flat_array = torch.reshape(array, (-1))
-
-          return torch.cumsum(flat_array, 0, dtype, **opts)
-
-       return torch.cumsum(array, axis, dtype, **opts) 
-
        
    # --- Binary elementwise algebra --- #
 
@@ -525,12 +527,12 @@ class TorchBackend(backend.Backend):
 
    def eig(self, x):
 
-       return common.eig(self, lambda v: torch.linalg.eigh(v), x)
+       return util.eig(self, lambda v: torch.linalg.eigh(v), x)
        
 
    def eigh(self, x):
 
-       return common.eigh(self, lambda v: torch.linalg.eigh(v), x)
+       return util.eigh(self, lambda v: torch.linalg.eigh(v), x)
        
 
    # --- Linear algebra: matrix exponential --- #

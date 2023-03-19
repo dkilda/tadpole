@@ -23,8 +23,16 @@ class Backend(abc.ABC):
 
    # --- Data type methods --- #
 
+   @abc.abstractmethod
+   def astype(self, array, **opts):
+       pass
+
    @abc.abstractmethod  
    def dtype(self, array):
+       pass
+
+   @abc.abstractmethod 
+   def iscomplex(self, array):
        pass
 
    @abc.abstractmethod  
@@ -43,10 +51,6 @@ class Backend(abc.ABC):
        pass
 
    @abc.abstractmethod
-   def astype(self, array, **opts):
-       pass
-
-   @abc.abstractmethod
    def zeros(self, shape, **opts):
        pass
 
@@ -60,10 +64,6 @@ class Backend(abc.ABC):
 
    @abc.abstractmethod
    def eye(self, N, M=None, **opts):
-       pass
-
-   @abc.abstractmethod
-   def diag(self, array, **opts):
        pass
 
    @abc.abstractmethod
@@ -111,6 +111,14 @@ class Backend(abc.ABC):
 
    @abc.abstractmethod
    def unsqueeze(self, array, axis):
+       pass
+
+   @abc.abstractmethod
+   def sumover(self, array, axis=None, dtype=None, **opts):
+       pass
+
+   @abc.abstractmethod
+   def cumsum(self, array, axis=None, dtype=None, **opts):
        pass
 
 
@@ -168,8 +176,8 @@ class Backend(abc.ABC):
    def argsort(self, array, axis=-1, **opts):
        pass
 
-   @abc.abstractmethod 
-   def iscomplex(self, array):
+   @abc.abstractmethod
+   def diag(self, array, **opts):
        pass
 
 
@@ -204,7 +212,7 @@ class Backend(abc.ABC):
        pass
 
 
-   # --- Simple math operations --- #
+   # --- Standard math --- #
 
    @abc.abstractmethod
    def conj(self, array, **opts):
@@ -280,14 +288,6 @@ class Backend(abc.ABC):
 
    @abc.abstractmethod
    def arctanh(self, array):
-       pass
-
-   @abc.abstractmethod
-   def sumover(self, array, axis=None, dtype=None, **opts):
-       pass
-
-   @abc.abstractmethod
-   def cumsum(self, array, axis=None, dtype=None, **opts):
        pass
 
 

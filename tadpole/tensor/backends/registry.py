@@ -127,3 +127,71 @@ def get_str(array):
 
 
 
+# --- Find a common backend ------------------------------------------------- #
+
+def common(*backends, msg=None):
+
+    if msg:
+       msg = f"{msg}: "
+
+    if not backends:
+       raise ValueError((
+          f"{msg}Please provide valid backend(s)! "
+          f"The input {backends} is invalid."
+       ))
+
+    if len(set(backends)) > 1:
+       raise ValueError((
+          f"{msg}Automatic conversion between backends "
+          f"{backends} is not supported! Please use "
+          f"the same backend everywhere or convert backends manually."
+       ))
+
+    return backends[0]
+
+
+
+
+# --- Find a common backend using backend precedence ------------------------ #
+
+def common_by_precedence(*backends):
+
+    if len(set(backends)) == 1:
+       return backends[0]
+
+    precedence_by_backend = {
+       "numpy":  0, 
+       "torch": -1,
+    }
+
+    precedences = [
+       precedence_by_backend[backend.name()] for backend in backends
+    ]
+
+    return backends[precedences.index(max(precedences))]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

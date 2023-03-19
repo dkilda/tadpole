@@ -12,7 +12,6 @@ import tadpole.autodiff as ad
 
 
 
-
 ###############################################################################
 ###                                                                         ###
 ###  General ArrayLike interface for OneArray/TwoArray/NArray/etc objects   ###
@@ -49,6 +48,12 @@ class VoidArray(ArrayLike):
    # --- Construction --- #
 
    def __init__(self, backend):
+
+       if not isinstance(backend, backends.Backend):
+          raise ValueError(
+             f"VoidArray: backend must be an instance "
+             f"of Backend, but it is {backend}"
+          ) 
 
        self._backend = backend
 
@@ -194,7 +199,7 @@ class OneArray(ArrayLike):
 
    def __init__(self, backend, data):
 
-       if not isinstance(backend, backends.backend.Backend):
+       if not isinstance(backend, backends.Backend):
           raise ValueError(
              f"OneArray: backend must be an instance "
              f"of Backend, but it is {backend}"
@@ -213,7 +218,9 @@ class OneArray(ArrayLike):
 
    def __or__(self, other):
 
-       backend = self._backend # TODO work out the common backend
+       backend = backends.common(
+          self._backend, other._backend, msg="OneArray.__or__"
+       )
 
        if isinstance(other, OneArray):
           return TwoArray(backend, self._data, other._data)
@@ -396,7 +403,7 @@ class OneArray(ArrayLike):
        return self.new(data) 
 
 
-   def argsort(self, axis=-1, **opts):
+   def argsort(self, axis=None, **opts):
 
        data = self._backend.argsort(self._data, axis, **opts)
 
@@ -741,7 +748,7 @@ def put(x, idxs, vals, accumulate=False):
     return x.put(idxs, vals, accumulate=accumulate)
 
 
-def argsort(x, axis=-1, **opts):
+def argsort(x, axis=None, **opts):
 
     return x.argsort(axis, **opts)
 
@@ -910,6 +917,12 @@ class TwoArray(ArrayLike):
 
    def __init__(self, backend, dataA, dataB):
 
+       if not isinstance(backend, backends.Backend):
+          raise ValueError(
+             f"TwoArray: backend must be an instance "
+             f"of Backend, but it is {backend}"
+          ) 
+
        self._backend = backend
        self._datas   = (dataA, dataB)
 
@@ -923,7 +936,9 @@ class TwoArray(ArrayLike):
 
    def __or__(self, other):
 
-       backend = self._backend # TODO work out the common backend
+       backend = backends.common(
+          self._backend, other._backend, msg="TwoArray.__or__"
+       )
 
        return NArray(backend, *self._datas, *other._datas)
 
@@ -1135,6 +1150,12 @@ class NArray(ArrayLike):
 
    def __init__(self, backend, *datas):
 
+       if not isinstance(backend, backends.Backend):
+          raise ValueError(
+             f"NArray: backend must be an instance "
+             f"of Backend, but it is {backend}"
+          ) 
+
        self._backend = backend
        self._datas   = datas
 
@@ -1148,7 +1169,9 @@ class NArray(ArrayLike):
 
    def __or__(self, other):
 
-       backend = self._backend # TODO work out the common backend
+       backend = backends.common(
+          self._backend, other._backend, msg="NArray.__or__"
+       )
 
        return NArray(backend, *self._datas, *other._datas)
 

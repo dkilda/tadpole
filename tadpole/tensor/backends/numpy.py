@@ -4,7 +4,7 @@
 import numpy as np
 import scipy.linalg as spla
 
-import tadpole.tensor.backends.common  as common
+import tadpole.tensor.backends.util    as util
 import tadpole.tensor.backends.backend as backend 
 
 
@@ -28,6 +28,13 @@ class NumpyBackend(backend.Backend):
 
    # --- Data type methods --- #
 
+   def astype(self, array, **opts):
+
+       dtype = self.get_dtype(opts.pop("dtype", None))
+
+       return array.astype(dtype, **opts)
+
+
    def dtype(self, array):
 
        try:   
@@ -35,7 +42,12 @@ class NumpyBackend(backend.Backend):
        except AttributeError:
           return np.result_type(array)
 
-  
+
+   def iscomplex(self, array):
+
+       return self.dtype(array) in self.complex_dtypes()
+
+
    def get_dtype(self, dtype):
 
        if  dtype is None:
@@ -58,12 +70,6 @@ class NumpyBackend(backend.Backend):
        return np.asarray(array, **opts)
 
 
-   def astype(self, array, **opts):
-
-       dtype = self.get_dtype(opts.pop("dtype", None))
-       return array.astype(dtype, **opts)
-       
-
    def zeros(self, shape, **opts):
 
        dtype = self.get_dtype(opts.pop("dtype", None))
@@ -78,20 +84,15 @@ class NumpyBackend(backend.Backend):
 
    def unit(self, shape, idx, **opts):
 
-       return common.unit(self, shape, idx, **opts)
+       return util.unit(self, shape, idx, **opts)
        
 
    def eye(self, N, M=None, **opts):
 
        dtype = self.get_dtype(opts.pop("dtype", None))
        return np.eye(N, M=M, dtype=dtype, **opts)
-       
 
-   def diag(self, array, **opts):
-
-       return np.diag(array, **opts) 
-  
- 
+   
    def _rand_helper(self, fun, **opts):
 
        dtype = self.get_dtype(opts.pop("dtype", None))
@@ -176,6 +177,16 @@ class NumpyBackend(backend.Backend):
    def unsqueeze(self, array, axis):
 
        return np.expand_dims(array, axis)
+
+       
+   def sumover(self, array, axis=None, dtype=None, **opts):
+
+       return np.sum(array, axis, dtype, **opts) 
+
+
+   def cumsum(self, array, axis=None, dtype=None, **opts):
+
+       return np.cumsum(array, axis, dtype, **opts) 
        
 
    # --- Array value methods --- #
@@ -256,14 +267,17 @@ class NumpyBackend(backend.Backend):
        return np.where(condition, x, y)
 
 
-   def argsort(self, array, axis=-1, **opts):
+   def argsort(self, array, axis=None, **opts):
+
+       if axis is None:
+          axis = -1
 
        return np.argsort(array, axis=axis, **opts)
+      
 
+   def diag(self, array, **opts):
 
-   def iscomplex(self, array):
-
-       return self.dtype(array) in self.complex_dtypes()
+       return np.diag(array, **opts) 
 
 
    # --- Logical operations --- #
@@ -303,7 +317,7 @@ class NumpyBackend(backend.Backend):
        return np.logical_or(x, y)
 
 
-   # --- Simple math operations --- #
+   # --- Standard math --- #
 
    def conj(self, array, **opts):
 
@@ -398,16 +412,6 @@ class NumpyBackend(backend.Backend):
    def arctanh(self, array):
 
        return np.arctanh(array)
-       
-
-   def sumover(self, array, axis=None, dtype=None, **opts):
-
-       return np.sum(array, axis, dtype, **opts) 
-
-
-   def cumsum(self, array, axis=None, dtype=None, **opts):
-
-       return np.cumsum(array, axis, dtype, **opts) 
 
 
    # --- Binary elementwise algebra --- #
@@ -479,12 +483,12 @@ class NumpyBackend(backend.Backend):
 
    def eig(self, x):
 
-       return common.eig(self, lambda v: np.linalg.eigh(v), x)
+       return util.eig(self, lambda v: np.linalg.eigh(v), x)
        
 
    def eigh(self, x):
 
-       return common.eigh(self, lambda v: np.linalg.eigh(v), x)
+       return util.eigh(self, lambda v: np.linalg.eigh(v), x)
 
 
    # --- Linear algebra: matrix exponential --- #
