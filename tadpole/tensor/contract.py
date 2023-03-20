@@ -25,26 +25,31 @@ from tadpole.tensor.index import (
 
 
 
+###############################################################################
+###                                                                         ###
+###  Einsum equations                                                       ###
+###  (Generating equations from input and output indices,                   ###
+###   using unicode or other sets of symbols).                              ###   
+###                                                                         ###
+###############################################################################
 
-@functools.lru_cache(2**12)
-def unicode_symbol(ind):
 
-    return oe.get_symbol(ind)
-
-
-
+# --- Symbol generator (generates symbols corresponding to Index objects) --- #
 
 class Symbols:
- 
-   def __init__(self, symbols):
 
-       self._symbols = symbols
+   def __init__(self, symbolfun=None):
+
+       if symbolfun is None:
+          symbolfun = unicode_symbol
+
+       self._symbolfun = symbolfun
 
 
    @util.cacheable
    def _map(self):
 
-       next_symbol = map(self._symbols, itertools.count()).__next__
+       next_symbol = map(self._symbolfun, itertools.count()).__next__
 
        return collections.defaultdict(next_symbol)
 
@@ -56,116 +61,80 @@ class Symbols:
 
 
 
-class Equation:
+# --- Unicode symbol function ----------------------------------------------- #
 
-   def __init__(self, symbols=None):
+@functools.lru_cache(2**12)
+def unicode_symbol(ind):
 
-       if symbols is None:
-          symbols = Symbols(unicode_symbol)
-
-       self._symbols = symbols
-
-   
-   @functools.lru_cache(2**12)
-   def tosymbols(self, inds):
-
-       return map(self._symbols.next, inds)
-
-
-   @functools.lru_cache(2**12)
-   def make(self, input_inds, output_inds): 
-
-       inputs = tuple("".join(self.tosymbols(inds)) for inds in input_inds)
-       output =       "".join(self.tosymbols(output_inds)) 
-
-       return ",".join(inputs) + f"->{output}"
-
-       
+    return oe.get_symbol(ind)
 
 
 
+
+# --- Create einsum equation from input and output indices ------------------ #
+
+@functools.lru_cache(2**12)
+def make_equation(input_inds, output_inds): 
+
+    symbols = Symbols(unicode_symbol)
+
+    def tosymbols(inds):
+        return "".join(map(symbols.next, inds))
+
+    inputs = tuple(tosymbols(inds)) for inds in input_inds)
+    output = tosymbols(output_inds)
+
+    return ",".join(inputs) + f"->{output}"
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Index contraction                                                      ###
+###  (different strategies to generate output indices from input indices)   ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Index contraction interface ------------------------------------------- #
 
 class IndexContract(abc.ABC):
 
    @abc.abstractmethod
-   def equation(self):
-       pass
-
-   @abc.abstractmethod
-   def input(self):
-       pass
-
-   @abc.abstractmethod
-   def output(self):
+   def generate(self, input_inds):
        pass
 
 
+
+
+# --- Fixed index contraction (with fixed output indices) ------------------- #
 
 class FixedIndexContract(IndexContract):
 
-   def __init__(self, input_inds, output_inds, equation=None):
+   def __init__(self, output_inds):
 
-       if equation is None:
-          equation = Equation()
-
-       self._input    = input_inds
-       self._output   = output_inds
-       self._equation = equation
+       self._output_inds = output_inds
 
 
-   def equation(self):
+   def generate(self, input_inds):
 
-       return self._equation.make(self._input, self._output)
-
-
-   def input(self):
-
-       return iter(self._input)
-
-
-   def output(self):
-
-       return iter(self._output)
+       return iter(self._output_inds)   
 
 
 
 
+# --- Pair index contraction (finds matching index pairs) ------------------- #
 
-class DotIndexContract(IndexContract):
+class PairIndexContract(IndexContract):
 
-   def __init__(self, inds, equation=None):
+   def generate(self, input_inds):
 
-       if equation is None:
-          equation = Equation()
-
-       self._inds     = inds
-       self._equation = equation
-
-
-   def _frequencies(self):
-
-       return iter(util.frequencies(inds).items())
-
-
-   def equation(self):
-
-       return self._equation.make(self._inds, self.output())
-
-
-   def input(self):
-
-       return iter(self._inds)
-
-
-   def output(self):
-
-       output = []
-
-       for ind, freq in self._frequencies(): 
+       for ind, freq in util.frequencies(input_inds).items():
 
            if freq > 2:
               raise ValueError(
-                 f"{type(self).__name__}.output: "
+                 f"{type(self).__name__}: "
                  f"Index {ind} appears more than twice! All input indices: "
                  f"{inds}. If you wish to perform a hyper-index contraction, "
                  f"please specify the output indices explicitly."
@@ -177,68 +146,42 @@ class DotIndexContract(IndexContract):
 
 
 
-
-
-
-"""
-@functools.lru_cache(2**12)
-def make_equation(input_inds, output_inds):
-
-    symbols = Symbols(unicode_symbol)
-
-    inputs = tuple("".join(map(symbols.next, inds)) for inds in input_inds)
-    output =       "".join(map(symbols.next, output_inds))
-
-    return ",".join(inputs) + f"->{output}"
-
-    
-
-
-def make_output_inds(inds):
-
-    output = []
-
-    for ind, freq in util.frequencies(inds).items():
-
-        if freq > 2:
-           raise ValueError(
-              f"make_output_inds: "
-              f"Index {ind} appears more than twice! All "
-              f"input indices: {inds}. If you wish to perform a hyper-index "
-              f"contraction, please specify the output indices explicitly."
-           )
-
-        if freq == 1:
-           output.append(ind)
-
-    return tuple(output)
-
-"""
-
-
-
-
-
-
-
-
 ###############################################################################
 ###                                                                         ###
-###  Conctraction calls                                                     ###
+###  Contraction calls                                                      ###
 ###                                                                         ###
 ###############################################################################
+
+
+# --- Conctraction call interface ------------------------------------------- #
+
+class ContractCall(abc.ABC):
+
+   @abc.abstractmethod
+   def output_inds(self):
+       pass
+
+   @abc.abstractmethod
+   def equation(self):
+       pass  
+
+
 
 
 # --- Dot product call ------------------------------------------------------ #
 
-class Dot(fn.FunCall):
+class Dot(fn.FunCall, ContractCall):
 
-   def __init__(self, engine):
+   def __init__(self, engine, indcon=None):
 
        if not isinstance(engine, fn.EngineLike):
           engine = fn.Engine(engine)
 
+       if indcon is None:
+          indcon = PairIndexContract()
+
        self._engine = engine
+       self._indcon = indcon
 
 
    def attach(self, data, inds):
@@ -247,23 +190,29 @@ class Dot(fn.FunCall):
 
 
    @util.cacheable
-   def outinds(self):
+   def output_inds(self):
 
-       return make_output_inds(self._engine.inds())
+       return self._indcon.generate(self._engine.inds()) 
+
+
+   @util.cacheable
+   def equation(self):
+
+       return make_equation(self._engine.inds(), self.output_inds())  
 
 
    def execute(self):
 
        outdata = self._engine.execute(*self._engine.datas())
 
-       return core.Tensor(outdata, self.outinds())
+       return core.Tensor(outdata, self.output_inds())
 
 
 
 
 # --- Einsum call ----------------------------------------------------------- #
 
-class Einsum(fn.FunCall):
+class Einsum(fn.FunCall, ContractCall):
 
    def __init__(self, engine, indcon):
 
@@ -280,48 +229,42 @@ class Einsum(fn.FunCall):
 
 
    @util.cacheable
-   def outinds(self):
+   def output_inds(self):
  
-       self._indcon.output()
-
-       if self._outinds is None: 
-          return make_output_inds(self._engine.inds())
-
-       return self._outinds
+       return self._indcon.generate(self._engine.inds())  
 
 
    @util.cacheable
    def equation(self):
 
-       return make_equation(self._engine.inds(), self.outinds())
+       return make_equation(self._engine.inds(), self.output_inds())  
 
 
    def execute(self):
 
-       outdata = self._engine.execute(
-                    self.equation(), *self._engine.datas()
-                 )
+       outdata = self._engine.execute(self.equation(), *self._engine.datas())
 
-       return core.Tensor(outdata, self.outinds())  
+       return core.Tensor(outdata, self.output_inds())  
 
 
 
 
-
-
-
-
-
-
-# --- Linear algebra: multiplication methods -------------------------------- #
+# --- Linear algebra: contraction methods ----------------------------------- #
 
 @ad.differentiable
 def einsum(*xs, outinds=None, optimize=True):
+
+    if outinds is None:
+       outinds = PairIndexContract()
+
+    if not isinstance(outinds, IndexContract):
+       outinds = FixedIndexContract(outinds)
 
     def fun(equation, *datas):
         return ar.einsum(equation, *datas, optimize=optimize)
 
     return fn.Args(*xs).pluginto(Einsum(fun, outinds))
+
 
 
 
@@ -335,62 +278,12 @@ def dot(x, y):
 
 
 
+
 def kron(x, y, kronmap):
 
     out = einsum(x, y)
 
     return op.fuse(out, kronmap)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

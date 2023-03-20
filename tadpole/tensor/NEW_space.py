@@ -261,6 +261,9 @@ class TensorSpace(Space):
 
    def __init__(self, arrayspace, inds):
 
+       if not isinstance(inds, Indices):
+          inds = Indices(*inds)
+
        self._arrayspace = arrayspace
        self._inds       = inds
 

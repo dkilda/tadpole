@@ -714,6 +714,9 @@ class Tensor(TensorLike, Pluggable):
        if inds is None:
           inds = Indices()
 
+       if not isinstance(inds, Indices):
+          inds = Indices(*inds)
+
        if data.shape != inds.shape,
           raise ValueError((
              f"{type(self).__name__}: 
