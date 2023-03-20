@@ -11,6 +11,32 @@ import tadpole.autodiff as ad
 
 
 
+# IndexPartition constructs [linds/rinds funs] w/o actually computing [linds/rinds] themselves 
+
+class LeftIndexPartition(IndexPartition):
+
+   def left(self, inds): # TODO returns PartialIndices with left-config
+
+
+
+
+class RightIndexPartition(IndexPartition):
+
+   def right(self, inds): # TODO returns PartialIndices with right-config
+
+
+
+
+class PartialIndices: # FIXME impl all (?) of Indices iface?
+
+   
+
+
+
+
+
+
+
 # --- Decomposition call ---------------------------------------------------- #
 
 class DecompCall(FunCall):

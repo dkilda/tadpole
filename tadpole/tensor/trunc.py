@@ -4,8 +4,8 @@
 import abc
 import numpy as np
 
-import tadpole.util     as util
-import tadpole.autodiff as ad
+import tadpole.util  as util
+import tadpole.array as ar
 
 
 
@@ -59,7 +59,7 @@ class DirectCutoff(CutoffMode):
 
    def apply(self, S):
 
-       return op.count_nonzero(S, lambda x: x > self._target_cutoff(S))
+       return ar.count_nonzero(S, lambda x: x > self._target_cutoff(S))
 
 
 
@@ -85,9 +85,9 @@ class SumCutoff(CutoffMode):
 
    def apply(self, S):
 
-       cumsum = op.cumsum(S**power, 0)
+       cumsum = ar.cumsum(S**power, 0)
 
-       return 1 + op.count_nonzero(
+       return 1 + ar.count_nonzero(
                      (cumsum[-1] - cumsum) > self._target_cutoff(cumsum)
                   ) 
 
@@ -127,7 +127,7 @@ class Error(ErrorMode):
        if S.shape[0] == rank: 
           return 0
 
-       cumsum = op.cumsum(S**power, 0)
+       cumsum = ar.cumsum(S**power, 0)
        error  = (cumsum[-1] - cumsum)[rank-1]  
 
        if self._relative:
@@ -235,7 +235,7 @@ class GenTrunc(Trunc):
 
        if self._renorm > 0:
       
-          cumsum = op.cumsum(S**self._renorm, 0)
+          cumsum = ar.cumsum(S**self._renorm, 0)
           renorm = (cumsum[-1] / cumsum[rank - 1]) ** (1 / self._renorm) 
 
           S1 = S1 * renorm
