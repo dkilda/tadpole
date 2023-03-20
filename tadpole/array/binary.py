@@ -11,7 +11,42 @@ import tadpole.array.nary  as nary
 
 from tadpole.array.core import ArrayLike
 
-# TODO TODO TODO need typecast! put it in core!
+
+
+
+###############################################################################
+###                                                                         ###
+###  Helper functions                                                       ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Type cast for binary functions ---------------------------------------- #
+
+def typecast(fun):
+
+    def wrap(x, y, *args, **kwargs):
+
+        try:
+            return fun(x, y, *args, **kwargs)       
+ 
+        except (AttributeError, TypeError):
+
+            if not any(isinstance(v, ArrayLike) for v in (x,y)):
+               x = unary.asarray(x)
+               y = unary.asarray(y) 
+
+            if not isinstance(x, ArrayLike):
+               x = y.new(x) 
+
+            if not isinstance(y, ArrayLike):
+               y = x.new(y) 
+
+            return fun(x, y, *args, **kwargs)
+         
+    return wrap
+
+
 
 
 ###############################################################################
@@ -166,36 +201,43 @@ class Array(ArrayLike):
 
 # --- Logical operations ---------------------------------------------------- #
 
+@typecast
 def allclose(x, y, **opts):
 
     return (x | y).allclose(**opts) 
 
 
+@typecast
 def allequal(x, y):
 
     return (x | y).allequal()
 
 
+@typecast
 def isclose(x, y, **opts):
 
     return (x | y).isclose()
 
 
+@typecast
 def isequal(x, y):
 
     return (x | y).isequal()
 
 
+@typecast
 def notequal(x, y):
 
     return (x | y).notequal()
 
 
+@typecast
 def logical_and(x, y):
 
     return (x | y).logical_and()
 
 
+@typecast
 def logical_or(x, y):
 
     return (x | y).logical_or()
@@ -205,26 +247,31 @@ def logical_or(x, y):
 
 # --- Elementwise binary algebra -------------------------------------------- #
 
+@typecast
 def add(x, y):
 
     return (x | y).add()
 
 
+@typecast
 def sub(x, y):
 
     return (x | y).sub()
 
 
+@typecast
 def mul(x, y):
 
     return (x | y).mul()
 
-       
+
+@typecast       
 def div(x, y):
 
     return (x | y).div()
 
 
+@typecast
 def power(x, y):
 
     return (x | y).power()
@@ -234,11 +281,13 @@ def power(x, y):
 
 # --- Linear algebra: products ---------------------------------------------- #
 
+@typecast
 def dot(x, y):
 
     return (x | y).dot()
 
-       
+     
+@typecast  
 def kron(x, y):
 
     return (x | y).kron()

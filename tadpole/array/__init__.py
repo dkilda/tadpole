@@ -16,12 +16,6 @@ from .void import (
 
 
 from .void import (
-   iscomplex_type,
-   get_dtype,
-)
-
-
-from .void import (
    zeros,
    ones,
    unit,

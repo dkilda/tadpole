@@ -16,7 +16,7 @@ from tadpole.array.core import ArrayLike
 
 ###############################################################################
 ###                                                                         ###
-###  Misc methods                                                           ###
+###  Helper functions                                                       ###
 ###                                                                         ###
 ###############################################################################
 
@@ -42,6 +42,31 @@ def adjust_axis(fun):
 
 
 
+# --- Type cast for unary functions ----------------------------------------- #
+
+def typecast(fun):
+
+    def wrap(x, *args, **kwargs):
+
+        try:
+            return fun(x, *args, **kwargs)       
+ 
+        except (AttributeError, TypeError):
+
+            return fun(asarray(x), *args, **kwargs)
+         
+    return wrap
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Definition of Unary Array (supports unary operations)                  ###
+###                                                                         ###
+###############################################################################
+
+
 # --- Array factory --------------------------------------------------------- #
 
 def asarray(data, **opts):
@@ -55,13 +80,6 @@ def asarray(data, **opts):
     return Array(backend, data)
 
 
-
-
-###############################################################################
-###                                                                         ###
-###  Definition of Unary Array (supports unary operations)                  ###
-###                                                                         ###
-###############################################################################
 
 
 # --- Unary Array ----------------------------------------------------------- #
@@ -517,6 +535,7 @@ def dtype(x):
     return x.dtype()
 
 
+@typecast
 def iscomplex(x):
 
     return x.iscomplex()
@@ -649,96 +668,115 @@ def diag(x, **opts):
 
 # --- Standard math --------------------------------------------------------- #
 
+@typecast
 def conj(x):
 
     return x.conj()
 
 
+@typecast
 def real(x):
 
     return x.real()
 
 
+@typecast
 def imag(x):
 
     return x.imag()
        
 
+@typecast
 def sqrt(x):
 
     return x.sqrt()
 
 
+@typecast
 def log(x): 
 
     return x.log()
 
 
+@typecast
 def exp(x): 
 
     return x.exp()
 
 
+@typecast
 def neg(x):
 
     return x.neg()
 
 
+@typecast
 def sin(x):
 
     return x.sin()
 
 
+@typecast
 def cos(x):
 
     return x.cos()
 
 
+@typecast
 def tan(x):
 
     return x.tan()
 
 
+@typecast
 def arcsin(x):
 
     return x.arcsin()
 
 
+@typecast
 def arccos(x):
 
     return x.arccos()
 
 
+@typecast
 def arctan(x):
 
     return x.arctan()
 
 
+@typecast
 def sinh(x):
 
     return x.sinh()
 
 
+@typecast
 def cosh(x):
 
     return x.cosh()
 
 
+@typecast
 def tanh(x):
 
     return x.tanh()
 
 
+@typecast
 def arcsinh(x):
 
     return x.arcsinh()
 
 
+@typecast
 def arccosh(x):
 
     return x.arccosh()
 
 
+@typecast
 def arctanh(x):
 
     return x.arctanh()

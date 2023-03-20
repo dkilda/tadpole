@@ -63,6 +63,20 @@ class TensorFromInds:
 
 
 
+
+def tensor_from_fun(fun):
+
+    def wrap(self, *args, **opts):
+
+        data = fun(self, *args, **opts)
+        return core.Tensor(data, self._inds)
+
+    return wrap
+
+
+
+
+
 # --- Tensor factories (from shape) ------------------------------------------ #
 
 @ad.differentiable
@@ -248,11 +262,11 @@ class TensorSpace(Space):
 
    # --- Construction --- #
 
-   def __init__(self, backend, inds, dtype):
+   def __init__(self, void, inds, dtype):
 
-       self._backend = backend
-       self._dtype   = dtype
-       self._inds    = inds
+       self._void  = void
+       self._inds  = inds
+       self._dtype = dtype
 
 
    # --- Comparisons --- #
@@ -260,11 +274,12 @@ class TensorSpace(Space):
    def __eq__(self, other):
 
        log = util.LogicalChain()
-
        log.typ(self, other)
-       log.val(self._backend, other._backend)
-       log.val(self._dtype,   other._dtype)
-       log.val(self._inds,    other._inds)
+
+       if bool(log):
+          log.val(self._void,  other._void)
+          log.val(self._inds,  other._inds)
+          log.val(self._dtype, other._dtype)
 
        return bool(log)
 
@@ -278,42 +293,54 @@ class TensorSpace(Space):
 
    def zeros(self):
 
-       return self._create(zeros) 
+       return self._create("zeros") 
 
 
    def ones(self):
 
-       return self._create(ones) 
+       return self._create("ones") 
 
 
-   def unit(self):
+   def unit(self, pos, **opts):
 
-       return self._create(unit) 
+       return self._create("unit", pos, **opts) 
 
 
    def rand(self, **opts):
 
-       return self._create(rand, **opts) 
+       return self._create("rand", **opts) 
 
 
    def randn(self, **opts):
 
-       return self._create(randn, **opts) 
+       return self._create("randn", **opts) 
 
 
    def randuniform(self, boundaries, **opts):
 
-       return self._create(randuniform, boundaries, **opts) 
+       return self._create("randuniform", boundaries, **opts) 
 
 
-   def units(self):
+   def units(self, **opts):
 
-       return self._create(units) 
+       for pos in np.ndindex(*self.shape):
+           yield self.unit(pos, **opts)
 
 
-   def basis(self):
+   def basis(self, **opts):
 
-       return self._create(basis) 
+       gen_units = self.units(**opts)
+
+       if  self._void.iscomplex_type(dtype):
+
+           for unit in gen_units:
+               yield unit
+               yield 1j * unit
+
+       else:
+           for unit in gen_units:
+               yield unit
+
 
 
    # --- Space properties --- #
@@ -339,9 +366,18 @@ class TensorSpace(Space):
 
    def _create(self, fun, *args, **opts):
 
-       return fun(
-          self._inds, *args, 
-          dtype=self._dtype, backend=self._backend, **opts
-       )
+       if isinstance(fun, str):
+          fun = {
+                 "zeros":       self._void.zeros,
+                 "ones":        self._void.ones,
+                 "unit":        self._void.unit,
+                 "rand":        self._void.rand,
+                 "randn":       self._void.randn,
+                 "randuniform": self._void.randuniform,
+                }[fun]
+
+       data = fun(self.shape, *args, dtype=self.dtype, **opts)
+       return Tensor(data, self._inds)  
+
 
 

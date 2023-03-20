@@ -440,12 +440,12 @@ class Tensor(TensorLike, Pluggable):
 
    def withdata(self, data):
 
-       return astensor(data, self._inds)
+       return self.__class__(data, self._inds)
 
 
    def space(self):
 
-       return TensorSpace(self._data.space(), self._inds) # TODO Impl ArraySpace
+       return TensorSpace(, self._inds) # TODO Impl ArraySpace
 
 
    def item(self, *pos): 
@@ -726,12 +726,12 @@ class SparseGrad(TensorLike, Pluggable):
 
    # --- Construction --- #
 
-   def __init__(self, void, inds, pos, vals):
+   def __init__(self, space, inds, pos, vals):
 
-       self._void = void
-       self._inds = inds
-       self._pos  = pos
-       self._vals = vals
+       self._space = space
+       self._inds  = inds
+       self._pos   = pos
+       self._vals  = vals
 
 
    # --- Plugging into function calls --- #
@@ -770,7 +770,7 @@ class SparseGrad(TensorLike, Pluggable):
    def copy(self):
 
        return self.__class__(
-          self._void, self._inds, self._pos, self._vals
+          self._space, self._inds, self._pos, self._vals
        )
 
 
@@ -789,9 +789,7 @@ class SparseGrad(TensorLike, Pluggable):
 
    def space(self):
 
-       return TensorSpace(
-          self._void, self._inds, self.dtype
-       )
+       return self._space
 
 
    def item(self, *pos):
@@ -803,19 +801,19 @@ class SparseGrad(TensorLike, Pluggable):
 
    @property
    def dtype(self):
-       return ar.dtype(self._vals) 
+       return self._space.dtype 
 
    @property 
    def size(self):
-       return self._inds.size
+       return self._space.size
 
    @property 
    def ndim(self):
-       return self._inds.ndim 
+       return self._space.ndim 
 
    @property 
    def shape(self):
-       return self._inds.shape
+       return self._space.shape
 
 
    # --- Comparisons --- #
@@ -826,9 +824,9 @@ class SparseGrad(TensorLike, Pluggable):
        log.typ(self, other)
 
        if bool(log):
-          log.val(self._void, other._void)
-          log.val(self._inds, other._inds)
-          log.val(self._pos,  other._pos)
+          log.val(self._space, other._space)
+          log.val(self._inds,  other._inds)
+          log.val(self._pos,   other._pos)
 
        if bool(log):
           return ar.allequal(self._vals, other._vals)  

@@ -327,7 +327,7 @@ def where(condition, x, y):
 
 
 
-# --- Standard math operations ---------------------------------------------- #
+# --- Standard math --------------------------------------------------------- #
 
 @ad.differentiable
 @typecast_unary

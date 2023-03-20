@@ -22,7 +22,7 @@ from tadpole.array.core import ArrayLike
 
 # --- Void Array factory ---------------------------------------------------- #
 
-def asvoid(backend=None):
+def asvoid(backend=None, **opts):
 
     return Array(backends.get(backend))
 
@@ -31,7 +31,7 @@ def asvoid(backend=None):
 
 # --- Decorator that creates a Void Array with an appropriate backend ------- #
 
-def fromvoid(fun):
+def unary_from_fun(fun):
 
     def wrap(*args, **opts):
 
@@ -52,7 +52,7 @@ def fromvoid(fun):
 
 # --- Void Array ------------------------------------------------------------ #
 
-class Array(ArrayLike): # TODO should we include dtype, shape in there? so that it becomes more like space?
+class Array(ArrayLike): 
 
    # --- Construction --- #
 
@@ -88,9 +88,9 @@ class Array(ArrayLike): # TODO should we include dtype, shape in there? so that 
        return dtype in self._backend.complex_dtypes()
 
 
-   def get_dtype(self, dtype=None):
+   def default_dtype(self):
 
-       return self._backend.get_dtype(dtype)
+       return str(self._backend.get_dtype(None))
 
 
    # --- Array creation methods --- #
@@ -153,61 +153,45 @@ class Array(ArrayLike): # TODO should we include dtype, shape in there? so that 
 ###############################################################################
 
 
-# --- Data type methods ----------------------------------------------------- #
-
-@fromvoid 
-def iscomplex_type(x, dtype):
-
-    return x.iscomplex_type(dtype)
-
-
-@fromvoid 
-def get_dtype(x, dtype=None):
-
-    return x.get_dtype(dtype)
-
-
-
-
 # --- Array creation methods ------------------------------------------------ #
     
-@fromvoid
+@unary_from_fun
 def zeros(x, shape, **opts):
 
     return x.zeros(shape, **opts)
 
 
-@fromvoid
+@unary_from_fun
 def ones(x, shape, **opts):
 
     return x.ones(shape, **opts)
 
 
-@fromvoid
+@unary_from_fun
 def unit(x, shape, idx, **opts):
 
     return x.unit(shape, idx, **opts)
 
 
-@fromvoid
+@unary_from_fun
 def eye(x, N, M=None, **opts):
 
     return x.eye(N, M=None, **opts)
 
 
-@fromvoid
+@unary_from_fun
 def rand(x, shape, **opts):
 
     return x.rand(shape, **opts)
 
 
-@fromvoid
+@unary_from_fun
 def randn(x, shape, **opts):
 
     return x.randn(shape, **opts)
        
 
-@fromvoid
+@unary_from_fun
 def randuniform(x, shape, boundaries, **opts):
 
     return x.randn(shape, boundaries, **opts)
