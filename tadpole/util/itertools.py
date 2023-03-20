@@ -16,6 +16,15 @@ import tadpole.util as util
 ###############################################################################
 
 
+# --- Frequencies of items in an iterable ----------------------------------- #
+
+def frequencies(xs):
+
+    return cytoolz.frequencies(xs)
+
+
+
+
 # --- Concatenate an iterable of iterables ---------------------------------- #
 
 def concat(xs):

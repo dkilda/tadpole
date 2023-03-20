@@ -528,3 +528,36 @@ def arctanh(x):
 
 
 
+# --- Linear algebra: misc methods ------------------------------------------ #
+
+@ad.differentiable
+def norm(x, order=None, inds=None, **opts):
+
+    def fun(data, axis):
+        return ar.norm(data, order, axis, **opts)
+
+    return Args(x).pluginto(fn.Reduce(fun, inds))
+
+
+
+@ad.differentiable
+def expm(x):
+
+    def fun(data):
+        return ar.expm(data)
+
+    return fn.Args(x).pluginto(fn.Elemwise(fun))
+       
+
+
+def htranspose(x, *order):
+
+    return transpose(conj(x), *order)
+
+
+
+
+
+
+
+
