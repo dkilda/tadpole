@@ -6,6 +6,7 @@ import tadpole.util     as util
 import tadpole.backends as backends
 
 import tadpole.array.core   as core
+import tadpole.array.space  as space
 import tadpole.array.binary as binary
 import tadpole.array.nary   as nary
 
@@ -92,8 +93,8 @@ class Array(ArrayLike):
 
        if not isinstance(backend, backends.Backend):
           raise ValueError(
-             f"OneArray: backend must be an instance "
-             f"of Backend, but it is {backend}"
+             f"{type(self).__name__}: "
+             f"backend must be an instance of Backend, but it is {backend}"
           ) 
 
        self._backend = backend
@@ -110,7 +111,9 @@ class Array(ArrayLike):
    def __or__(self, other):
 
        backend = backends.common(
-          self._backend, other._backend, msg=f"{type(self).__name__}.__or__"
+          self._backend, 
+          other._backend, 
+          msg=f"{type(self).__name__}.__or__"
        )
 
        if isinstance(other, self.__class__):
@@ -132,6 +135,11 @@ class Array(ArrayLike):
        data = self._backend.copy(self._data, **opts)
 
        return self.new(data) 
+
+
+   def space(self):
+
+       return space.ArraySpace(self._backend, self.shape, self.dtype)
 
 
    # --- Data type methods --- #

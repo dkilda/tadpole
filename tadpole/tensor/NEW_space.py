@@ -312,7 +312,7 @@ def auto_arrayspace(fun):
 
 
 
-# --- Tensor factories without ArraySpace input ----------------------------- #
+# --- Tensor factories with automatic ArraySpace ---------------------------- #
 
 sparse = auto_arrayspace(sparse_from_space)
 zeros  = auto_arrayspace(zeros_from_space)
@@ -344,10 +344,6 @@ class Space(abc.ABC):
 
    @abc.abstractmethod
    def sparse(self, pos, vals):
-       pass
-
-   @abc.abstractmethod
-   def zeros(self):
        pass
 
    @abc.abstractmethod

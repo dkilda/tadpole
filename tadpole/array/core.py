@@ -8,7 +8,7 @@ import abc
 
 ###############################################################################
 ###                                                                         ###
-###  General ArrayLike interface for OneArray/TwoArray/NArray/etc objects   ###
+###  Commonly used interfaces for arrays and array spaces                   ###
 ###                                                                         ###
 ###############################################################################
 
@@ -28,8 +28,69 @@ class ArrayLike(abc.ABC):
 
 
 
+# --- ArraySpaceLike interface ---------------------------------------------- #
+
+class ArraySpaceLike(abc.ABC):
+
+   # --- Space properties --- #
+
+   @property
+   @abc.abstractmethod
+   def dtype(self):
+       pass
+
+   @property
+   @abc.abstractmethod
+   def size(self):
+       pass
+
+   @property 
+   @abc.abstractmethod
+   def ndim(self):
+       pass
+
+   @property
+   @abc.abstractmethod
+   def shape(self):
+       pass
 
 
+   # --- Array creation methods --- #
+
+   @abc.abstractmethod
+   def zeros(self, **opts):
+       pass
+
+   @abc.abstractmethod
+   def ones(self, **opts):
+       pass
+
+   @abc.abstractmethod
+   def unit(self, idx, **opts):
+       pass
+
+   @abc.abstractmethod
+   def rand(self, **opts):
+       pass
+
+   @abc.abstractmethod
+   def randn(self, **opts):
+       pass
+
+   @abc.abstractmethod
+   def randuniform(self, boundaries, **opts):
+       pass
+
+
+   # --- Array generators --- #
+
+   @abc.abstractmethod
+   def units(self, **opts):
+       pass
+
+   @abc.abstractmethod
+   def basis(self):
+       pass
 
 
 

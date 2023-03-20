@@ -34,8 +34,8 @@ class Array(ArrayLike):
 
        if not isinstance(backend, backends.Backend):
           raise ValueError(
-             f"NArray: backend must be an instance "
-             f"of Backend, but it is {backend}"
+             f"{type(self).__name__}: "
+             f"backend must be an instance of Backend, but it is {backend}"
           ) 
 
        self._backend = backend
@@ -52,7 +52,9 @@ class Array(ArrayLike):
    def __or__(self, other):
 
        backend = backends.common(
-          self._backend, other._backend, msg=f"{type(self).__name__}.__or__"
+          self._backend, 
+          other._backend, 
+          msg=f"{type(self).__name__}.__or__"
        )
 
        return self.__class__(backend, *self._datas, *other._datas)

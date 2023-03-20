@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from tadpole.array.backends import set_default as set_backend
-from tadpole.array.core     import ArrayLike
+from tadpole.array.core     import ArrayLike, ArraySpaceLike
 
 from tadpole.array.void   import Array as VoidArray
 from tadpole.array.unary  import Array as UnaryArray
@@ -10,9 +10,16 @@ from tadpole.array.binary import Array as BinaryArray
 from tadpole.array.nary   import Array as NaryArray
 
 
+
+
+from .space import (
+   arrayspace,
+   ArraySpace,
+)
+
+
 from .void import (
    iscomplex_type,
-   default_dtype,
 )
 
 

@@ -51,8 +51,8 @@ class Array(ArrayLike):
 
        if not isinstance(backend, backends.Backend):
           raise ValueError(
-             f"VoidArray: backend must be an instance "
-             f"of Backend, but it is {backend}"
+             f"{type(self).__name__}: "
+             f"backend must be an instance of Backend, but it is {backend}"
           ) 
 
        self._backend = backend
@@ -62,7 +62,7 @@ class Array(ArrayLike):
 
    def new(self, data):
 
-       return unary.OneArray(self._backend, data)
+       return unary.Array(self._backend, data)
 
 
    def __or__(self, other):
@@ -77,11 +77,6 @@ class Array(ArrayLike):
        dtype = self._backend.get_dtype(dtype)
 
        return dtype in self._backend.complex_dtypes()
-
-
-   def default_dtype(self):
-
-       return str(self._backend.get_dtype(None))
 
 
    # --- Array creation methods --- #
@@ -151,11 +146,6 @@ def iscomplex_type(x, dtype, **opts):
 
     return x.iscomplex_type(dtype)
 
-
-@auto_void
-def default_dtype(x, **opts):
-
-    return x.default_dtype()
 
 
 
