@@ -8,6 +8,7 @@ import tadpole.util     as util
 import tadpole.autodiff as ad
 import tadpole.array    as ar
 
+import tadpole.tensor.core    as core
 import tadpole.tensor.funcall as fn
 
 
@@ -34,23 +35,34 @@ from tadpole.tensor.index import (
 ###############################################################################
 
 
-# --- Tensor factories ------------------------------------------------------ #
+# --- Gradient factories ---------------------------------------------------- #
 
 @ad.differentiable
-def sparse_from_space(arrayspace, inds, pos, vals):
+def sparsegrad_from_space(arrayspace, inds, pos, vals):
 
     space = TensorSpace(arrayspace, inds)
     vals  = ar.asarray(vals, dtype=space.dtype)
 
-    return SparseGrad(space, inds, pos, vals)
+    return core.SparseGrad(space, pos, vals)
 
 
+
+@ad.nondifferentiable
+def nullgrad_from_space(arrayspace, inds):
+
+    space = TensorSpace(arrayspace, inds)
+    return core.NullGrad(space)
+
+
+
+
+# --- Tensor factories ------------------------------------------------------ #
 
 @ad.nondifferentiable
 def zeros_from_space(arrayspace, inds, **opts):
 
     data = arrayspace.zeros(**opts)
-    return Tensor(data, inds)
+    return core.astensor(data, inds)
  
 
 
@@ -58,7 +70,7 @@ def zeros_from_space(arrayspace, inds, **opts):
 def ones_from_space(arrayspace, inds, **opts):
 
     data = arrayspace.ones(**opts)
-    return Tensor(data, inds)
+    return core.astensor(data, inds)
 
 
 
@@ -66,7 +78,7 @@ def ones_from_space(arrayspace, inds, **opts):
 def unit_from_space(arrayspace, inds, pos, **opts):
 
     data = arrayspace.unit(pos, **opts)
-    return Tensor(data, inds)
+    return core.astensor(data, inds)
 
 
 
@@ -74,7 +86,7 @@ def unit_from_space(arrayspace, inds, pos, **opts):
 def rand_from_space(arrayspace, inds, **opts):
 
     data = arrayspace.rand(**opts)
-    return Tensor(data, inds)
+    return core.astensor(data, inds)
 
 
 
@@ -82,7 +94,7 @@ def rand_from_space(arrayspace, inds, **opts):
 def randn_from_space(arrayspace, inds, **opts):
 
     data = arrayspace.randn(**opts)
-    return Tensor(data, inds)
+    return core.astensor(data, inds)
 
 
 
@@ -90,7 +102,7 @@ def randn_from_space(arrayspace, inds, **opts):
 def randuniform_from_space(arrayspace, inds, boundaries, **opts):
 
     data = arrayspace.randn(boundaries, **opts)
-    return Tensor(data, inds)
+    return core.astensor(data, inds)
 
 
 
@@ -101,7 +113,7 @@ def randuniform_from_space(arrayspace, inds, boundaries, **opts):
 def units_from_space(arrayspace, inds, **opts):
 
     for data in arrayspace.units(**opts):
-        yield Tensor(data, inds)
+        yield core.astensor(data, inds)
 
 
 
@@ -109,7 +121,7 @@ def units_from_space(arrayspace, inds, **opts):
 def basis_from_space(arrayspace, inds, **opts):
 
     for data in arrayspace.basis(**opts):
-        yield Tensor(data, inds)
+        yield core.astensor(data, inds)
 
 
 
@@ -128,12 +140,19 @@ def auto_arrayspace(fun):
 
 
 
+# --- Gradient factories with automatic ArraySpace -------------------------- #
+
+sparsegrad = auto_arrayspace(sparsegrad_from_space)
+nullgrad   = auto_arrayspace(nullgrad_from_space)
+
+
+
+
 # --- Tensor factories with automatic ArraySpace ---------------------------- #
 
-sparse = auto_arrayspace(sparse_from_space)
-zeros  = auto_arrayspace(zeros_from_space)
-ones   = auto_arrayspace(ones_from_space)
-unit   = auto_arrayspace(unit_from_space)
+zeros = auto_arrayspace(zeros_from_space)
+ones  = auto_arrayspace(ones_from_space)
+unit  = auto_arrayspace(unit_from_space)
 
 rand        = auto_arrayspace(rand_from_space)
 randn       = auto_arrayspace(randn_from_space)
@@ -156,11 +175,25 @@ basis = auto_arrayspace(basis_from_space)
 
 class Space(abc.ABC):
 
-   # --- Factories --- #
+   # --- Fill the space with data --- #
 
    @abc.abstractmethod
-   def sparse(self, pos, vals):
+   def fillwith(self, data):
        pass
+
+
+   # --- Gradient factories --- #
+
+   @abc.abstractmethod
+   def sparsegrad(self, pos, vals):
+       pass
+
+   @abc.abstractmethod
+   def nullgrad(self):
+       pass
+
+
+   # --- Tensor factories --- #
 
    @abc.abstractmethod
    def zeros(self):
@@ -253,14 +286,30 @@ class TensorSpace(Space):
        return bool(log)
 
 
-   # --- Factories --- #
+   # --- Fill the space with data --- #
 
-   def sparse(self, pos, vals):
+   def fillwith(self, data):
+
+       return core.astensor(data, self._inds)
+
+
+   # --- Gradient factories --- #
+
+   def sparsegrad(self, pos, vals):
 
        return self._create(
-          sparse_from_space, pos, vals
+          sparsegrad_from_space, pos, vals
        )
 
+
+   def nullgrad(self):
+
+       return self._create(
+          nullgrad_from_space
+       )
+
+
+   # --- Tensor factories --- #
 
    def zeros(self):
 

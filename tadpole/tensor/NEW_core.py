@@ -7,6 +7,7 @@ import tadpole.util     as util
 import tadpole.autodiff as ad
 import tadpole.array    as ar
 
+import tadpole.tensor.space   as sp
 import tadpole.tensor.funcall as fn
 
 
@@ -350,210 +351,6 @@ def addgrads(x, y):
 
 ###############################################################################
 ###                                                                         ###
-###  Definition of tensor                                                   ###
-###                                                                         ###
-###############################################################################
-
-
-# --- Tensor factories ------------------------------------------------------ #
-
-def astensor(data, inds=None, **opts):
-
-    if isinstance(data, TensorLike):
-       return data
-
-    if isinstance(data, ar.ArrayLike):
-       return Tensor(data, inds)
-
-    data = ar.asarray(data, **opts)
-    return Tensor(data, inds)
-
-
-
-
-# --- Tensor ---------------------------------------------------------------- #
-
-class Tensor(TensorLike, Pluggable):
-
-   # --- Construction --- #
-
-   def __init__(self, data, inds=None):
-
-       if inds is None:
-          inds = Indices()
-
-       if data.shape != inds.shape,
-          raise ValueError((
-             f"{type(self).__name__}: 
-             f"data and indices must have matching shapes, "
-             f"but data shape {data.shape} != index shape {inds.shape}"
-          ))
-
-       self._data = data
-       self._inds = inds
-
-
-   # --- Plugging into function calls --- #
-
-   def pluginto(self, funcall):
-
-       return funcall.attach(self._data, self._inds)
-
-
-   # --- Using in gradient accumulations --- #
-
-   def addto(self, other):
-
-       if not other:
-          other = NullGrad()
-
-       if isinstance(other, NullGrad): 
-          return self
-
-       if isinstance(other, SparseGrad):
-          return other.addto(self)
-
-       assert self._inds == other._inds, (
-          f"{type(self).__name__}.addto: "
-          f"gradient accumulation cannot be performed for tensors "
-          f"with non-matching indices {self._inds} != {other._inds}"
-       )
-
-       data = ar.add(self._data, other._data)
-
-       return other.withdata(data)
-
-
-   # --- Basic functionality --- #
-
-   def copy(self, virtual=False, **opts):
-
-       data = self._data if virtual else self._data.copy(**opts)
-
-       return self.__class__(data, self._inds)
-
-
-   def todense(self):
-
-       return self
-
-
-   def withdata(self, data):
-
-       return self.__class__(data, self._inds)
-
-
-   def space(self):
-
-       return TensorSpace(, self._inds) # TODO Impl ArraySpace
-
-
-   def item(self, *pos): 
-
-       return self._data.item(*pos)
-
-
-   # --- Tensor properties --- #
-
-   @property
-   def dtype(self):
-       return ar.dtype(self._data)
-
-   @property 
-   def size(self):
-       return ar.size(self._data)  
-
-   @property 
-   def ndim(self):
-       return ar.ndim(self._data)  
-
-   @property
-   def shape(self):
-       return ar.shape(self._data)
-
-
-   # --- Comparisons --- #
-
-   def __eq__(self, other):
-
-       log = util.LogicalChain()
-       log.typ(self, other)
-
-       if bool(log):
-          log.val(self._inds, other._inds)
- 
-       if bool(log):
-          return allequal(self._data, other._data)
-
-       return False
-
-
-   # --- Arithmetics and element access --- # 
-
-   def __getitem__(self, pos):
-
-       return getitem(self, pos)
-
-
-   def __neg__(self):
-
-       return neg(self)
-
- 
-   def __add__(self, other):
-
-       return add(self, other)
-
-
-   def __sub__(self, other):
-
-       return sub(self, other)
-
-
-   def __mul__(self, other):
-
-       return mul(self, other)
-
-
-   def __truediv__(self, other):
-
-       return div(self, other)
-
-
-   def __pow__(self, other):
-
-       return power(self, other)
-
-
-   def __radd__(self, other):
-
-       return add(other, self)
-
- 
-   def __rsub__(self, other):
-
-       return sub(other, self)
-
-
-   def __rmul__(self, other):
-
-       return mul(other, self)
-
-
-   def __rtruediv__(self, other):
-
-       return div(other, self)
-
-
-   def __rpow__(self, other):
-
-       return power(other, self)
-
-
-
-
-###############################################################################
-###                                                                         ###
 ###  Special tensor types for gradients                                     ###
 ###                                                                         ###
 ###############################################################################
@@ -565,16 +362,9 @@ class NullGrad(TensorLike, Pluggable):
 
    # --- Construction --- #
 
-   def __init__(self, inds=None, void=None):
+   def __init__(self, space):
 
-       if inds is None:
-          inds = Indices()
-
-       if void is None:
-          void = ar.asvoid(void)
-
-       self._inds = inds
-       self._void = void
+       self._space = space
 
 
    # --- Plugging into function calls --- #
@@ -605,16 +395,13 @@ class NullGrad(TensorLike, Pluggable):
 
    def withdata(self, data):
 
-       return astensor(data, self._inds)
+       return self.space().fillwith(data) 
 
 
    def space(self):
 
-       return TensorSpace(
-                          self._void, 
-                          self._inds, 
-                          self._backend.get_dtype(None)
-                         )
+       return self._space
+
 
    def item(self):
 
@@ -726,10 +513,9 @@ class SparseGrad(TensorLike, Pluggable):
 
    # --- Construction --- #
 
-   def __init__(self, space, inds, pos, vals):
+   def __init__(self, space, pos, vals):
 
        self._space = space
-       self._inds  = inds
        self._pos   = pos
        self._vals  = vals
 
@@ -754,14 +540,13 @@ class SparseGrad(TensorLike, Pluggable):
        if isinstance(other, SparseGrad):
           other = other.todense()
 
-       assert self._inds == other._inds, (
+       assert self._space == other._space, (
           f"{type(self).__name__}.addto(): "
           f"gradient accumulation cannot be performed for tensors "
-          f"with non-matching indices {self._inds} != {other._inds}"
+          f"with non-matching spaces {self._space} != {other._space}"
        )
 
        data = ar.put(other._data, self._pos, self._vals, accumulate=True)
-
        return other.withdata(data)
 
        
@@ -769,9 +554,7 @@ class SparseGrad(TensorLike, Pluggable):
 
    def copy(self):
 
-       return self.__class__(
-          self._space, self._inds, self._pos, self._vals
-       )
+       return self.__class__(self._space, self._pos, self._vals)
 
 
    def todense(self):
@@ -779,12 +562,12 @@ class SparseGrad(TensorLike, Pluggable):
        zeros = self.space().zeros() 
        data  = ar.put(zeros, self._pos, self._vals)
 
-       return astensor(data, self._inds)
+       return self.space().fillwith(data)
 
 
    def withdata(self, data):
 
-       return astensor(data, self._inds)
+       return self.space().fillwith(data)
 
 
    def space(self):
@@ -825,7 +608,6 @@ class SparseGrad(TensorLike, Pluggable):
 
        if bool(log):
           log.val(self._space, other._space)
-          log.val(self._inds,  other._inds)
           log.val(self._pos,   other._pos)
 
        if bool(log):
@@ -895,6 +677,208 @@ class SparseGrad(TensorLike, Pluggable):
 
        return other ** self.todense() 
 
+
+
+
+###############################################################################
+###                                                                         ###
+###  Definition of tensor                                                   ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Tensor factories ------------------------------------------------------ #
+
+def astensor(data, inds=None, **opts):
+
+    if isinstance(data, TensorLike):
+       return data
+
+    if isinstance(data, ar.ArrayLike):
+       return Tensor(data, inds)
+
+    data = ar.asarray(data, **opts)
+    return Tensor(data, inds)
+
+
+
+
+# --- Tensor ---------------------------------------------------------------- #
+
+class Tensor(TensorLike, Pluggable):
+
+   # --- Construction --- #
+
+   def __init__(self, data, inds=None):
+
+       if inds is None:
+          inds = Indices()
+
+       if data.shape != inds.shape,
+          raise ValueError((
+             f"{type(self).__name__}: 
+             f"data and indices must have matching shapes, "
+             f"but data shape {data.shape} != index shape {inds.shape}"
+          ))
+
+       self._data = data
+       self._inds = inds
+
+
+   # --- Plugging into function calls --- #
+
+   def pluginto(self, funcall):
+
+       return funcall.attach(self._data, self._inds)
+
+
+   # --- Using in gradient accumulations --- #
+
+   def addto(self, other):
+
+       if not other:
+          other = NullGrad()
+
+       if isinstance(other, NullGrad): 
+          return self
+
+       if isinstance(other, SparseGrad):
+          return other.addto(self)
+
+       assert self._inds == other._inds, (
+          f"{type(self).__name__}.addto: "
+          f"gradient accumulation cannot be performed for tensors "
+          f"with non-matching indices {self._inds} != {other._inds}"
+       )
+
+       data = ar.add(self._data, other._data)
+       return other.withdata(data)
+
+
+   # --- Basic functionality --- #
+
+   def copy(self, virtual=False, **opts):
+
+       data = self._data if virtual else self._data.copy(**opts)
+
+       return self.__class__(data, self._inds)
+
+
+   def todense(self):
+
+       return self
+
+
+   def withdata(self, data):
+
+       return self.__class__(data, self._inds)
+
+
+   def space(self):
+
+       return sp.TensorSpace(self._data.space(), self._inds) 
+
+
+   def item(self, *pos): 
+
+       return self._data.item(*pos)
+
+
+   # --- Tensor properties --- #
+
+   @property
+   def dtype(self):
+       return self._data.dtype 
+
+   @property 
+   def size(self):
+       return self._data.size
+
+   @property 
+   def ndim(self):
+       return self._data.ndim  
+
+   @property
+   def shape(self):
+       return self._data.shape 
+
+
+   # --- Comparisons --- #
+
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+       log.typ(self, other)
+
+       if bool(log):
+          log.val(self._inds, other._inds)
+ 
+       if bool(log):
+          return allequal(self._data, other._data)
+
+       return False
+
+
+   # --- Arithmetics and element access --- # 
+
+   def __getitem__(self, pos):
+
+       return getitem(self, pos)
+
+
+   def __neg__(self):
+
+       return neg(self)
+
+ 
+   def __add__(self, other):
+
+       return add(self, other)
+
+
+   def __sub__(self, other):
+
+       return sub(self, other)
+
+
+   def __mul__(self, other):
+
+       return mul(self, other)
+
+
+   def __truediv__(self, other):
+
+       return div(self, other)
+
+
+   def __pow__(self, other):
+
+       return power(self, other)
+
+
+   def __radd__(self, other):
+
+       return add(other, self)
+
+ 
+   def __rsub__(self, other):
+
+       return sub(other, self)
+
+
+   def __rmul__(self, other):
+
+       return mul(other, self)
+
+
+   def __rtruediv__(self, other):
+
+       return div(other, self)
+
+
+   def __rpow__(self, other):
+
+       return power(other, self)
 
 
 
