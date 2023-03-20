@@ -20,18 +20,9 @@ from tadpole.array.core import ArrayLike
 ###############################################################################
 
 
-# --- Void Array factory ---------------------------------------------------- #
-
-def asvoid(backend=None, **opts):
-
-    return Array(backends.get(backend))
-
-
-
-
 # --- Decorator that creates a Void Array with an appropriate backend ------- #
 
-def unary_from_fun(fun):
+def auto_void(fun):
 
     def wrap(*args, **opts):
 
@@ -153,45 +144,60 @@ class Array(ArrayLike):
 ###############################################################################
 
 
+# --- Data type methods ----------------------------------------------------- #
+
+@auto_void
+def iscomplex_type(x, dtype, **opts):
+
+    return x.iscomplex_type(dtype)
+
+
+@auto_void
+def default_dtype(x, **opts):
+
+    return x.default_dtype()
+
+
+
 # --- Array creation methods ------------------------------------------------ #
     
-@unary_from_fun
+@auto_void
 def zeros(x, shape, **opts):
 
     return x.zeros(shape, **opts)
 
 
-@unary_from_fun
+@auto_void
 def ones(x, shape, **opts):
 
     return x.ones(shape, **opts)
 
 
-@unary_from_fun
+@auto_void
 def unit(x, shape, idx, **opts):
 
     return x.unit(shape, idx, **opts)
 
 
-@unary_from_fun
+@auto_void
 def eye(x, N, M=None, **opts):
 
     return x.eye(N, M=None, **opts)
 
 
-@unary_from_fun
+@auto_void
 def rand(x, shape, **opts):
 
     return x.rand(shape, **opts)
 
 
-@unary_from_fun
+@auto_void
 def randn(x, shape, **opts):
 
     return x.randn(shape, **opts)
        
 
-@unary_from_fun
+@auto_void
 def randuniform(x, shape, boundaries, **opts):
 
     return x.randn(shape, boundaries, **opts)

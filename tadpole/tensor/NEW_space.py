@@ -26,83 +26,100 @@ from tadpole.tensor.index import (
 
 
 
-
+"""
 ###############################################################################
 ###                                                                         ###
-###  Tensor creation functions                                              ###
+###  Tensor creation functions (from indices)                               ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- Generic factory that constructs a Tensor from index input ------------- #
+# --- Factory that constructs a Tensor from function ------------------------ #
 
-class TensorFromInds:
+class TensorFromFun:
 
-   def __init__(self, fun):
+   def __init__(self, funstr):
 
-       self._fun = fun
+       self._funstr = funstr
+
+
+   @property
+   def _fun(self):
+
+      return {
+              "zeros":       ar.zeros,
+              "ones":        ar.ones,
+              "unit":        ar.unit,
+              "rand":        ar.rand,
+              "randn":       ar.randn,
+              "randuniform": ar.randuniform,
+             }[self._funstr]
 
 
    def __call__(self, inds, *args, **opts):
  
-       fun = self._fun
-
-       if isinstance(fun, str):
-          fun = {
-                 "zeros":       ar.zeros,
-                 "ones":        ar.ones,
-                 "unit":        ar.unit,
-                 "rand":        ar.rand,
-                 "randn":       ar.randn,
-                 "randuniform": ar.randuniform,
-                }[fun]
-
-       data = fun(inds.shape, *args, **opts)
+       data = self._fun(inds.shape, *args, **opts)
        return Tensor(data, inds)  
 
 
 
 
-
-def tensor_from_fun(fun):
-
-    def wrap(self, *args, **opts):
-
-        data = fun(self, *args, **opts)
-        return core.Tensor(data, self._inds)
-
-    return wrap
-
-
-
-
-
-# --- Tensor factories (from shape) ------------------------------------------ #
+# --- Tensor factories ------------------------------------------------------ #
 
 @ad.differentiable
 def sparse(inds, pos, vals, **opts):
 
+    void  = ar.make_void(**opts)
+    space = TensorSpace(void, inds, opts.get("dtype", None))
+
     if "dtype" in opts:
-       vals = ar.asarray(vals)
-       vals = ar.astype(vals, **opts)
+       vals = ar.asarray(vals, **opts)
+       vals = ar.astype(vals, dtype=opts["dtype"])
 
     return SparseGrad(
-              inds, pos, vals, **opts
+              space, inds, pos, vals
            )
+
+
+
+
+
+
+
+
+
+@from_arrayspace
+def zeros(arrayspace, inds, **opts):
+
+    return zeros(arrayspace, inds, **opts)
+
 
 
 @ad.nondifferentiable
 def zeros(inds, **opts):
 
-    return TensorFromInds("zeros")(
+    arrayspace = ar.space(inds.shape, **opts)
+
+    return zeros(arrayspace, inds, **opts)
+
+    return TensorFromFun("zeros")(
               inds, **opts
            )
 
 
 @ad.nondifferentiable
+def zeros(arrayspace, inds, **opts):
+
+    data = arrayspace.zeros(**opts)
+    return Tensor(data, inds)
+
+
+
+
+@ad.nondifferentiable
 def ones(inds, **opts):
 
-    return TensorFromInds("ones")(
+    return TensorFromFun("ones")(
               inds, **opts
            )
 
@@ -110,7 +127,7 @@ def ones(inds, **opts):
 @ad.nondifferentiable
 def unit(inds, pos, **opts):
 
-    return TensorFromInds("unit")(
+    return TensorFromFun("unit")(
               inds, pos, **opts
            )
 
@@ -118,7 +135,7 @@ def unit(inds, pos, **opts):
 @ad.nondifferentiable
 def rand(inds, **opts):
 
-    return TensorFromInds("rand")(
+    return TensorFromFun("rand")(
               inds, **opts
            )
 
@@ -126,7 +143,7 @@ def rand(inds, **opts):
 @ad.nondifferentiable
 def randn(inds, **opts):
 
-    return TensorFromInds("randn")(
+    return TensorFromFun("randn")(
               inds, **opts
            )
 
@@ -134,13 +151,9 @@ def randn(inds, **opts):
 @ad.nondifferentiable
 def randuniform(inds, boundaries, **opts):
 
-    return TensorFromInds("randuniform")(
+    return TensorFromFun("randuniform")(
               inds, boundaries, **opts
            )
-
-
-
-
 
 
 
@@ -148,10 +161,10 @@ def randuniform(inds, boundaries, **opts):
 # --- Tensor generators ----------------------------------------------------- #
 
 @ad.nondifferentiable
-def units(inds, dtype=None, **opts):
+def units(inds, **opts):
 
-    for pos in np.ndindex(*shape):
-        yield unit(inds, pos, dtype=dtype, **opts)
+    for pos in np.ndindex(*inds.shape):
+        yield unit(inds, pos, **opts)
 
 
 
@@ -159,20 +172,159 @@ def units(inds, dtype=None, **opts):
 @ad.nondifferentiable
 def basis(inds, dtype=None, **opts): 
 
-    gen_units = units(inds, dtype=dtype, **opts)
+    if  ar.iscomplex_type(dtype, **opts):
 
-    if  ar.iscomplex_type(dtype):
-
-        for unit in gen_units:
+        for unit in units(inds, dtype=dtype, **opts):
             yield unit
             yield 1j * unit
 
     else:
-        for unit in gen_units:
+        for unit in units(inds, dtype=dtype, **opts):
             yield unit
 
+"""
 
 
+
+
+
+
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Tensor creation functions (from indices)                               ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Tensor factories ------------------------------------------------------ #
+
+@ad.differentiable
+def sparse_from_space(arrayspace, inds, pos, vals):
+
+    space = TensorSpace(arrayspace, inds)
+    vals  = ar.asarray(vals, dtype=space.dtype)
+
+    return SparseGrad(space, inds, pos, vals)
+
+
+
+@ad.nondifferentiable
+def zeros_from_space(arrayspace, inds, **opts):
+
+    data = arrayspace.zeros(**opts)
+    return Tensor(data, inds)
+ 
+
+
+@ad.nondifferentiable
+def ones_from_space(arrayspace, inds, **opts):
+
+    data = arrayspace.ones(**opts)
+    return Tensor(data, inds)
+
+
+
+@ad.nondifferentiable
+def unit_from_space(arrayspace, inds, pos, **opts):
+
+    data = arrayspace.unit(pos, **opts)
+    return Tensor(data, inds)
+
+
+
+@ad.nondifferentiable
+def rand_from_space(arrayspace, inds, **opts):
+
+    data = arrayspace.rand(**opts)
+    return Tensor(data, inds)
+
+
+
+@ad.nondifferentiable
+def randn_from_space(arrayspace, inds, **opts):
+
+    data = arrayspace.randn(**opts)
+    return Tensor(data, inds)
+
+
+
+@ad.nondifferentiable
+def randuniform_from_space(arrayspace, inds, boundaries, **opts):
+
+    data = arrayspace.randn(boundaries, **opts)
+    return Tensor(data, inds)
+
+
+
+
+# --- Tensor generators ----------------------------------------------------- #
+
+@ad.nondifferentiable
+def units_from_space(arrayspace, inds, **opts):
+
+    for data in arrayspace.units(**opts):
+        yield Tensor(data, inds)
+
+
+
+@ad.nondifferentiable
+def basis_from_space(arrayspace, inds, **opts):
+
+    for data in arrayspace.basis(**opts):
+        yield Tensor(data, inds)
+
+
+
+"""
+    for pos in np.ndindex(*inds.shape):
+        yield unit(space, inds, pos, **opts)
+"""
+ 
+
+"""
+    if  ar.iscomplex_type(dtype, **opts):
+
+        for unit in units(inds, dtype=dtype, **opts):
+            yield unit
+            yield 1j * unit
+
+    else:
+        for unit in units(inds, dtype=dtype, **opts):
+            yield unit
+"""
+
+
+# --- Decorator that creates ArraySpace for tensor factories ---------------- #
+
+def auto_arrayspace(fun):
+
+    def wrap(inds, **opts):
+
+        arrayspace = ar.space(inds.shape, **opts)
+        return fun(arrayspace, inds, **opts)
+
+    return wrap
+
+
+
+
+# --- Tensor factories without ArraySpace input ----------------------------- #
+
+sparse = auto_arrayspace(sparse_from_space)
+zeros  = auto_arrayspace(zeros_from_space)
+ones   = auto_arrayspace(ones_from_space)
+unit   = auto_arrayspace(unit_from_space)
+
+rand        = auto_arrayspace(rand_from_space)
+randn       = auto_arrayspace(randn_from_space)
+randuniform = auto_arrayspace(randuniform_from_space)
+
+units = auto_arrayspace(units_from_space)
+basis = auto_arrayspace(basis_from_space)
 
 
 
@@ -262,11 +414,17 @@ class TensorSpace(Space):
 
    # --- Construction --- #
 
-   def __init__(self, void, inds, dtype):
+   def __init__(self, arrayspace, inds):
 
-       self._void  = void
-       self._inds  = inds
-       self._dtype = dtype
+       self._arrayspace = arrayspace
+       self._inds       = inds
+
+
+   # --- Private helpers --- #
+
+   def _create(self, fun, *args, **opts):
+
+       return fun(self._arrayspace, self._inds, *args, **opts)
 
 
    # --- Comparisons --- #
@@ -277,9 +435,8 @@ class TensorSpace(Space):
        log.typ(self, other)
 
        if bool(log):
-          log.val(self._void,  other._void)
-          log.val(self._inds,  other._inds)
-          log.val(self._dtype, other._dtype)
+          log.val(self._arrayspace, other._arrayspace)
+          log.val(self._inds,       other._inds)
 
        return bool(log)
 
@@ -288,96 +445,88 @@ class TensorSpace(Space):
 
    def sparse(self, pos, vals):
 
-       return self._create(sparse, pos, vals)
+       return self._create(
+          sparse_from_space, pos, vals
+       )
 
 
    def zeros(self):
 
-       return self._create("zeros") 
+       return self._create(
+          zeros_from_space
+       ) 
 
 
    def ones(self):
 
-       return self._create("ones") 
+       return self._create(
+          ones_from_space
+       ) 
 
 
    def unit(self, pos, **opts):
 
-       return self._create("unit", pos, **opts) 
+       return self._create(
+          unit_from_space, pos, **opts
+       ) 
 
 
    def rand(self, **opts):
 
-       return self._create("rand", **opts) 
+       return self._create(
+          rand_from_space, **opts
+       ) 
 
 
    def randn(self, **opts):
 
-       return self._create("randn", **opts) 
+       return self._create(
+          randn_from_space, **opts
+       ) 
 
 
    def randuniform(self, boundaries, **opts):
 
-       return self._create("randuniform", boundaries, **opts) 
+       return self._create(
+          randuniform_from_space, boundaries, **opts
+       ) 
 
 
    def units(self, **opts):
 
-       for pos in np.ndindex(*self.shape):
-           yield self.unit(pos, **opts)
+       return self._create(
+          units_from_space, **opts
+       )
 
 
    def basis(self, **opts):
 
-       gen_units = self.units(**opts)
-
-       if  self._void.iscomplex_type(dtype):
-
-           for unit in gen_units:
-               yield unit
-               yield 1j * unit
-
-       else:
-           for unit in gen_units:
-               yield unit
-
+       return self._create(
+          basis_from_space, **opts
+       )
 
 
    # --- Space properties --- #
 
    @property
    def dtype(self):
-       return self._dtype
+       return self._arrayspace.dtype
 
    @property
    def size(self):
-       return self._inds.size 
+       return self._arrayspace.size 
 
    @property 
    def ndim(self):
-       return self._inds.ndim
+       return self._arrayspace.ndim
 
    @property
    def shape(self):
-       return self._inds.shape
+       return self._arrayspace.shape
 
 
-   # --- Private helpers --- #
 
-   def _create(self, fun, *args, **opts):
-
-       if isinstance(fun, str):
-          fun = {
-                 "zeros":       self._void.zeros,
-                 "ones":        self._void.ones,
-                 "unit":        self._void.unit,
-                 "rand":        self._void.rand,
-                 "randn":       self._void.randn,
-                 "randuniform": self._void.randuniform,
-                }[fun]
-
-       data = fun(self.shape, *args, dtype=self.dtype, **opts)
-       return Tensor(data, self._inds)  
+ 
 
 
 

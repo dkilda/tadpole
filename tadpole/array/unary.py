@@ -143,11 +143,13 @@ class Array(ArrayLike):
        return self.new(data) 
 
 
+   @property
    def dtype(self):
 
        return str(self._backend.dtype(self._data))
 
 
+   @property
    def iscomplex(self):
 
        return self._backend.iscomplex(self._data)
@@ -162,16 +164,19 @@ class Array(ArrayLike):
 
    # --- Shape methods --- #
 
+   @property
    def size(self):
 
        return self._backend.size(self._data)
 
 
+   @property
    def ndim(self):
 
        return self._backend.ndim(self._data)
 
 
+   @property
    def shape(self):
 
        return self._backend.shape(self._data)
@@ -532,13 +537,13 @@ def astype(x, **opts):
 
 def dtype(x):
 
-    return x.dtype()
+    return x.dtype
 
 
 @typecast
 def iscomplex(x):
 
-    return x.iscomplex()
+    return x.iscomplex
 
 
 
@@ -547,17 +552,17 @@ def iscomplex(x):
 
 def size(x):
 
-    return x.size() 
+    return x.size
 
 
 def ndim(x):
 
-    return x.ndim()
+    return x.ndim
 
 
 def shape(x):
 
-    return x.shape()
+    return x.shape
 
 
 def reshape(x, shape, **opts):

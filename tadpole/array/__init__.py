@@ -11,7 +11,8 @@ from tadpole.array.nary   import Array as NaryArray
 
 
 from .void import (
-   asvoid,
+   iscomplex_type,
+   default_dtype,
 )
 
 

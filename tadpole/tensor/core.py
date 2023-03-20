@@ -195,7 +195,7 @@ def astensor(data, inds=None, **opts):
 @ad.nondifferentiable
 def units(inds, dtype=None, backend=None):
 
-    for pos in np.ndindex(*shape):
+    for pos in np.ndindex(*inds.shape):
         yield unit(inds, pos, dtype=dtype, backend=backend)
 
 
