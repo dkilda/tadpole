@@ -26,172 +26,6 @@ from tadpole.tensor.index import (
 
 
 
-"""
-###############################################################################
-###                                                                         ###
-###  Tensor creation functions (from indices)                               ###
-###                                                                         ###
-###############################################################################
-
-
-# --- Factory that constructs a Tensor from function ------------------------ #
-
-class TensorFromFun:
-
-   def __init__(self, funstr):
-
-       self._funstr = funstr
-
-
-   @property
-   def _fun(self):
-
-      return {
-              "zeros":       ar.zeros,
-              "ones":        ar.ones,
-              "unit":        ar.unit,
-              "rand":        ar.rand,
-              "randn":       ar.randn,
-              "randuniform": ar.randuniform,
-             }[self._funstr]
-
-
-   def __call__(self, inds, *args, **opts):
- 
-       data = self._fun(inds.shape, *args, **opts)
-       return Tensor(data, inds)  
-
-
-
-
-# --- Tensor factories ------------------------------------------------------ #
-
-@ad.differentiable
-def sparse(inds, pos, vals, **opts):
-
-    void  = ar.make_void(**opts)
-    space = TensorSpace(void, inds, opts.get("dtype", None))
-
-    if "dtype" in opts:
-       vals = ar.asarray(vals, **opts)
-       vals = ar.astype(vals, dtype=opts["dtype"])
-
-    return SparseGrad(
-              space, inds, pos, vals
-           )
-
-
-
-
-
-
-
-
-
-@from_arrayspace
-def zeros(arrayspace, inds, **opts):
-
-    return zeros(arrayspace, inds, **opts)
-
-
-
-@ad.nondifferentiable
-def zeros(inds, **opts):
-
-    arrayspace = ar.space(inds.shape, **opts)
-
-    return zeros(arrayspace, inds, **opts)
-
-    return TensorFromFun("zeros")(
-              inds, **opts
-           )
-
-
-@ad.nondifferentiable
-def zeros(arrayspace, inds, **opts):
-
-    data = arrayspace.zeros(**opts)
-    return Tensor(data, inds)
-
-
-
-
-@ad.nondifferentiable
-def ones(inds, **opts):
-
-    return TensorFromFun("ones")(
-              inds, **opts
-           )
-
-
-@ad.nondifferentiable
-def unit(inds, pos, **opts):
-
-    return TensorFromFun("unit")(
-              inds, pos, **opts
-           )
-
-
-@ad.nondifferentiable
-def rand(inds, **opts):
-
-    return TensorFromFun("rand")(
-              inds, **opts
-           )
-
-
-@ad.nondifferentiable
-def randn(inds, **opts):
-
-    return TensorFromFun("randn")(
-              inds, **opts
-           )
-
-
-@ad.nondifferentiable
-def randuniform(inds, boundaries, **opts):
-
-    return TensorFromFun("randuniform")(
-              inds, boundaries, **opts
-           )
-
-
-
-
-# --- Tensor generators ----------------------------------------------------- #
-
-@ad.nondifferentiable
-def units(inds, **opts):
-
-    for pos in np.ndindex(*inds.shape):
-        yield unit(inds, pos, **opts)
-
-
-
-
-@ad.nondifferentiable
-def basis(inds, dtype=None, **opts): 
-
-    if  ar.iscomplex_type(dtype, **opts):
-
-        for unit in units(inds, dtype=dtype, **opts):
-            yield unit
-            yield 1j * unit
-
-    else:
-        for unit in units(inds, dtype=dtype, **opts):
-            yield unit
-
-"""
-
-
-
-
-
-
-
-
-
 
 ###############################################################################
 ###                                                                         ###
@@ -279,26 +113,8 @@ def basis_from_space(arrayspace, inds, **opts):
 
 
 
-"""
-    for pos in np.ndindex(*inds.shape):
-        yield unit(space, inds, pos, **opts)
-"""
- 
 
-"""
-    if  ar.iscomplex_type(dtype, **opts):
-
-        for unit in units(inds, dtype=dtype, **opts):
-            yield unit
-            yield 1j * unit
-
-    else:
-        for unit in units(inds, dtype=dtype, **opts):
-            yield unit
-"""
-
-
-# --- Decorator that creates ArraySpace for tensor factories ---------------- #
+# --- Automatic creation of ArraySpace for tensor factories ----------------- #
 
 def auto_arrayspace(fun):
 
@@ -521,8 +337,5 @@ class TensorSpace(Space):
        return self._arrayspace.shape
 
 
-
  
-
-
 

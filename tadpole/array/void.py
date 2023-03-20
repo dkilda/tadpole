@@ -15,27 +15,6 @@ from tadpole.array.core import ArrayLike
 
 ###############################################################################
 ###                                                                         ###
-###  Misc methods                                                           ###
-###                                                                         ###
-###############################################################################
-
-
-# --- Decorator that creates a Void Array with an appropriate backend ------- #
-
-def auto_void(fun):
-
-    def wrap(*args, **opts):
-
-        x = Array(backends.get_from(opts))
-        return fun(x, *args, **opts)
-
-    return wrap
-
-
-
-
-###############################################################################
-###                                                                         ###
 ###  Definition of Void Array (supports array creation)                     ###
 ###                                                                         ###
 ###############################################################################
@@ -137,6 +116,20 @@ class Array(ArrayLike):
 ###  Standalone functions corresponding to Void Array methods               ###
 ###                                                                         ###
 ###############################################################################
+
+
+# --- Automatic creation of VoidArray for Array factories ------------------- #
+
+def auto_void(fun):
+
+    def wrap(*args, **opts):
+
+        x = Array(backends.get_from(opts))
+        return fun(x, *args, **opts)
+
+    return wrap
+
+
 
 
 # --- Data type methods ----------------------------------------------------- #
