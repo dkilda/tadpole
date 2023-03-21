@@ -804,11 +804,6 @@ def svd(x):
     return x.svd()
 
 
-def qr(x):
-
-    return x.qr()
-
-
 def eig(x):
 
     return x.eig()
@@ -817,6 +812,28 @@ def eig(x):
 def eigh(x):
 
     return x.eigh()
+
+
+def qr(x):
+
+    return x.qr()
+
+
+def lq(x):
+
+    if iscomplex(x):
+       xH = conj(x)
+
+    Q, R = qr(transpose(xH, (1,0)))
+    
+    L = transpose(R, (1,0))
+    Q = transpose(Q, (1,0))
+
+    if iscomplex(x):
+       L = conj(L) 
+       Q = conj(Q) 
+
+    return L, Q
 
 
 

@@ -137,7 +137,7 @@ class ExtractCall(FunCall):
 
    def __init__(self, engine):
 
-       if not isinstance(engine, Engine):
+       if not isinstance(engine, EngineLike):
           engine = Engine(engine)
 
        self._engine = engine
@@ -161,7 +161,7 @@ class TransformCall(FunCall):
 
    def __init__(self, engine):
 
-       if not isinstance(engine, Engine):
+       if not isinstance(engine, EngineLike):
           engine = Engine(engine)
 
        self._engine = engine
@@ -195,7 +195,7 @@ class Elemwise(FunCall):
 
    def __init__(self, engine):
 
-       if not isinstance(engine, Engine):
+       if not isinstance(engine, EngineLike):
           engine = Engine(engine)
 
        self._engine = engine
@@ -233,7 +233,7 @@ class Reduce(FunCall):
        if not isinstance(inds, (tuple, util.TupleLike)):
           inds = (inds,)
 
-       if not isinstance(engine, Engine):
+       if not isinstance(engine, EngineLike):
           engine = Engine(engine)
 
        self._engine = engine
