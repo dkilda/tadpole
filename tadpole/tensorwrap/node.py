@@ -11,7 +11,7 @@ import tadpole.autodiff.node         as an
 import tadpole.tensorwrap.operations as op
 
 from tadpole.tensor import Tensor
-from tadpole.tensor import ZeroGrad, SparseGrad
+from tadpole.tensor import NullGrad, SparseGrad
 
 
 
@@ -25,7 +25,7 @@ class Node(an.Node, tn.TensorLike):
    def addto(self, other):
 
        if not other:
-          other = ZeroGrad()
+          other = NullGrad()
 
        return tn.addgrads(self, other)
 
@@ -52,9 +52,9 @@ class Node(an.Node, tn.TensorLike):
        return tn.space(self)
 
 
-   def item(self, *idx):
+   def item(self, *pos):
 
-       return tn.item(self, *idx)
+       return tn.item(self, *pos)
 
 
    # --- Tensor methods: tensor properties --- #
@@ -74,18 +74,6 @@ class Node(an.Node, tn.TensorLike):
    @property
    def shape(self):
        return tn.shape(self) 
-
-
-   # --- Tensor methods: comparisons --- #
-
-   def allequal(self, other):
-
-       return tn.allequal(self, other)
-
-
-   def allclose(self, other, **opts):
-
-       return tn.allequal(self, other)
 
 
    # --- Tensor methods: arithmetics and element access --- # 
@@ -154,7 +142,7 @@ class Node(an.Node, tn.TensorLike):
 
 an.register(Tensor,     Node)
 an.register(SparseGrad, Node)
-an.register(ZeroGrad,   Node)
+an.register(NullGrad,   Node)
 
 
 

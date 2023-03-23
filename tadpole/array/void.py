@@ -183,7 +183,7 @@ def randn(x, shape, **opts):
 @auto_void
 def randuniform(x, shape, boundaries, **opts):
 
-    return x.randn(shape, boundaries, **opts)
+    return x.randuniform(shape, boundaries, **opts)
 
 
 
