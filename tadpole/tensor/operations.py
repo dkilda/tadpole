@@ -2,20 +2,22 @@
 # -*- coding: utf-8 -*-
 
 import abc
-import numpy as np
 
 import tadpole.util     as util
 import tadpole.autodiff as ad
+import tadpole.array    as ar
 
-import tadpole.tensor.core     as core
-import tadpole.tensor.function as function
+import tadpole.tensor.core    as core
+import tadpole.tensor.funcall as fn
 
-from tadpole.tensor.function import (
-   Args, 
-   VisitCall, 
-   SplitCall, 
-   TransformCall,
+
+from tadpole.tensor.index import (
+   Index, 
+   Indices,
+   shapeof, 
+   sizeof,
 )
+
 
 from tadpole.tensor.core import (
    typecast_unary,
@@ -37,50 +39,50 @@ from tadpole.tensor.core import (
 @ad.nondifferentiable
 def allof(x, inds=None, **opts):
 
-    def fun(backend, data, axis): 
-        return backend.all(data, axis, **opts)
+    def fun(data, axis): 
+        return ar.allof(data, axis, **opts)
 
-    return Args(x).pluginto(ReduceCall(fun, inds))
+    return fn.Args(x).pluginto(fn.Reduce(fun, inds))
 
 
 
 @ad.nondifferentiable
 def anyof(x, inds=None, **opts):
 
-    def fun(backend, data, axis): 
-        return backend.any(data, axis, **opts)
+    def fun(data, axis): 
+        return ar.anyof(data, axis, **opts)
 
-    return Args(x).pluginto(ReduceCall(fun, inds))
+    return fn.Args(x).pluginto(fn.Reduce(fun, inds))
 
 
 
 @ad.nondifferentiable
 def count_nonzero(x, inds=None, **opts):
 
-    def fun(backend, data, axis): 
-        return backend.count_nonzero(v, axis, **opts)
+    def fun(data, axis): 
+        return ar.count_nonzero(data, axis, **opts)
 
-    return Args(x).pluginto(ReduceCall(fun, inds))
+    return fn.Args(x).pluginto(fn.Reduce(fun, inds))
 
 
 
 @ad.nondifferentiable
 def sign(x, **opts):
 
-    def fun(backend, data): 
-        return backend.sign(data, **opts)
+    def fun(data): 
+        return ar.sign(data, **opts)
 
-    return Args(x).pluginto(ElemwiseCall(fun))
+    return fn.Args(x).pluginto(fn.Elemwise(fun))
 
 
 
 @ad.nondifferentiable
 def put(x, pos, vals, accumulate=False): 
 
-    def fun(backend, data):
-        return backend.put(data, pos, vals, accumulate=accumulate)
+    def fun(data):
+        return ar.put(data, pos, vals, accumulate=accumulate)
 
-    return Args(x).pluginto(ElemwiseCall(fun))
+    return fn.Args(x).pluginto(fn.Elemwise(fun))
 
 
 
@@ -88,10 +90,10 @@ def put(x, pos, vals, accumulate=False):
 @typecast_unary
 def iscomplex(x):
 
-    def fun(backend, data):
-        return backend.iscomplex(data)
+    def fun(data):
+        return ar.iscomplex(data)
 
-    return Args(x).pluginto(ExtractCall(fun))  
+    return fn.Args(x).pluginto(fn.Extract(fun))  
 
 
 
@@ -120,7 +122,7 @@ def reindex(x, indmap):
 
         return Indices(*outinds) 
 
-    return Args(x).pluginto(ReindexCall(fun))
+    return fn.Args(x).pluginto(fn.Reindex(fun))
 
 
 
@@ -139,16 +141,16 @@ def fuse(x, fusemap):
                out = Index(out, sizeof(*inp))
 
             assert sizeof(*inp) == sizeof(out), (
-               f"fuse(): sizes of "
-               f"input {inp} and output {out} indices must match, "
-               f"but {sizeof(*inp)} != {sizeof(out)}"
+               f"fuse: "
+               f"sizes of input {inp} and output {out} indices "
+               f"must match, but {sizeof(*inp)} != {sizeof(out)}."
             )
 
             inds = inds.remove(*inp).add(out)
 
         return inds
 
-    return Args(x).pluginto(ReshapeCall(fun))
+    return fn.Args(x).pluginto(fn.Reshape(fun))
 
 
 
@@ -164,9 +166,9 @@ def split(x, splitmap):
         for inp, out in splitmap:
 
             assert sizeof(inp) == sizeof(*out), (
-               f"split(): sizes of "
-               f"input {inp} and output {out} indices must match, "
-               f"but {sizeof(inp)} != {sizeof(*out)}"
+               f"split: "
+               f"sizes of input {inp} and output {out} indices "
+               f"must match, but {sizeof(inp)} != {sizeof(*out)}."
             )
 
             axis = inds.axis(inp)
@@ -174,7 +176,7 @@ def split(x, splitmap):
 
         return inds
 
-    return Args(x).pluginto(ReshapeCall(fun))
+    return fn.Args(x).pluginto(fn.Reshape(fun))
 
 
 
@@ -182,18 +184,19 @@ def split(x, splitmap):
 @ad.differentiable
 def transpose(x, *order):
 
-    def fun(backend, data, inds):
+    def fun(data, inds):
 
         assert set(inds) == set(order),
-           f"index.transpose(): input and output must contain the same "
-           f"set of indices, but input {inds} does not match output {order}."
+           f"transpose: "
+           f"input and output must contain the same set of indices, "
+           f"but input {inds} does not match output {order}."
 
         outinds = Indices(*order)
-        outdata = backend.transpose(data, inds.axes(*order))
+        outdata = ar.transpose(data, inds.axes(*order))
 
-        return core.Tensor(backend, data, order)
+        return core.Tensor(data, order)
 
-    return Args(x).pluginto(TransformCall(fun))
+    return fn.Args(x).pluginto(fn.Transform(fun))
 
 
 
@@ -201,16 +204,16 @@ def transpose(x, *order):
 @ad.differentiable
 def squeeze(x):
 
-    def fun(backend, data, inds):
+    def fun(data, inds):
 
         singletons = (ind for ind in inds if len(ind) == 1)
 
         outinds = inds.remove(*singletons)
-        outdata = backend.squeeze(data, inds.axes(*singletons))
+        outdata = ar.squeeze(data, inds.axes(*singletons))
 
-        return core.Tensor(backend, outdata, outinds)
+        return core.Tensor(outdata, outinds)
 
-    return Args(x).pluginto(TransformCall(fun))
+    return fn.Args(x).pluginto(fn.Transform(fun))
 
 
 
@@ -218,16 +221,16 @@ def squeeze(x):
 @ad.differentiable
 def unsqueeze(x, names):
 
-    def fun(backend, data, inds):
+    def fun(data, inds):
 
         singletons = (Index(name) for name in names)
 
         outinds = inds.add(*singletons)
-        outdata = backend.unsqueeze(data, outinds.axes(*singletons))
+        outdata = ar.unsqueeze(data, outinds.axes(*singletons))
 
-        return core.Tensor(backend, outdata, outinds)
+        return core.Tensor(outdata, outinds)
 
-    return Args(x).pluginto(TransformCall(fun))
+    return fn.Args(x).pluginto(fn.Transform(fun))
 
 
 
@@ -235,10 +238,10 @@ def unsqueeze(x, names):
 @ad.differentiable
 def sumover(x, inds=None, dtype=None, **opts):
 
-    def fun(backend, data, axis):
-        return backend.sumover(data, axis, dtype, **opts)
+    def fun(data, axis):
+        return ar.sumover(data, axis, dtype, **opts)
 
-    return Args(x).pluginto(ReduceCall(fun, inds))
+    return fn.Args(x).pluginto(fn.Reduce(fun, inds))
 
 
 
@@ -246,10 +249,10 @@ def sumover(x, inds=None, dtype=None, **opts):
 @ad.differentiable
 def cumsum(x, inds=None, dtype=None, **opts):
 
-    def fun(backend, data, axis):
-        return backend.cumsum(data, axis, dtype, **opts)
+    def fun(data, axis):
+        return ar.cumsum(data, axis, dtype, **opts)
 
-    return Args(x).pluginto(ReduceCall(fun, inds))
+    return fn.Args(x).pluginto(fn.Reduce(fun, inds))
 
 
 
@@ -259,56 +262,56 @@ def cumsum(x, inds=None, dtype=None, **opts):
 @ad.differentiable
 def amax(x, inds=None, **opts):
 
-    def fun(backend, data, axis): 
-        return backend.max(data, axis, **opts)
+    def fun(data, axis): 
+        return ar.max(data, axis, **opts)
 
-    return Args(x).pluginto(ReduceCall(fun, inds))
+    return fn.Args(x).pluginto(fn.Reduce(fun, inds))
 
 
 
 @ad.differentiable
 def amin(x, inds=None, **opts):
 
-    def fun(backend, data, axis): 
-        return backend.min(data, axis, **opts)
+    def fun(data, axis): 
+        return ar.min(data, axis, **opts)
 
-    return Args(x).pluginto(ReduceCall(fun, inds))
+    return fn.Args(x).pluginto(fn.Reduce(fun, inds))
 
 
 
 @ad.differentiable
 def absolute(x, **opts):
 
-    def fun(backend, data): 
-        return backend.abs(data, **opts)
+    def fun(data): 
+        return ar.absolute(data, **opts)
 
-    return Args(x).pluginto(ElemwiseCall(fun))
+    return fn.Args(x).pluginto(fn.Elemwise(fun))
 
 
 
 @ad.differentiable
 def flip(x, flipinds=None):
 
-    def fun(backend, data, inds): 
+    def fun(data, inds): 
 
         axes = None
         if flipinds is not None:
            axes = inds.axes(*flipinds)
 
-        outdata = backend.flip(data, axes)
-        return core.Tensor(backend, outdata, inds)
+        outdata = ar.flip(data, axes)
+        return core.Tensor(outdata, inds)
 
-    return Args(x).pluginto(TransformCall(fun))
+    return fn.Args(x).pluginto(fn.Transform(fun))
 
 
 
 @ad.differentiable
 def clip(x, minval, maxval, **opts):
 
-    def fun(backend, data): 
-        return backend.clip(data, minval, maxval, **opts)
+    def fun(data): 
+        return ar.clip(data, minval, maxval, **opts)
 
-    return Args(x).pluginto(ElemwiseCall(fun))
+    return fn.Args(x).pluginto(fn.Elemwise(fun))
 
 
 
@@ -316,24 +319,24 @@ def clip(x, minval, maxval, **opts):
 @typecast_binary
 def where(condition, x, y):
 
-    def fun(backend, cond_uv, u, v): 
-        return backend.where(cond_uv, u, v)
+    def fun(cond_uv, u, v): 
+        return ar.where(cond_uv, u, v)
 
-    return Args(condition, x, y).pluginto(ElemwiseCall(fun))
-
-
+    return fn.Args(condition, x, y).pluginto(fn.Elemwise(fun))
 
 
-# --- Standard math operations ---------------------------------------------- #
+
+
+# --- Standard math --------------------------------------------------------- #
 
 @ad.differentiable
 @typecast_unary
 def conj(x, **opts):
 
-    def fun(backend, v):
-        return backend.conj(v, **opts)
+    def fun(v):
+        return ar.conj(v, **opts)
 
-    return Args(x).pluginto(ElemwiseCall(fun))
+    return fn.Args(x).pluginto(fn.Elemwise(fun))
 
 
 
@@ -341,10 +344,10 @@ def conj(x, **opts):
 @typecast_unary
 def real(x):
 
-    def fun(backend, v):
-        return backend.real(v)
+    def fun(v):
+        return ar.real(v)
 
-    return Args(x).pluginto(ElemwiseCall(fun))     
+    return fn.Args(x).pluginto(fn.Elemwise(fun))     
 
 
 
@@ -352,10 +355,10 @@ def real(x):
 @typecast_unary
 def imag(x):
 
-    def fun(backend, v):
-        return backend.imag(v)
+    def fun(v):
+        return ar.imag(v)
 
-    return Args(x).pluginto(ElemwiseCall(fun))
+    return fn.Args(x).pluginto(fn.Elemwise(fun))
   
 
 
@@ -363,10 +366,10 @@ def imag(x):
 @typecast_unary
 def sqrt(x):
 
-    def fun(backend, v):
-        return backend.sqrt(v)
+    def fun(v):
+        return ar.sqrt(v)
 
-    return Args(x).pluginto(ElemwiseCall(fun))
+    return fn.Args(x).pluginto(fn.Elemwise(fun))
 
 
 
@@ -374,10 +377,10 @@ def sqrt(x):
 @typecast_unary
 def log(x):
 
-    def fun(backend, v):
-        return backend.log(v)
+    def fun(v):
+        return ar.log(v)
 
-    return Args(x).pluginto(ElemwiseCall(fun))
+    return fn.Args(x).pluginto(fn.Elemwise(fun))
 
 
 
@@ -385,10 +388,10 @@ def log(x):
 @typecast_unary
 def exp(x):
 
-    def fun(backend, v):
-        return backend.exp(v)
+    def fun(v):
+        return ar.exp(v)
 
-    return Args(x).pluginto(ElemwiseCall(fun))
+    return fn.Args(x).pluginto(fn.Elemwise(fun))
 
 
 
@@ -396,10 +399,10 @@ def exp(x):
 @typecast_unary
 def sin(x):
 
-    def fun(backend, v):
-        return backend.sin(v)
+    def fun(v):
+        return ar.sin(v)
 
-    return Args(x).pluginto(ElemwiseCall(fun))
+    return fn.Args(x).pluginto(fn.Elemwise(fun))
 
 
 
@@ -407,10 +410,10 @@ def sin(x):
 @typecast_unary
 def cos(x):
 
-    def fun(backend, v):
-        return backend.cos(v)
+    def fun(v):
+        return ar.cos(v)
 
-    return Args(x).pluginto(ElemwiseCall(fun))
+    return fn.Args(x).pluginto(fn.Elemwise(fun))
 
 
 
@@ -418,10 +421,10 @@ def cos(x):
 @typecast_unary
 def tan(x):
 
-    def fun(backend, v):
-        return backend.tan(v)
+    def fun(v):
+        return ar.tan(v)
 
-    return Args(x).pluginto(ElemwiseCall(fun))
+    return fn.Args(x).pluginto(fn.Elemwise(fun))
 
 
 
@@ -429,10 +432,10 @@ def tan(x):
 @typecast_unary
 def arcsin(x):
 
-    def fun(backend, v):
-        return backend.arcsin(v)
+    def fun(v):
+        return ar.arcsin(v)
 
-    return Args(x).pluginto(ElemwiseCall(fun))
+    return fn.Args(x).pluginto(fn.Elemwise(fun))
 
 
 
@@ -440,10 +443,10 @@ def arcsin(x):
 @typecast_unary
 def arccos(x):
 
-    def fun(backend, v):
-        return backend.arccos(v)
+    def fun(v):
+        return ar.arccos(v)
 
-    return Args(x).pluginto(ElemwiseCall(fun))
+    return fn.Args(x).pluginto(fn.Elemwise(fun))
 
 
 
@@ -451,10 +454,10 @@ def arccos(x):
 @typecast_unary
 def arctan(x):
 
-    def fun(backend, v):
-        return backend.arctan(v)
+    def fun(v):
+        return ar.arctan(v)
 
-    return Args(x).pluginto(ElemwiseCall(fun))
+    return fn.Args(x).pluginto(fn.Elemwise(fun))
 
 
 
@@ -462,10 +465,10 @@ def arctan(x):
 @typecast_unary
 def sinh(x):
 
-    def fun(backend, v):
-        return backend.sinh(v)
+    def fun(v):
+        return ar.sinh(v)
 
-    return Args(x).pluginto(ElemwiseCall(fun))
+    return fn.Args(x).pluginto(fn.Elemwise(fun))
 
 
 
@@ -473,10 +476,10 @@ def sinh(x):
 @typecast_unary
 def cosh(x):
 
-    def fun(backend, v):
-        return backend.cosh(v)
+    def fun(v):
+        return ar.cosh(v)
 
-    return Args(x).pluginto(ElemwiseCall(fun))
+    return fn.Args(x).pluginto(fn.Elemwise(fun))
 
 
 
@@ -484,10 +487,10 @@ def cosh(x):
 @typecast_unary
 def tanh(x):
 
-    def fun(backend, v):
-        return backend.tanh(v)
+    def fun(v):
+        return ar.tanh(v)
 
-    return Args(x).pluginto(ElemwiseCall(fun))
+    return fn.Args(x).pluginto(fn.Elemwise(fun))
 
 
 
@@ -495,10 +498,10 @@ def tanh(x):
 @typecast_unary
 def arcsinh(x):
 
-    def fun(backend, v):
-        return backend.arcsinh(v)
+    def fun(v):
+        return ar.arcsinh(v)
 
-    return Args(x).pluginto(ElemwiseCall(fun))
+    return fn.Args(x).pluginto(fn.Elemwise(fun))
 
 
 
@@ -506,10 +509,10 @@ def arcsinh(x):
 @typecast_unary
 def arccosh(x):
 
-    def fun(backend, v):
-        return backend.arccosh(v)
+    def fun(v):
+        return ar.arccosh(v)
 
-    return Args(x).pluginto(ElemwiseCall(fun))
+    return fn.Args(x).pluginto(fn.Elemwise(fun))
 
 
 
@@ -517,102 +520,35 @@ def arccosh(x):
 @typecast_unary
 def arctanh(x):
 
-    def fun(backend, v):
-        return backend.arctanh(v)
+    def fun(v):
+        return ar.arctanh(v)
 
-    return Args(x).pluginto(ElemwiseCall(fun))
+    return fn.Args(x).pluginto(fn.Elemwise(fun))
 
-
-
-
-# --- Linear algebra: multiplication methods -------------------------------- #
-
-@ad.differentiable
-def einsum(*xs, outinds=None, optimize=True):
-
-    def fun(backend, equation, *datas):
-        return backend.einsum(equation, *datas, optimize=optimize)
-
-    return Args(*xs).pluginto(EinsumCall(fun, outinds))
-
-
-
-@ad.differentiable
-def dot(x, y):
-
-    def fun(backend, u, v):
-        return backend.dot(u, v)
-
-    return Args(x, y).pluginto(DotCall(fun))
-
-
-
-def kron(x, y, kronmap):
-
-    out = einsum(x, y)
-
-    return fuse(out, kronmap)
-
-
-
-
-# --- Linear algebra: decomposition methods --------------------------------- #
-
-@ad.differentiable
-def svd(x, mind, linds=None, rinds=None, **opts):
-
-    def fun(backend, v):
-        return backend.svd(v)
-
-    return Args(x).pluginto(SplitCall(fun))
-
-
-
-@ad.differentiable
-def qr(x):
-
-    def fun(backend, v):
-        return backend.qr(v)
-
-    return Args(x).pluginto(DoubleDecompCall(fun))
-
-
-
-@ad.differentiable
-def eig(x):
-
-    def fun(backend, v):
-        return backend.eig(v)
-
-    return Args(x).pluginto(DoubleDecompCall(fun))
-
-
-
-@ad.differentiable
-def eigh(x):
-
-    def fun(backend, v):
-        return backend.eigh(v)
-
-    return Args(x).pluginto(DoubleDecompCall(fun))
-       
-
-
-
-# --- Linear algebra: matrix exponential ------------------------------------ #
-
-@ad.differentiable
-def expm(x):
-
-    def fun(backend, data):
-        return backend.expm(data)
-
-    return Args(x).pluginto(ElemwiseCall(fun))
-       
 
 
 
 # --- Linear algebra: misc methods ------------------------------------------ #
+
+@ad.differentiable
+def norm(x, order=None, inds=None, **opts):
+
+    def fun(data, axis):
+        return ar.norm(data, order, axis, **opts)
+
+    return fn.Args(x).pluginto(fn.Reduce(fun, inds))
+
+
+
+@ad.differentiable
+def expm(x):
+
+    def fun(data):
+        return ar.expm(data)
+
+    return fn.Args(x).pluginto(fn.Elemwise(fun))
+       
+
 
 def htranspose(x, *order):
 
@@ -620,358 +556,8 @@ def htranspose(x, *order):
 
 
 
-@ad.differentiable
-def norm(x, order=None, inds=None, **opts):
 
-    def fun(backend, data, axis):
-        return backend.norm(data, order, axis, **opts)
 
-    return Args(x).pluginto(ReduceCall(fun, inds))
-
-
-
-
-
-
-
-
-
-
-#############################################################
-"""
-@ad.differentiable
-def transpose(x, axes):
-
-    def fun(backend, v):
-        return backend.transpose(v, axes)
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-@ad.differentiable
-def moveaxis(x, source, destination):
-
-    def fun(backend, v): 
-        return backend.moveaxis(v, source, destination)
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-@ad.differentiable
-def squeeze(x, axis=None):
-
-    def fun(backend, v): 
-        return backend.squeeze(v, axis)
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-@ad.differentiable
-def unsqueeze(x, axis):
-
-    def fun(backend, v): 
-        return backend.unsqueeze(v, axis)
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-
-# --- Tensor value methods -------------------------------------------------- #
- 
-@ad.differentiable
-def amax(x, axis=None, **opts):
-
-    def fun(backend, v): 
-        return backend.max(v, axis, **opts)
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-@ad.differentiable
-def amin(x, axis=None, **opts):
-
-    def fun(backend, v): 
-        return backend.min(v, axis, **opts)
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-@ad.differentiable
-def absolute(x, **opts):
-
-    def fun(backend, v): 
-        return backend.abs(v, **opts)
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-@ad.differentiable
-def flip(x, axis=None):
-
-    def fun(backend, v): 
-        return backend.flip(v, axis)
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-@ad.differentiable
-def clip(x, minval, maxval, **opts):
-
-    def fun(backend, v): 
-        return backend.clip(v, minval, maxval, **opts)
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-@ad.differentiable
-@typecast_binary
-def where(condition, x, y):
-
-    def fun(backend, cond_uv, u, v): 
-        return backend.where(cond_uv, u, v)
-
-    return Args(condition, x, y).pluginto(TransformCall(fun))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# --- Linear algebra: matrix exponential ------------------------------------ #
-
-@ad.differentiable
-def expm(x):
-
-    def fun(backend, v):
-        return backend.expm(v)
-
-    return Args(x).pluginto(TransformCall(fun))
-       
-
-
-
-# --- Linear algebra: misc methods ------------------------------------------ #
-
-def htranspose(x, axes):
-
-    return transpose(conj(x), axes)
-
-
-
-@ad.differentiable
-def norm(x, order=None, axis=None, **opts):
-
-    def fun(backend, v):
-        return backend.htranspose(v, order, axis, **opts)
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-
-################################################################################
-################################################################################
-################################################################################
-################################################################################
-################################################################################
-
-
-
-
-
-# --- Unary, couples data and inds (acts on data but inds used as options) --- #
-
-def amax(x, ind=None, **opts):
-
-    def fun(backend, inds, v):
- 
-        axis = None if ind is None else inds.axis(ind)
-        data = backend.max(v, axis, **opts)
-
-        return core.Tensor(backend, data, tuple())
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-def transpose(x, *order):
-
-    def fun(backend, inds, v):
-
-        inds = index.transpose(inds, *order)
-        data = backend.transpose(v, tuple(map(inds.axis, order)))
-
-        return core.Tensor(backend, data, inds)
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-def sumover(x, *suminds):
-
-    def fun(backend, inds, v):
-
-        axes = tuple(map(inds.axis, suminds))
-        inds = inds.remove(suminds)
-        data = backend.sumover(v, axes)
-
-        return core.Tensor(backend, data, inds)
-
-    return Args(x).pluginto(TransformCall(fun))   
-
-
-
-def reindex(x, indmap):
-
-    def fun(backend, inds, v):
-
-        inds = index.reindex(inds, indmap)
-
-        assert v.shape == index.shapeof(*inds)
-
-        return core.Tensor(backend, v, inds)
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-
-# --- Unary, data-only --- #
-
-def sin(x):
-
-    def fun(backend, inds, v):
-        data = backend.sin(v)
-        return core.Tensor(backend, data, inds)
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-
-def conj(x, **opts):
-
-    def fun(backend, inds, v):
-
-        data = backend.conj(v, **opts)
-        return core.Tensor(backend, data, inds)
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-
-# --- Unary, inds-only --- #
-
-def unsqueeze(x, names):
-
-    def fun(backend, inds, v):
-
-        inds  = index.unsqueeze(inds, names)
-        shape = index.shapeof(*inds)
-        data  = backend.reshape(v, shape) 
-
-        return core.Tensor(backend, data, inds)
-
-    return Args(x).pluginto(TransformCall(fun))   
-
-
-
-
-def squeeze(x):
-
-    def fun(backend, inds, v):
-
-        inds  = index.squeeze(inds)
-        shape = index.shapeof(*inds)
-        data  = backend.reshape(v, shape)
-
-        return core.Tensor(backend, data, inds)
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-
-def split(x, splitmap):
-
-    def fun(backend, inds, v):
-
-        inds  = index.split(inds, splitmap)
-        shape = index.shapeof(*inds) 
-        data  = backend.reshape(v, shape)
-
-        return core.Tensor(backend, data, inds)
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-
-def fuse(x, fusemap):
-
-    def fun(backend, inds, v):
-
-        inds  = index.fuse(inds, fusemap)
-        shape = index.shapeof(*inds) 
-        data  = backend.reshape(v, shape)
-
-        return core.Tensor(backend, data, inds)
-
-    return Args(x).pluginto(TransformCall(fun))
-
-
-
-
-# --- Binary elementwise --- #
-
-def add(x, y):
-
-    def fun(backend, inds, u, v):
-
-        assert inds[0] == inds[1]
-        data = backend.add(u, v)
-
-        return core.Tensor(backend, data, inds[0])
-
-    return function.Args(x, y).pluginto(function.TransformCall(fun))
-
-
-
-# --- Unary decompose --- #
-
-def svd(x):
-
-    def fun(backend, v):
-        return backend.svd(v) # TODO def all decomp steps in DecompCall, we only inject method (svd/qr/etc)
-
-    return Args(x).pluginto(DecompCall(fun)) # Perhaps make DoubleDecomp / TripleDecomp? (DecompDouble, DecompTriple) 
-
-
-
-
-
-"""
-
-"""
-"""
 
 
 

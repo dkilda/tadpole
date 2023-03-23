@@ -2,23 +2,34 @@
 # -*- coding: utf-8 -*-
 
 import abc
-import numpy as np
 
 import tadpole.util     as util
 import tadpole.autodiff as ad
+import tadpole.array    as ar
 
-import tadpole.tensor.backends as backends
-import tadpole.tensor.function as function
-import tadpole.tensor.grad     as grad
+import tadpole.tensor.space   as sp
+import tadpole.tensor.funcall as fn
 
-from tadpole.tensor.types import TensorLike, Pluggable
+
+from tadpole.tensor.types import (
+   TensorLike, 
+   Pluggable,
+)
+
+
+from tadpole.tensor.index import (
+   Index, 
+   Indices,
+   shapeof, 
+   sizeof,
+)
 
 
 
 
 ###############################################################################
 ###                                                                         ###
-###  Helper functions                                                       ###
+###  Typecasting                                                            ###
 ###                                                                         ###
 ###############################################################################
 
@@ -71,340 +82,6 @@ def typecast_binary(fun):
 
 ###############################################################################
 ###                                                                         ###
-###  Tensor creation functions                                              ###
-###                                                                         ###
-###############################################################################
-
-
-# --- Generic factory that constructs a Tensor from index input ------------- #
-
-class TensorFromInds:
-
-   def __init__(self, fun):
-
-       self._fun = fun
-
-
-   def __call__(self, inds, *args, **opts):
-
-       backend = backends.get_from(opts) 
-       fun     = self._fun
-
-       if callable(fun): 
-          fun = fun(backend)
-
-       if isinstance(fun, str):
-          fun = {
-                 "zeros":       backend.zeros,
-                 "ones":        backend.ones,
-                 "unit":        backend.unit,
-                 "rand":        backend.rand,
-                 "randn":       backend.randn,
-                 "randuniform": backend.randuniform,
-                }[fun]
-
-       data = fun(inds.shape, *args, **opts)
-       return Tensor(backend, data, inds)  
-
-
-
-
-# --- Tensor factories (from shape) ------------------------------------------ #
-
-@ad.differentiable
-def sparse(inds, pos, vals, **opts):
-
-    backend = backends.get_from(opts)
-
-    if "dtype" in opts:
-       vals = backend.asarray(vals)
-       vals = backend.astype(vals, **opts)
-
-    return grad.SparseGrad(
-              backend, inds, pos, vals
-           )
-
-
-@ad.nondifferentiable
-def zeros(inds, **opts):
-
-    return TensorFromInds("zeros")(
-              inds, **opts
-           )
-
-
-@ad.nondifferentiable
-def ones(inds, **opts):
-
-    return TensorFromInds("ones")(
-              inds, **opts
-           )
-
-
-@ad.nondifferentiable
-def unit(inds, pos, **opts):
-
-    return TensorFromInds("unit")(
-              inds, pos, **opts
-           )
-
-
-@ad.nondifferentiable
-def rand(inds, **opts):
-
-    return TensorFromInds("rand")(
-              inds, **opts
-           )
-
-
-@ad.nondifferentiable
-def randn(inds, **opts):
-
-    return TensorFromInds("randn")(
-              inds, **opts
-           )
-
-
-@ad.nondifferentiable
-def randuniform(inds, boundaries, **opts):
-
-    return TensorFromInds("randuniform")(
-              inds, boundaries, **opts
-           )
-
-
-
-
-# --- Tensor factories (from data) ------------------------------------------ #
-
-def astensor(data, inds=None, **opts):
-
-    if isinstance(data, TensorLike):
-       return data
-
-    backend = backends.get_from(opts)                            
-    data    = backend.asarray(data, **opts)
-
-    return Tensor(backend, data, inds)
-
-
-
-
-# --- Tensor generators ----------------------------------------------------- #
-
-@ad.nondifferentiable
-def units(inds, dtype=None, backend=None):
-
-    for pos in np.ndindex(*inds.shape):
-        yield unit(inds, pos, dtype=dtype, backend=backend)
-
-
-@ad.nondifferentiable
-def basis(inds, dtype=None, backend=None): 
-
-    backend   = backends.get(backend)
-    dtype     = backend.get_dtype(dtype)
-    gen_units = units(inds, dtype=dtype, backend=backend)
-
-    if  dtype in backend.complex_dtypes():
-
-        for unit in gen_units:
-            yield unit
-            yield 1j * unit
-
-    else:
-        for unit in gen_units:
-            yield unit
-
-
-
-
-###############################################################################
-###                                                                         ###
-###  Tensor space                                                           ###
-###                                                                         ###
-###############################################################################
-
-
-# --- Space interface ------------------------------------------------------- #
-
-class Space(abc.ABC):
-
-   # --- Factories --- #
-
-   @abc.abstractmethod
-   def sparse(self, pos, vals):
-       pass
-
-   @abc.abstractmethod
-   def zeros(self):
-       pass
-
-   @abc.abstractmethod
-   def zeros(self):
-       pass
-
-   @abc.abstractmethod
-   def ones(self):
-       pass
-
-   @abc.abstractmethod
-   def unit(self):
-       pass
-
-   @abc.abstractmethod
-   def rand(self, **opts):
-       pass
-
-   @abc.abstractmethod
-   def randn(self, **opts):
-       pass
-
-   @abc.abstractmethod
-   def randuniform(self, boundaries, **opts):
-       pass
-
-   @abc.abstractmethod
-   def units(self):
-       pass
-
-   @abc.abstractmethod
-   def basis(self):
-       pass
-
-
-   # --- Space properties --- #
-
-   @property
-   @abc.abstractmethod
-   def dtype(self):
-       pass
-
-   @property
-   @abc.abstractmethod
-   def size(self):
-       pass
-
-   @property 
-   @abc.abstractmethod
-   def ndim(self):
-       pass
-
-   @property
-   @abc.abstractmethod
-   def shape(self):
-       pass
-
-       
-
-
-# --- TensorSpace ----------------------------------------------------------- #
-
-class TensorSpace(Space):
-
-   # --- Construction --- #
-
-   def __init__(self, backend, inds, dtype):
-
-       self._backend = backend
-       self._dtype   = dtype
-       self._inds    = inds
-
-
-   # --- Comparisons --- #
-
-   def __eq__(self, other):
-
-       log = util.LogicalChain()
-
-       log.typ(self, other)
-       log.val(self._backend, other._backend)
-       log.val(self._dtype,   other._dtype)
-       log.val(self._inds,    other._inds)
-
-       return bool(log)
-
-
-   # --- Factories --- #
-
-   def sparse(self, pos, vals):
-
-       return self._create(sparse, pos, vals)
-
-
-   def zeros(self):
-
-       return self._create(zeros) 
-
-
-   def ones(self):
-
-       return self._create(ones) 
-
-
-   def unit(self):
-
-       return self._create(unit) 
-
-
-   def rand(self, **opts):
-
-       return self._create(rand, **opts) 
-
-
-   def randn(self, **opts):
-
-       return self._create(randn, **opts) 
-
-
-   def randuniform(self, boundaries, **opts):
-
-       return self._create(randuniform, boundaries, **opts) 
-
-
-   def units(self):
-
-       return self._create(units) 
-
-
-   def basis(self):
-
-       return self._create(basis) 
-
-
-   # --- Space properties --- #
-
-   @property
-   def dtype(self):
-       return self._dtype
-
-   @property
-   def size(self):
-       return self._inds.size 
-
-   @property 
-   def ndim(self):
-       return self._inds.ndim
-
-   @property
-   def shape(self):
-       return self._inds.shape
-
-
-   # --- Private helpers --- #
-
-   def _create(self, fun, *args, **opts):
-
-       return fun(
-          self._inds, *args, 
-          dtype=self._dtype, backend=self._backend, **opts
-       )
-
-
-
-
-###############################################################################
-###                                                                         ###
 ###  Logical operations                                                     ###
 ###                                                                         ###
 ###############################################################################
@@ -425,10 +102,10 @@ def close_opts(opts):
 @typecast_binary
 def allclose(x, y, **opts):
 
-    def fun(backend, u, v):
-        return backend.allclose(u, v, **close_opts(opts))
+    def fun(u, v):
+        return ar.allclose(u, v, **close_opts(opts))
 
-    return function.Args(x, y).pluginto(function.ExtractCall(fun))
+    return fn.Args(x, y).pluginto(fn.Extract(fun))
 
 
 
@@ -436,10 +113,10 @@ def allclose(x, y, **opts):
 @typecast_binary
 def isclose(x, y, **opts):
     
-    def fun(backend, u, v):
-        return backend.isclose(u, v, **close_opts(opts))
+    def fun(u, v):
+        return ar.isclose(u, v, **close_opts(opts))
 
-    return function.Args(x, y).pluginto(function.ElemwiseCall(fun))
+    return fn.Args(x, y).pluginto(fn.Elemwise(fun))
 
 
 
@@ -450,10 +127,10 @@ def isclose(x, y, **opts):
 @typecast_binary
 def allequal(x, y):
 
-    def fun(backend, u, v):
-        return backend.allequal(u, v)
+    def fun(u, v):
+        return ar.allequal(u, v)
 
-    return function.Args(x, y).pluginto(function.ExtractCall(fun))
+    return fn.Args(x, y).pluginto(fn.Extract(fun))
 
 
 
@@ -461,10 +138,10 @@ def allequal(x, y):
 @typecast_binary
 def isequal(x, y):
 
-    def fun(backend, u, v):
-        return backend.isequal(u, v)
+    def fun(u, v):
+        return ar.isequal(u, v)
 
-    return function.Args(x, y).pluginto(function.ElemwiseCall(fun))
+    return fn.Args(x, y).pluginto(fn.Elemwise(fun))
 
 
 
@@ -472,10 +149,10 @@ def isequal(x, y):
 @typecast_binary
 def notequal(x, y):
 
-    def fun(backend, u, v):
-        return backend.notequal(u, v)
+    def fun(u, v):
+        return ar.notequal(u, v)
 
-    return function.Args(x, y).pluginto(function.ElemwiseCall(fun))
+    return fn.Args(x, y).pluginto(fn.Elemwise(fun))
 
 
 
@@ -486,10 +163,10 @@ def notequal(x, y):
 @typecast_binary
 def logical_and(x, y):
 
-    def fun(backend, u, v):
-        return backend.logical_and(u, v)
+    def fun(u, v):
+        return ar.logical_and(u, v)
 
-    return function.Args(x, y).pluginto(function.ElemwiseCall(fun))
+    return fn.Args(x, y).pluginto(fn.Elemwise(fun))
 
 
 
@@ -497,10 +174,10 @@ def logical_and(x, y):
 @typecast_binary
 def logical_or(x, y):
 
-    def fun(backend, u, v):
-        return backend.logical_or(u, v)
+    def fun(u, v):
+        return ar.logical_or(u, v)
 
-    return function.Args(x, y).pluginto(function.ElemwiseCall(fun))
+    return fn.Args(x, y).pluginto(fn.Elemwise(fun))
 
 
 
@@ -516,26 +193,31 @@ def logical_or(x, y):
 
 @ad.nondifferentiable
 def copy(x, **opts):
+
     return x.copy(**opts)
 
 
 @ad.nondifferentiable
 def todense(x):
+
     return x.todense()
 
 
 @ad.nondifferentiable
 def withdata(x, data):
+
     return x.withdata(data)
 
 
 @ad.nondifferentiable
 def space(x):
+
     return x.space()
 
 
 @ad.nondifferentiable
 def item(x, *pos):
+
     return x.item(*pos)
 
 
@@ -545,22 +227,113 @@ def item(x, *pos):
 
 @ad.nondifferentiable
 def dtype(x):
+
     return x.dtype
 
 
 @ad.nondifferentiable
 def size(x):
+
     return x.size
 
 
 @ad.nondifferentiable
 def ndim(x):
+
     return x.ndim
 
 
 @ad.nondifferentiable
 def shape(x):
+
     return x.shape
+
+
+
+
+# --- Tensor methods: element access ---------------------------------------- #
+
+@ad.differentiable
+def getitem(x, pos):
+
+    def fun(u):
+        return u[pos] 
+
+    return fn.Args(x).pluginto(fn.Transform(fun))
+
+
+
+
+# --- Tensor methods: arithmetics ------------------------------------------- # 
+
+@ad.differentiable
+@typecast_unary
+def neg(x):
+
+    def fun(u):
+        return ar.neg(u)
+
+    return fn.Args(x).pluginto(fn.Elemwise(fun))
+
+
+
+
+@ad.differentiable
+@typecast_binary
+def add(x, y):
+
+    def fun(u, v):
+        return ar.add(u, v)
+
+    return fn.Args(x, y).pluginto(fn.Elemwise(fun))
+
+
+
+
+@ad.differentiable
+@typecast_binary
+def sub(x, y):
+
+    def fun(u, v):
+        return ar.sub(u, v)
+
+    return fn.Args(x, y).pluginto(fn.Elemwise(fun))
+
+
+
+
+@ad.differentiable
+@typecast_binary
+def mul(x, y):
+
+    def fun(u, v):
+        return ar.mul(u, v)
+
+    return fn.Args(x, y).pluginto(fn.Elemwise(fun))
+
+
+
+
+@ad.differentiable
+@typecast_binary
+def div(x, y):
+
+    def fun(u, v):
+        return ar.div(u, v)
+
+    return fn.Args(x, y).pluginto(fn.Elemwise(fun))
+
+
+
+
+@ad.differentiable
+@typecast_binary
+def power(x, y):
+
+    def fun(u, v):
+        return ar.power(u, v)
+
+    return fn.Args(x, y).pluginto(fn.Elemwise(fun))
 
 
 
@@ -576,81 +349,333 @@ def addgrads(x, y):
 
 
 
-# --- Tensor methods: arithmetics and element access ------------------------ # 
-
-@ad.differentiable
-def getitem(x, pos):
-
-    def fun(backend, v):
-        return v[pos]
-
-    return function.Args(x).pluginto(function.TransformCall(fun))
+###############################################################################
+###                                                                         ###
+###  Special tensor types for gradients                                     ###
+###                                                                         ###
+###############################################################################
 
 
+# --- Null gradient --------------------------------------------------------- #
 
-@ad.differentiable
-@typecast_unary
-def neg(x):
+class NullGrad(TensorLike, Pluggable):
 
-    def fun(backend, v):
-        return -v
+   # --- Construction --- #
 
-    return function.Args(x).pluginto(function.ElemwiseCall(fun))
+   def __init__(self, space):
 
-
-
-@ad.differentiable
-@typecast_binary
-def add(x, y):
-
-    def fun(backend, u, v):
-        return backend.add(u, v)
-
-    return function.Args(x, y).pluginto(function.ElemwiseCall(fun))
+       self._space = space
 
 
+   # --- Plugging into function calls --- #
 
-@ad.differentiable
-@typecast_binary
-def sub(x, y):
+   def pluginto(self, funcall):
 
-    def fun(backend, u, v):
-        return backend.sub(u, v)
-
-    return function.Args(x, y).pluginto(function.ElemwiseCall(fun))
+       return self.todense().pluginto(funcall)
 
 
+   # --- Gradient accumulation --- #
 
-@ad.differentiable
-@typecast_binary
-def mul(x, y):
+   def addto(self, other):
 
-    def fun(backend, u, v):
-        return backend.mul(u, v)
-
-    return function.Args(x, y).pluginto(function.ElemwiseCall(fun))
+       return other.addto(self)
 
 
+   # --- Basic functionality --- #
 
-@ad.differentiable
-@typecast_binary
-def div(x, y):
+   def copy(self):
 
-    def fun(backend, u, v):
-        return backend.div(u, v)
-
-    return function.Args(x, y).pluginto(function.ElemwiseCall(fun))
+       return self.__class__()
 
 
+   def todense(self):
 
-@ad.differentiable
-@typecast_binary
-def power(x, y):
+       return self.space().zeros()
 
-    def fun(backend, u, v):
-        return backend.power(u, v)
 
-    return function.Args(x, y).pluginto(function.ElemwiseCall(fun))
+   def withdata(self, data):
+
+       return self.space().fillwith(data) 
+
+
+   def space(self):
+
+       return self._space
+
+
+   def item(self):
+
+       return self.todense().item() 
+
+
+   # --- Tensor properties --- #
+
+   @property
+   def dtype(self):
+       return self.space().dtype
+
+   @property 
+   def size(self):
+       return self.space().size
+
+   @property 
+   def ndim(self):
+       return self.space().ndim
+
+   @property 
+   def shape(self):
+       return self.space().shape
+
+
+   # --- Comparisons --- #
+       
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+       log.typ(self, other)
+
+       return bool(log)
+
+
+   # --- Arithmetics and element access --- #
+
+   def __getitem__(self, pos):
+
+       return self.todense()[pos]
+
+
+   def __neg__(self):
+
+       return self.todense()
+
+
+   def __add__(self, other): 
+
+       return other
+
+
+   def __sub__(self, other): 
+
+       return -other 
+
+
+   def __mul__(self, other):
+
+       return self.todense()
+
+
+   def __truediv__(self, other):
+
+       return self.todense()
+
+
+   def __pow__(self, other):
+
+       return self.todense() 
+
+
+   def __radd__(self, other): 
+
+       return other  
+
+
+   def __rsub__(self, other): 
+
+       return other
+
+
+   def __rmul__(self, other):
+
+       return self.todense()
+
+
+   def __rtruediv__(self, other):
+
+       raise ValueError(
+          f"{type(self).__name__}.__rtruediv__: "
+          f"division by zero encountered!"
+       )
+
+
+   def __rpow__(self, other):
+
+       if not isinstance(other, TensorLike):
+          other = astensor(other)
+
+       return other.space().ones()
+
+
+
+
+# --- Sparse gradient ------------------------------------------------------- #
+
+class SparseGrad(TensorLike, Pluggable):
+
+   # --- Construction --- #
+
+   def __init__(self, space, pos, vals):
+
+       self._space = space
+       self._pos   = pos
+       self._vals  = vals
+
+
+   # --- Plugging into function calls --- #
+
+   def pluginto(self, funcall):
+
+       return self.todense().pluginto(funcall)
+
+
+   # --- Gradient accumulation --- #
+
+   def addto(self, other):
+
+       if not other:
+          other = NullGrad()
+
+       if isinstance(other, NullGrad):
+          other = self.space().zeros()
+
+       if isinstance(other, SparseGrad):
+          other = other.todense()
+
+       assert self._space == other._space, (
+          f"{type(self).__name__}.addto(): "
+          f"gradient accumulation cannot be performed for tensors "
+          f"with non-matching spaces {self._space} != {other._space}"
+       )
+
+       data = ar.put(other._data, self._pos, self._vals, accumulate=True)
+       return other.withdata(data)
+
+       
+   # --- Basic functionality --- #
+
+   def copy(self):
+
+       return self.__class__(self._space, self._pos, self._vals)
+
+
+   def todense(self):
+
+       zeros = self.space().zeros() 
+       data  = ar.put(zeros, self._pos, self._vals)
+
+       return self.space().fillwith(data)
+
+
+   def withdata(self, data):
+
+       return self.space().fillwith(data)
+
+
+   def space(self):
+
+       return self._space
+
+
+   def item(self, *pos):
+
+       return self.todense().item(*pos)  
+
+
+   # --- Tensor properties --- #
+
+   @property
+   def dtype(self):
+       return self._space.dtype 
+
+   @property 
+   def size(self):
+       return self._space.size
+
+   @property 
+   def ndim(self):
+       return self._space.ndim 
+
+   @property 
+   def shape(self):
+       return self._space.shape
+
+
+   # --- Comparisons --- #
+       
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+       log.typ(self, other)
+
+       if bool(log):
+          log.val(self._space, other._space)
+          log.val(self._pos,   other._pos)
+
+       if bool(log):
+          return ar.allequal(self._vals, other._vals)  
+
+       return False
+
+
+   # --- Arithmetics and element access --- # 
+
+   def __getitem__(self, pos):
+
+       return self.todense()[pos]
+
+
+   def __neg__(self):
+
+       return -self.todense()
+
+
+   def __add__(self, other): 
+
+       return self.todense() + other
+
+
+   def __sub__(self, other): 
+
+       return self.todense() - other   
+
+
+   def __mul__(self, other):
+
+       return self.todense() * other 
+
+
+   def __truediv__(self, other):
+
+       return self.todense() / other 
+
+
+   def __pow__(self, other):
+
+       return self.todense() ** other 
+
+
+   def __radd__(self, other): 
+
+       return other + self.todense() 
+
+
+   def __rsub__(self, other): 
+
+       return other - self.todense() 
+
+
+   def __rmul__(self, other):
+
+       return other * self.todense()
+
+
+   def __rtruediv__(self, other):
+
+       return other / self.todense()
+
+
+   def __rpow__(self, other):
+
+       return other ** self.todense() 
 
 
 
@@ -662,39 +687,52 @@ def power(x, y):
 ###############################################################################
 
 
+# --- Tensor factories ------------------------------------------------------ #
+
+def astensor(data, inds=None, **opts):
+
+    if isinstance(data, TensorLike):
+       return data
+
+    if isinstance(data, ar.ArrayLike):
+       return Tensor(data, inds)
+
+    data = ar.asarray(data, **opts)
+    return Tensor(data, inds)
+
+
+
+
 # --- Tensor ---------------------------------------------------------------- #
 
 class Tensor(TensorLike, Pluggable):
 
    # --- Construction --- #
 
-   def __init__(self, backend, data, inds=None):
+   def __init__(self, data, inds=None):
 
        if inds is None:
-          inds = index.Indices()
+          inds = Indices()
 
-       if not isinstance(backend, backends.backend.Backend):
-          raise ValueError((
-             f"Tensor: backend must be an instance "
-             f"of Backend, but it is {backend}"
-          ))  
+       if not isinstance(inds, Indices):
+          inds = Indices(*inds)
 
        if data.shape != inds.shape,
           raise ValueError((
-             f"Tensor: data and indices must have matching shapes, "
+             f"{type(self).__name__}: 
+             f"data and indices must have matching shapes, "
              f"but data shape {data.shape} != index shape {inds.shape}"
           ))
 
-       self._backend = backend
-       self._data    = data
-       self._inds    = inds
+       self._data = data
+       self._inds = inds
 
 
    # --- Plugging into function calls --- #
 
    def pluginto(self, funcall):
 
-       return funcall.attach(self._backend, self._data, self._inds)
+       return funcall.attach(self._data, self._inds)
 
 
    # --- Using in gradient accumulations --- #
@@ -702,31 +740,31 @@ class Tensor(TensorLike, Pluggable):
    def addto(self, other):
 
        if not other:
-          other = grad.ZeroGrad()
+          other = NullGrad()
 
-       if isinstance(other, grad.ZeroGrad): 
+       if isinstance(other, NullGrad): 
           return self
 
-       if isinstance(other, grad.SparseGrad):
+       if isinstance(other, SparseGrad):
           return other.addto(self)
 
        assert self._inds == other._inds, (
-          f"Tensor.addto(): "
+          f"{type(self).__name__}.addto: "
           f"gradient accumulation cannot be performed for tensors "
           f"with non-matching indices {self._inds} != {other._inds}"
        )
 
-       data = self._backend.add(self._data, other._data)
+       data = ar.add(self._data, other._data)
        return other.withdata(data)
 
 
    # --- Basic functionality --- #
 
-   def copy(self, deep=True):
+   def copy(self, virtual=False, **opts):
 
-       data = self._backend.copy(self._data) if deep else self._data
+       data = self._data if virtual else self._data.copy(**opts)
 
-       return self.__class__(self._backend, data, self._inds)
+       return self.__class__(data, self._inds)
 
 
    def todense(self):
@@ -736,36 +774,36 @@ class Tensor(TensorLike, Pluggable):
 
    def withdata(self, data):
 
-       return astensor(data, self._inds, backend=self._backend)
+       return self.__class__(data, self._inds)
 
 
    def space(self):
 
-       return TensorSpace(self._backend, self._inds, self.dtype)
+       return sp.TensorSpace(self._data.space(), self._inds) 
 
 
    def item(self, *pos): 
 
-       return self._backend.item(self._data, *pos)
+       return self._data.item(*pos)
 
 
    # --- Tensor properties --- #
 
    @property
    def dtype(self):
-       return self._backend.dtype(self._data)
+       return self._data.dtype 
 
    @property 
    def size(self):
-       return self._backend.size(self._data)  
+       return self._data.size
 
    @property 
    def ndim(self):
-       return self._backend.ndim(self._data)  
+       return self._data.ndim  
 
    @property
    def shape(self):
-       return self._backend.shape(self._data)
+       return self._data.shape 
 
 
    # --- Comparisons --- #
@@ -776,10 +814,10 @@ class Tensor(TensorLike, Pluggable):
        log.typ(self, other)
 
        if bool(log):
-          log.val(self._backend, other._backend)
+          log.val(self._inds, other._inds)
  
        if bool(log):
-          return allequal(self, other)
+          return allequal(self._data, other._data)
 
        return False
 

@@ -7,7 +7,7 @@ import numpy as np
 import tadpole.util     as util
 import tadpole.autodiff as ad
 
-import tadpole.tensor.funcall    as funcall
+import tadpole.tensor.funcall    as fn
 import tadpole.tensor.truncation as truncation
 
 
