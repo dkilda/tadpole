@@ -536,7 +536,7 @@ def norm(x, order=None, inds=None, **opts):
     def fun(data, axis):
         return ar.norm(data, order, axis, **opts)
 
-    return Args(x).pluginto(fn.Reduce(fun, inds))
+    return fn.Args(x).pluginto(fn.Reduce(fun, inds))
 
 
 

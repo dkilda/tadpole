@@ -10,9 +10,6 @@ import tadpole.autodiff as ad
 import tadpole.tensor.funcall    as funcall
 import tadpole.tensor.truncation as truncation
 
-from tadpole.tensor.funcall import (
-   FunCall,
-)
 
 from tadpole.tensor.truncation import (
    NullTrunc,
@@ -229,12 +226,12 @@ def make_partitions(linkname, inds, which):
 
 # --- Explicit-rank decomposition call -------------------------------------- #
 
-class ExplicitDecomp(FunCall):
+class ExplicitDecomp(fn.FunCall):
 
    def __init__(self, engine, partitions, trunc):
 
-       if not isinstance(engine, Engine):
-          engine = Engine(engine)
+       if not isinstance(engine, fn.Engine):
+          engine = fn.Engine(engine)
 
        self._engine     = engine
        self._partitions = partitions
@@ -269,12 +266,12 @@ class ExplicitDecomp(FunCall):
 
 # --- Hidden-rank decomposition call ---------------------------------------- #
 
-class HiddenDecomp(FunCall):
+class HiddenDecomp(fn.FunCall):
 
    def __init__(self, engine, partitions):
 
-       if not isinstance(engine, Engine):
-          engine = Engine(engine)
+       if not isinstance(engine, fn.Engine):
+          engine = fn.Engine(engine)
 
        self._engine     = engine
        self._partitions = partitions
@@ -312,7 +309,7 @@ def svd(x, name, inds, which="left", trunc=NullTrunc()):
     partitions = make_partitions(name, inds, which)
     decomp     = ExplicitDecomp(fun, partitions, trunc)
     
-    return Args(x).pluginto(decomp)
+    return fn.Args(x).pluginto(decomp)
 
 
 
@@ -326,7 +323,7 @@ def eig(x, name, inds, which="left", trunc=NullTrunc()):
     partitions = make_partitions(name, inds, which)
     decomp     = ExplicitDecomp(fun, partitions, trunc)
     
-    return Args(x).pluginto(decomp)
+    return fn.Args(x).pluginto(decomp)
 
 
 
@@ -340,7 +337,7 @@ def eigh(x, name, inds, which="left", trunc=NullTrunc()):
     partitions = make_partitions(name, inds, which)
     decomp     = ExplicitDecomp(fun, partitions, trunc)
     
-    return Args(x).pluginto(decomp)
+    return fn.Args(x).pluginto(decomp)
 
 
 
@@ -354,7 +351,7 @@ def qr(x, name, inds, which="left"):
     partitions = make_partitions(name, inds, which)
     decomp     = HiddenDecomp(fun, partitions)
     
-    return Args(x).pluginto(decomp) 
+    return fn.Args(x).pluginto(decomp) 
        
 
 
@@ -368,7 +365,7 @@ def lq(x, name, inds, which="left"):
     partitions = make_partitions(name, inds, which)
     decomp     = HiddenDecomp(fun, partitions)
     
-    return Args(x).pluginto(decomp) 
+    return fn.Args(x).pluginto(decomp) 
 
 
 

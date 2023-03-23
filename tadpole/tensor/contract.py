@@ -11,14 +11,8 @@ import tadpole.autodiff as ad
 import tadpole.array    as ar
 
 import tadpole.tensor.core       as core
-import tadpole.tensor.funcall    as funcall
+import tadpole.tensor.funcall    as fn
 import tadpole.tensor.operations as op
-
-
-from tadpole.tensor.funcall import (
-   Engine,
-   FunCall,
-)
 
 
 from tadpole.tensor.index import (
@@ -212,12 +206,12 @@ class Contractions:
 
 # --- Dot product call ------------------------------------------------------ #
 
-class Dot(FunCall):
+class Dot(fn.FunCall):
 
    def __init__(self, engine, contractions=None):
 
-       if not isinstance(engine, Engine):
-          engine = Engine(engine)
+       if not isinstance(engine, fn.Engine):
+          engine = fn.Engine(engine)
 
        if contractions is None:
           contractions = Contractions(PairwiseProduct())
@@ -243,12 +237,12 @@ class Dot(FunCall):
 
 # --- Einsum call ----------------------------------------------------------- #
 
-class Einsum(FunCall):
+class Einsum(fn.FunCall):
 
    def __init__(self, engine, contractions):
 
-       if not isinstance(engine, Engine):
-          engine = Engine(engine)
+       if not isinstance(engine, fn.Engine):
+          engine = fn.Engine(engine)
 
        self._engine       = engine
        self._contractions = contractions
@@ -286,7 +280,7 @@ def einsum(*xs, product=None, optimize=True):
     def fun(equation, *datas):
         return ar.einsum(equation, *datas, optimize=optimize)
 
-    return Args(*xs).pluginto(Einsum(fun, Contractions(product)))
+    return fn.Args(*xs).pluginto(Einsum(fun, Contractions(product)))
 
 
 
@@ -297,7 +291,7 @@ def dot(x, y):
     def fun(u, v):
         return ar.dot(u, v)
 
-    return Args(x,y).pluginto(Dot(fun)) 
+    return fn.Args(x,y).pluginto(Dot(fun)) 
 
 
 
