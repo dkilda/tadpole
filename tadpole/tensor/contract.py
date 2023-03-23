@@ -91,12 +91,145 @@ def make_equation(input_inds, output_inds):
 
 ###############################################################################
 ###                                                                         ###
-###  Index contraction                                                      ###
-###  (different strategies to generate output indices from input indices)   ###
+###  Index contraction logic:                                               ### 
+###  -- generates equation and output indices from input indices            ###
+###  -- creates output tensor from data computed by an array product        ###
+###     function                                                            ###
 ###                                                                         ###
 ###############################################################################
 
 
+# --- Index product interface ----------------------------------------------- #
+
+class Product(abc.ABC):
+
+   @abc.abstractmethod
+   def __call__(self, inds):
+       pass
+       
+
+
+
+# --- Fixed index product --------------------------------------------------- #
+
+class FixedProduct(Product):
+
+  def __init__(self, inds):
+
+      self._inds = inds
+
+
+  def __call__(self, inds):
+
+      return iter(self._inds)
+
+
+
+
+# --- Pairwise index product ------------------------------------------------ #
+
+class PairwiseProduct(Product): 
+
+   def __call__(self, inds):
+
+       for ind, freq in util.frequencies(inds).items():
+
+           if freq > 2:
+              raise ValueError(
+                 f"{type(self).__name__}: "
+                 f"Index {ind} appears more than twice! All input indices: "
+                 f"{inds}. If you wish to perform a hyper-index contraction, "
+                 f"please specify the output indices explicitly."
+              )
+
+           if freq == 1:
+              yield ind 
+
+
+
+
+# --- ContractionLike's factory interface ----------------------------------- #
+
+class ContractionLikes(abc.ABC):
+
+   @abc.abstractmethod
+   def create(self, inds):
+       pass 
+
+
+
+
+# --- Factory of contractions ----------------------------------------------- #
+
+class Contractions(ContractionLikes):
+
+   def __init__(self, product):
+
+       self._product = product
+
+
+   def create(self, inds):
+
+       return Contraction(inds, self._product)
+
+
+
+
+# --- ContractionLike interface --------------------------------------------- #
+
+class ContractionLike(abc.ABC):
+
+   @abc.abstractmethod
+   def equation(self):
+       pass 
+
+   @abc.abstractmethod
+   def input_inds(self):
+       pass 
+
+   @abc.abstractmethod
+   def output_inds(self):
+       pass 
+
+   @abc.abstractmethod
+   def output_tensor(self, data):
+       pass 
+
+
+
+
+# --- Contraction ----------------------------------------------------------- #
+
+class Contraction(ContractionLike):
+
+   def __init__(self, inds, product):
+
+       self._inds    = inds
+       self._product = product
+
+
+   def equation(self):
+
+       return make_equation(self._inds, self.output_inds())
+
+
+   def input_inds(self):
+
+       return iter(self._inds)
+
+
+   def output_inds(self):
+
+       return self._product(self._inds)
+
+
+   def output_tensor(self, data):
+
+       return core.Tensor(data, Indices(*self.output_inds()))
+
+
+
+"""
 # --- Index contraction interface ------------------------------------------- #
 
 class IndexContract(abc.ABC):
@@ -143,16 +276,16 @@ class PairIndexContract(IndexContract):
            if freq == 1:
               yield ind 
 
-
+"""
 
 
 ###############################################################################
 ###                                                                         ###
-###  Contraction calls                                                      ###
+###  Tensor contraction calls                                               ###
 ###                                                                         ###
 ###############################################################################
 
-
+"""
 # --- Conctraction call interface ------------------------------------------- #
 
 class ContractCall(abc.ABC):
@@ -165,23 +298,23 @@ class ContractCall(abc.ABC):
    def equation(self):
        pass  
 
-
+"""
 
 
 # --- Dot product call ------------------------------------------------------ #
 
-class Dot(fn.FunCall, ContractCall):
+class Dot(fn.FunCall):
 
-   def __init__(self, engine, indcon=None):
+   def __init__(self, engine, contractions=None):
 
        if not isinstance(engine, fn.EngineLike):
           engine = fn.Engine(engine)
 
-       if indcon is None:
-          indcon = PairIndexContract()
+       if contractions is None:
+          contractions = Contractions(PairwiseProduct())
 
-       self._engine = engine
-       self._indcon = indcon
+       self._engine       = engine
+       self._contractions = contractions
 
 
    def attach(self, data, inds):
@@ -189,38 +322,27 @@ class Dot(fn.FunCall, ContractCall):
        return self.__class__(self._engine.attach(data, inds))
 
 
-   @util.cacheable
-   def output_inds(self):
-
-       return self._indcon.generate(self._engine.inds()) 
-
-
-   @util.cacheable
-   def equation(self):
-
-       return make_equation(self._engine.inds(), self.output_inds())  
-
-
    def execute(self):
 
-       outdata = self._engine.execute(*self._engine.datas())
+       contract = self._contractions.create(self._engine.inds())  
+       data     = self._engine.execute(*self._engine.datas())
 
-       return core.Tensor(outdata, self.output_inds())
+       return contract.output_tensor(data)
 
 
 
 
 # --- Einsum call ----------------------------------------------------------- #
 
-class Einsum(fn.FunCall, ContractCall):
+class Einsum(fn.FunCall):
 
-   def __init__(self, engine, indcon):
+   def __init__(self, engine, contractions):
 
        if not isinstance(engine, fn.EngineLike):
           engine = fn.Engine(engine)
 
-       self._engine = engine
-       self._indcon = indcon
+       self._engine       = engine
+       self._contractions = contractions
 
 
    def attach(self, data, inds):
@@ -228,42 +350,34 @@ class Einsum(fn.FunCall, ContractCall):
        return self.__class__(self._engine.attach((data, inds))
 
 
-   @util.cacheable
-   def output_inds(self):
- 
-       return self._indcon.generate(self._engine.inds())  
-
-
-   @util.cacheable
-   def equation(self):
-
-       return make_equation(self._engine.inds(), self.output_inds())  
-
-
    def execute(self):
 
-       outdata = self._engine.execute(self.equation(), *self._engine.datas())
+       contract = self._contractions.create(self._engine.inds()) 
+       data     = self._engine.execute(
+                                       contract.equation(), 
+                                       *self._engine.datas()
+                                      )
 
-       return core.Tensor(outdata, self.output_inds())  
+       return contract.output_tensor(data) 
 
 
 
 
-# --- Linear algebra: contraction methods ----------------------------------- #
+# --- Specialized contraction methods --------------------------------------- #
 
 @ad.differentiable
-def einsum(*xs, outinds=None, optimize=True):
+def einsum(*xs, product=None, optimize=True):
 
-    if outinds is None:
-       outinds = PairIndexContract()
+    if product is None:
+       product = PairwiseProduct()
 
-    if not isinstance(outinds, IndexContract):
-       outinds = FixedIndexContract(outinds)
+    if not isinstance(product, Product):
+       product = FixedProduct(product)
 
     def fun(equation, *datas):
         return ar.einsum(equation, *datas, optimize=optimize)
 
-    return fn.Args(*xs).pluginto(Einsum(fun, outinds))
+    return funcall.execute(Einsum(fun, Contractions(product)))
 
 
 
@@ -274,7 +388,7 @@ def dot(x, y):
     def fun(u, v):
         return ar.dot(u, v)
 
-    return fn.Args(x, y).pluginto(Dot(fun))
+    return funcall.execute(Dot(fun))
 
 
 

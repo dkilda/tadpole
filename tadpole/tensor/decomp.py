@@ -10,6 +10,17 @@ import tadpole.autodiff as ad
 
 
 
+###############################################################################
+###                                                                         ###
+###  Index partitioning logic:                                              ### 
+###  -- aligns input data by defining left/right indices                    ###
+###  -- creates left/right/middle output tensors from data computed         ###
+###     by an array decomposition function                                  ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Alignment interface --------------------------------------------------- #
 
 class Alignment(abc.ABC):
 
@@ -23,6 +34,8 @@ class Alignment(abc.ABC):
 
 
 
+
+# --- Left alignment -------------------------------------------------------- #
 
 class LeftAlignment(Alignment):
 
@@ -43,6 +56,8 @@ class LeftAlignment(Alignment):
 
 
 
+# --- Right alignment -------------------------------------------------------- #
+
 class RightAlignment(Alignment):
 
    def __init__(self, partinds):
@@ -62,7 +77,20 @@ class RightAlignment(Alignment):
 
 
 
-class Link:
+# --- LinkLike interface ---------------------------------------------------- #
+
+class LinkLike(abc.ABC):
+
+   @abc.abstractmethod
+   def ind(self, size):
+       pass
+
+
+
+
+# --- Link between partitions ----------------------------------------------- #
+
+class Link(LinkLike):
 
    def __init__(self, name):
 
@@ -86,7 +114,20 @@ class Link:
 
 
 
-class Partitions:
+# --- PartitionLike's factory interface ------------------------------------- #
+
+class PartitionLikes(abc.ABC):
+
+   @abc.abstractmethod
+   def create(self, inds):
+       pass
+
+
+
+
+# --- Partition factory ----------------------------------------------------- #
+
+class Partitions(PartitionLikes):
 
    def __init__(self, alignment, link):
 
@@ -102,13 +143,33 @@ class Partitions:
          
 
 
-
  
+# --- PartitionLike interface ----------------------------------------------- #
+
+class PartitionLike(abc.ABC):
+
+   @abc.abstractmethod
+   def aligndata(self, data):
+       pass
+
+   @abc.abstractmethod
+   def ltensor(self, data):
+       pass
+
+   @abc.abstractmethod
+   def rtensor(self, data):
+       pass
+
+   @abc.abstractmethod
+   def stensor(self, data):
+       pass
 
 
 
 
-class Partition:
+# --- Partition ------------------------------------------------------------- #
+
+class Partition(PartitionLike):
 
    def __init__(self, inds, linds, rinds, link):
 
@@ -262,6 +323,11 @@ def indpartition(sname, inds, which):
 
 
 
+###############################################################################
+###                                                                         ###
+###  Tensor decomposition calls                                             ###
+###                                                                         ###
+###############################################################################
 
 
 # --- Explicit-rank decomposition call -------------------------------------- #
@@ -427,7 +493,7 @@ class HiddenDecomp(fn.FunCall):
 
        
 
-
+# --- A shorthand execution of any function with TensorLike arguments ------- # 
 
 def execute(fun, *xs): # TODO move to funcall.py
 
@@ -438,19 +504,23 @@ def execute(fun, *xs): # TODO move to funcall.py
 
 
 
-
+"""
 def make_alignment(inds, which):
 
     return {
             "left":  LeftAlignment,
             "right": RightAlignment,
            }[which](inds)
+"""
 
 
 
-def make_partitions(inds, which, name):
 
-    link      = Link(name)
+# --- General methods for explicit-rank and hidden-rank decompositions ------ #
+
+def make_partitions(linkname, inds, which):
+
+    link      = Link(linkname)
     alignment = {
                  "left":  LeftAlignment,
                  "right": RightAlignment,
@@ -460,13 +530,10 @@ def make_partitions(inds, which, name):
 
 
 
-    
 
+def explicit_decomp(fun, name, inds, which, trunc):
 
-
-def explicit_decomp(fun, inds, which, name, trunc):
-
-    partitions = make_partitions(inds, which, name)
+    partitions = make_partitions(name, inds, which)
     decomp     = ExplicitDecomp(fun, partitions, trunc)
 
     return funcall.execute(decomp)
@@ -474,9 +541,9 @@ def explicit_decomp(fun, inds, which, name, trunc):
 
 
 
-def hidden_decomp(fun, inds, which, name):
+def hidden_decomp(fun, name, inds, which):
 
-    partitions = make_partitions(inds, which, name)
+    partitions = make_partitions(name, inds, which)
     decomp     = HiddenDecomp(fun, partitions)
 
     return funcall.execute(decomp)
@@ -484,121 +551,59 @@ def hidden_decomp(fun, inds, which, name):
 
 
 
-
-
-# --- Linear algebra: decomposition methods --------------------------------- #
+# --- Specialized decomposition methods ------------------------------------- #
 
 @ad.differentiable
-def svd(x, sname, inds, which="left", trunc=NullTrunc()):
+def svd(x, name, inds, which="left", trunc=NullTrunc()):
 
     def fun(data):
         return ar.svd(data)
 
-    indpart = indpartition(sname, inds, which)
-    decomp  = ExplicitDecomp(fun, indpart, trunc)
+    return explicit_decomp(fun, name, inds, which, trunc)
 
-    return fn.Args(x).pluginto(decomp)
-
+ 
 
 
 @ad.differentiable
-def eig(x, sname, inds, which="left", trunc=NullTrunc()):
+def eig(x, name, inds, which="left", trunc=NullTrunc()):
 
     def fun(data):
         return ar.eig(data)
 
-    indpart = indpartition(sname, inds, which)
-    decomp  = ExplicitDecomp(fun, indpart, trunc)
+    return explicit_decomp(fun, name, inds, which, trunc)
 
-    return fn.Args(x).pluginto(decomp)
 
 
 
 @ad.differentiable
-def eigh(x, sname, inds, which="left", trunc=NullTrunc()):
+def eigh(x, name, inds, which="left", trunc=NullTrunc()):
 
     def fun(data):
         return ar.eigh(data)
 
-    indpart = indpartition(sname, inds, which)
-    decomp  = ExplicitDecomp(fun, indpart, trunc)
+    return explicit_decomp(fun, name, inds, which, trunc) 
 
-    return fn.Args(x).pluginto(decomp)
-       
+
 
 
 @ad.differentiable
-def qr(x, sname, inds, which="left"):
+def qr(x, name, inds, which="left"):
 
     def fun(data):
         return ar.qr(data)
 
-    indpart = indpartition(sname, inds, which)
-    decomp  = HiddenDecomp(fun, indpart)
-
-    return fn.Args(x).pluginto(decomp)
+    return hidden_decomp(fun, name, inds, which) 
        
 
 
+
 @ad.differentiable
-def lq(x, sname, inds, which="left"):
+def lq(x, name, inds, which="left"):
 
     def fun(data):
         return ar.lq(data)
 
-    indpart = indpartition(sname, inds, which)
-    decomp  = HiddenDecomp(fun, indpart)
-
-    return fn.Args(x).pluginto(decomp)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    return hidden_decomp(fun, name, inds, which) 
 
 
 
