@@ -60,7 +60,7 @@ def anyof(x, inds=None, **opts):
 def count_nonzero(x, inds=None, **opts):
 
     def fun(data, axis): 
-        return ar.count_nonzero(v, axis, **opts)
+        return ar.count_nonzero(data, axis, **opts)
 
     return fn.Args(x).pluginto(fn.Reduce(fun, inds))
 

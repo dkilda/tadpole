@@ -11,8 +11,14 @@ import tadpole.autodiff as ad
 import tadpole.array    as ar
 
 import tadpole.tensor.core       as core
-import tadpole.tensor.funcall    as fn
+import tadpole.tensor.funcall    as funcall
 import tadpole.tensor.operations as op
+
+
+from tadpole.tensor.funcall import (
+   Engine,
+   FunCall,
+)
 
 
 from tadpole.tensor.index import (
@@ -148,59 +154,9 @@ class PairwiseProduct(Product):
 
 
 
-# --- ContractionLike's factory interface ----------------------------------- #
-
-class ContractionLikes(abc.ABC):
-
-   @abc.abstractmethod
-   def create(self, inds):
-       pass 
-
-
-
-
-# --- Factory of contractions ----------------------------------------------- #
-
-class Contractions(ContractionLikes):
-
-   def __init__(self, product):
-
-       self._product = product
-
-
-   def create(self, inds):
-
-       return Contraction(inds, self._product)
-
-
-
-
-# --- ContractionLike interface --------------------------------------------- #
-
-class ContractionLike(abc.ABC):
-
-   @abc.abstractmethod
-   def equation(self):
-       pass 
-
-   @abc.abstractmethod
-   def input_inds(self):
-       pass 
-
-   @abc.abstractmethod
-   def output_inds(self):
-       pass 
-
-   @abc.abstractmethod
-   def output_tensor(self, data):
-       pass 
-
-
-
-
 # --- Contraction ----------------------------------------------------------- #
 
-class Contraction(ContractionLike):
+class Contraction:
 
    def __init__(self, inds, product):
 
@@ -229,54 +185,22 @@ class Contraction(ContractionLike):
 
 
 
-"""
-# --- Index contraction interface ------------------------------------------- #
 
-class IndexContract(abc.ABC):
+# --- Factory of contractions ----------------------------------------------- #
 
-   @abc.abstractmethod
-   def generate(self, input_inds):
-       pass
+class Contractions:
 
+   def __init__(self, product):
 
+       self._product = product
 
 
-# --- Fixed index contraction (with fixed output indices) ------------------- #
+   def create(self, inds):
 
-class FixedIndexContract(IndexContract):
-
-   def __init__(self, output_inds):
-
-       self._output_inds = output_inds
-
-
-   def generate(self, input_inds):
-
-       return iter(self._output_inds)   
+       return Contraction(inds, self._product)
 
 
 
-
-# --- Pair index contraction (finds matching index pairs) ------------------- #
-
-class PairIndexContract(IndexContract):
-
-   def generate(self, input_inds):
-
-       for ind, freq in util.frequencies(input_inds).items():
-
-           if freq > 2:
-              raise ValueError(
-                 f"{type(self).__name__}: "
-                 f"Index {ind} appears more than twice! All input indices: "
-                 f"{inds}. If you wish to perform a hyper-index contraction, "
-                 f"please specify the output indices explicitly."
-              )
-
-           if freq == 1:
-              yield ind 
-
-"""
 
 
 ###############################################################################
@@ -285,30 +209,15 @@ class PairIndexContract(IndexContract):
 ###                                                                         ###
 ###############################################################################
 
-"""
-# --- Conctraction call interface ------------------------------------------- #
-
-class ContractCall(abc.ABC):
-
-   @abc.abstractmethod
-   def output_inds(self):
-       pass
-
-   @abc.abstractmethod
-   def equation(self):
-       pass  
-
-"""
-
 
 # --- Dot product call ------------------------------------------------------ #
 
-class Dot(fn.FunCall):
+class Dot(FunCall):
 
    def __init__(self, engine, contractions=None):
 
-       if not isinstance(engine, fn.EngineLike):
-          engine = fn.Engine(engine)
+       if not isinstance(engine, Engine):
+          engine = Engine(engine)
 
        if contractions is None:
           contractions = Contractions(PairwiseProduct())
@@ -334,12 +243,12 @@ class Dot(fn.FunCall):
 
 # --- Einsum call ----------------------------------------------------------- #
 
-class Einsum(fn.FunCall):
+class Einsum(FunCall):
 
    def __init__(self, engine, contractions):
 
-       if not isinstance(engine, fn.EngineLike):
-          engine = fn.Engine(engine)
+       if not isinstance(engine, Engine):
+          engine = Engine(engine)
 
        self._engine       = engine
        self._contractions = contractions
@@ -377,7 +286,7 @@ def einsum(*xs, product=None, optimize=True):
     def fun(equation, *datas):
         return ar.einsum(equation, *datas, optimize=optimize)
 
-    return funcall.execute(Einsum(fun, Contractions(product)))
+    return Args(*xs).pluginto(Einsum(fun, Contractions(product)))
 
 
 
@@ -388,7 +297,7 @@ def dot(x, y):
     def fun(u, v):
         return ar.dot(u, v)
 
-    return funcall.execute(Dot(fun))
+    return Args(x,y).pluginto(Dot(fun)) 
 
 
 

@@ -11,6 +11,68 @@ import tadpole.tensor.core as core
 
 ###############################################################################
 ###                                                                         ###
+###  Arguments for tensor function calls                                    ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Args ------------------------------------------------------------------ #
+
+class Args:
+
+   def __init__(self, *args):
+
+       self._args = args
+
+
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+       log.typ(self, other)
+
+       if bool(log):
+          return all(x == y for x, y in zip(self._args, other._args))    
+
+       return False
+
+
+   def __len__(self):
+
+       return len(self._args)
+
+
+   def __contains__(self, x):
+
+       return x in self._args
+
+
+   def __iter__(self):
+
+       return iter(self._args)
+
+
+   def __reversed__(self):
+
+       return iter(list(reversed(self._args)))
+
+
+   def __getitem__(self, idx):
+
+       return self._args[idx]
+
+
+   def pluginto(self, funcall):
+
+       for arg in self._args:
+           funcall = arg.pluginto(funcall)
+
+       return funcall.execute()
+
+
+
+
+###############################################################################
+###                                                                         ###
 ###  Engine for tensor function calls                                       ###
 ###                                                                         ###
 ###############################################################################
@@ -137,7 +199,7 @@ class ExtractCall(FunCall):
 
    def __init__(self, engine):
 
-       if not isinstance(engine, EngineLike):
+       if not isinstance(engine, Engine):
           engine = Engine(engine)
 
        self._engine = engine
@@ -161,7 +223,7 @@ class TransformCall(FunCall):
 
    def __init__(self, engine):
 
-       if not isinstance(engine, EngineLike):
+       if not isinstance(engine, Engine):
           engine = Engine(engine)
 
        self._engine = engine
@@ -195,7 +257,7 @@ class Elemwise(FunCall):
 
    def __init__(self, engine):
 
-       if not isinstance(engine, EngineLike):
+       if not isinstance(engine, Engine):
           engine = Engine(engine)
 
        self._engine = engine
@@ -233,7 +295,7 @@ class Reduce(FunCall):
        if not isinstance(inds, (tuple, util.TupleLike)):
           inds = (inds,)
 
-       if not isinstance(engine, EngineLike):
+       if not isinstance(engine, Engine):
           engine = Engine(engine)
 
        self._engine = engine
@@ -271,7 +333,7 @@ class Reindex(FunCall):
 
    def __init__(self, engine):
 
-       if not isinstance(engine, EngineLike):
+       if not isinstance(engine, Engine):
           engine = Engine(engine)
 
        self._engine = engine
@@ -306,7 +368,7 @@ class Reshape(FunCall):
 
    def __init__(self, engine):
 
-       if not isinstance(engine, EngineLike):
+       if not isinstance(engine, Engine):
           engine = Engine(engine)
 
        self._engine = engine

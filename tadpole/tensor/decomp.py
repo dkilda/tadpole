@@ -7,6 +7,17 @@ import numpy as np
 import tadpole.util     as util
 import tadpole.autodiff as ad
 
+import tadpole.tensor.funcall    as funcall
+import tadpole.tensor.truncation as truncation
+
+from tadpole.tensor.funcall import (
+   FunCall,
+)
+
+from tadpole.tensor.truncation import (
+   NullTrunc,
+)
+
 
 
 
@@ -110,66 +121,13 @@ class Link(LinkLike):
           )
 
        return self._ind
-
-
-
-
-# --- PartitionLike's factory interface ------------------------------------- #
-
-class PartitionLikes(abc.ABC):
-
-   @abc.abstractmethod
-   def create(self, inds):
-       pass
-
-
-
-
-# --- Partition factory ----------------------------------------------------- #
-
-class Partitions(PartitionLikes):
-
-   def __init__(self, alignment, link):
-
-       self._alignment = alignment
-       self._link      = link
-
-
-   def create(self, inds):
-
-       return Partition(
-          inds, self._alignment.linds(), self._alignment.rinds(), self._link
-       )
-         
-
-
  
-# --- PartitionLike interface ----------------------------------------------- #
-
-class PartitionLike(abc.ABC):
-
-   @abc.abstractmethod
-   def aligndata(self, data):
-       pass
-
-   @abc.abstractmethod
-   def ltensor(self, data):
-       pass
-
-   @abc.abstractmethod
-   def rtensor(self, data):
-       pass
-
-   @abc.abstractmethod
-   def stensor(self, data):
-       pass
-
 
 
 
 # --- Partition ------------------------------------------------------------- #
 
-class Partition(PartitionLike):
+class Partition:
 
    def __init__(self, inds, linds, rinds, link):
 
@@ -228,97 +186,36 @@ class Partition(PartitionLike):
 
 
 
+# --- Partition factory ----------------------------------------------------- #
+
+class Partitions:
+
+   def __init__(self, alignment, link):
+
+       self._alignment = alignment
+       self._link      = link
+
+
+   def create(self, inds):
+
+       return Partition(
+          inds, self._alignment.linds(), self._alignment.rinds(), self._link
+       )
 
 
 
 
+# --- Creating partitions factory ------------------------------------------- #
 
+def make_partitions(linkname, inds, which):
 
+    link      = Link(linkname)
+    alignment = {
+                 "left":  LeftAlignment,
+                 "right": RightAlignment,
+                }[which](inds)
 
-"""
-
-class IndexPartition(abc.ABC):
-
-   @abc.abstractmethod
-   def left(self, inds):
-       pass
-
-   @abc.abstractmethod
-   def right(self, inds):
-       pass
-
-   @abc.abstractmethod   
-   def mid(self, size):
-       pass
-
-
-
-class LeftIndexPartition(IndexPartition):
-
-   def __init__(self, partinds, midname):
-
-       self._partinds = partinds
-       self._midname  = midname
-
-
-   def left(self, inds): 
- 
-       return Indices(*self._partinds)
-    
-
-   def right(self, inds):
-
-       return inds.remove(*self._partinds) 
-
-  
-   def mid(self, size):
-           return {
-            "left":  LeftIndexPartition,
-            "right": RightIndexPartition,
-           }[which](sname, inds)
-       return Index(self._midname, size)
-
-
-
-
-class RightIndexPartition(IndexPartition):
-
-   def __init__(self, partinds, midname):
-
-       self._partinds = partinds
-       self._midname  = midname
-
-
-   def left(self, inds): 
-
-       return inds.remove(*self._partinds) 
-
-
-   def right(self, inds): 
-
-       return Indices(*self._partinds)
-
-  
-   def mid(self, size):
-       
-       return Index(self._midname, size)
-
-
-
-
-
-def indpartition(sname, inds, which):
-
-    return {
-            "left":  LeftIndexPartition,
-            "right": RightIndexPartition,
-           }[which](sname, inds)
-
-"""
-
-
-
-
+    return Partitions(alignment, link)
 
 
 
@@ -332,12 +229,12 @@ def indpartition(sname, inds, which):
 
 # --- Explicit-rank decomposition call -------------------------------------- #
 
-class ExplicitDecomp(fn.FunCall):
+class ExplicitDecomp(FunCall):
 
    def __init__(self, engine, partitions, trunc):
 
-       if not isinstance(engine, fn.EngineLike):
-          engine = fn.Engine(engine)
+       if not isinstance(engine, Engine):
+          engine = Engine(engine)
 
        self._engine     = engine
        self._partitions = partitions
@@ -370,59 +267,14 @@ class ExplicitDecomp(fn.FunCall):
 
 
 
-
-       
-
-
-
-"""
-
-
-   @util.cacheable
-   def linds(self):
-
-       inds, = self._engine.inds()
-       return self._indpart.left(inds)
-
-
-   @util.cacheable
-   def rinds(self):
-
-       inds, = self._engine.inds()
-       return self._indpart.right(inds)
-
-
-       linds, rinds = self.linds(), self.rinds()
-
-       data = ar.transpose(data, (*inds.axes(*linds), *inds.axes(*rinds)))
-       data = ar.reshape(data,   (linds.size, rinds.size))
-       
-       ldata, sdata, rdata = self._engine.execute(data)
-
-
-
-       ldata, sdata, rdata = self._trunc.apply(ldata, sdata, rdata)
-
-       ldata = ar.reshape(ldata, (*linds.shape, -1))
-       rdata = ar.reshape(rdata, (-1, *rinds.shape))
-
-       ltensor = core.Tensor(ldata, linds.push(sind))
-       stensor = core.Tensor(sdata, sind)
-       rtensor = core.Tensor(rdata, rinds.add(sind))
-
-       return ltensor, stensor, rtensor, error
-"""
-
-
-
 # --- Hidden-rank decomposition call ---------------------------------------- #
 
-class HiddenDecomp(fn.FunCall):
+class HiddenDecomp(FunCall):
 
    def __init__(self, engine, partitions):
 
-       if not isinstance(engine, fn.EngineLike):
-          engine = fn.Engine(engine)
+       if not isinstance(engine, Engine):
+          engine = Engine(engine)
 
        self._engine     = engine
        self._partitions = partitions
@@ -449,108 +301,6 @@ class HiddenDecomp(fn.FunCall):
 
 
 
-
-
-"""
-   @util.cacheable
-   def linds(self):
-
-       inds, = self._engine.inds()
-       return self._indpart.left(inds)
-
-
-   @util.cacheable
-   def rinds(self):
-
-       inds, = self._engine.inds()
-       return self._indpart.right(inds)
-
-
-
-       data, = self._engine.datas()
-       inds, = self._engine.inds()
-
-       linds, rinds = self.linds(), self.rinds()
-
-       data = ar.transpose(data, (*inds.axes(*linds), *inds.axes(*rinds)))
-       data = ar.reshape(data,   (linds.size, rinds.size))
-       
-       ldata, rdata = self._engine.execute(data)
-
-       ldata = ar.reshape(ldata, (*linds.shape, -1))
-       rdata = ar.reshape(rdata, (-1, *rinds.shape))
-
-       sind = self._indpart.mid(ldata.shape[-1])
-
-       ltensor = core.Tensor(ldata, linds.push(sind))
-       rtensor = core.Tensor(rdata, rinds.add(sind))
-
-       return ltensor, rtensor 
-
-"""
-
-
-
-       
-
-# --- A shorthand execution of any function with TensorLike arguments ------- # 
-
-def execute(fun, *xs): # TODO move to funcall.py
-
-    if not isinstance(fun, EngineLike):
-       fun = Engine(engine)
-
-    return Args(*xs).pluginto(fun)
-
-
-
-"""
-def make_alignment(inds, which):
-
-    return {
-            "left":  LeftAlignment,
-            "right": RightAlignment,
-           }[which](inds)
-"""
-
-
-
-
-# --- General methods for explicit-rank and hidden-rank decompositions ------ #
-
-def make_partitions(linkname, inds, which):
-
-    link      = Link(linkname)
-    alignment = {
-                 "left":  LeftAlignment,
-                 "right": RightAlignment,
-                }[which](inds)
-
-    return Partitions(alignment, link)
-
-
-
-
-def explicit_decomp(fun, name, inds, which, trunc):
-
-    partitions = make_partitions(name, inds, which)
-    decomp     = ExplicitDecomp(fun, partitions, trunc)
-
-    return funcall.execute(decomp)
-
-
-
-
-def hidden_decomp(fun, name, inds, which):
-
-    partitions = make_partitions(name, inds, which)
-    decomp     = HiddenDecomp(fun, partitions)
-
-    return funcall.execute(decomp)
-
-
-
-
 # --- Specialized decomposition methods ------------------------------------- #
 
 @ad.differentiable
@@ -559,9 +309,12 @@ def svd(x, name, inds, which="left", trunc=NullTrunc()):
     def fun(data):
         return ar.svd(data)
 
-    return explicit_decomp(fun, name, inds, which, trunc)
+    partitions = make_partitions(name, inds, which)
+    decomp     = ExplicitDecomp(fun, partitions, trunc)
+    
+    return Args(x).pluginto(decomp)
 
- 
+
 
 
 @ad.differentiable
@@ -570,7 +323,10 @@ def eig(x, name, inds, which="left", trunc=NullTrunc()):
     def fun(data):
         return ar.eig(data)
 
-    return explicit_decomp(fun, name, inds, which, trunc)
+    partitions = make_partitions(name, inds, which)
+    decomp     = ExplicitDecomp(fun, partitions, trunc)
+    
+    return Args(x).pluginto(decomp)
 
 
 
@@ -581,7 +337,10 @@ def eigh(x, name, inds, which="left", trunc=NullTrunc()):
     def fun(data):
         return ar.eigh(data)
 
-    return explicit_decomp(fun, name, inds, which, trunc) 
+    partitions = make_partitions(name, inds, which)
+    decomp     = ExplicitDecomp(fun, partitions, trunc)
+    
+    return Args(x).pluginto(decomp)
 
 
 
@@ -592,7 +351,10 @@ def qr(x, name, inds, which="left"):
     def fun(data):
         return ar.qr(data)
 
-    return hidden_decomp(fun, name, inds, which) 
+    partitions = make_partitions(name, inds, which)
+    decomp     = HiddenDecomp(fun, partitions)
+    
+    return Args(x).pluginto(decomp) 
        
 
 
@@ -603,7 +365,10 @@ def lq(x, name, inds, which="left"):
     def fun(data):
         return ar.lq(data)
 
-    return hidden_decomp(fun, name, inds, which) 
+    partitions = make_partitions(name, inds, which)
+    decomp     = HiddenDecomp(fun, partitions)
+    
+    return Args(x).pluginto(decomp) 
 
 
 
