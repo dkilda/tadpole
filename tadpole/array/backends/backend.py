@@ -121,6 +121,10 @@ class Backend(abc.ABC):
    def cumsum(self, array, axis=None, dtype=None, **opts):
        pass
 
+   @abc.abstractmethod
+   def broadcast_to(self, array, shape):
+       pass
+
 
    # --- Array value methods --- #
 

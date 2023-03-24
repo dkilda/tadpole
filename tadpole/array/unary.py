@@ -241,6 +241,13 @@ class Array(ArrayLike):
        return self.new(data) 
 
 
+   def broadcast_to(self, shape):
+
+       data = self._backend.broadcast_to(self._data, shape)
+
+       return self.new(data)
+
+
    # --- Value methods --- #
 
    def item(self, *idx):
@@ -606,6 +613,11 @@ def sumover(x, axis=None, dtype=None, **opts):
 def cumsum(x, axis=None, dtype=None, **opts):
 
     return x.cumsum(axis, dtype, **opts)
+
+
+def broadcast_to(x, shape):
+
+    return x.broadcast_to(shape)
 
 
 

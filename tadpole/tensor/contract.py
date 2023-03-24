@@ -121,7 +121,9 @@ class FixedProduct(Product):
 
   def __call__(self, inds):
 
-      return iter(self._inds)
+      inds = Indices(*util.concat(inds)) 
+  
+      return iter(inds.map(*self._inds))
 
 
 

@@ -182,6 +182,25 @@ class Space(abc.ABC):
        pass
 
 
+   # --- Space indices --- #
+
+   @abc.abstractmethod
+   def inds(self, *tags):
+       pass
+
+   @abc.abstractmethod
+   def __and__(self, other):
+       pass
+
+   @abc.abstractmethod
+   def __or__(self, other):
+       pass
+
+   @abc.abstractmethod
+   def __xor__(self, other):
+       pass
+
+
    # --- Gradient factories --- #
 
    @abc.abstractmethod
@@ -259,7 +278,10 @@ class TensorSpace(Space):
 
    # --- Construction --- #
 
-   def __init__(self, arrayspace, inds):
+   def __init__(self, arrayspace, inds=None):
+
+       if inds is None:
+          inds = Indices()
 
        if not isinstance(inds, Indices):
           inds = Indices(*inds)
@@ -294,6 +316,28 @@ class TensorSpace(Space):
    def fillwith(self, data):
 
        return core.astensor(data, self._inds)
+
+
+   # --- Space indices --- #
+
+   def inds(self, *tags):
+
+       return self._inds.map(*tags)
+
+
+   def __and__(self, other):
+
+       return self._inds & other._inds
+
+
+   def __or__(self, other):
+
+       return self._inds | other._inds
+
+
+   def __xor__(self, other):
+
+       return self._inds ^ other._inds
 
 
    # --- Gradient factories --- #
@@ -387,6 +431,9 @@ class TensorSpace(Space):
    @property
    def shape(self):
        return self._arrayspace.shape
+
+
+
 
 
  

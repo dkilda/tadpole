@@ -29,6 +29,103 @@ from tadpole.tensor.core import (
 
 ###############################################################################
 ###                                                                         ###
+###  Definitions of matching, typecasting and broadcasting operations       ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Typecast -------------------------------------------------------------- #
+
+def typecast(x, y):
+
+    if iscomplex(x) and not iscomplex(y):
+       return real(x)
+
+    if not iscomplex(x) and iscomplex(y):
+       return x + 0j
+
+    return x
+
+
+
+
+# --- Upcast (adding new indices to match tensor shapes) -------------------- # 
+
+
+
+def unreduce_grad(x, target, inds=None): # TODO this seems exclusively for grads
+
+    def fun(g):
+
+        g1 = extend(g, target, inds)
+        x1 = extend(x, target, inds)
+
+        mask = core.isequal(target, x1)
+
+        return g1 * mask / sumover(mask, inds)
+
+    return fun
+
+
+
+def extend(x, inds):
+
+    def fun(xdata, xinds):
+
+        xinds = xinds.add(*inds)
+        xdata = ar.broadcast_to(xdata, xinds.shape)
+
+        return core.Tensor(xdata, xinds)
+
+    return fn.Args(x).pluginto(fn.Transform(fun))
+
+
+
+def typematch(x, y):
+
+    if iscomplex(x) and not iscomplex(y):
+       return real(x)
+
+    if not iscomplex(x) and iscomplex(y):
+       return x + 0j
+
+    return x
+
+
+
+def downmatch(x, y): 
+
+    while ndim(x) > ndim(y): # TODO which inds to sumover? 
+       x = sumover(x, ind)
+
+    return 
+
+
+
+def upmatch(x, y, inds):
+
+    if y.ndim == 0:
+       return x
+
+    
+
+
+    extend(x, )
+
+
+
+# --- Downcast (removing indices to match tensor shapes) -------------------- # 
+
+
+
+
+# --- Unreduce (reverse of reduction by upcasting a tensor) ----------------- # 
+
+
+
+
+###############################################################################
+###                                                                         ###
 ###  Definitions of non-differentiable tensor operations                    ###
 ###                                                                         ###
 ###############################################################################
@@ -137,6 +234,8 @@ def fuse(x, fusemap):
 
         for inp, out in fusemap:
 
+            inp = inds.map(*inp)
+
             if not isinstance(out, Index):
                out = Index(out, sizeof(*inp))
 
@@ -165,14 +264,16 @@ def split(x, splitmap):
 
         for inp, out in splitmap:
 
+            inp, = inds.map(inp)
+
             assert sizeof(inp) == sizeof(*out), (
                f"split: "
                f"sizes of input {inp} and output {out} indices "
                f"must match, but {sizeof(inp)} != {sizeof(*out)}."
             )
 
-            axis = inds.axis(inp)
-            inds = inds.remove(inp).add(*out, axis=axis)
+            axis, = inds.axes(inp)
+            inds  = inds.remove(inp).add(*out, axis=axis)
 
         return inds
 
@@ -185,6 +286,8 @@ def split(x, splitmap):
 def transpose(x, *order):
 
     def fun(data, inds):
+
+        order = inds.map(*order)
 
         assert set(inds) == set(order),
            f"transpose: "

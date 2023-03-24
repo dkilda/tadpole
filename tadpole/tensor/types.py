@@ -58,6 +58,25 @@ class TensorLike(abc.ABC):
        pass
 
 
+   # --- Tensor indices --- #
+
+   @abc.abstractmethod
+   def inds(self, *tags):
+       pass
+
+   @abc.abstractmethod
+   def __and__(self, other):
+       pass
+
+   @abc.abstractmethod
+   def __or__(self, other):
+       pass
+
+   @abc.abstractmethod
+   def __xor__(self, other):
+       pass
+
+
    # --- Tensor properties --- #
 
    @property

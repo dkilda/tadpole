@@ -57,7 +57,11 @@ class IndexLike(abc.ABC):
    # --- General methods --- #
 
    @abc.abstractmethod
-   def answers(self, name):
+   def matches_all(self, *tags):
+       pass
+
+   @abc.abstractmethod
+   def matches_any(self, *tags):
        pass
 
    @abc.abstractmethod
@@ -65,7 +69,7 @@ class IndexLike(abc.ABC):
        pass
 
    @abc.abstractmethod
-   def renamed(self, name, **opts):
+   def retagged(self, tags, **opts):
        pass
 
 
@@ -73,18 +77,16 @@ class IndexLike(abc.ABC):
 
 # --- Index ----------------------------------------------------------------- #
 
-# TODO impl ConnectedIndex decorator with all the partner/connectivity info?
-
 class Index(IndexLike): 
 
    # --- Construction --- #
 
-   def __init__(self, name, size=1, uuid=None):
+   def __init__(self, tags, size=1, uuid=None):
 
        if uuid is None:
           uuid = uuids.next()
 
-       self._name = name
+       self._tags = tags
        self._size = size
        self._uuid = uuid
 
@@ -108,7 +110,7 @@ class Index(IndexLike):
        rep = util.ReprChain()
        rep.typ(self)
 
-       rep.val("name", self._name)
+       rep.val("tags", self._tags)
        rep.val("size", self._size)
        rep.val("uuid", self._uuid)
 
@@ -157,19 +159,24 @@ class Index(IndexLike):
 
    # --- General methods --- #
 
-   def answers(self, name):
+   def matches_all(self, *tags):
 
-       return self._name == name
+       return set(tags) in set(self._tags)
+
+
+   def matches_any(self, *tags):
+
+       return len(set(tags) & set(self._tags)) > 0
 
 
    def resized(self, size, **opts):
 
-       return self.__class__(self._name, size, **opts)
+       return self.__class__(self._tags, size, **opts)
 
 
-   def renamed(self, name, **opts):
+   def retagged(self, tags, **opts):
 
-       return self.__class__(name, self._size, **opts)
+       return self.__class__(tags, self._size, **opts)
 
 
 
@@ -274,24 +281,37 @@ class Indices(util.TupleLike):
 
    # --- Index container behavior --- #
 
-   def inds(self, name):
+   def all(self, *tags):
 
-       return tuple(filter(lambda x: x.answers(name), self._inds))  
+       return tuple(filter(lambda x: x.matches_all(*tags), self._inds))  
+
+
+   def any(self, *tags):
+
+       return tuple(filter(lambda x: x.matches_any(*tags), self._inds))
+
+
+   def _map(self, tags):
+
+       if isinstance(tags, Index):
+          return (tags, )
+
+       return self.all(*tags)
+
+
+   def map(self, *tags):
+
+       out = []
+
+       for xtags in tags:
+           out.extend(self._map(xtags))
+
+       return tuple(out)
 
 
    def axes(self, *inds):
 
-       return tuple(self._inds.index(ind) for ind in inds)
-
-
-   def ind(self, name):
-
-       return self.inds(name)[0]
-
-
-   def axis(self, ind):
-
-       return self.axes(ind)[0]
+       return tuple(self._inds.index(ind) for ind in self.map(*inds))
 
 
    # --- Out-of-place modifications --- #
@@ -313,6 +333,23 @@ class Indices(util.TupleLike):
    def push(self, *inds):
 
        return self.add(*inds, axis=len(self))
+
+
+   # --- Set arithmetic --- #
+
+   def __and__(self, other):
+
+       return self.remove(*self.remove(*other))
+
+
+   def __or__(self, other):
+
+       return self.push(*other)
+
+
+   def __xor__(self, other):
+
+       return self.remove(*other) 
 
 
 
@@ -340,94 +377,5 @@ def sizeof(*inds):
     return Indices(*inds).size
 
 
-"""
-
-# --- Index transformations (preserving the number of inds) ----------------- #
-
-def reindex(inds, indmap):
-
-    newinds = list(inds)
-
-    for i, ind in enumerate(inds):
-
-        try:
-            newinds[i] = indmap[ind]
-        except KeyError:
-            pass
-
-    return type(inds)(*newinds) 
-
-
-
-
-def transpose(inds, *order):
-
-    assert set(inds) == set(order),
-       f"index.transpose(): input and output must contain the same "
-       f"set of indices, but input {inds} does not match output {order}."
-
-    return type(inds)(*order)
-
-
-
-
-# --- Index transformations: (changing the number of inds) ------------------ #
-
-def fuse(inds, fusemap):
-
-    if isinstance(fusemap, dict):
-       fusemap = fusemap.items()
-
-    for inp, out in fusemap:
-
-        if not isinstance(inp, Index):
-           inp = Index(inp, sizeof(*inp))
-
-        assert sizeof(*inp) == sizeof(out), (
-           f"index.fuse(): input {inp} and output {out} must have "
-           f"matching sizes, but output size {sizeof(out)} != net "
-           f"input size {sizeof(*inp)} = prod({shapeof(*inp)})." 
-        )
-
-        inds = inds.remove(*inp).add(out)
-
-    return inds
-
-       
-
- 
-def split(inds, splitmap):
-
-    if isinstance(splitmap, dict):
-       splitmap = splitmap.items()
-
-    for inp, out in splitmap:
-
-        assert sizeof(inp) == sizeof(*out), (
-           f"index.split(): input {inp} and output {out} must have "
-           f"matching sizes, but output size {sizeof(inp)} != net input "
-           f"size {sizeof(*out)} = prod({shapeof(*out)})." 
-        )
-
-        axis = inds.axis(inp)
-        inds = inds.remove(inp).add(*out, axis=axis)
-
-    return inds
-
-
-
-
-def squeeze(inds):
-
-    return inds.remove(*filter(lambda x: len(x) == 1, inds))
-
-
-
-
-def unsqueeze(inds, names):
-
-    return inds.add(*(Index(name) for name in names))
-
-"""
 
 

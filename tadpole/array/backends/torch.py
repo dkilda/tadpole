@@ -234,6 +234,11 @@ class TorchBackend(backend.Backend):
           return torch.cumsum(flat_array, 0, dtype, **opts)
 
        return torch.cumsum(array, axis, dtype, **opts) 
+
+
+   def broadcast_to(self, array, shape):
+
+       return torch.broadcast_to(array, shape)
        
 
    # --- Array value methods --- #

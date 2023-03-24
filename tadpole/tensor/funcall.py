@@ -270,15 +270,17 @@ class Elemwise(FunCall):
 
    def execute(self):
 
-       assert len(set(self._engine.inds())) == 1,
+       inds = max(self._engine.inds(), key=len)
+
+       assert set(util.concat(self._engine.inds())) == set(inds), (
           f"\n{type(self).__name__}.execute(): "
-          f"an elementwise operation cannot be performed for tensors "
-          f"with non-matching indices {tuple(self._engine.inds())}" 
+          f"An elementwise operation cannot be performed for tensors"
+          f"with incompatible indices {tuple(self._engine.inds())}."
+       )
 
-       outinds = next(self._engine.inds())
-       outdata = self._engine.execute(*self._engine.datas())
+       data = self._engine.execute(*self._engine.datas())
 
-       return core.Tensor(outdata, outinds)
+       return core.Tensor(data, inds)
 
 
 
@@ -292,7 +294,7 @@ class Reduce(FunCall):
        if inds is None:
           inds = tuple()
 
-       if not isinstance(inds, (tuple, util.TupleLike)):
+       if not isinstance(inds, (list, tuple, util.TupleLike)):
           inds = (inds,)
 
        if not isinstance(engine, Engine):
@@ -312,7 +314,7 @@ class Reduce(FunCall):
        data, = self._engine.datas()
        inds, = self._engine.inds()
        
-       outinds = inds.remove(*self._inds)
+       outinds = inds.remove(*inds.map(*self._inds))
        outdata = self._engine.execute(data, inds.axes(self._inds))
 
        return core.Tensor(outdata, outinds)

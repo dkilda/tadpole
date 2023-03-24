@@ -408,6 +408,28 @@ class NullGrad(TensorLike, Pluggable):
        return self.todense().item() 
 
 
+   # --- Tensor indices --- #
+
+   def inds(self, *tags):
+
+       return self.space.inds(*tags)
+
+
+   def __and__(self, other):
+
+       return self.space() & other.space()
+
+
+   def __or__(self, other):
+
+       return self.space() | other.space()
+
+
+   def __xor__(self, other):
+
+       return self.space() ^ other.space() 
+
+
    # --- Tensor properties --- #
 
    @property
@@ -577,7 +599,29 @@ class SparseGrad(TensorLike, Pluggable):
 
    def item(self, *pos):
 
-       return self.todense().item(*pos)  
+       return self.todense().item(*pos) 
+
+
+   # --- Tensor indices --- #
+
+   def inds(self, *tags):
+
+       return self.space.inds(*tags)
+
+
+   def __and__(self, other):
+
+       return self.space() & other.space()
+
+
+   def __or__(self, other):
+
+       return self.space() | other.space()
+
+
+   def __xor__(self, other):
+
+       return self.space() ^ other.space() 
 
 
    # --- Tensor properties --- #
@@ -777,6 +821,7 @@ class Tensor(TensorLike, Pluggable):
        return self.__class__(data, self._inds)
 
 
+   @util.cacheable
    def space(self):
 
        return sp.TensorSpace(self._data.space(), self._inds) 
@@ -785,6 +830,28 @@ class Tensor(TensorLike, Pluggable):
    def item(self, *pos): 
 
        return self._data.item(*pos)
+
+
+   # --- Tensor indices --- #
+
+   def inds(self, *tags):
+
+       return self.space.inds(*tags)
+
+
+   def __and__(self, other):
+
+       return self.space() & other.space()
+
+
+   def __or__(self, other):
+
+       return self.space() | other.space()
+
+
+   def __xor__(self, other):
+
+       return self.space() ^ other.space() 
 
 
    # --- Tensor properties --- #
@@ -805,7 +872,7 @@ class Tensor(TensorLike, Pluggable):
    def shape(self):
        return self._data.shape 
 
-
+ 
    # --- Comparisons --- #
 
    def __eq__(self, other):

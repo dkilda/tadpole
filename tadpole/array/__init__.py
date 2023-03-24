@@ -54,6 +54,7 @@ from .unary import (
    unsqueeze,
    sumover,
    cumsum,
+   broadcast_to,
 )
 
 

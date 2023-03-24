@@ -306,7 +306,7 @@ def svd(x, name, inds, which="left", trunc=NullTrunc()):
     def fun(data):
         return ar.svd(data)
 
-    partitions = make_partitions(name, inds, which)
+    partitions = make_partitions(name, x.inds(inds), which)
     decomp     = ExplicitDecomp(fun, partitions, trunc)
     
     return fn.Args(x).pluginto(decomp)
@@ -320,7 +320,7 @@ def eig(x, name, inds, which="left", trunc=NullTrunc()):
     def fun(data):
         return ar.eig(data)
 
-    partitions = make_partitions(name, inds, which)
+    partitions = make_partitions(name, x.inds(inds), which)
     decomp     = ExplicitDecomp(fun, partitions, trunc)
     
     return fn.Args(x).pluginto(decomp)
@@ -334,7 +334,7 @@ def eigh(x, name, inds, which="left", trunc=NullTrunc()):
     def fun(data):
         return ar.eigh(data)
 
-    partitions = make_partitions(name, inds, which)
+    partitions = make_partitions(name, x.inds(inds), which)
     decomp     = ExplicitDecomp(fun, partitions, trunc)
     
     return fn.Args(x).pluginto(decomp)
@@ -348,7 +348,7 @@ def qr(x, name, inds, which="left"):
     def fun(data):
         return ar.qr(data)
 
-    partitions = make_partitions(name, inds, which)
+    partitions = make_partitions(name, x.inds(inds), which)
     decomp     = HiddenDecomp(fun, partitions)
     
     return fn.Args(x).pluginto(decomp) 
@@ -362,7 +362,7 @@ def lq(x, name, inds, which="left"):
     def fun(data):
         return ar.lq(data)
 
-    partitions = make_partitions(name, inds, which)
+    partitions = make_partitions(name, x.inds(inds), which)
     decomp     = HiddenDecomp(fun, partitions)
     
     return fn.Args(x).pluginto(decomp) 

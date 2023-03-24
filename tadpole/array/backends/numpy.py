@@ -187,6 +187,11 @@ class NumpyBackend(backend.Backend):
    def cumsum(self, array, axis=None, dtype=None, **opts):
 
        return np.cumsum(array, axis, dtype, **opts) 
+
+
+   def broadcast_to(self, array, shape):
+
+       return np.broadcast_to(array, shape)
        
 
    # --- Array value methods --- #
