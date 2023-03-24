@@ -19,6 +19,52 @@ import tadpole.tensorwrap.operations as op
 
 # --- Tensor member methods: arithmetics and element access ----------------- # 
 
+ad.makevjp(tn.neg, lambda g, out, x: -g)
+
+
+ad.makevjp(tn.add, lambda g, out, x, y: g, 
+                   lambda g, out, x, y: g
+)
+
+
+ad.makevjp(tn.sub, lambda g, out, x, y:  g, 
+                   lambda g, out, x, y: -g
+)
+
+
+ad.makevjp(tn.mul, lambda g, out, x, y: y * g, 
+                   lambda g, out, x, y: x * g
+)
+
+
+ad.makevjp(tn.div, lambda g, out, x, y:  g / y,       
+                   lambda g, out, x, y: -g * x / y**2
+)
+
+
+
+
+# --- Tensor methods: for gradient accumulation ----------------------------- #
+
+ad.makevjp(tn.addgrads, lambda g, out, x, y: g, 
+                        lambda g, out, x, y: g
+)
+
+
+
+
+# --- Simple math operations ------------------------------------------------ #
+
+ad.makevjp(tn.sin, lambda g, out, x:  g * tn.cos(x))
+ad.makevjp(tn.cos, lambda g, out, x: -g * tn.sin(x))
+
+
+
+
+
+"""
+# --- Tensor member methods: arithmetics and element access ----------------- # 
+
 ad.makevjp(tn.getitem, lambda g, out, x, idx: x.space().sparse(idx, out.item()))
 
 
@@ -190,7 +236,7 @@ ad.makevjp(tn.cumsum,  vjp_cumsum)
 
 # --- Linear algebra: misc methods ------------------------------------------ #
 
-
+"""
 
 
 
