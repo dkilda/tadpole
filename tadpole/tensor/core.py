@@ -834,12 +834,12 @@ class Tensor(TensorLike, Pluggable):
 
    # --- Tensor indices --- #
 
-   def inds(self, *tags):
+   def inds(self, *tags): 
 
        return self.space.inds(*tags)
 
 
-   def __and__(self, other):
+   def __and__(self, other): # TODO: how about we avoid delegation and just do x.space() & y.space()?
 
        return self.space() & other.space()
 

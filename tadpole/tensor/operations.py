@@ -34,23 +34,6 @@ from tadpole.tensor.core import (
 ###############################################################################
 
 
-# --- Typecast -------------------------------------------------------------- #
-
-def typecast(x, y):
-
-    if iscomplex(x) and not iscomplex(y):
-       return real(x)
-
-    if not iscomplex(x) and iscomplex(y):
-       return x + 0j
-
-    return x
-
-
-
-
-# --- Upcast (adding new indices to match tensor shapes) -------------------- # 
-
 
 
 def unreduce_grad(x, target, inds=None): # TODO this seems exclusively for grads
@@ -68,7 +51,7 @@ def unreduce_grad(x, target, inds=None): # TODO this seems exclusively for grads
 
 
 
-def extend(x, inds):
+def extend(x, inds): # opposite of sumover
 
     def fun(xdata, xinds):
 
@@ -81,45 +64,40 @@ def extend(x, inds):
 
 
 
-def typematch(x, y):
+def typematch(x, target):
 
-    if iscomplex(x) and not iscomplex(y):
-       return real(x)
+    if iscomplex(target) and not iscomplex(target):
+       return real(target)
 
-    if not iscomplex(x) and iscomplex(y):
-       return x + 0j
+    if not iscomplex(target) and iscomplex(target):
+       return target + 0j
+
+    return target
+
+
+
+def shapematch(x, target, keepinds=False): # TODO can add keepinds to sumover too!
+
+    if not keepinds:
+       target = squeeze(target) # removes axes with dim=1 in target, so that they all get summed over
+
+    for ind in x.space() ^ target.space():
+        x = sumover(x, ind)
+
+    for ind in target.space() ^ x.space(): 
+        x = extend(x, ind)
 
     return x
 
 
 
-def downmatch(x, y): 
+def match(x, target, **opts)
 
-    while ndim(x) > ndim(y): # TODO which inds to sumover? 
-       x = sumover(x, ind)
-
-    return 
-
-
-
-def upmatch(x, y, inds):
-
-    if y.ndim == 0:
-       return x
-
-    
-
-
-    extend(x, )
-
-
-
-# --- Downcast (removing indices to match tensor shapes) -------------------- # 
+    return typematch(shapematch(x, target, **opts), target) 
 
 
 
 
-# --- Unreduce (reverse of reduction by upcasting a tensor) ----------------- # 
 
 
 
