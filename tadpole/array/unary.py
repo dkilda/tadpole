@@ -518,7 +518,7 @@ class Array(ArrayLike):
 
    # --- Linear algebra: norm --- #
 
-   def norm(self, order=None, axis=None, **opts):
+   def norm(self, axis=None, order=None, **opts):
 
        data = self._backend.norm(self._data, order, axis, **opts)
 
@@ -861,9 +861,9 @@ def expm(x):
 
 # --- Linear algebra: norm -------------------------------------------------- #
 
-def norm(x, order=None, axis=None, **opts):
+def norm(x, axis=None, order=None, **opts):
 
-    return x.norm(order, axis, **opts)
+    return x.norm(axis, order, **opts)
 
 
 

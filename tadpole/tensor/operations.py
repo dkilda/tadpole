@@ -344,7 +344,7 @@ def cumsum(x, inds=None, dtype=None, **opts):
 def amax(x, inds=None, **opts):
 
     def fun(data, axis): 
-        return ar.max(data, axis, **opts)
+        return ar.amax(data, axis, **opts)
 
     return fn.Args(x).pluginto(fn.Reduce(fun, inds))
 
@@ -354,7 +354,7 @@ def amax(x, inds=None, **opts):
 def amin(x, inds=None, **opts):
 
     def fun(data, axis): 
-        return ar.min(data, axis, **opts)
+        return ar.amin(data, axis, **opts)
 
     return fn.Args(x).pluginto(fn.Reduce(fun, inds))
 
@@ -612,7 +612,7 @@ def arctanh(x):
 # --- Linear algebra: misc methods ------------------------------------------ #
 
 @ad.differentiable
-def norm(x, order=None, inds=None, **opts):
+def norm(x, inds=None, order=None, **opts):
 
     def fun(data, axis):
         return ar.norm(data, order, axis, **opts)
