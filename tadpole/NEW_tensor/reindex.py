@@ -54,10 +54,10 @@ class EngineReindex(Engine):
        return self.__class__(self._train.attach(data, inds))
 
 
-   def create(self):
+   def operator(self):
 
-       data, = self._engine.data()
-       inds, = self._engine.inds()
+       data, = self._train.data()
+       inds, = self._train.inds()
 
        return TensorReindex(data, inds)
 
@@ -69,12 +69,12 @@ class EngineReindex(Engine):
 def tensor_reindex(x):
 
     engine = x.pluginto(EngineReindex())
-    return engine.create()
+    return engine.operator()
 
 
 
 
-# --- TensorReindex operations ---------------------------------------------- #
+# --- TensorReindex operator ------------------------------------------------ #
 
 class TensorReindex:
 
@@ -217,50 +217,50 @@ class TensorReindex:
 @ad.differentiable
 def reindex(x, indmap):
 
-    engine = tensor_reindex(x)
-    return engine.reindex(indmap)
+    op = tensor_reindex(x)
+    return op.reindex(indmap)
 
 
 @ad.differentiable
 def transpose(x, *output_inds):
 
-    engine = tensor_reindex(x)
-    return engine.transpose(*output_inds)
+    op = tensor_reindex(x)
+    return op.transpose(*output_inds)
 
 
 @ad.differentiable
 def fuse(x, fusemap):
 
-    engine = tensor_reindex(x)
-    return engine.fuse(fusemap)
+    op = tensor_reindex(x)
+    return op.fuse(fusemap)
 
 
 @ad.differentiable
 def split(x, splitmap):
 
-    engine = tensor_reindex(x)
-    return engine.split(splitmap)
+    op = tensor_reindex(x)
+    return op.split(splitmap)
 
 
 @ad.differentiable
 def squeeze(x):
 
-    engine = tensor_reindex(x)
-    return engine.squeeze()
+    op = tensor_reindex(x)
+    return op.squeeze()
 
 
 @ad.differentiable
 def unsqueeze(x, inds):
 
-    engine = tensor_reindex(x)
-    return engine.unsqueeze(inds)
+    op = tensor_reindex(x)
+    return op.unsqueeze(inds)
 
 
 @ad.differentiable
 def expand(x, inds):    
 
-    engine = tensor_reindex(x)
-    return engine.expand(inds)
+    op = tensor_reindex(x)
+    return op.expand(inds)
 
 
 

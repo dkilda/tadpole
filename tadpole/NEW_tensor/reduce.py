@@ -13,7 +13,7 @@ from tadpole.tensor.train import (
 
 
 from tadpole.tensor.types import (
-   Engine
+   Engine,
 )
 
 
@@ -54,10 +54,10 @@ class EngineReduce(Engine):
        return self.__class__(self._train.attach(data, inds))
 
 
-   def create(self):
+   def operator(self):
 
-       data, = self._engine.data()
-       inds, = self._engine.inds()
+       data, = self._train.data()
+       inds, = self._train.inds()
 
        return TensorReduce(data, inds)
 
@@ -69,12 +69,12 @@ class EngineReduce(Engine):
 def tensor_reduce(x):
 
     engine = x.pluginto(EngineReduce())
-    return engine.create()
+    return engine.operator()
 
 
     
 
-# --- TensorReduce operations ----------------------------------------------- #
+# --- TensorReduce operator ------------------------------------------------- #
 
 class TensorReduce:
 
@@ -180,36 +180,36 @@ class TensorReduce:
 @ad.differentiable
 def allof(x, inds=None, **opts):
 
-    engine = tensor_reduce(x)
-    return engine.allof(inds, **opts)  
+    op = tensor_reduce(x)
+    return op.allof(inds, **opts)  
 
 
 @ad.differentiable
 def anyof(x, inds=None, **opts):
 
-    engine = tensor_reduce(x)
-    return engine.anyof(inds, **opts)  
+    op = tensor_reduce(x)
+    return op.anyof(inds, **opts)  
 
 
 @ad.differentiable
 def amax(x, inds=None, **opts):
 
-    engine = tensor_reduce(x)
-    return engine.amax(inds, **opts)  
+    op = tensor_reduce(x)
+    return op.amax(inds, **opts)  
 
 
 @ad.differentiable
 def amin(x, inds=None, **opts):
 
-    engine = tensor_reduce(x)
-    return engine.amin(inds, **opts)  
+    op = tensor_reduce(x)
+    return op.amin(inds, **opts)  
 
 
 @ad.differentiable
 def count_nonzero(x, inds=None, **opts):
 
-    engine = tensor_reduce(x)
-    return engine.count_nonzero(inds, **opts)  
+    op = tensor_reduce(x)
+    return op.count_nonzero(inds, **opts)  
 
 
 
@@ -219,15 +219,15 @@ def count_nonzero(x, inds=None, **opts):
 @ad.differentiable
 def sumover(x, inds=None, dtype=None, **opts):
 
-    engine = tensor_reduce(x)
-    return engine.sumover(inds, dtype, **opts)  
+    op = tensor_reduce(x)
+    return op.sumover(inds, dtype, **opts)  
 
 
 @ad.differentiable
 def cumsum(x, inds=None, dtype=None, **opts):
 
-    engine = tensor_reduce(x)
-    return engine.cumsum(inds, dtype, **opts)
+    op = tensor_reduce(x)
+    return op.cumsum(inds, dtype, **opts)
 
 
 
@@ -237,8 +237,8 @@ def cumsum(x, inds=None, dtype=None, **opts):
 @ad.differentiable
 def norm(x, inds=None, order=None, **opts):
 
-    engine = tensor_reduce(x)
-    return engine.norm(inds, order, **opts)  
+    op = tensor_reduce(x)
+    return op.norm(inds, order, **opts)  
 
 
 

@@ -49,6 +49,18 @@ def typecast(fun):
 
 
 
+# --- Approximate (close) equality ------------------------------------------ #
+
+def close_opts(opts):
+
+    rtol = opts.pop("rtol", 1e-5)
+    atol = opts.pop("atol", 1e-8)
+
+    return {"rtol": rtol, "atol": atol, **opts}
+
+
+
+
 ###############################################################################
 ###                                                                         ###
 ###  Definition of Binary Array (supports binary operations)                ###
@@ -96,7 +108,7 @@ class Array(ArrayLike):
 
    def allclose(self, **opts):
 
-       return self._backend.allclose(*self._datas, **opts)  
+       return self._backend.allclose(*self._datas, **close_opts(opts))  
 
 
    def allequal(self):
@@ -106,10 +118,10 @@ class Array(ArrayLike):
 
    def isclose(self, **opts):
 
-       data = self._backend.isclose(*self._datas, **opts)  
+       data = self._backend.isclose(*self._datas, **close_opts(opts))  
 
        return self.new(data)
- 
+
 
    def isequal(self):
 
