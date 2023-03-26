@@ -72,6 +72,64 @@ class TensorGen(Tensor, Pluggable):
 
 
 
+# --- Tensor member methods: basic functionality ---------------------------- #
+
+@ad.nondifferentiable
+def copy(x, **opts):
+
+    return x.copy(**opts)
+
+
+@ad.nondifferentiable
+def todense(x):
+
+    return x.todense()
+
+
+@ad.nondifferentiable
+def withdata(x, data):
+
+    return x.withdata(data)
+
+
+@ad.nondifferentiable
+def space(x):
+
+    return x.space()
+
+
+@ad.nondifferentiable
+def item(x, *pos):
+
+    return x.item(*pos)
+
+
+
+
+# --- Tensor member methods: properties ------------------------------------- #
+
+@ad.nondifferentiable
+def dtype(x):
+
+    return x.dtype
+
+
+@ad.nondifferentiable
+def size(x):
+
+    return x.size
+
+
+@ad.nondifferentiable
+def ndim(x):
+
+    return x.ndim
+
+
+@ad.nondifferentiable
+def shape(x):
+
+    return x.shape
 
 
 

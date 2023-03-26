@@ -104,6 +104,28 @@ class TensorElemwiseUnary:
        return self._apply(ar.clip, minval, maxval, **opts)
 
 
+   def flip(self, inds=None):
+
+       if inds is None:
+          return self._apply(ar.flip)
+
+       return self._apply(ar.flip, self._inds.axes(*inds))
+
+
+   # --- Element access --- #
+
+   def __getitem__(self, pos):
+
+       return self._data[pos]
+
+
+   # --- Extracting info --- #
+
+   def iscomplex(self):
+
+       return ar.iscomplex(self._data)
+
+
    # --- Standard math --- #
 
    def neg(self):
@@ -261,6 +283,39 @@ def clip(x, minval, maxval, **opts):
     op = tensor_elemwise_unary(x)
 
     return op.clip(minval, maxval, **opts)  
+
+
+@ad.differentiable
+def flip(x, inds=None):
+
+    op = tensor_elemwise_unary(x)
+
+    return op.flip(inds)
+
+
+
+
+# --- Element access -------------------------------------------------------- #
+
+@ad.differentiable
+def getitem(x, pos):
+
+    op = tensor_elemwise_unary(x)
+
+    return op[pos]
+
+
+
+
+# --- Extracting info ------------------------------------------------------- #
+
+@ad.nondifferentiable
+@typecast_unary
+def iscomplex(x):
+
+    op = tensor_elemwise_unary(x)
+
+    return op.iscomplex()
 
 
 

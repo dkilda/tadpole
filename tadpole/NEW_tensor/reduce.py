@@ -108,7 +108,6 @@ class TensorReduce:
        if inds is None:
 
           data = fun(self._data, **opts)
-
           return core.TensorGen(data, Indices())
 
        inds = self._map(inds)

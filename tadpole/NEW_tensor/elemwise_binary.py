@@ -192,6 +192,17 @@ def typecast_binary(fun):
 
 
 
+# --- Gradient accumulation ------------------------------------------------- #
+
+@ad.differentiable
+@typecast_binary
+def addgrads(x, y):
+
+    return y.addto(x)
+
+
+
+
 # --- Standard math --------------------------------------------------------- #
 
 @ad.differentiable
