@@ -7,15 +7,17 @@ import tadpole.util     as util
 import tadpole.autodiff as ad
 import tadpole.array    as ar
 
-
-from tadpole.tensor.train import (
-   TrainTensorData,
-   TooManyArgsError,
-)
+import tadpole.tensor.core as core
 
 
 from tadpole.tensor.types import (
    Engine
+)
+
+
+from tadpole.tensor.engine import (
+   TrainTensorData,
+   TooManyArgsError,
 )
 
 

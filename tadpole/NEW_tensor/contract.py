@@ -9,15 +9,18 @@ import tadpole.util     as util
 import tadpole.autodiff as ad
 import tadpole.array    as ar
 
-
-from tadpole.tensor.train import (
-   TrainTensorData,
-   TooManyArgsError,
-)
+import tadpole.tensor.core    as core
+import tadpole.tensor.reindex as reindex
 
 
 from tadpole.tensor.types import (
    Engine
+)
+
+
+from tadpole.tensor.engine import (
+   TrainTensorData,
+   TooManyArgsError,
 )
 
 
@@ -253,7 +256,7 @@ class EngineDot(Engine):
 ###############################################################################
 
 
-# --- TensorContract operator ----------------------------------------------- #
+# --- Tensor contraction operator ------------------------------------------- #
 
 class TensorContract:
 
@@ -314,6 +317,7 @@ class TensorContract:
 def contract(*xs, product=None):
 
     op = tensor_contract(*xs, product=product)
+
     return op.einsum(optimize) 
 
 
@@ -325,6 +329,7 @@ def contract(*xs, product=None):
 def dot(x, y):
 
     op = tensor_dot(x, y)
+
     return op.dot()
 
 

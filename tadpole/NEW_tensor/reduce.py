@@ -5,15 +5,18 @@ import tadpole.util     as util
 import tadpole.autodiff as ad
 import tadpole.array    as ar
 
-
-from tadpole.tensor.train import (
-   TrainTensorData,
-   TooManyArgsError,
-)
+import tadpole.tensor.core as core
 
 
 from tadpole.tensor.types import (
    Engine,
+)
+
+
+from tadpole.tensor.engine import (
+   EngineUnary,
+   TrainTensorData,
+   TooManyArgsError,
 )
 
 
@@ -29,42 +32,12 @@ from tadpole.tensor.index import (
 
 ###############################################################################
 ###                                                                         ###
-###  Tensor reduction operations                                            ###
+###  Tensor reduction engine and operator                                   ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- Reduction engine: creates TensorReduce -------------------------------- #
-
-class EngineReduce(Engine):
-
-   def __init__(self, train=None):
-
-       if train is None:
-          train = TrainTensorData()
-
-       self._train = train
-
-
-   def attach(self, data, inds):
-
-       if self._train.size() == 1:
-          raise TooManyArgsError(self, 1)
-
-       return self.__class__(self._train.attach(data, inds))
-
-
-   def operator(self):
-
-       data, = self._train.data()
-       inds, = self._train.inds()
-
-       return TensorReduce(data, inds)
-
-
-
-
-# --- Factory: creates TensorReduce ----------------------------------------- #
+# --- Tensor reduction factory ---------------------------------------------- #
 
 def tensor_reduce(x):
 
@@ -72,9 +45,33 @@ def tensor_reduce(x):
     return engine.operator()
 
 
-    
 
-# --- TensorReduce operator ------------------------------------------------- #
+
+# --- Tensor reduction engine ----------------------------------------------- #
+
+class EngineReduce(Engine):
+
+   def __init__(self, source=None):
+
+       if source is None:
+          source = EngineUnary(TensorReduce)
+
+       self._source = source
+
+
+   def attach(self, data, inds):
+
+       return self.__class__(self._source.attach(data, inds))
+
+
+   def operator(self):
+
+       return self._source.operator()
+
+
+
+
+# --- Tensor reduction operator --------------------------------------------- #
 
 class TensorReduce:
 
@@ -242,173 +239,6 @@ def norm(x, inds=None, order=None, **opts):
 
 
 
-
-
-
-
-
-
-"""
-
-
-###############################################################################
-###                                                                         ###
-###  Definitions of non-differentiable tensor operations                    ###
-###                                                                         ###
-###############################################################################
-
-
-# --- Basic functionality --------------------------------------------------- #
-
-@ad.nondifferentiable
-def copy(x, **opts):
-
-    return x.copy(**opts)
-
-
-@ad.nondifferentiable
-def todense(x):
-
-    return x.todense()
-
-
-@ad.nondifferentiable
-def withdata(x, data):
-
-    return x.withdata(data)
-
-
-@ad.nondifferentiable
-def space(x):
-
-    return x.space()
-
-
-@ad.nondifferentiable
-def item(x, *pos):
-
-    return x.item(*pos)
-
-
-
-
-# --- Tensor properties ----------------------------------------------------- #
-
-@ad.nondifferentiable
-def dtype(x):
-
-    return x.dtype
-
-
-@ad.nondifferentiable
-def size(x):
-
-    return x.size
-
-
-@ad.nondifferentiable
-def ndim(x):
-
-    return x.ndim
-
-
-@ad.nondifferentiable
-def shape(x):
-
-    return x.shape
-
-
-
-
-# --- Value methods --------------------------------------------------------- #
-
-
-
-
-
-
-
-
-
-
-
-###############################################################################
-###                                                                         ###
-###  Definitions of differentiable tensor operations                        ###
-###                                                                         ###
-###############################################################################
-
-
-
-
-
-
-# --- Shape methods --------------------------------------------------------- #
-
-
-
-
-
-# --- Value methods --------------------------------------------------------- #
-
-@ad.differentiable
-def getitem(x, pos):
-
-    return x[pos]
-
-
-
-
-# --- Standard math --------------------------------------------------------- #
-
-@ad.differentiable
-def neg(x):
-
-    return x.neg()
-
-
-"""
- 
-
-"""
-
-class TensorOpUnary(TensorOp):
-
-   def __init__(self, data, inds): 
-
-       self._data = data
-       self._inds = inds
-
-
-   # --- Value methods --- #
-
-   def __getitem__(self, pos):
-
-       return TensorGen(self._data[pos])
-
-
-   def allof(self, inds=None, **opts):
-
-       if inds is None:
-          inds = 
-
-       inds = self._inds.map(inds)
-       self._inds.remove()
-
-       
-       data = ar.allof(self._data, axis, **opts)
-
-       return TensorGen(data, )
-  
-
-
-   # --- Standard math --- #
-
-   def neg(self):
-
-       return ar.neg(self._data)
-
-"""
 
 
 

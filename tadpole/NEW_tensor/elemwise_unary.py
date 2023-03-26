@@ -5,15 +5,18 @@ import tadpole.util     as util
 import tadpole.autodiff as ad
 import tadpole.array    as ar
 
-
-from tadpole.tensor.train import (
-   TrainTensorData,
-   TooManyArgsError,
-)
+import tadpole.tensor.core as core
 
 
 from tadpole.tensor.types import (
    Engine,
+)
+
+
+from tadpole.tensor.engine import (
+   EngineUnary,
+   TrainTensorData,
+   TooManyArgsError,
 )
 
 
@@ -29,47 +32,12 @@ from tadpole.tensor.index import (
 
 ###############################################################################
 ###                                                                         ###
-###  Tensor elementwise unary operations                                    ###
+###  Tensor unary elementwise engine and operator                           ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- Elementwise unary engine: creates TensorElemwiseUnary ----------------- #
-
-class EngineElemwiseUnary(Engine):
-
-   def __init__(self, train=None):
-
-       if train is None:
-          train = TrainTensorData()
-
-       self._train = train
-
-
-   def size(self):
-       
-       return 1
-
-
-   def attach(self, data, inds):
-
-       if self._train.size() == self.size():
-          raise TooManyArgsError(self, self.size())
-
-       return self.__class__(self._train.attach(data, inds))
-
-
-   def operator(self):
-
-       data, = self._train.data()
-       inds, = self._train.inds()
-
-       return TensorElemwiseUnary(data, inds)
-
-
-
-
-# --- Factory: creates TensorElemwiseUnary ---------------------------------- #
+# --- Tensor unary elementwise factory -------------------------------------- #
 
 def tensor_elemwise_unary(x):
 
@@ -79,7 +47,31 @@ def tensor_elemwise_unary(x):
 
 
 
-# --- TensorElemwiseUnary operator ------------------------------------------ #
+# --- Tensor unary elementwise engine --------------------------------------- #
+
+class EngineElemwiseUnary(Engine):
+
+   def __init__(self, source=None):
+
+       if source is None:
+          source = EngineUnary(TensorElemwiseUnary)
+
+       self._source = source
+
+
+   def attach(self, data, inds):
+
+       return self.__class__(self._source.attach(data, inds))
+
+
+   def operator(self):
+
+       return self._source.operator()
+
+
+
+
+# --- Tensor unary elementwise operator ------------------------------------- #  
 
 class TensorElemwiseUnary:
 
@@ -228,12 +220,6 @@ class TensorElemwiseUnary:
 
 
 
-
-
-
- 
-
-
 ###############################################################################
 ###                                                                         ###
 ###  Standalone functions corresponding to TensorElemwiseUnary methods      ###
@@ -241,50 +227,221 @@ class TensorElemwiseUnary:
 ###############################################################################
 
 
+# --- Helper: unary typecast unary ------------------------------------------ #
+
+def typecast_unary(fun):
+
+    def wrap(x, *args, **kwargs):
+
+        try:
+            return fun(x, *args, **kwargs)       
+ 
+        except (AttributeError, TypeError):
+
+            return fun(core.astensor(x), *args, **kwargs)
+         
+    return wrap
+
+
+
+
 # --- Value methods --------------------------------------------------------- #
+
+@ad.nondifferentiable
+def put(x, pos, vals, accumulate=False):
+
+    op = tensor_elemwise_unary(x)
+
+    return op.put(pos, val, accumulate=accumulate)
+
+
+@ad.differentiable
+def clip(x, minval, maxval, **opts):
+
+    op = tensor_elemwise_unary(x)
+
+    return op.clip(minval, maxval, **opts)  
+
 
 
 
 # --- Standard math --------------------------------------------------------- #
 
+@ad.differentiable
+@typecast_unary
+def neg(x):
+
+    op = tensor_elemwise_unary(x)
+    return op.neg()
+
+   
+@ad.differentiable
+@typecast_unary
+def sign(x):
+
+    op = tensor_elemwise_unary(x)
+    return op.sign()
+
+
+@ad.differentiable 
+@typecast_unary
+def conj(x):
+
+    op = tensor_elemwise_unary(x)
+    return op.conj()
+
+
+@ad.differentiable
+@typecast_unary
+def real(x):
+
+    op = tensor_elemwise_unary(x)
+    return op.real()
+
+
+@ad.differentiable
+def imag(x):
+
+    op = tensor_elemwise_unary(x)
+    return op.imag()
+
+
+@ad.differentiable
+@typecast_unary
+def absolute(x):
+
+    op = tensor_elemwise_unary(x)
+    return op.absolute()
+
+
+@ad.differentiable
+def sqrt(x):
+
+    op = tensor_elemwise_unary(x)
+    return op.sqrt()
+
+
+@ad.differentiable
+@typecast_unary
+def log(x):
+
+    op = tensor_elemwise_unary(x)
+    return op.log()
+
+
+@ad.differentiable
+def exp(x):
+
+    op = tensor_elemwise_unary(x)
+    return op.exp()
+
+
+@ad.differentiable
+@typecast_unary
+def sin(x):
+
+    op = tensor_elemwise_unary(x)
+    return op.sin()
+
+
+@ad.differentiable
+@typecast_unary
+def cos(x):
+
+    op = tensor_elemwise_unary(x)
+    return op.cos()
+
+
+@ad.differentiable
+@typecast_unary
+def tan(x):
+
+    op = tensor_elemwise_unary(x)
+    return op.tan()
+
+
+@ad.differentiable
+@typecast_unary
+def arcsin(x):
+
+    op = tensor_elemwise_unary(x)
+    return op.arcsin()
+
+
+@ad.differentiable
+@typecast_unary
+def arccos(x):
+
+    op = tensor_elemwise_unary(x)
+    return op.arccos()
+
+
+@ad.differentiable
+@typecast_unary
+def arctan(x):
+
+    op = tensor_elemwise_unary(x)
+    return op.arctan()
+
+
+@ad.differentiable
+@typecast_unary
+def sinh(x):
+
+    op = tensor_elemwise_unary(x)
+    return op.sinh()
+
+
+@ad.differentiable
+@typecast_unary
+def cosh(x):
+
+    op = tensor_elemwise_unary(x)
+    return op.cosh()
+
+
+@ad.differentiable
+@typecast_unary
+def tanh(x):
+
+    op = tensor_elemwise_unary(x)
+    return op.tanh()
+
+
+@ad.differentiable
+@typecast_unary
+def arcsinh(x):
+
+    op = tensor_elemwise_unary(x)
+    return op.arcsinh()
+
+
+@ad.differentiable
+@typecast_unary
+def arccosh(x):
+
+    op = tensor_elemwise_unary(x)
+    return op.arccosh()
+
+
+@ad.differentiable
+@typecast_unary
+def arctanh(x):
+
+    op = tensor_elemwise_unary(x)
+    return op.arctanh()
+
+
 
 
 # --- Linear algebra -------------------------------------------------------- #
 
+@ad.differentiable
+@typecast_unary
+def expm(x):
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    op = tensor_elemwise_unary(x)
+    return op.exmp()
 
 
 

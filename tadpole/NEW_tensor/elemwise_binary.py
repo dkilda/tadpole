@@ -5,15 +5,18 @@ import tadpole.util     as util
 import tadpole.autodiff as ad
 import tadpole.array    as ar
 
-
-from tadpole.tensor.train import (
-   TrainTensorData,
-   TooManyArgsError,
-)
+import tadpole.tensor.core as core
 
 
 from tadpole.tensor.types import (
    Engine,
+)
+
+
+from tadpole.tensor.engine import (
+   EngineElemwise,
+   TrainTensorData,
+   TooManyArgsError,
 )
 
 
@@ -29,12 +32,12 @@ from tadpole.tensor.index import (
 
 ###############################################################################
 ###                                                                         ###
-###  Tensor elementwise binary operations                                   ###
+###  Tensor binary elementwise engine and operator                          ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- Factory: creates TensorElemwiseBinary --------------------------------- #
+# --- Tensor binary elementwise factory ------------------------------------- #
 
 def tensor_elemwise_binary(x, y):
 
@@ -47,43 +50,26 @@ def tensor_elemwise_binary(x, y):
 
 
 
-# --- Elementwise binary engine: creates TensorElemwiseBinary --------------- #
+# --- Tensor binary elementwise engine -------------------------------------- #
 
-class EngineElemwiseBinary(Engine): # TODO make separate templates for unary/binary/nary?
+class EngineElemwiseBinary(Engine):
 
-   def __init__(self, train=None):
+   def __init__(self, source=None):
 
-       if train is None:
-          train = TrainTensorData()
+       if source is None:
+          source = EngineElemwise(TensorElemwiseBinary, 2)
 
-       self._train = train
-
-
-   def size(self):
-       
-       return 2
+       self._source = source
 
 
    def attach(self, data, inds):
 
-       if self._train.size() == self.size():
-          raise TooManyArgsError(self, self.size())
-
-       return self.__class__(self._train.attach(data, inds))
+       return self.__class__(self._source.attach(data, inds))
 
 
    def operator(self):
 
-       data = self._train.data()
-       inds = max(self._train.inds(), key=len)
-
-       assert set(util.concat(self._train.inds())) == set(inds), (
-          f"\n{type(self).__name__}.operator(): "
-          f"An elementwise operation cannot be performed for tensors"
-          f"with incompatible indices {tuple(self._train.inds())}."
-       )
-
-       return TensorElemwiseBinary(*data, inds)
+       return self._source.operator()
 
 
 
@@ -178,38 +164,126 @@ class TensorElemwiseBinary:
 ###############################################################################
 
 
+# --- Helper: binary typecast ----------------------------------------------- #
+
+def typecast_binary(fun):
+
+    def wrap(x, y, *args, **kwargs):
+
+        try:
+            return fun(x, y, *args, **kwargs)       
+ 
+        except (AttributeError, TypeError):
+
+            if not any(isinstance(v, Pluggable) for v in (x,y)):
+               x = core.astensor(x)
+               y = core.astensor(y) 
+
+            if not isinstance(x, Pluggable):
+               x = y.withdata(x) 
+
+            if not isinstance(y, Pluggable):
+               y = x.withdata(y) 
+
+            return fun(x, y, *args, **kwargs)
+         
+    return wrap
+
+
+
+
 # --- Standard math --------------------------------------------------------- #
+
+@ad.differentiable
+@typecast_binary
+def add(x, y):
+ 
+    op = tensor_elemwise_binary(x, y)
+    return op.add() 
+ 
+
+@ad.differentiable
+@typecast_binary
+def sub(x, y):
+
+    op = tensor_elemwise_binary(x, y)
+    return op.sub() 
+ 
+
+@ad.differentiable
+@typecast_binary
+def mul(x, y):
+
+    op = tensor_elemwise_binary(x, y)
+    return op.mul() 
+ 
+
+@ad.differentiable
+@typecast_binary
+def div(x, y):
+
+    op = tensor_elemwise_binary(x, y)
+    return op.div() 
+ 
+
+@ad.differentiable
+@typecast_binary
+def power(x, y):
+
+    op = tensor_elemwise_binary(x, y)
+    return op.power() 
+
 
 
 
 # --- Logical operations ---------------------------------------------------- #
 
+@ad.nondifferentiable
+@typecast_binary
+def allclose(x, y, **opts):
+
+    op = tensor_elemwise_binary(x, y)
+    return op.allclose(**opts) 
 
 
+@ad.nondifferentiable
+@typecast_binary
+def isclose(x, y, **opts): 
+
+    op = tensor_elemwise_binary(x, y)
+    return op.isclose(**opts) 
 
 
+@ad.nondifferentiable
+@typecast_binary
+def allequal(x, y):
+
+    op = tensor_elemwise_binary(x, y)
+    return op.allequal() 
 
 
+@ad.nondifferentiable
+@typecast_binary
+def isequal(x, y): 
+
+    op = tensor_elemwise_binary(x, y)
+    return op.isequal() 
 
 
+@ad.nondifferentiable
+@typecast_binary
+def logical_and(x, y): 
+
+    op = tensor_elemwise_binary(x, y)
+    return op.logical_and() 
 
 
+@ad.nondifferentiable
+@typecast_binary
+def logical_or(x, y): 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    op = tensor_elemwise_binary(x, y)
+    return op.logical_or() 
 
 
 

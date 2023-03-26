@@ -5,15 +5,18 @@ import tadpole.util     as util
 import tadpole.autodiff as ad
 import tadpole.array    as ar
 
-
-from tadpole.tensor.train import (
-   TrainTensorData,
-   TooManyArgsError,
-)
-
+import tadpole.tensor.core           as core
+import tadpole.tensor.elemwise_unary as unary
 
 from tadpole.tensor.types import (
    Engine,
+)
+
+
+from tadpole.tensor.engine import (
+   EngineUnary,
+   TrainTensorData,
+   TooManyArgsError,
 )
 
 
@@ -29,42 +32,12 @@ from tadpole.tensor.index import (
 
 ###############################################################################
 ###                                                                         ###
-###  Tensor reindexing operations                                           ###
+###  Tensor reindexing engine and operator                                  ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- Reindexing engine: creates TensorReindex ------------------------------ #
-
-class EngineReindex(Engine):
-
-   def __init__(self, train=None):
-
-       if train is None:
-          train = TrainTensorData()
-
-       self._train = train
-
-
-   def attach(self, data, inds):
-
-       if self._train.size() == 1:
-          raise TooManyArgsError(self, 1)
-
-       return self.__class__(self._train.attach(data, inds))
-
-
-   def operator(self):
-
-       data, = self._train.data()
-       inds, = self._train.inds()
-
-       return TensorReindex(data, inds)
-
-
-
-
-# --- Factory: creates TensorReindex ---------------------------------------- #
+# --- Tensor reindexing factory --------------------------------------------- #
 
 def tensor_reindex(x):
 
@@ -74,7 +47,31 @@ def tensor_reindex(x):
 
 
 
-# --- TensorReindex operator ------------------------------------------------ #
+# --- Tensor reindexing engine ---------------------------------------------- #
+
+class EngineReindex(Engine):
+
+   def __init__(self, source=None):
+
+       if source is None:
+          source = EngineUnary(TensorReindex)
+
+       self._source = source
+
+
+   def attach(self, data, inds):
+
+       return self.__class__(self._source.attach(data, inds))
+
+
+   def operator(self):
+
+       return self._source.operator()
+
+
+
+
+# --- Tensor reindexing operator -------------------------------------------- #
 
 class TensorReindex:
 
@@ -101,7 +98,7 @@ class TensorReindex:
        return core.TensorGen(data, inds)
 
 
-   # --- Main methods --- #
+   # --- Reindexing and reshaping methods --- #
 
    def reindex(self, indmap):
 
@@ -212,7 +209,7 @@ class TensorReindex:
 ###############################################################################
 
 
-# --- Main methods ---------------------------------------------------------- #
+# --- Reindexing and reshaping methods -------------------------------------- #
 
 @ad.differentiable
 def reindex(x, indmap):
@@ -261,6 +258,11 @@ def expand(x, inds):
 
     op = tensor_reindex(x)
     return op.expand(inds)
+
+
+def htranspose(x, *output_inds):
+
+    return transpose(unary.conj(x), *output_inds)
 
 
 

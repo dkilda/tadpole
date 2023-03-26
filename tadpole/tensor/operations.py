@@ -397,7 +397,6 @@ def clip(x, minval, maxval, **opts):
 
 
 @ad.differentiable
-@typecast_binary
 def where(condition, x, y):
 
     def fun(cond_uv, u, v): 
