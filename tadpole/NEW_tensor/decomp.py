@@ -7,7 +7,8 @@ import tadpole.util     as util
 import tadpole.autodiff as ad
 import tadpole.array    as ar
 
-import tadpole.tensor.core as core
+import tadpole.tensor.core       as core
+import tadpole.tensor.truncation as truncation
 
 
 from tadpole.tensor.types import (
@@ -27,6 +28,12 @@ from tadpole.tensor.index import (
    shapeof, 
    sizeof,
 )
+
+
+from tadpole.tensor.truncation import (
+   NullTrunc,
+)
+
 
 
 
