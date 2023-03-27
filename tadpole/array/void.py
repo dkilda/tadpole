@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import abc
 import tadpole.util     as util
 import tadpole.backends as backends
 
-import tadpole.array.core  as core
+import tadpole.array.types as types
 import tadpole.array.unary as unary
-
-from tadpole.array.core import ArrayLike
 
 
 
@@ -22,7 +19,7 @@ from tadpole.array.core import ArrayLike
 
 # --- Void Array ------------------------------------------------------------ #
 
-class Array(ArrayLike): 
+class Array(types.Array): 
 
    # --- Construction --- #
 

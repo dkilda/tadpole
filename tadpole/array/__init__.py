@@ -1,8 +1,27 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+
+
+
+# --- Backends -------------------------------------------------------------- #
+
 from tadpole.array.backends import set_default as set_backend
-from tadpole.array.core     import ArrayLike, ArraySpaceLike
+
+
+
+
+# --- Types ----------------------------------------------------------------- #
+
+from .types import (
+   Array, 
+   ArraySpace,
+)
+
+
+
+
+# --- Arrays ---------------------------------------------------------------- #
 
 from tadpole.array.void   import Array as VoidArray
 from tadpole.array.unary  import Array as UnaryArray
@@ -12,11 +31,17 @@ from tadpole.array.nary   import Array as NaryArray
 
 
 
+# --- Space ----------------------------------------------------------------- #
+
 from .space import (
    arrayspace,
-   ArraySpace,
+   ArraySpaceGen,
 )
 
+
+
+
+# --- Void ------------------------------------------------------------------ #
 
 from .void import (
    iscomplex_type,
@@ -33,6 +58,10 @@ from .void import (
    randuniform,
 )
 
+
+
+
+# --- Unary ----------------------------------------------------------------- #
 
 from .unary import (
    asarray,
@@ -108,6 +137,10 @@ from .unary import (
 )
 
 
+
+
+# --- Binary ---------------------------------------------------------------- #
+
 from .binary import (
    allclose,
    allequal,
@@ -126,9 +159,16 @@ from .binary import (
 )
 
 
+
+
+# --- Nary ------------------------------------------------------------------ #
+
 from .nary import (
    where,
    einsum,
 )
+
+
+
 
 

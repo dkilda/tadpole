@@ -130,7 +130,7 @@ def auto_arrayspace(fun):
 
     def wrap(inds, **opts):
 
-        arrayspace = ar.space(inds.shape, **opts)
+        arrayspace = ar.arrayspace(inds.shape, **opts)
         return fun(arrayspace, inds, **opts)
 
     return wrap

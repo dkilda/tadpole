@@ -1,15 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import abc
 import tadpole.util     as util
 import tadpole.backends as backends
 
-import tadpole.array.core  as core
+import tadpole.array.types as types
 import tadpole.array.unary as unary
 import tadpole.array.nary  as nary
-
-from tadpole.array.core import ArrayLike
 
 
 
@@ -32,14 +29,14 @@ def typecast(fun):
  
         except (AttributeError, TypeError):
 
-            if not any(isinstance(v, ArrayLike) for v in (x,y)):
+            if not any(isinstance(v, types.Array) for v in (x,y)):
                x = unary.asarray(x)
                y = unary.asarray(y) 
 
-            if not isinstance(x, ArrayLike):
+            if not isinstance(x, types.Array):
                x = y.new(x) 
 
-            if not isinstance(y, ArrayLike):
+            if not isinstance(y, types.Array):
                y = x.new(y) 
 
             return fun(x, y, *args, **kwargs)
@@ -70,7 +67,7 @@ def close_opts(opts):
 
 # --- Binary Array ---------------------------------------------------------- #
 
-class Array(ArrayLike):
+class Array(types.Array):
 
    # --- Construction --- #
 
@@ -101,7 +98,7 @@ class Array(ArrayLike):
           msg=f"{type(self).__name__}.__or__"
        )
 
-       return unary.Array(backend, *self._datas, *other._datas)
+       return nary.Array(backend, *self._datas, *other._datas)
 
 
    # --- Logical operations --- #

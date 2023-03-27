@@ -1,16 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import abc
 import tadpole.util     as util
 import tadpole.backends as backends
 
-import tadpole.array.core   as core
+import tadpole.array.types  as types
 import tadpole.array.space  as space
 import tadpole.array.binary as binary
 import tadpole.array.nary   as nary
-
-from tadpole.array.core import ArrayLike
 
 
 
@@ -72,7 +69,7 @@ def typecast(fun):
 
 def asarray(data, **opts):
 
-    if isinstance(data, ArrayLike):
+    if isinstance(data, types.Array):
        return data
 
     backend = backends.get_from(opts)                            
@@ -85,7 +82,7 @@ def asarray(data, **opts):
 
 # --- Unary Array ----------------------------------------------------------- #
 
-class Array(ArrayLike):
+class Array(types.Array):
 
    # --- Construction --- #
 

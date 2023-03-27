@@ -1,18 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import abc
 import tadpole.util     as util
 import tadpole.backends as backends
 
 import operator
 from functools import reduce
 
-import tadpole.array.core   as core
+import tadpole.array.types  as types
 import tadpole.array.unary  as unary
 import tadpole.array.binary as binary
-
-from tadpole.array.core import ArrayLike
 
 
 
@@ -26,7 +23,7 @@ from tadpole.array.core import ArrayLike
 
 # --- Nary Array ------------------------------------------------------------ #
 
-class Array(ArrayLike):
+class Array(types.Array):
 
    # --- Construction --- #
 
