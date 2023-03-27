@@ -118,10 +118,11 @@ class TensorReindex:
 
        output_inds = self._map(*output_inds)
 
-       assert set(self._inds) == set(output_inds),
+       assert set(self._inds) == set(output_inds), (
           f"{type(self).__name__}.transpose: "
           f"the destination indices {output_inds} are not "
           f"compatible with the source indices {self._inds}."
+       )
 
        data = ar.transpose(data, self._inds.axes(*output_inds))
        return self._new(data, output_inds)

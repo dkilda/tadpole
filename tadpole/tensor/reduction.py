@@ -104,7 +104,7 @@ class TensorReduce:
        return self._inds.remove(*inds)
 
 
-   def _apply(fun, inds=None, **opts):
+   def _apply(self, fun, inds=None, **opts):
 
        if inds is None:
 

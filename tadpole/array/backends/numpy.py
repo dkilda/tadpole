@@ -4,8 +4,8 @@
 import numpy as np
 import scipy.linalg as spla
 
-import tadpole.tensor.backends.util    as util
-import tadpole.tensor.backends.backend as backend 
+import tadpole.array.backends.util    as util
+import tadpole.array.backends.backend as backend 
 
 
 

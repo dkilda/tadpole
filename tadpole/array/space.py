@@ -3,12 +3,12 @@
 
 import numpy as np
 
-import tadpole.util     as util
-import tadpole.backends as backends
+import tadpole.util as util
 
-import tadpole.array.types as types
-import tadpole.array.void  as void
-import tadpole.array.unary as unary
+import tadpole.array.backends as backends
+import tadpole.array.types    as types
+import tadpole.array.void     as void
+import tadpole.array.unary    as unary
 
 
 
@@ -22,7 +22,7 @@ import tadpole.array.unary as unary
 
 # --- Create Array Space ---------------------------------------------------- #
 
-def arrayspace(backend, shape, dtype=None):
+def arrayspace(shape, dtype=None, backend=None):
 
     backend = backends.get(backend)
     dtype   = backend.get_dtype(dtype)

@@ -91,7 +91,7 @@ class TensorElemwiseBinary:
 
    # --- Private helpers --- #
 
-   def _apply(fun, *args, **kwargs):
+   def _apply(self, fun, *args, **kwargs):
 
        data = fun(self._dataA, self._dataB, *args, **kwargs)
 
@@ -129,7 +129,7 @@ class TensorElemwiseBinary:
 
    def allclose(self, **opts):
 
-       return self._apply(ar.allclose, **opts)
+       return ar.allclose(self._dataA, self._dataB, **opts)
 
 
    def isclose(self, **opts): 
@@ -139,7 +139,7 @@ class TensorElemwiseBinary:
 
    def allequal(self):
 
-       return self._apply(ar.allequal)
+       return ar.allequal(self._dataA, self._dataB)
 
 
    def isequal(self): 

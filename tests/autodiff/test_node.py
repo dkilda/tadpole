@@ -619,16 +619,18 @@ class TestNodeScape:
 
    def test_register(self):
 
-       from tadpole.tensor.core     import randn
-       from tadpole.tensor.core     import Tensor
-       from tadpole.tensorwrap.node import Node 
+       from tadpole.tensor     import allclose
+       from tadpole.tensor     import randn
+       from tadpole.tensor     import TensorGen
+       from tadpole.index      import IndexGen
+       from tadpole.tensorwrap import Node 
 
        w = data.reverse_node_dat()
 
        nodescape = an.NodeScape()
-       nodescape.register(Tensor, Node)
+       nodescape.register(TensorGen, Node)
 
-       source = randn((2,3,4))
+       source = randn((IndexGen("i",2), IndexGen("j",3), IndexGen("k",4)))
        layer  = 0
        gate   = fake.GateLike()      
 
@@ -636,7 +638,7 @@ class TestNodeScape:
        ans = Node(Node(source, -1, an.NullGate()), layer, gate) 
 
        assert isinstance(out, Node)
-       assert out.allclose(ans)
+       assert allclose(out, ans)
        assert out == ans
 
 

@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import tadpole.util     as util
-import tadpole.backends as backends
+import tadpole.util as util
 
-import tadpole.array.types  as types
-import tadpole.array.space  as space
-import tadpole.array.binary as binary
-import tadpole.array.nary   as nary
+import tadpole.array.backends as backends
+import tadpole.array.types    as types
+import tadpole.array.space    as space
+import tadpole.array.binary   as binary
+import tadpole.array.nary     as nary
 
 
 
@@ -98,7 +98,7 @@ class Array(types.Array):
        self._data    = data
 
 
-   # --- Arraylike methods --- #
+   # --- Array methods --- #
 
    def new(self, data):
 
@@ -125,6 +125,22 @@ class Array(types.Array):
        return (self._data, )
 
 
+   # --- Comparison --- #
+
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+       log.typ(self, other)
+
+       if bool(log):
+          log.val(self._backend, other._backend)
+ 
+       if bool(log):
+          return self._backend.allequal(self._data, other._data) 
+
+       return False
+
+       
    # --- Core methods --- #
 
    def copy(self, **opts):
@@ -136,7 +152,7 @@ class Array(types.Array):
 
    def space(self):
 
-       return space.ArraySpace(self._backend, self.shape, self.dtype)
+       return space.ArraySpaceGen(self._backend, self.shape, self.dtype)
 
 
    # --- Data type methods --- #
@@ -303,7 +319,7 @@ class Array(types.Array):
 
    def clip(self, minval, maxval, **opts):
 
-       data = self._backend.clip(self._data, minval, maxval, **opts):
+       data = self._backend.clip(self._data, minval, maxval, **opts)
 
        return self.new(data) 
 

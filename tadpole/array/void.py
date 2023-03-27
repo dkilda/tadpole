@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import tadpole.util     as util
-import tadpole.backends as backends
+import tadpole.util as util
 
-import tadpole.array.types as types
-import tadpole.array.unary as unary
+import tadpole.array.backends as backends
+import tadpole.array.types    as types
+import tadpole.array.unary    as unary
 
 
 
@@ -34,7 +34,7 @@ class Array(types.Array):
        self._backend = backend
 
 
-   # --- Arraylike methods --- #
+   # --- Array methods --- #
 
    def new(self, data):
 
@@ -44,6 +44,19 @@ class Array(types.Array):
    def __or__(self, other):
 
        return other 
+
+
+   # --- Comparison --- #
+
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+       log.typ(self, other)
+
+       if bool(log):
+          log.val(self._backend, other._backend)
+ 
+       return bool(log)
 
 
    # --- Data type methods  --- #

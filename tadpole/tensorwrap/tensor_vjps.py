@@ -5,8 +5,6 @@ import tadpole.util     as util
 import tadpole.autodiff as ad
 import tadpole.tensor   as tn
 
-import tadpole.tensorwrap.operations as op
-
 
 
 

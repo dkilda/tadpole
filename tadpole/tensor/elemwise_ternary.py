@@ -93,7 +93,7 @@ class TensorElemwiseTernary:
 
    # --- Private helpers --- #
 
-   def _apply(fun, *args, **kwargs):
+   def _apply(self, fun, *args, **kwargs):
 
        data = fun(self._dataA, self._dataB, self._dataC, *args, **kwargs)
 

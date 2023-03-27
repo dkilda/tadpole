@@ -89,7 +89,7 @@ def make_equation(input_inds, output_inds):
     def tosymbols(inds):
         return "".join(map(symbols.next, inds))
 
-    inputs = tuple(tosymbols(inds)) for inds in input_inds)
+    inputs = tuple(tosymbols(inds) for inds in input_inds)
     output = tosymbols(output_inds)
 
     return ",".join(inputs) + f"->{output}"

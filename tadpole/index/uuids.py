@@ -103,10 +103,10 @@ class UUIDGenerator:
    def setup(self, product=None, prefix_size=6, min_repeat=5): 
 
        if self._uuids is not None:
-          raise UUIDError((
-             "Illegal action triggered by uuids.setup(): an attempt to 
+          raise UUIDError(
+             "Illegal action triggered by uuids.setup(): an attempt to "
              "reset UUIDGenerator. Resetting UUIDGenerator is not permitted."
-          ))
+          )
 
        if product is None:
           product = AlphabetProduct()
@@ -137,7 +137,7 @@ def setup(self, *args, **kwargs):
     _UUID_GENERATOR.setup(*args, **kwargs)
 
 
-def next(base=None):
+def next_uuid(base=None):
 
     return _UUID_GENERATOR.next(base)
 

@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import tadpole.util     as util
-import tadpole.backends as backends
+import tadpole.util as util
 
-import tadpole.array.types as types
-import tadpole.array.unary as unary
-import tadpole.array.nary  as nary
+import tadpole.array.backends as backends
+import tadpole.array.types    as types
+import tadpole.array.unary    as unary
+import tadpole.array.nary     as nary
 
 
 
@@ -83,7 +83,7 @@ class Array(types.Array):
        self._datas   = (dataA, dataB)
 
 
-   # --- Arraylike methods --- #
+   # --- Array methods --- #
 
    def new(self, data):
 
@@ -99,6 +99,23 @@ class Array(types.Array):
        )
 
        return nary.Array(backend, *self._datas, *other._datas)
+
+
+   # --- Comparison --- #
+
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+       log.typ(self, other)
+
+       if bool(log):
+          log.val(self._backend, other._backend)
+ 
+       if bool(log):
+          return all(self._backend.allequal(x, y) 
+                        for x, y in zip(self._datas, other._datas))
+               
+       return False
 
 
    # --- Logical operations --- #

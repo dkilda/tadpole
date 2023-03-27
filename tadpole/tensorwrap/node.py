@@ -7,25 +7,27 @@ import numpy as np
 import tadpole.util   as util
 import tadpole.tensor as tn
 
-import tadpole.autodiff.node         as an
-import tadpole.tensorwrap.operations as op
+import tadpole.autodiff.node as an
 
-from tadpole.tensor import Tensor
-from tadpole.tensor import NullGrad, SparseGrad
+from tadpole.tensor import (
+   TensorGen, 
+   NullGrad, 
+   SparseGrad,
+)
 
 
 
 
 # --- Node wrapper for TensorLike objects ----------------------------------- #
 
-class Node(an.Node, tn.TensorLike): 
+class Node(an.Node, tn.Tensor): 
 
    # --- Tensor methods: gradient accumulation --- #
 
    def addto(self, other):
 
        if not other:
-          other = NullGrad()
+          other = NullGrad(self.space())
 
        return tn.addgrads(self, other)
 
@@ -140,7 +142,7 @@ class Node(an.Node, tn.TensorLike):
 
 
 
-an.register(Tensor,     Node)
+an.register(TensorGen,  Node)
 an.register(SparseGrad, Node)
 an.register(NullGrad,   Node)
 

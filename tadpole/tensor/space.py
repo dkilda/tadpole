@@ -12,8 +12,9 @@ import tadpole.tensor.elemwise_binary as binary
 
 
 from tadpole.tensor.types import (
-   Tensor, 
    Pluggable,
+   Tensor, 
+   Space,
 )
 
 
@@ -130,7 +131,9 @@ def auto_arrayspace(fun):
 
     def wrap(inds, **opts):
 
+        inds       = Indices(*inds)
         arrayspace = ar.arrayspace(inds.shape, **opts)
+
         return fun(arrayspace, inds, **opts)
 
     return wrap

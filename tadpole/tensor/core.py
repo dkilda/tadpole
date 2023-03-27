@@ -6,7 +6,7 @@ import tadpole.autodiff as ad
 import tadpole.array    as ar
 import tadpole.index    as tid
 
-import tadpole.tensor.space           as space
+import tadpole.tensor.space           as sp
 import tadpole.tensor.elemwise_unary  as unary
 import tadpole.tensor.elemwise_binary as binary
 
@@ -114,6 +114,11 @@ class NullGrad(Tensor, Pluggable):
        return bool(log)
 
 
+   def __bool__(self):
+
+       return False
+
+
    # --- Arithmetics and element access --- #
 
    def __getitem__(self, pos):
@@ -209,9 +214,6 @@ class SparseGrad(Tensor, Pluggable):
    def addto(self, other):
 
        if not other:
-          other = NullGrad()
-
-       if isinstance(other, NullGrad):
           other = self.space().zeros()
 
        if isinstance(other, SparseGrad):
@@ -386,11 +388,17 @@ class TensorGen(Tensor, Pluggable):
 
    # --- Construction --- #
 
-   def __init__(self, data, inds):
+   def __init__(self, data, inds=None):
 
-       if data.shape != inds.shape,
+       if inds is None:
+          inds = Indices()
+
+       if not isinstance(inds, Indices):
+          inds = Indices(*inds)
+
+       if data.shape != inds.shape:
           raise ValueError((
-             f"{type(self).__name__}: 
+             f"{type(self).__name__}: "
              f"data and indices must have matching shapes, "
              f"but data shape {data.shape} != index shape {inds.shape}"
           ))
@@ -411,9 +419,6 @@ class TensorGen(Tensor, Pluggable):
    def addto(self, other):
 
        if not other:
-          other = NullGrad()
-
-       if isinstance(other, NullGrad): 
           return self
 
        if isinstance(other, SparseGrad):
@@ -488,7 +493,7 @@ class TensorGen(Tensor, Pluggable):
           log.val(self._inds, other._inds)
  
        if bool(log):
-          log.val(self._data, other._data) # TODO impl __eq__() = allequal() in array
+          log.val(self._data, other._data) 
 
        return bool(log)
 

@@ -107,7 +107,7 @@ from .reduction import (
    anyof,
    amax,
    amin,
-   count_zero,
+   count_nonzero,
 )
 
 

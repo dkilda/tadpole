@@ -30,7 +30,7 @@ class IndexGen(Index):
    def __init__(self, tags, size=1, uuid=None):
 
        if uuid is None:
-          uuid = uuids.next()
+          uuid = uuids.next_uuid()
 
        self._tags = tags
        self._size = size
@@ -74,9 +74,11 @@ class IndexGen(Index):
           log.val(self._uuid, other._uuid)
 
        if bool(log):
-          assert self._size == other._size,
-             f"Index.__eq__(): indices {self} and {other} are equal but "
-             f"their sizes {self._size} != {other._size} do not match!"
+          assert self._size == other._size, (
+             f"{type(self).__name__}.__eq__: "
+             f"indices {self} and {other} are equal but their "
+             f"sizes {self._size} != {other._size} do not match!"
+          )
           
        return bool(log) 
 
@@ -264,7 +266,7 @@ class Indices(util.TupleLike):
 
    def remove(self, *inds):
 
-       return self.__class__(*(for ind in self if ind not in inds))
+       return self.__class__(*(ind for ind in self if ind not in inds))
 
 
    def add(self, *inds, axis=0):

@@ -4,9 +4,9 @@
 import functools
 import numpy as np
 
-from tadpole.tensor.backends.backend import Backend
-from tadpole.tensor.backends.numpy   import NumpyBackend
-from tadpole.tensor.backends.torch   import TorchBackend
+from tadpole.array.backends.backend import Backend
+from tadpole.array.backends.numpy   import NumpyBackend
+from tadpole.array.backends.torch   import TorchBackend
 
 
 
