@@ -24,7 +24,8 @@ from tadpole.tensor.engine import (
 
 
 from tadpole.index import (
-   Index, 
+   Index,
+   IndexGen, 
    Indices,
 )
 
@@ -135,7 +136,7 @@ class TensorReindex:
            inp = self._map(*inp)
 
            if not isinstance(out, Index):
-              out = Index(out, tid.sizeof(*inp))
+              out = IndexGen(out, tid.sizeof(*inp))
 
            assert tid.sizeof(*inp) == tid.sizeof(out), (
                f"{type(self).__name__}.fuse: "

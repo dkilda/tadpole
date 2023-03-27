@@ -31,7 +31,8 @@ from tadpole.tensor.truncation import (
 
 
 from tadpole.index import (
-   Index, 
+   Index,
+   IndexGen, 
    Indices,
 )
 
@@ -101,7 +102,7 @@ class Link:
    def ind(self, size):
 
        if self._ind is None:
-          self._ind = Index(self._name, size)
+          self._ind = IndexGen(self._name, size)
 
        if size != len(self._ind):
           raise ValueError(

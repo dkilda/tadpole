@@ -18,7 +18,8 @@ from tadpole.tensor.types import (
 
 
 from tadpole.index import (
-   Index, 
+   Index,
+   IndexGen,  
    Indices,
 )
 
