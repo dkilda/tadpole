@@ -1,25 +1,28 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import abc
+import numpy as np
+
 import tadpole.util     as util
 import tadpole.autodiff as ad
 import tadpole.array    as ar
-import tadpole.index    as tid
 
-import tadpole.tensor.core            as core
-import tadpole.tensor.elemwise_unary  as unary
-import tadpole.tensor.elemwise_binary as binary
+import tadpole.tensor.core    as core
+import tadpole.tensor.funcall as fn
 
 
 from tadpole.tensor.types import (
-   Tensor, 
+   TensorLike, 
    Pluggable,
 )
 
 
-from tadpole.index import (
+from tadpole.tensor.index import (
    Index, 
    Indices,
+   shapeof, 
+   sizeof,
 )
 
 
@@ -168,6 +171,107 @@ basis = auto_arrayspace(basis_from_space)
 ###############################################################################
 
 
+# --- Space interface ------------------------------------------------------- #
+
+class Space(abc.ABC):
+
+   # --- Fill the space with data --- #
+
+   @abc.abstractmethod
+   def fillwith(self, data):
+       pass
+
+
+   # --- Space indices --- #
+
+   @abc.abstractmethod
+   def inds(self, *tags):
+       pass
+
+   @abc.abstractmethod
+   def __and__(self, other):
+       pass
+
+   @abc.abstractmethod
+   def __or__(self, other):
+       pass
+
+   @abc.abstractmethod
+   def __xor__(self, other):
+       pass
+
+
+   # --- Gradient factories --- #
+
+   @abc.abstractmethod
+   def sparsegrad(self, pos, vals):
+       pass
+
+   @abc.abstractmethod
+   def nullgrad(self):
+       pass
+
+
+   # --- Tensor factories --- #
+
+   @abc.abstractmethod
+   def zeros(self):
+       pass
+
+   @abc.abstractmethod
+   def ones(self):
+       pass
+
+   @abc.abstractmethod
+   def unit(self):
+       pass
+
+   @abc.abstractmethod
+   def rand(self, **opts):
+       pass
+
+   @abc.abstractmethod
+   def randn(self, **opts):
+       pass
+
+   @abc.abstractmethod
+   def randuniform(self, boundaries, **opts):
+       pass
+
+   @abc.abstractmethod
+   def units(self):
+       pass
+
+   @abc.abstractmethod
+   def basis(self):
+       pass
+
+
+   # --- Space properties --- #
+
+   @property
+   @abc.abstractmethod
+   def dtype(self):
+       pass
+
+   @property
+   @abc.abstractmethod
+   def size(self):
+       pass
+
+   @property 
+   @abc.abstractmethod
+   def ndim(self):
+       pass
+
+   @property
+   @abc.abstractmethod
+   def shape(self):
+       pass
+
+       
+
+
 # --- TensorSpace ----------------------------------------------------------- #
 
 class TensorSpace(Space):
@@ -212,6 +316,28 @@ class TensorSpace(Space):
    def fillwith(self, data):
 
        return core.astensor(data, self._inds)
+
+
+   # --- Space indices --- #
+
+   def inds(self, *tags):
+
+       return self._inds.map(*tags)
+
+
+   def __and__(self, other):
+
+       return self._inds & other._inds
+
+
+   def __or__(self, other):
+
+       return self._inds | other._inds
+
+
+   def __xor__(self, other):
+
+       return self._inds ^ other._inds
 
 
    # --- Gradient factories --- #
@@ -308,4 +434,7 @@ class TensorSpace(Space):
 
 
 
+
+
+ 
 

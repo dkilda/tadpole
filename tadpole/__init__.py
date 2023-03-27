@@ -3,6 +3,7 @@
 
 
 from .autodiff   import *
+from .index      import *
 from .tensor     import *
 from .tensorwrap import *
 

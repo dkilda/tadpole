@@ -8,25 +8,25 @@ import abc
 
 ###############################################################################
 ###                                                                         ###
-###  Definition of tensor interfaces                                        ###
+###  Core                                                                   ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- Pluggable interface --------------------------------------------------- #
+# --- Pluggable ------------------------------------------------------------- #
 
 class Pluggable(abc.ABC):
 
    @abc.abstractmethod
-   def pluginto(self, funcall):
+   def pluginto(self, engine):
        pass
 
 
 
 
-# --- TensorLike interface -------------------------------------------------- #
+# --- Tensor ---------------------------------------------------------------- #
 
-class TensorLike(abc.ABC):
+class Tensor(abc.ABC):
 
    # --- Gradient accumulation --- #
 
@@ -55,25 +55,6 @@ class TensorLike(abc.ABC):
 
    @abc.abstractmethod
    def item(self, *idx):
-       pass
-
-
-   # --- Tensor indices --- #
-
-   @abc.abstractmethod
-   def inds(self, *tags):
-       pass
-
-   @abc.abstractmethod
-   def __and__(self, other):
-       pass
-
-   @abc.abstractmethod
-   def __or__(self, other):
-       pass
-
-   @abc.abstractmethod
-   def __xor__(self, other):
        pass
 
 
@@ -110,7 +91,7 @@ class TensorLike(abc.ABC):
    # --- Arithmetics and element access --- # 
 
    @abc.abstractmethod
-   def __getitem__(self, idx):
+   def __getitem__(self, pos):
        pass
 
    @abc.abstractmethod
@@ -155,6 +136,205 @@ class TensorLike(abc.ABC):
 
    @abc.abstractmethod
    def __rpow__(self, other):
+       pass
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Space                                                                  ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Space ----------------------------------------------------------------- #
+
+class Space(abc.ABC):
+
+   # --- Fill the space with data --- #
+
+   @abc.abstractmethod
+   def fillwith(self, data):
+       pass
+
+
+   # --- Gradient factories --- #
+
+   @abc.abstractmethod
+   def sparsegrad(self, pos, vals):
+       pass
+
+   @abc.abstractmethod
+   def nullgrad(self):
+       pass
+
+
+   # --- Tensor factories --- #
+
+   @abc.abstractmethod
+   def zeros(self):
+       pass
+
+   @abc.abstractmethod
+   def ones(self):
+       pass
+
+   @abc.abstractmethod
+   def unit(self):
+       pass
+
+   @abc.abstractmethod
+   def rand(self, **opts):
+       pass
+
+   @abc.abstractmethod
+   def randn(self, **opts):
+       pass
+
+   @abc.abstractmethod
+   def randuniform(self, boundaries, **opts):
+       pass
+
+   @abc.abstractmethod
+   def units(self):
+       pass
+
+   @abc.abstractmethod
+   def basis(self):
+       pass
+
+
+   # --- Space properties --- #
+
+   @property
+   @abc.abstractmethod
+   def dtype(self):
+       pass
+
+   @property
+   @abc.abstractmethod
+   def size(self):
+       pass
+
+   @property 
+   @abc.abstractmethod
+   def ndim(self):
+       pass
+
+   @property
+   @abc.abstractmethod
+   def shape(self):
+       pass
+
+       
+
+
+###############################################################################
+###                                                                         ###
+###  Engine                                                                 ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Tensor operations engine ---------------------------------------------- #
+
+class Engine(abc.ABC): 
+
+   @abc.abstractmethod
+   def attach(self, data, inds):
+       pass
+
+   @abc.abstractmethod
+   def operator(self):
+       pass
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Contraction                                                            ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Index product --------------------------------------------------------- #
+
+class IndexProduct(abc.ABC):
+
+   @abc.abstractmethod
+   def __call__(self, inds):
+       pass
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Decomp                                                                 ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Alignment ------------------------------------------------------------- #
+
+class Alignment(abc.ABC):
+
+   @abc.abstractmethod
+   def left(self, inds):
+       pass
+
+   @abc.abstractmethod
+   def right(self, inds):
+       pass
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Truncation                                                             ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Cutoff mode ----------------------------------------------------------- #
+
+class CutoffMode(abc.ABC):
+
+   @abc.abstractmethod
+   def apply(self, S):
+       pass
+
+
+
+
+# --- Error mode ------------------------------------------------------------ #
+
+class ErrorMode(abc.ABC):
+
+   @abc.abstractmethod
+   def apply(self, S, rank):
+       pass
+
+
+
+
+# --- Truncation ------------------------------------------------------------ #
+
+class Trunc(abc.ABC):
+
+   @abc.abstractmethod
+   def rank(self, S):
+       pass
+
+   @abc.abstractmethod
+   def error(self, S):
+       pass
+
+   @abc.abstractmethod
+   def apply(self, U, S, VH):
        pass
 
 

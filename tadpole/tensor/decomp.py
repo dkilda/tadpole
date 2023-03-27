@@ -1,18 +1,38 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import abc
-import numpy as np
-
 import tadpole.util     as util
 import tadpole.autodiff as ad
+import tadpole.array    as ar
+import tadpole.index    as tid
 
-import tadpole.tensor.funcall    as fn
+import tadpole.tensor.core       as core
 import tadpole.tensor.truncation as truncation
 
 
+from tadpole.tensor.types import (
+   Engine,
+   CutoffMode,
+   ErrorMode,
+   Trunc,
+   Alignment,
+)
+
+
+from tadpole.tensor.engine import (
+   TrainTensorData,
+   TooManyArgsError,
+)
+
+
 from tadpole.tensor.truncation import (
-   NullTrunc,
+   TruncNull,
+)
+
+
+from tadpole.index import (
+   Index, 
+   Indices,
 )
 
 
@@ -20,46 +40,29 @@ from tadpole.tensor.truncation import (
 
 ###############################################################################
 ###                                                                         ###
-###  Index partitioning logic:                                              ### 
-###  -- aligns input data by defining left/right indices                    ###
-###  -- creates left/right/middle output tensors from data computed         ###
-###     by an array decomposition function                                  ###
+###  The logic of index partitioning: defines the alignment by left/right   ### 
+###  indices and a link between the left/right partitions.                  ###
 ###                                                                         ###
 ###############################################################################
-
-
-# --- Alignment interface --------------------------------------------------- #
-
-class Alignment(abc.ABC):
-
-   @abc.abstractmethod
-   def left(self, inds):
-       pass
-
-   @abc.abstractmethod
-   def right(self, inds):
-       pass
-
-
 
 
 # --- Left alignment -------------------------------------------------------- #
 
 class LeftAlignment(Alignment):
 
-   def __init__(self, partinds):
+   def __init__(self, partial_inds):
 
-       self._partinds = partinds
+       self._partial_inds = partial_inds
 
 
    def linds(self, inds):
 
-       return self._partinds
+       return self._partial_inds
        
 
    def rinds(self, inds):
 
-       return inds.remove(*self._partinds) 
+       return inds.remove(*self._partial_inds) 
 
 
 
@@ -68,37 +71,26 @@ class LeftAlignment(Alignment):
 
 class RightAlignment(Alignment):
 
-   def __init__(self, partinds):
+   def __init__(self, partial_inds):
 
-       self._partinds = partinds
+       self._partial_inds = partial_inds
 
 
    def linds(self, inds):
 
-       return inds.remove(*self._partinds)
+       return inds.remove(*self._partial_inds)
        
 
    def rinds(self, inds):
 
-       return self._partinds
-
-
-
-
-# --- LinkLike interface ---------------------------------------------------- #
-
-class LinkLike(abc.ABC):
-
-   @abc.abstractmethod
-   def ind(self, size):
-       pass
+       return self._partial_inds
 
 
 
 
 # --- Link between partitions ----------------------------------------------- #
 
-class Link(LinkLike):
+class Link:
 
    def __init__(self, name):
 
@@ -161,7 +153,7 @@ class Partition:
        sind = self._link.ind(data.shape[-1])
        inds = self._linds.push(sind)
 
-       return core.Tensor(data, inds)
+       return core.TensorGen(data, inds)
 
 
    def rtensor(self, data):
@@ -171,201 +163,231 @@ class Partition:
        sind = self._link.ind(data.shape[0])
        inds = self._rinds.add(sind)
 
-       return core.Tensor(data, inds)
+       return core.TensorGen(data, inds)
 
 
    def stensor(self, data):
 
        sind = self._link.ind(data.shape[0])
 
-       return core.Tensor(data, Indices(sind))
+       return core.TensorGen(data, Indices(sind))
 
 
 
 
-# --- Partition factory ----------------------------------------------------- #
-
-class Partitions:
-
-   def __init__(self, alignment, link):
-
-       self._alignment = alignment
-       self._link      = link
+###############################################################################
+###                                                                         ###
+###  Tensor decomposition engine and operator                               ###
+###                                                                         ###
+###############################################################################
 
 
-   def create(self, inds):
+# --- Tensor decomposition factory ------------------------------------------ #
 
-       return Partition(
-          inds, self._alignment.linds(), self._alignment.rinds(), self._link
-       )
+def tensor_decomp(x, inds, alignment, link):
 
-
-
-
-# --- Creating partitions factory ------------------------------------------- #
-
-def make_partitions(linkname, inds, which):
-
-    link      = Link(linkname)
+    link      = Link(link)
     alignment = {
                  "left":  LeftAlignment,
                  "right": RightAlignment,
-                }[which](inds)
+                }[alignment](inds)
 
-    return Partitions(alignment, link)
+    engine = EngineDecomp(alignment, link)
+    engine = x.pluginto(engine)
 
-
-
-
-###############################################################################
-###                                                                         ###
-###  Tensor decomposition calls                                             ###
-###                                                                         ###
-###############################################################################
+    return engine
 
 
-# --- Explicit-rank decomposition call -------------------------------------- #
 
-class ExplicitDecomp(fn.FunCall):
 
-   def __init__(self, engine, partitions, trunc):
+# --- Tensor decomposition engine ------------------------------------------- #
 
-       if not isinstance(engine, fn.Engine):
-          engine = fn.Engine(engine)
+class EngineDecomp(Engine): 
 
-       self._engine     = engine
-       self._partitions = partitions
-       self._trunc      = trunc
+   def __init__(self, alignment, link, train=None):
+
+       if train is None:
+          train = TrainTensorData()
+
+       self._alignment = alignment
+       self._link      = link
+       self._train     = train
+
+
+   @property
+   def _size(self):
+
+       return 1
 
 
    def attach(self, data, inds):
 
-       return self.__class__(self._engine.attach(data, inds))
+       if self._train.size() == self._size:
+          raise TooManyArgsError(self, self._size)
+
+       return self.__class__(self._train.attach(data, inds))
 
 
-   def execute(self):
+   def operator(self):
 
-       data, = self._engine.datas()
-       inds, = self._engine.inds()
+       data, = self._train.data()
+       inds, = self._train.inds()
 
-       partition = self._partitions.create(inds)
-       outdata   = self._engine.execute(partition.aligndata(data))
+       partition = Partition(
+          inds, 
+          self._alignment.linds(), 
+          self._alignment.rinds(), 
+          self._link
+       )
 
-       error   = self._trunc.error(outdata[1])
-       outdata = self._trunc.apply(*outdata)
+       return TensorDecomp(data, partition)
+
+
+
+
+# --- Tensor decomposition operator ----------------------------------------- #
+
+class TensorDecomp:
+
+   # --- Construction --- #
+
+   def __init__(self, data, partition):
+
+       self._data      = data
+       self._partition = partition
+
+
+   # --- Private helpers --- #
+
+   def _aligned_data(self):
+
+       return self._partition.aligndata(self._data)
+
+  
+   def _ltensor(self, data):
+
+       return self._partition.ltensor(data)
+
+
+   def _stensor(self, data):
+
+       return self._partition.stensor(data)
+
+
+   def _rtensor(self, data):
+
+       return self._partition.rtensor(data)
+
+
+   def _explicit(self, fun, trunc):
+
+       output_data = fun(self._aligned_data())
+       error       = trunc.error(output_data[1])
+       output_data = trunc.apply(*output_data)
 
        return (
-               partition.ltensor(outdata[0]), 
-               partition.stensor(outdata[1]), 
-               partition.rtensor(outdata[2]), 
+               self._ltensor(output_data[0]), 
+               self._stensor(output_data[1]), 
+               self._rtensor(output_data[2]), 
                error,
               )
 
+       
+   def _hidden(self, fun):
 
-
-
-# --- Hidden-rank decomposition call ---------------------------------------- #
-
-class HiddenDecomp(fn.FunCall):
-
-   def __init__(self, engine, partitions):
-
-       if not isinstance(engine, fn.Engine):
-          engine = fn.Engine(engine)
-
-       self._engine     = engine
-       self._partitions = partitions
-
-
-   def attach(self, data, inds):
-
-       return self.__class__(self._engine.attach(data, inds))
-
-
-   def execute(self):
-
-       data, = self._engine.datas()
-       inds, = self._engine.inds()
-
-       partition = self._partitions.create(inds)
-       outdata   = self._engine.execute(partition.aligndata(data))
+       output_data = fun(self._aligned_data())
 
        return (
-               partition.ltensor(outdata[0]), 
-               partition.rtensor(outdata[1]),
+               self._ltensor(output_data[0]), 
+               self._rtensor(output_data[1]), 
               )
+ 
+
+   # --- Explicit-rank decompositions --- #
+
+   def svd(self, trunc):
+
+       return self._explicit(ar.svd, trunc)
+
+
+   def eig(self, trunc):
+
+       return self._explicit(ar.eig, trunc)
+
+
+   def eigh(self, trunc):
+
+       return self._explicit(ar.eigh, trunc)
+
+
+   # --- Hidden-rank decompositions --- #
+
+   def qr(self):
+
+       return self._hidden(ar.qr)
+
+
+   def lq(self):
+
+       return self._hidden(ar.lq)
 
 
 
 
-# --- Specialized decomposition methods ------------------------------------- #
-
-@ad.differentiable
-def svd(x, name, inds, which="left", trunc=NullTrunc()):
-
-    def fun(data):
-        return ar.svd(data)
-
-    partitions = make_partitions(name, x.inds(inds), which)
-    decomp     = ExplicitDecomp(fun, partitions, trunc)
-    
-    return fn.Args(x).pluginto(decomp)
+###############################################################################
+###                                                                         ###
+###  Standalone functions corresponding to TensorDecomp methods             ###
+###                                                                         ###
+###############################################################################
 
 
-
-
-@ad.differentiable
-def eig(x, name, inds, which="left", trunc=NullTrunc()):
-
-    def fun(data):
-        return ar.eig(data)
-
-    partitions = make_partitions(name, x.inds(inds), which)
-    decomp     = ExplicitDecomp(fun, partitions, trunc)
-    
-    return fn.Args(x).pluginto(decomp)
-
-
-
-
-@ad.differentiable
-def eigh(x, name, inds, which="left", trunc=NullTrunc()):
-
-    def fun(data):
-        return ar.eigh(data)
-
-    partitions = make_partitions(name, x.inds(inds), which)
-    decomp     = ExplicitDecomp(fun, partitions, trunc)
-    
-    return fn.Args(x).pluginto(decomp)
-
-
-
+# --- Explicit-rank decompositions ------------------------------------------ #
 
 @ad.differentiable
-def qr(x, name, inds, which="left"):
+def svd(x, inds, alignment="left", link="link", trunc=TruncNull()):
 
-    def fun(data):
-        return ar.qr(data)
+    op = tensor_decomp(x, inds, alignment, link)
 
-    partitions = make_partitions(name, x.inds(inds), which)
-    decomp     = HiddenDecomp(fun, partitions)
-    
-    return fn.Args(x).pluginto(decomp) 
-       
+    return op.svd(trunc)
 
 
 
 @ad.differentiable
-def lq(x, name, inds, which="left"):
+def eig(x, inds, alignment="left", link="link", trunc=TruncNull()):
 
-    def fun(data):
-        return ar.lq(data)
+    op = tensor_decomp(x, inds, alignment, link)
 
-    partitions = make_partitions(name, x.inds(inds), which)
-    decomp     = HiddenDecomp(fun, partitions)
-    
-    return fn.Args(x).pluginto(decomp) 
+    return op.eig(trunc)
+
+
+
+@ad.differentiable
+def eigh(x, inds, alignment="left", link="link", trunc=TruncNull()):
+
+    op = tensor_decomp(x, inds, alignment, link)
+
+    return op.eigh(trunc)
+
+
+
+
+# --- Hidden-rank decompositions -------------------------------------------- #
+
+@ad.differentiable
+def qr(x, inds, alignment="left", link="link"):
+
+    op = tensor_decomp(x, inds, alignment, link)
+
+    return op.qr()
+
+
+
+@ad.differentiable
+def lq(x, inds, alignment="left", link="link"):
+
+    op = tensor_decomp(x, inds, alignment, link)
+
+    return op.lq()
 
 
 
