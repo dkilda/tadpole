@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import abc
-
 import tadpole.util     as util
 import tadpole.autodiff as ad
 import tadpole.array    as ar
+import tadpole.index    as tid
 
-import tadpole.tensor.unary  as unary
-import tadpole.tensor.binary as binary
+import tadpole.tensor.space           as space
+import tadpole.tensor.elemwise_unary  as unary
+import tadpole.tensor.elemwise_binary as binary
 
 
 from tadpole.tensor.types import (
@@ -17,12 +17,365 @@ from tadpole.tensor.types import (
 )
 
 
-from tadpole.tensor.index import (
+from tadpole.index import (
    Index, 
    Indices,
-   shapeof, 
-   sizeof,
 )
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Special tensor types for gradients                                     ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Null gradient --------------------------------------------------------- #
+
+class NullGrad(Tensor, Pluggable):
+
+   # --- Construction --- #
+
+   def __init__(self, space):
+
+       self._space = space
+
+
+   # --- Plugging into an engine --- #
+
+   def pluginto(self, engine):
+
+       return self.todense().pluginto(engine)
+
+
+   # --- Gradient accumulation --- #
+
+   def addto(self, other):
+
+       return other.addto(self)
+
+
+   # --- Basic functionality --- #
+
+   def copy(self):
+
+       return self.__class__()
+
+
+   def todense(self):
+
+       return self.space().zeros()
+
+
+   def withdata(self, data):
+
+       return self.space().fillwith(data) 
+
+
+   def space(self):
+
+       return self._space
+
+
+   def item(self):
+
+       return self.todense().item() 
+
+
+   # --- Tensor properties --- #
+
+   @property
+   def dtype(self):
+       return self.space().dtype
+
+   @property 
+   def size(self):
+       return self.space().size
+
+   @property 
+   def ndim(self):
+       return self.space().ndim
+
+   @property 
+   def shape(self):
+       return self.space().shape
+
+
+   # --- Comparisons --- #
+       
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+       log.typ(self, other)
+
+       return bool(log)
+
+
+   # --- Arithmetics and element access --- #
+
+   def __getitem__(self, pos):
+
+       return self.todense()[pos]
+
+
+   def __neg__(self):
+
+       return self.todense()
+
+
+   def __add__(self, other): 
+
+       return other
+
+
+   def __sub__(self, other): 
+
+       return -other 
+
+
+   def __mul__(self, other):
+
+       return self.todense()
+
+
+   def __truediv__(self, other):
+
+       return self.todense()
+
+
+   def __pow__(self, other):
+
+       return self.todense() 
+
+
+   def __radd__(self, other): 
+
+       return other  
+
+
+   def __rsub__(self, other): 
+
+       return other
+
+
+   def __rmul__(self, other):
+
+       return self.todense()
+
+
+   def __rtruediv__(self, other):
+
+       raise ValueError(
+          f"{type(self).__name__}.__rtruediv__: "
+          f"division by zero encountered!"
+       )
+
+
+   def __rpow__(self, other):
+
+       if not isinstance(other, Tensor):
+          other = astensor(other)
+
+       return other.space().ones()
+
+
+
+
+# --- Sparse gradient ------------------------------------------------------- #
+
+class SparseGrad(Tensor, Pluggable):
+
+   # --- Construction --- #
+
+   def __init__(self, space, pos, vals):
+
+       self._space = space
+       self._pos   = pos
+       self._vals  = vals
+
+
+   # --- Plugging into an engine --- #
+
+   def pluginto(self, engine):
+
+       return self.todense().pluginto(engine)
+
+
+   # --- Gradient accumulation --- #
+
+   def addto(self, other):
+
+       if not other:
+          other = NullGrad()
+
+       if isinstance(other, NullGrad):
+          other = self.space().zeros()
+
+       if isinstance(other, SparseGrad):
+          other = other.todense()
+
+       assert self._space == other._space, (
+          f"{type(self).__name__}.addto: "
+          f"gradient accumulation cannot be performed for tensors "
+          f"with non-matching spaces {self._space} != {other._space}"
+       )
+
+       data = ar.put(other._data, self._pos, self._vals, accumulate=True)
+       return other.withdata(data)
+
+       
+   # --- Basic functionality --- #
+
+   def copy(self):
+
+       return self.__class__(self._space, self._pos, self._vals)
+
+
+   def todense(self):
+
+       zeros = self.space().zeros() 
+       data  = ar.put(zeros, self._pos, self._vals)
+
+       return self.space().fillwith(data)
+
+
+   def withdata(self, data):
+
+       return self.space().fillwith(data)
+
+
+   def space(self):
+
+       return self._space
+
+
+   def item(self, *pos):
+
+       return self.todense().item(*pos) 
+
+
+   # --- Tensor properties --- #
+
+   @property
+   def dtype(self):
+       return self._space.dtype 
+
+   @property 
+   def size(self):
+       return self._space.size
+
+   @property 
+   def ndim(self):
+       return self._space.ndim 
+
+   @property 
+   def shape(self):
+       return self._space.shape
+
+
+   # --- Comparisons --- #
+       
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+       log.typ(self, other)
+
+       if bool(log):
+          log.val(self._space, other._space)
+          log.val(self._pos,   other._pos)
+
+       if bool(log):
+          log.val(self._vals, other._vals)  
+
+       return bool(log)
+
+
+   # --- Arithmetics and element access --- # 
+
+   def __getitem__(self, pos):
+
+       return self.todense()[pos]
+
+
+   def __neg__(self):
+
+       return -self.todense()
+
+
+   def __add__(self, other): 
+
+       return self.todense() + other
+
+
+   def __sub__(self, other): 
+
+       return self.todense() - other   
+
+
+   def __mul__(self, other):
+
+       return self.todense() * other 
+
+
+   def __truediv__(self, other):
+
+       return self.todense() / other 
+
+
+   def __pow__(self, other):
+
+       return self.todense() ** other 
+
+
+   def __radd__(self, other): 
+
+       return other + self.todense() 
+
+
+   def __rsub__(self, other): 
+
+       return other - self.todense() 
+
+
+   def __rmul__(self, other):
+
+       return other * self.todense()
+
+
+   def __rtruediv__(self, other):
+
+       return other / self.todense()
+
+
+   def __rpow__(self, other):
+
+       return other ** self.todense() 
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  General tensor                                                         ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Tensor factories ------------------------------------------------------ #
+
+def astensor(data, inds=None, **opts):
+
+    if isinstance(data, Tensor):
+       return data
+
+    if isinstance(data, ar.Array):
+       return TensorGen(data, inds)
+
+    data = ar.asarray(data, **opts)
+    return TensorGen(data, inds)
+
 
 
 
@@ -45,11 +398,98 @@ class TensorGen(Tensor, Pluggable):
        self._inds = inds
 
 
-   # --- Plugging into function calls --- #
+   # --- Plugging into an engine --- #
 
-   def pluginto(self, op):
+   def pluginto(self, engine):
 
-       return op.attach(self._data, self._inds)
+       return engine.attach(self._data, self._inds)
+
+
+   # --- Gradient accumulation --- #
+
+   def addto(self, other):
+
+       if not other:
+          other = NullGrad()
+
+       if isinstance(other, NullGrad): 
+          return self
+
+       if isinstance(other, SparseGrad):
+          return other.addto(self)
+
+       assert self._inds == other._inds, (
+          f"{type(self).__name__}.addto: "
+          f"gradient accumulation cannot be performed for tensors "
+          f"with non-matching indices {self._inds} != {other._inds}"
+       )
+
+       data = ar.add(self._data, other._data)
+       return other.withdata(data)
+
+
+   # --- Basic functionality --- #
+
+   def copy(self, virtual=False, **opts):
+
+       data = self._data if virtual else self._data.copy(**opts)
+
+       return self.__class__(data, self._inds)
+
+
+   def todense(self):
+
+       return self
+
+
+   def withdata(self, data):
+
+       return self.__class__(data, self._inds)
+
+
+   def space(self):
+
+       return sp.TensorSpace(self._data.space(), self._inds) 
+
+
+   def item(self, *pos): 
+
+       return self._data.item(*pos)
+
+
+   # --- Tensor properties --- #
+
+   @property
+   def dtype(self):
+       return self._data.dtype 
+
+   @property 
+   def size(self):
+       return self._data.size
+
+   @property 
+   def ndim(self):
+       return self._data.ndim  
+
+   @property
+   def shape(self):
+       return self._data.shape 
+
+
+   # --- Comparisons --- #
+
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+       log.typ(self, other)
+
+       if bool(log):
+          log.val(self._inds, other._inds)
+ 
+       if bool(log):
+          log.val(self._data, other._data) # TODO impl __eq__() = allequal() in array
+
+       return bool(log)
 
 
    # --- Arithmetics and element access --- # 
@@ -69,10 +509,61 @@ class TensorGen(Tensor, Pluggable):
        return binary.add(self, other)
 
 
+   def __sub__(self, other):
+
+       return binary.sub(self, other)
+
+
+   def __mul__(self, other):
+
+       return binary.mul(self, other)
+
+
+   def __truediv__(self, other):
+
+       return binary.div(self, other)
+
+
+   def __pow__(self, other):
+
+       return binary.power(self, other)
+
+
+   def __radd__(self, other):
+
+       return binary.add(other, self)
+
+ 
+   def __rsub__(self, other):
+
+       return binary.sub(other, self)
+
+
+   def __rmul__(self, other):
+
+       return binary.mul(other, self)
+
+
+   def __rtruediv__(self, other):
+
+       return binary.div(other, self)
+
+
+   def __rpow__(self, other):
+
+       return binary.power(other, self)
 
 
 
-# --- Tensor member methods: basic functionality ---------------------------- #
+
+###############################################################################
+###                                                                         ###
+###  Standalone functions corresponding to Tensor methods                   ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Basic functionality --------------------------------------------------- #
 
 @ad.nondifferentiable
 def copy(x, **opts):
@@ -106,7 +597,7 @@ def item(x, *pos):
 
 
 
-# --- Tensor member methods: properties ------------------------------------- #
+# --- Tensor properties ----------------------------------------------------- #
 
 @ad.nondifferentiable
 def dtype(x):
@@ -130,45 +621,6 @@ def ndim(x):
 def shape(x):
 
     return x.shape
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

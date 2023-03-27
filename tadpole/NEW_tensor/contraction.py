@@ -1,20 +1,21 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import abc
 import functools
 import opt_einsum as oe
 
 import tadpole.util     as util
 import tadpole.autodiff as ad
 import tadpole.array    as ar
+import tadpole.index    as tid
 
-import tadpole.tensor.core    as core
-import tadpole.tensor.reindex as reindex
+import tadpole.tensor.core       as core
+import tadpole.tensor.reindexing as reidx
 
 
 from tadpole.tensor.types import (
-   Engine
+   Engine,
+   IndexProduct,
 )
 
 
@@ -24,11 +25,9 @@ from tadpole.tensor.engine import (
 )
 
 
-from tadpole.tensor.index import (
+from tadpole.index import (
    Index, 
    Indices,
-   shapeof, 
-   sizeof,
 )
 
 
@@ -97,20 +96,9 @@ def make_equation(input_inds, output_inds):
 
 
 
-# --- Index product interface ----------------------------------------------- #
-
-class Product(abc.ABC):
-
-   @abc.abstractmethod
-   def __call__(self, inds):
-       pass
-       
-
-
-
 # --- Fixed index product --------------------------------------------------- #
 
-class FixedProduct(Product):
+class FixedIndexProduct(IndexProduct):
 
   def __init__(self, inds):
 
@@ -128,7 +116,7 @@ class FixedProduct(Product):
 
 # --- Pairwise index product ------------------------------------------------ #
 
-class PairwiseProduct(Product): 
+class PairwiseIndexProduct(IndexProduct): 
 
    def __call__(self, inds):
 
@@ -159,8 +147,8 @@ class PairwiseProduct(Product):
 
 def tensor_contract(*xs, product=None):
 
-    if product is not None and not isinstance(product, Product): 
-       product = FixedProduct(product)
+    if product is not None and not isinstance(product, IndexProduct): 
+       product = FixedIndexProduct(product)
 
     engine = EngineContract(product)
 
@@ -179,7 +167,7 @@ class EngineContract(Engine):
    def __init__(self, product=None, train=None):
 
        if product is None:
-          product = PairwiseProduct()
+          product = PairwiseIndexProduct()
 
        if train is None:
           train = TrainTensorData()
@@ -242,8 +230,10 @@ class EngineDot(Engine):
    def operator(self):
 
        return TensorContract(
-                 self._train.data(), self._train.inds(), PairwiseProduct()
-              )
+                             self._train.data(), 
+                             self._train.inds(), 
+                             PairwiseIndexProduct()
+                            )
 
 
 
@@ -339,7 +329,7 @@ def dot(x, y):
 
 def kron(x, y, kronmap):
 
-    return reindex.fuse(einsum(x, y), kronmap)
+    return reidx.fuse(einsum(x, y), kronmap)
 
 
 

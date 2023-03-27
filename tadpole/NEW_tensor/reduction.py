@@ -4,6 +4,7 @@
 import tadpole.util     as util
 import tadpole.autodiff as ad
 import tadpole.array    as ar
+import tadpole.index    as tid
 
 import tadpole.tensor.core as core
 
@@ -15,16 +16,15 @@ from tadpole.tensor.types import (
 
 from tadpole.tensor.engine import (
    EngineUnary,
+   EngineElemwise,
    TrainTensorData,
    TooManyArgsError,
 )
 
 
-from tadpole.tensor.index import (
+from tadpole.index import (
    Index, 
    Indices,
-   shapeof, 
-   sizeof,
 )
 
 

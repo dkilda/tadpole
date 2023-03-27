@@ -7,14 +7,14 @@ from functools import reduce
 import tadpole.util     as util
 import tadpole.autodiff as ad
 import tadpole.array    as ar
+import tadpole.index    as tid
 
-import tadpole.tensor.core    as core
-import tadpole.tensor.reindex as reindex
-import tadpole.tensor.reduce  as redu
+import tadpole.tensor.core       as core
+import tadpole.tensor.reduction  as redu
+import tadpole.tensor.reindexing as reidx
 
 import tadpole.tensor.elemwise_unary  as unary
 import tadpole.tensor.elemwise_binary as binary
-
 
 
 from tadpole.tensor.types import (
@@ -24,16 +24,15 @@ from tadpole.tensor.types import (
 
 from tadpole.tensor.engine import (
    EngineUnary,
+   EngineElemwise,
    TrainTensorData,
    TooManyArgsError,
 )
 
 
-from tadpole.tensor.index import (
+from tadpole.index import (
    Index, 
    Indices,
-   shapeof, 
-   sizeof,
 )
 
 
@@ -110,7 +109,7 @@ class TensorInteraction:
 
    def complement_inds(self):
 
-       return reduce(operator_.xor_, self._inds) 
+       return reduce(operator_.xor_, self._inds)
 
 
 
@@ -162,13 +161,13 @@ def match_type(x, target):
 def match_shape(x, target, keepinds=False): 
 
     if  not keepinds:
-        target = reindex.squeeze(target) 
+        target = reidx.squeeze(target) 
 
     for ind in complement_inds(x, target):   
         x = redu.sumover(x, ind)
 
     for ind in complement_inds(target, x):  
-        x = reindex.expand(x, ind)
+        x = reidx.expand(x, ind)
 
     return x
 
@@ -191,8 +190,8 @@ def expand_grad(x, target, inds=None):
 
     def fun(g):
 
-        g1 = reindex.expand(g, inds)
-        x1 = reindex.expand(x, inds)
+        g1 = reidx.expand(g, inds)
+        x1 = reidx.expand(x, inds)
 
         mask = binary.isequal(target, x1)
 

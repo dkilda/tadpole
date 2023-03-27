@@ -4,6 +4,7 @@
 import tadpole.util     as util
 import tadpole.autodiff as ad
 import tadpole.array    as ar
+import tadpole.index    as tid
 
 import tadpole.tensor.core           as core
 import tadpole.tensor.elemwise_unary as unary
@@ -16,18 +17,16 @@ from tadpole.tensor.types import (
 
 from tadpole.tensor.engine import (
    EngineUnary,
+   EngineElemwise,
    TrainTensorData,
    TooManyArgsError,
 )
 
 
-from tadpole.tensor.index import (
+from tadpole.index import (
    Index, 
    Indices,
-   shapeof, 
-   sizeof,
 )
-
 
 
 
@@ -136,13 +135,13 @@ class TensorReindex:
            inp = self._map(*inp)
 
            if not isinstance(out, Index):
-              out = Index(out, sizeof(*inp))
+              out = Index(out, tid.sizeof(*inp))
 
-           assert sizeof(*inp) == sizeof(out), (
+           assert tid.sizeof(*inp) == tid.sizeof(out), (
                f"{type(self).__name__}.fuse: "
                f"sizes of input indices {inp} and output index {out} must "
-               f"match, but the input size {sizeof(*inp)} != "
-               f"the output size {sizeof(out)}."
+               f"match, but the input size {tid.sizeof(*inp)} != "
+               f"the output size {tid.sizeof(out)}."
            )
 
            inds = inds.remove(*inp).add(out)
@@ -159,11 +158,11 @@ class TensorReindex:
        
            inp, = self._map(inp)
 
-           assert sizeof(*inp) == sizeof(out), (
+           assert tid.sizeof(*inp) == tid.sizeof(out), (
               f"{type(self).__name__}.split: "
               f"sizes of input index {inp} and output indices {out} must "
-              f"match, but the input size {sizeof(inp)} != "
-              f"the output size {sizeof(*out)}."
+              f"match, but the input size {tid.sizeof(inp)} != "
+              f"the output size {tid.sizeof(*out)}."
            )
 
            axis, = inds.axes(inp)

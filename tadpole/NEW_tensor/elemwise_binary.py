@@ -4,27 +4,28 @@
 import tadpole.util     as util
 import tadpole.autodiff as ad
 import tadpole.array    as ar
+import tadpole.index    as tid
 
 import tadpole.tensor.core as core
 
 
 from tadpole.tensor.types import (
+   Pluggable,
    Engine,
 )
 
 
 from tadpole.tensor.engine import (
+   EngineUnary,
    EngineElemwise,
    TrainTensorData,
    TooManyArgsError,
 )
 
 
-from tadpole.tensor.index import (
+from tadpole.index import (
    Index, 
    Indices,
-   shapeof, 
-   sizeof,
 )
 
 
@@ -143,6 +144,11 @@ class TensorElemwiseBinary:
    def isequal(self): 
 
        return self._apply(ar.isequal)
+
+
+   def notequal(self): 
+
+       return self._apply(ar.notequal)
 
 
    def logical_and(self): 
@@ -279,6 +285,14 @@ def isequal(x, y):
 
     op = tensor_elemwise_binary(x, y)
     return op.isequal() 
+
+
+@ad.nondifferentiable
+@typecast_binary
+def notequal(x, y): 
+
+    op = tensor_elemwise_binary(x, y)
+    return op.notequal() 
 
 
 @ad.nondifferentiable

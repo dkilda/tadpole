@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import abc
 import numpy as np
 
 import tadpole.util  as util
 import tadpole.array as ar
+
+
+from tadpole.tensor.types import (
+   CutoffMode,
+   ErrorMode,
+   Trunc,
+)
 
 
 
@@ -15,17 +21,6 @@ import tadpole.array as ar
 ###  Cutoff mode for truncation                                             ###
 ###                                                                         ###
 ###############################################################################
-
-
-# --- Cutoff mode interface ------------------------------------------------- #
-
-class CutoffMode(abc.ABC):
-
-   @abc.abstractmethod
-   def apply(self, S):
-       pass
-       
-
 
 
 # --- Cutoff by rank -------------------------------------------------------- #
@@ -101,17 +96,6 @@ class SumCutoff(CutoffMode):
 ###############################################################################
 
 
-# --- Error mode interface -------------------------------------------------- #
-
-class ErrorMode(abc.ABC):
-
-   @abc.abstractmethod
-   def apply(self, S, rank):
-       pass
-
-
-
-
 # --- Error mode ------------------------------------------------------------ #
 
 class Error(ErrorMode):
@@ -145,28 +129,9 @@ class Error(ErrorMode):
 ###############################################################################
 
 
-# --- Truncation interface -------------------------------------------------- #
-
-class Trunc(abc.ABC):
-
-   @abc.abstractmethod
-   def rank(self, S):
-       pass
-
-   @abc.abstractmethod
-   def error(self, S):
-       pass
-
-   @abc.abstractmethod
-   def apply(self, U, S, VH):
-       pass
-
-
-
-
 # --- Null truncation ------------------------------------------------------- #
 
-class NullTrunc(Trunc):
+class TruncNull(Trunc):
 
    def rank(self, S):
 
@@ -187,7 +152,7 @@ class NullTrunc(Trunc):
 
 # --- General truncation ---------------------------------------------------- #
 
-class GenTrunc(Trunc):
+class TruncGen(Trunc):
 
    def __init__(self, max_rank=None, cutoff=None, error=None, renorm=None):
 
@@ -247,7 +212,7 @@ class GenTrunc(Trunc):
 
 # --- Truncation by rank ---------------------------------------------------- #
 
-class TruncRank(GenTrunc):
+class TruncRank(TruncGen):
 
    def __init__(self, max_rank=None, error=None, renorm=None):  
 
@@ -258,7 +223,7 @@ class TruncRank(GenTrunc):
 
 # --- Truncation by absolute cutoff ----------------------------------------- #
 
-class TruncAbs(GenTrunc):
+class TruncAbs(TruncGen):
 
    def __init__(self, cutoff, max_rank=None, error=None, renorm=None):   
 
@@ -271,7 +236,7 @@ class TruncAbs(GenTrunc):
 
 # --- Truncation by relative cutoff ----------------------------------------- # 
 
-class TruncRel(GenTrunc):
+class TruncRel(TruncGen):
 
    def __init__(self, cutoff, max_rank=None, error=None, renorm=None):   
 
@@ -286,7 +251,7 @@ class TruncRel(GenTrunc):
 
 def trunc_sum_cls(power, relative):
 
-    class TruncSum(GenTrunc):
+    class TruncSum(TruncGen):
 
        def __init__(self, cutoff, max_rank=None, error=None, renorm=None):  
 

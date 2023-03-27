@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import abc
-
 import tadpole.util     as util
 import tadpole.autodiff as ad
 import tadpole.array    as ar
+import tadpole.index    as tid
 
 import tadpole.tensor.core       as core
 import tadpole.tensor.truncation as truncation
 
 
 from tadpole.tensor.types import (
-   Engine
+   Engine,
+   CutoffMode,
+   ErrorMode,
+   Trunc,
+   Alignment,
 )
 
 
@@ -22,18 +25,15 @@ from tadpole.tensor.engine import (
 )
 
 
-from tadpole.tensor.index import (
+from tadpole.tensor.truncation import (
+   TruncNull,
+)
+
+
+from tadpole.index import (
    Index, 
    Indices,
-   shapeof, 
-   sizeof,
 )
-
-
-from tadpole.tensor.truncation import (
-   NullTrunc,
-)
-
 
 
 
@@ -44,21 +44,6 @@ from tadpole.tensor.truncation import (
 ###  indices and a link between the left/right partitions.                  ###
 ###                                                                         ###
 ###############################################################################
-
-
-# --- Alignment interface --------------------------------------------------- #
-
-class Alignment(abc.ABC):
-
-   @abc.abstractmethod
-   def left(self, inds):
-       pass
-
-   @abc.abstractmethod
-   def right(self, inds):
-       pass
-
-
 
 
 # --- Left alignment -------------------------------------------------------- #
@@ -359,7 +344,7 @@ class TensorDecomp:
 # --- Explicit-rank decompositions ------------------------------------------ #
 
 @ad.differentiable
-def svd(x, inds, alignment="left", link="link", trunc=NullTrunc()):
+def svd(x, inds, alignment="left", link="link", trunc=TruncNull()):
 
     op = tensor_decomp(x, inds, alignment, link)
 
@@ -368,7 +353,7 @@ def svd(x, inds, alignment="left", link="link", trunc=NullTrunc()):
 
 
 @ad.differentiable
-def eig(x, inds, alignment="left", link="link", trunc=NullTrunc()):
+def eig(x, inds, alignment="left", link="link", trunc=TruncNull()):
 
     op = tensor_decomp(x, inds, alignment, link)
 
@@ -377,7 +362,7 @@ def eig(x, inds, alignment="left", link="link", trunc=NullTrunc()):
 
 
 @ad.differentiable
-def eigh(x, inds, alignment="left", link="link", trunc=NullTrunc()):
+def eigh(x, inds, alignment="left", link="link", trunc=TruncNull()):
 
     op = tensor_decomp(x, inds, alignment, link)
 

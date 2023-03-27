@@ -2,58 +2,28 @@
 # -*- coding: utf-8 -*-
 
 
-from .backends import set_default as set_backend
+# --- Types ----------------------------------------------------------------- #
+
+from .types import (
+   Pluggable,
+   Tensor,
+   Space,
+)
 
 
 from .types import (
-   TensorLike,
-   Pluggable,
+   Engine,
+   IndexProduct,
+   Alignment,
+   CutoffMode,
+   ErrorMode,
+   Trunc,
 )
 
 
-from .core import (
-   Tensor,
-   NullGrad,
-   SparseGrad,
-)
 
 
-from .core import (
-   astensor,
-   copy,
-   todense,
-   withdata,
-   space,
-   item,
-   dtype,
-   size,
-   ndim,
-   shape,
-)
-
-
-from .core import (
-   allclose,
-   allequal,
-   isclose,
-   isequal,
-   notequal,
-   logical_and,
-   logical_or,
-)
-
-
-from .core import (
-   addgrads,
-   getitem,
-   neg,
-   add,
-   sub,
-   mul,
-   div,
-   power,
-)
-
+# --- Space ----------------------------------------------------------------- #
 
 from .space import (
    TensorSpace,
@@ -88,41 +58,107 @@ from .space import (
 )
 
 
-from .operations import (
+
+
+# --- Core ------------------------------------------------------------------ #
+
+from .core import (
+   TensorGen,
+   NullGrad,
+   SparseGrad,
+)
+
+
+from .core import (
+   astensor,
+   copy,
+   todense,
+   withdata,
+   space,
+   item,
+   dtype,
+   size,
+   ndim,
+   shape,
+)
+
+
+
+
+# --- Interaction ----------------------------------------------------------- #
+
+from .interaction import (
+   union_inds,
+   overlap_inds,
+   complement_inds,
+   match_type,
+   match_shape,
+   match,
+   expand_grad
+)
+
+
+
+
+# --- Reduction ------------------------------------------------------------- #
+
+from .reduction import (
    allof,
    anyof,
-   count_nonzero,
-   sign,
-   put,
-   iscomplex,
-)
-
-from .operations import (
-   reindex,
-   fuse,
-   split,
-   transpose,
-   squeeze,
-   unsqueeze,
-   sumover,
-   cumsum,
-)
-
-
-from .operations import (
    amax,
    amin,
-   absolute,
-   flip,
-   clip,
-   where,
+   count_zero,
 )
 
 
-from .operations import (
+from .reduction import (
+   sumover,
+   cumsum,
+   norm,
+)
+
+
+
+
+# --- Reindexing ------------------------------------------------------------ #
+
+from .reindexing import (
+   reindex, 
+   transpose,
+   htranspose,
+   fuse,
+   split,
+   squeeze,
+   unsqueeze,
+   expand,
+)
+
+
+
+
+# --- Elemwise Unary -------------------------------------------------------- #
+
+from .elemwise_unary import (
+   put,
+   clip,
+   flip,
+)
+
+
+from .elemwise_unary import (
+   iscomplex,
+   getitem,
+   expm,
+)
+
+
+from .elemwise_unary import (
+   neg,
+   sign,
    conj,
    real,
    imag,
+   absolute,
    sqrt,
    log,
    exp,
@@ -137,25 +173,60 @@ from .operations import (
    tanh,
    arcsinh,
    arccosh,
-   arctanh,
+   arctanh,   
 )
 
 
-from .operations import (
-   norm,
-   expm,
-   htranspose,
+
+
+# --- Elemwise Binary ------------------------------------------------------- #
+
+from .elemwise_binary import (
+   addgrads,
+   add,
+   sub,
+   mul,
+   div,
+   power,
 )
 
 
-from .contract import (
-   einsum,
+from .elemwise_binary import (
+   allclose,
+   isclose,
+   allequal,
+   isequal,
+   notequal,
+   logical_and,
+   logical_or,
+)
+
+
+
+
+# --- Elemwise Ternary ------------------------------------------------------ #
+
+from .elemwise_ternary import (
+   where,
+)
+
+
+
+
+# --- Contraction ----------------------------------------------------------- #
+
+from .contraction import (
+   contract,
    dot,
    kron,
 )
 
 
-from .contract import (
+
+
+# --- Decomposition --------------------------------------------------------- #
+
+from .decomp import (
    svd,
    eig,
    eigh,
@@ -164,9 +235,8 @@ from .contract import (
 )
 
 
-from .trunc import (
-   Trunc,
-   NullTrunc,
+from .truncation import (
+   TruncNull,
    TruncRank,
    TruncAbs,
    TruncRel,
@@ -177,19 +247,12 @@ from .trunc import (
 )
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+from .truncation import (
+   RankCutoff,
+   DirectCutoff,
+   SumCutoff,
+   Error,
+)
 
 
 
