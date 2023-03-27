@@ -257,6 +257,12 @@ class Op:
 
 
 """
+
+       print("FUN args-1: ", args, type(args[0]))
+       print("FUN args-2: ", self._args)
+
+
+
        try:
           print("\nFUN-1: ", args,       args[0]._data)
           print("\nFUN-2: ", self._args, self._args[0]._data)

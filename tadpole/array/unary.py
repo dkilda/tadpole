@@ -19,39 +19,16 @@ import tadpole.array.nary     as nary
 ###############################################################################
 
 
-# --- Decorator to adjust input axis ---------------------------------------- #
-
-def adjust_axis(fun):
-
-    def wrap(x, axis=None, *args, **kwargs):
-
-        if isinstance(axis, (list, tuple, util.TupleLike)):
-
-           if len(axis) == 0:
-              axis = None
-
-           if len(axis) == 1:
-              axis, = axis
-
-        return fun(x, axis, *args, **kwargs)
-
-    return wrap
-
-
-
-
 # --- Type cast for unary functions ----------------------------------------- #
 
 def typecast(fun):
 
     def wrap(x, *args, **kwargs):
 
-        try:
-            return fun(x, *args, **kwargs)       
- 
-        except (AttributeError, TypeError):
+        if isinstance(x, types.Array):
+           return fun(x, *args, **kwargs)   
 
-            return fun(asarray(x), *args, **kwargs)
+        return fun(asarray(x), *args, **kwargs)
          
     return wrap
 
@@ -238,7 +215,6 @@ class Array(types.Array):
        return self.new(data) 
 
 
-   @adjust_axis
    def sumover(self, axis=None, dtype=None, **opts):
 
        data = self._backend.sumover(self._data, axis, dtype, **opts) 
@@ -246,7 +222,6 @@ class Array(types.Array):
        return self.new(data) 
 
 
-   @adjust_axis
    def cumsum(self, axis=None, dtype=None, **opts):
 
        data = self._backend.sumover(self._data, axis, dtype, **opts) 
@@ -268,7 +243,6 @@ class Array(types.Array):
        return self._backend.item(self._data, *idx)
 
 
-   @adjust_axis
    def allof(self, axis=None, **opts):
 
        data = self._backend.all(self._data, axis, **opts)
@@ -276,7 +250,6 @@ class Array(types.Array):
        return self.new(data) 
 
 
-   @adjust_axis
    def anyof(self, axis=None, **opts):
 
        data = self._backend.any(self._data, axis, **opts)
@@ -284,13 +257,11 @@ class Array(types.Array):
        return self.new(data) 
 
 
-   @adjust_axis
    def amax(self, axis=None, **opts):
 
        return self._backend.max(self._data, axis, **opts)
 
 
-   @adjust_axis
    def amin(self, axis=None, **opts):
 
        return self._backend.min(self._data, axis, **opts)
@@ -324,7 +295,6 @@ class Array(types.Array):
        return self.new(data) 
 
 
-   @adjust_axis
    def count_nonzero(self, axis=None, **opts):
 
        data = self._backend.count_nonzero(self._data, axis, **opts)

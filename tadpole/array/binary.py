@@ -22,25 +22,29 @@ import tadpole.array.nary     as nary
 
 def typecast(fun):
 
+    def isarray(x):
+
+        return isinstance(x, types.Array)
+
+
     def wrap(x, y, *args, **kwargs):
 
-        try:
-            return fun(x, y, *args, **kwargs)       
+        if isarray(x) and isarray(y):
+           return fun(x, y, *args, **kwargs)       
  
-        except (AttributeError, TypeError):
+        if not isarray(x) and not isarray(y):  
+           x = unary.asarray(x)
+           y = unary.asarray(y) 
 
-            if not any(isinstance(v, types.Array) for v in (x,y)):
-               x = unary.asarray(x)
-               y = unary.asarray(y) 
+        if not isarray(x):
+           x = y.new(x) 
 
-            if not isinstance(x, types.Array):
-               x = y.new(x) 
+        if not isarray(y):
+           y = x.new(y) 
 
-            if not isinstance(y, types.Array):
-               y = x.new(y) 
-
-            return fun(x, y, *args, **kwargs)
+        return fun(x, y, *args, **kwargs)
          
+
     return wrap
 
 

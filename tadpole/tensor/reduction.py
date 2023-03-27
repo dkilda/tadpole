@@ -107,12 +107,16 @@ class TensorReduce:
    def _apply(self, fun, inds=None, **opts):
 
        if inds is None:
-
           data = fun(self._data, **opts)
           return core.TensorGen(data, Indices())
 
        inds = self._map(inds)
-       data = fun(self._data, self._axes(inds), **opts)
+       axes = self._axes(inds)
+
+       if len(axes) == 1:
+          axes, = axes   
+
+       data = fun(self._data, axes, **opts)
 
        return core.TensorGen(data, self._output_inds(inds))
 
