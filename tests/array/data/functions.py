@@ -80,7 +80,6 @@ def binary_wrappedfun_dat_001(backend):
 
 
 
-
 def binary_wrappedfun_dat_002(backend):
 
     backend = backends.get(backend)
@@ -109,13 +108,12 @@ def binary_wrappedfun_dat_003(backend):
     seed    = 1
     np.random.seed(seed)
 
-    x = data.array_dat(data.randn)(
-           backend.name(), (2,3,4), dtype="complex128", seed=seed
-        )
-
-    ydata = np.random.randn(seed+1)
+    ydata = np.random.randn(seed)
     y     = unary.Array(backend, ydata)
 
+    x = data.array_dat(data.randn)(
+           backend.name(), (2,3,4), dtype="complex128", seed=seed+1
+        )
     out = unary.Array(backend, x.data * ydata)
 
     fun        = fake.Fun(out, x.array, y)

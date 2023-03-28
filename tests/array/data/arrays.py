@@ -10,6 +10,7 @@ import tests.array.data  as data
 import tadpole.array.unary    as unary
 import tadpole.array.binary   as binary
 import tadpole.array.nary     as nary
+import tadpole.array.void     as void
 import tadpole.array.backends as backends
 
 
@@ -314,6 +315,8 @@ def narray_dat(datafun):
 
     def wrap(backend, shapes=None, dtypes=None, **opts):
 
+        seed = opts.pop("seed", 1)
+
         if shapes is None:
            shapes = []
 
@@ -324,7 +327,7 @@ def narray_dat(datafun):
         for i in range(len(shapes)):
 
             w = array_dat(datafun)(
-                      backend, shapes[i], dtype=dtypes[i], seed=i+1, **opts
+                      backend, shapes[i], dtype=dtypes[i], seed=seed+i, **opts
                    )
             ws.append(w)
 

@@ -52,7 +52,7 @@ class TestTypeCast:
        data.unary_wrappedfun_dat_001,
        data.unary_wrappedfun_dat_002,
    ])
-   def test_unary(self, fundat):
+   def test_typecast(self, fundat):
 
        w = fundat(self.backend)
        assert ar.allclose(w.wrappedfun(*w.args), w.out)
