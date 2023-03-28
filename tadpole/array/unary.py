@@ -129,7 +129,7 @@ class Array(types.Array):
 
    def space(self):
 
-       return space.ArraySpaceGen(self._backend, self.shape, self.dtype)
+       return space.ArraySpace(self._backend, self.shape, self.dtype)
 
 
    # --- Data type methods --- #
@@ -157,7 +157,7 @@ class Array(types.Array):
 
    def __getitem__(self, idx):
 
-       return self._data[idx]
+       return self.new(self._data[idx])
 
 
    # --- Shape methods --- #
@@ -224,7 +224,7 @@ class Array(types.Array):
 
    def cumsum(self, axis=None, dtype=None, **opts):
 
-       data = self._backend.sumover(self._data, axis, dtype, **opts) 
+       data = self._backend.cumsum(self._data, axis, dtype, **opts) 
 
        return self.new(data) 
 
@@ -259,12 +259,16 @@ class Array(types.Array):
 
    def amax(self, axis=None, **opts):
 
-       return self._backend.max(self._data, axis, **opts)
+       data = self._backend.max(self._data, axis, **opts)
+
+       return self.new(data)
 
 
    def amin(self, axis=None, **opts):
 
-       return self._backend.min(self._data, axis, **opts)
+       data = self._backend.min(self._data, axis, **opts)
+
+       return self.new(data)
 
 
    def sign(self, **opts):
@@ -503,7 +507,7 @@ class Array(types.Array):
 
    def norm(self, axis=None, order=None, **opts):
 
-       data = self._backend.norm(self._data, order, axis, **opts)
+       data = self._backend.norm(self._data, axis, order, **opts)
 
        return self.new(data)       
 
@@ -817,9 +821,9 @@ def qr(x):
 def lq(x):
 
     if iscomplex(x):
-       xH = conj(x)
+       x = conj(x)
 
-    Q, R = qr(transpose(xH, (1,0)))
+    Q, R = qr(transpose(x, (1,0)))
     
     L = transpose(R, (1,0))
     Q = transpose(Q, (1,0))

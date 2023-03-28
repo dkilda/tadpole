@@ -155,9 +155,9 @@ class TensorReduce:
        return self._apply(ar.sumover, inds, dtype, **opts)
 
 
-   def cumsum(self, inds=None, dtype=None, **opts):
+   def cumsum(self, ind=None, dtype=None, **opts):
 
-       return self._apply(ar.cumsum, inds, dtype, **opts)
+       return self._apply(ar.cumsum, ind, dtype, **opts)
 
 
    # --- Linear algebra methods --- #
@@ -225,10 +225,10 @@ def sumover(x, inds=None, dtype=None, **opts):
 
 
 @ad.differentiable
-def cumsum(x, inds=None, dtype=None, **opts):
+def cumsum(x, ind=None, dtype=None, **opts):
 
     op = tensor_reduce(x)
-    return op.cumsum(inds, dtype, **opts)
+    return op.cumsum(ind, dtype, **opts)
 
 
 

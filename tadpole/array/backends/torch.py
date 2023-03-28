@@ -549,12 +549,17 @@ class TorchBackend(backend.Backend):
 
    # --- Linear algebra: misc methods --- #
 
-   def norm(self, x, order=None, axis=None, **opts):
+   def norm(self, x, axis=None, order=None, **opts):
 
        if order is None:
           order = "fro"
 
        return torch.norm(x, p=order, dim=axis, **opts)
+
+
+   def htranspose(self, x, axes):
+
+       return self.transpose(self.conj(x), axes)
        
 
 

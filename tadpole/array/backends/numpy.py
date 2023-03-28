@@ -505,9 +505,14 @@ class NumpyBackend(backend.Backend):
 
    # --- Linear algebra: misc methods --- #
 
-   def norm(self, x, order=None, axis=None, **opts):
+   def norm(self, x, axis=None, order=None, **opts):
 
-       return np.linalg.norm(array, order, axis, **opts)
+       return np.linalg.norm(x, order, axis, **opts)
+
+
+   def htranspose(self, x, axes):
+
+       return self.transpose(self.conj(x), axes)
 
 
 

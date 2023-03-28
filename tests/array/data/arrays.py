@@ -308,7 +308,7 @@ ArraySpaceData = collections.namedtuple("ArraySpaceData", [
 
 def array_space_dat(backend, shape, dtype):
 
-    space = unary.ArraySpaceGen(backend, shape, dtype)
+    space = unary.ArraySpace(backend, shape, dtype)
 
     return ArraySpaceData(space, backend, shape, dtype)
 

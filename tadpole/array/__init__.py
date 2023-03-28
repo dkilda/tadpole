@@ -15,7 +15,7 @@ from tadpole.array.backends import set_default as set_backend
 
 from .types import (
    Array, 
-   ArraySpace,
+   Space,
 )
 
 
@@ -35,7 +35,7 @@ from tadpole.array.nary   import Array as NaryArray
 
 from .space import (
    arrayspace,
-   ArraySpaceGen,
+   ArraySpace,
 )
 
 
@@ -130,6 +130,7 @@ from .unary import (
 from .unary import (
    svd,
    qr,
+   lq,
    eig,
    eigh,
    expm,

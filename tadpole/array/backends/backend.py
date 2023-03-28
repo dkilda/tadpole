@@ -362,7 +362,11 @@ class Backend(abc.ABC):
    # --- Linear algebra: misc methods --- #
 
    @abc.abstractmethod
-   def norm(self, x, order=None, axis=None, **opts):
+   def norm(self, x, axis=None, order=None, **opts):
+       pass
+
+   @abc.abstractmethod
+   def htranspose(self, x, axes):
        pass
 
 

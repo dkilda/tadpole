@@ -174,9 +174,19 @@ class TensorReindex:
        return self._new(data, inds)
 
 
-   def squeeze(self):
+   def squeeze(self, inds=None):
 
-       singletons = (ind for ind in self._inds if len(ind) == 1)
+       if   inds is None:
+            singletons = (ind for ind in self._inds if len(ind) == 1)   
+  
+       else:
+            singletons = self._inds.map(*inds)
+
+            assert all(len(ind) == 1 for ind in singletons), (
+               f"{type(self).__name__}.squeeze: "
+               f"Cannot squeeze an input index with size != 1!"
+               f"Sizes of all input indices: {tid.shapeof(*singletons)}."
+            ) 
 
        inds = self._inds.remove(*singletons)
        data = ar.squeeze(self._data, self._inds.axes(*singletons))
@@ -242,7 +252,7 @@ def split(x, splitmap):
 
 
 @ad.differentiable
-def squeeze(x):
+def squeeze(x, inds=None):
 
     op = tensor_reindex(x)
     return op.squeeze()

@@ -27,14 +27,14 @@ def arrayspace(shape, dtype=None, backend=None):
     backend = backends.get(backend)
     dtype   = backend.get_dtype(dtype)
 
-    return ArraySpaceGen(backend, shape, dtype)
+    return ArraySpace(backend, shape, dtype)
 
 
 
 
 # --- Array Space ----------------------------------------------------------- #
 
-class ArraySpaceGen(types.ArraySpace): 
+class ArraySpace(types.Space): 
 
    # --- Construction --- #
 
@@ -52,6 +52,21 @@ class ArraySpaceGen(types.ArraySpace):
    def _void(self):
 
        return void.Array(self._backend)
+
+
+   # --- Comparisons --- #
+
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+       log.typ(self, other)
+
+       if bool(log):
+          log.val(self._backend, other._backend)
+          log.val(self._shape,   other._shape)
+          log.val(self._dtype,   other._dtype)
+
+       return bool(log)
 
 
    # --- Space properties --- #
