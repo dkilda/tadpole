@@ -64,7 +64,7 @@ class Array(types.Array):
        return bool(log)
 
 
-   # --- Data type methods  --- #
+   # --- Data type methods --- #
  
    def iscomplex_type(self, dtype):
 
@@ -98,8 +98,8 @@ class Array(types.Array):
 
    def eye(self, N, M=None, **opts):
 
-       data = self._backend.eye(N, M, **opts)
-
+       data = self._backend.eye(N, M=M, **opts)
+     
        return self.new(data)
        
 
@@ -180,7 +180,7 @@ def unit(x, shape, idx, **opts):
 @auto_void
 def eye(x, N, M=None, **opts):
 
-    return x.eye(N, M=None, **opts)
+    return x.eye(N, M=M, **opts)
 
 
 @auto_void

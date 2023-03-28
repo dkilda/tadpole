@@ -52,6 +52,18 @@ class TestArray:
 
    # --- Array methods --- #
 
+   @pytest.mark.parametrize("shape", [(2,3,4)])
+   @pytest.mark.parametrize("dtype", ["complex128"])
+   def test_new(self, shape, dtype):
+
+       w = data.narray_dat(data.randn)(self.backend)
+       x = data.array_dat(data.randn)(
+              self.backend, shape, dtype=dtype
+           )
+
+       assert w.narray.new(x.data) == x.array
+
+
    def test_nary(self):
 
        w = data.narray_dat(data.randn)(self.backend)
@@ -59,22 +71,134 @@ class TestArray:
        assert w.narray.nary() == nary.Array(w.backend)
 
 
+   @pytest.mark.parametrize("shapes", [
+      [(2,3,4), (5,4,6), (5,3,2)],
+   ])
+   def test_or(self, shapes):
+
+       x = data.narray_dat(data.randn)(self.backend)
+       y = data.narray_dat(data.randn)(self.backend, shapes)
+
+       assert x.narray | y.narray is y.narray
 
 
+   # --- Data type methods --- #
+
+   @pytest.mark.parametrize("dtype, iscomplex", [
+      ["complex128", True],
+      ["float64",    False],
+   ])
+   def test_iscomplex_type(self, dtype, iscomplex):
+
+       assert ar.iscomplex_type(dtype) == iscomplex
+
+       
+   # --- Array creation methods --- #
+
+   @pytest.mark.parametrize("sampledat", [
+      data.zeros_dat_001,
+   ])
+   def test_zeros(self, sampledat):
+
+       x   = sampledat(self.backend)
+       out = ar.zeros(
+                x.shape, **options(dtype=x.dtype, backend=self.backend)
+             )
+
+       assert out == x.array
 
 
+   @pytest.mark.parametrize("sampledat", [
+      data.ones_dat_001,
+   ])
+   def test_ones(self, sampledat):
+
+       x   = sampledat(self.backend)
+       out = ar.ones(
+                x.shape, **options(dtype=x.dtype, backend=self.backend)
+             )
+
+       assert out == x.array
 
 
+   @pytest.mark.parametrize("basisdat", [
+      data.basis_real_dat_001,
+   ])
+   def test_unit(self, basisdat):
+
+       x = basisdat(self.backend)
+
+       for idx, array in zip(x.idxs, x.arrays):
+
+           out = ar.unit(
+                    x.shape, 
+                    idx, 
+                    **options(dtype=x.dtype, backend=self.backend)
+                 )
+
+           assert out == array
 
 
+   @pytest.mark.parametrize("sampledat", [
+      data.rand_real_dat_001,
+      data.rand_complex_dat_001,
+   ])
+   def test_rand(self, sampledat):
+
+       seed = 1
+       x    = sampledat(self.backend, seed=seed)
+       out  = ar.rand(
+                 x.shape, 
+                 **options(dtype=x.dtype, seed=seed, backend=self.backend)
+              )
+
+       assert out == x.array
 
 
+   @pytest.mark.parametrize("sampledat", [
+      data.randn_real_dat_001,
+      data.randn_complex_dat_001,
+   ])
+   def test_randn(self, sampledat):
+
+       seed = 1
+       x    = sampledat(self.backend, seed=seed)
+       out  = ar.randn(
+                 x.shape, 
+                 **options(dtype=x.dtype, seed=seed, backend=self.backend)
+              )
+
+       assert out == x.array
 
 
+   @pytest.mark.parametrize("sampledat", [
+      data.randuniform_real_dat_001,
+      data.randuniform_complex_dat_001,
+   ])
+   def test_randuniform(self, sampledat):
+
+       seed = 1
+       x    = sampledat(self.backend, seed=seed)
+       out  = ar.randuniform(
+                 x.shape, 
+                 x.opts["boundaries"],
+                 **options(dtype=x.dtype, seed=seed, backend=self.backend)
+              )
+
+       assert out == x.array
 
 
+   @pytest.mark.parametrize("N, M", [
+      [4, None],
+      [3, 4],
+   ])
+   def test_eye(self, N, M):
 
-
+       out = ar.eye(N, **options(M=M, backend=self.backend))
+       ans = np.eye(N, M=M)
+       ans = unary.asarray(ans, **options(backend=self.backend))
+ 
+       assert out == ans
 
 
 
