@@ -9,6 +9,7 @@ import tests.array.data  as data
 
 import tadpole.array.unary    as unary
 import tadpole.array.binary   as binary
+import tadpole.array.nary     as nary
 import tadpole.array.backends as backends
 
 
@@ -293,6 +294,57 @@ def array_dat(datafun):
         array  = unary.Array(backend, data)
 
         return ArrayData(array, backend, data, shape, opts)
+
+    return wrap
+
+
+
+
+# --- NArray data ----------------------------------------------------------- #
+
+NArrayData = collections.namedtuple("NArrayData", [
+                 "narray", "arrays", 
+                 "backend", "datas", "shapes", "dtypes", "opts",
+             ])
+
+
+
+
+def narray_dat(datafun):
+
+    def wrap(backend, shapes=None, dtypes=None, **opts):
+
+        if shapes is None:
+           shapes = []
+
+        if dtypes is None:
+           dtypes = ["complex128"] * len(shapes) 
+
+        ws = []
+        for i in range(len(shapes)):
+
+            w = array_dat(datafun)(
+                      backend, shapes[i], dtype=dtypes[i], seed=i+1, **opts
+                   )
+            ws.append(w)
+
+        arrays  = [w.array for w in ws]
+        datas   = [w.data  for w in ws]
+        backend = backends.get(backend)
+
+        if   len(shapes) == 0:
+             narray = void.Array(backend)
+        elif len(shapes) == 1:
+             narray = unary.Array(backend, *datas)
+        elif len(shapes) == 2:
+             narray = binary.Array(backend, *datas) 
+        else:
+             narray = nary.Array(backend, *datas) 
+
+        return NArrayData(
+                  narray, arrays, 
+                  backend, datas, shapes, dtypes, opts
+               )
 
     return wrap
 

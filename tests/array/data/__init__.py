@@ -20,6 +20,7 @@ from .arrays import (
    randn,
    randn_pos,
    array_dat,
+   narray_dat,
    array_space_dat,
 )
 

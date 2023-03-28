@@ -124,19 +124,11 @@ class TestArray:
    ])
    def test_or_binary(self, shapes, dtypes):
 
-       x = data.array_dat(data.randn)(
-              self.backend, shapes[0], dtype=dtypes[0], seed=1
-           )
-       y = data.array_dat(data.randn)(
-              self.backend, shapes[1], dtype=dtypes[1], seed=2
-           )
+       w = data.narray_dat(data.randn)(self.backend, shapes, dtypes)
 
-       out = x.array | y.array
-       ans = binary.Array(x.backend, x.data, y.data)
+       assert w.arrays[0] | w.arrays[1] == w.narray
 
-       assert out == ans
    
-
    @pytest.mark.parametrize("shapes", [
       [(2,3,4), (5,4,6), (3,5,2)],
    ])
@@ -145,21 +137,12 @@ class TestArray:
    ])
    def test_or_nary(self, shapes, dtypes):
 
-       x = data.array_dat(data.randn)(
-              self.backend, shapes[0], dtype=dtypes[0], seed=1
-           )
-       y = data.array_dat(data.randn)(
-              self.backend, shapes[1], dtype=dtypes[1], seed=2
-           )
-       w = data.array_dat(data.randn)(
-              self.backend, shapes[2], dtype=dtypes[2], seed=3
-           )
+       w = data.narray_dat(data.randn)(self.backend, shapes, dtypes)
 
-       z   = binary.Array(x.backend, x.data, y.data)
-       out = w.array | z
-       ans = nary.Array(w.backend, w.data, x.data, y.data)
+       x = w.arrays[0]
+       y = w.arrays[1] | w.arrays[2]
 
-       assert out == ans 
+       assert x | y == w.narray
 
 
    # --- Core methods --- #   
@@ -1001,21 +984,6 @@ class TestArray:
        ans = unary.asarray(ans,     **options(backend=self.backend))
 
        assert ar.allclose(out, ans)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
