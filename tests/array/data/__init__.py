@@ -21,7 +21,7 @@ from .arrays import (
    randn_pos,
    array_dat,
    narray_dat,
-   array_space_dat,
+   arrayspace_dat,
 )
 
 

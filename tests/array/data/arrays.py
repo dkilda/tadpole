@@ -11,6 +11,7 @@ import tadpole.array.unary    as unary
 import tadpole.array.binary   as binary
 import tadpole.array.nary     as nary
 import tadpole.array.void     as void
+import tadpole.array.space    as sp
 import tadpole.array.backends as backends
 
 
@@ -361,9 +362,10 @@ ArraySpaceData = collections.namedtuple("ArraySpaceData", [
                  ])
 
 
-def array_space_dat(backend, shape, dtype):
+def arrayspace_dat(backend, shape, dtype):
 
-    space = unary.ArraySpace(backend, shape, dtype)
+    backend = backends.get(backend)
+    space   = sp.ArraySpace(backend, shape, dtype)
 
     return ArraySpaceData(space, backend, shape, dtype)
 

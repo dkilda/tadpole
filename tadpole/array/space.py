@@ -9,7 +9,7 @@ import tadpole.array.backends as backends
 import tadpole.array.types    as types
 import tadpole.array.void     as void
 import tadpole.array.unary    as unary
-
+import tadpole.array.binary   as binary
 
 
 
@@ -140,13 +140,13 @@ class ArraySpace(types.Space):
            yield self.unit(idx, **opts)
 
 
-   def basis(self):
+   def basis(self, **opts):
 
        if  self._void.iscomplex_type(self._dtype):
 
            for unit in self.units(**opts):
                yield unit
-               yield 1j * unit
+               yield binary.mul(1j, unit)
 
        else:
            for unit in self.units(**opts):
