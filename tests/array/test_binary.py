@@ -63,10 +63,6 @@ class TestTypeCast:
 
 
 
-
-
-
-
 ###############################################################################
 ###                                                                         ###
 ###  Definition of Binary Array (supports binary operations)                ###
@@ -109,11 +105,22 @@ class TestArray:
            )
 
        assert w.narray.new(x.data) == x.array
+
+
+   @pytest.mark.parametrize("shapes", [[(2,3,4), (2,3,4)]])
+   @pytest.mark.parametrize("dtypes", [["complex128", "complex128"]])
+   def test_nary(self, shapes, dtypes):
+
+       w = data.narray_dat(data.randn)(
+              self.backend, shapes, dtypes
+           )
+
+       assert w.narray.nary() == nary.Array(w.backend, *w.datas)
    
 
    @pytest.mark.parametrize("shapes1, shapes2", [
-      [[(2,3,4), (5,4,6)         ], [(5,3,2), (3,4,2)]],
-      [[(2,3,4), (5,4,6), (5,3,2)], [(3,4,2)         ]],
+      [[(2,3,4), (5,4,6)], [(5,3,2), (3,4,2)]],
+      [[(2,3,4), (5,4,6)], [(3,4,2)         ]],
    ])
    def test_or(self, shapes1, shapes2):
 

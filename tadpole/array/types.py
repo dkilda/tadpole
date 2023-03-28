@@ -22,6 +22,10 @@ class Array(abc.ABC):
        pass
 
    @abc.abstractmethod
+   def nary(self):
+       pass
+
+   @abc.abstractmethod
    def __or__(self, other):
        pass
 

@@ -94,6 +94,11 @@ class Array(types.Array):
        return unary.Array(self._backend, data)
 
 
+   def nary(self):
+
+       return nary.Array(self._backend, *self._datas)
+
+
    def __or__(self, other):
 
        backend = backends.common(

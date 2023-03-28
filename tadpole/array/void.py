@@ -6,7 +6,7 @@ import tadpole.util as util
 import tadpole.array.backends as backends
 import tadpole.array.types    as types
 import tadpole.array.unary    as unary
-
+import tadpole.array.nary     as nary
 
 
 
@@ -39,6 +39,11 @@ class Array(types.Array):
    def new(self, data):
 
        return unary.Array(self._backend, data)
+
+
+   def nary(self):
+
+       return nary.Array(self._backend)
 
 
    def __or__(self, other):

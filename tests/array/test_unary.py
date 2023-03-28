@@ -114,7 +114,18 @@ class TestArray:
            )
 
        assert x.array.new(y.data) == y.array
-   
+
+
+   @pytest.mark.parametrize("shape", [(2,3,4)])
+   @pytest.mark.parametrize("dtype", ["complex128"])
+   def test_nary(self, shape, dtype):
+
+       x = data.array_dat(data.randn)(
+              self.backend, shape, dtype=dtype
+           )
+
+       assert x.array.nary() == nary.Array(x.backend, x.data)
+
 
    @pytest.mark.parametrize("shapes", [
       [(2,3,4), (5,4,6)],
@@ -599,6 +610,24 @@ class TestArray:
        out          = ar.put(w.array, idxs, vals)
        w.data[idxs] = vals
 
+       ans = unary.asarray(w.data, **options(backend=self.backend))
+
+       assert out == ans
+
+
+   @pytest.mark.parametrize("shape, idxs", [
+      [(2,3,4), (((1,0,1),), ((0,2,0),), ((2,1,3),))], 
+   ])
+   def test_put_accumulate(self, shape, idxs):
+
+       np.random.seed(1)
+       vals = np.random.randn(len(idxs))
+
+       w = data.array_dat(data.randn)(self.backend, shape)
+
+       out = ar.put(w.array, idxs, vals, accumulate=True)
+
+       np.add.at(w.data, idxs, vals) 
        ans = unary.asarray(w.data, **options(backend=self.backend))
 
        assert out == ans

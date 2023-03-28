@@ -8,6 +8,7 @@ from functools import reduce
 
 import tadpole.array.backends as backends
 import tadpole.array.types    as types
+import tadpole.array.void     as void
 import tadpole.array.unary    as unary
 import tadpole.array.binary   as binary
 
@@ -46,6 +47,11 @@ class Array(types.Array):
        return unary.Array(self._backend, data)
 
 
+   def nary(self):
+
+       return self
+
+
    def __or__(self, other):
 
        backend = backends.common(
@@ -78,7 +84,7 @@ class Array(types.Array):
 
    def where(self): 
 
-       data = self._backend.where(*self.datas)
+       data = self._backend.where(*self._datas)
 
        return self.new(data)
 
@@ -115,6 +121,7 @@ def where(condition, x, y):
 def einsum(equation, *xs, optimize=True):
 
     array = reduce(operator.or_, xs) 
+    array = array.nary()
             
     return array.einsum(equation, optimize=optimize)
 
