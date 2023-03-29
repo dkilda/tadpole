@@ -27,3 +27,7 @@ from .engines import (
    train_dat,
 )
 
+
+from .decomp import (
+   svd_dat,
+)
