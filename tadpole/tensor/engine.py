@@ -111,6 +111,18 @@ class EngineUnary(Engine):
        self._train  = train
 
 
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+       log.typ(self, other)
+
+       if bool(log):
+          log.val(self._optype, other._optype)
+          log.val(self._train,  other._train)
+
+       return bool(log)
+
+
    @property
    def _size(self):
        
@@ -156,6 +168,19 @@ class EngineElemwise(Engine):
        self._optype = optype
        self._size   = size
        self._train  = train
+
+
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+       log.typ(self, other)
+
+       if bool(log):
+          log.val(self._optype, other._optype)
+          log.val(self._size,   other._size)
+          log.val(self._train,  other._train)
+
+       return bool(log)
 
 
    def _inds(self):

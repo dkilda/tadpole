@@ -64,6 +64,17 @@ class EngineElemwiseBinary(Engine):
        self._source = source
 
 
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+       log.typ(self, other)
+
+       if bool(log):
+          log.val(self._source, other._source)
+
+       return bool(log)
+
+
    def attach(self, data, inds):
 
        return self.__class__(self._source.attach(data, inds))

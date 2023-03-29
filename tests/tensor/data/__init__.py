@@ -2,6 +2,15 @@
 # -*- coding: utf-8 -*-
 
 
+from tests.array.data import (
+   randn,
+   randn_pos,
+   array_dat,
+   narray_dat,
+   arrayspace_dat,   
+)
+
+
 from .tensors import (
    indices_dat,
    basis_dat,
@@ -31,3 +40,9 @@ from .engines import (
 from .decomp import (
    svd_dat,
 )
+
+
+
+
+
+

@@ -15,7 +15,6 @@ import tadpole.tensor.elemwise_binary as binary
 
 import tests.tensor.fakes as fake
 import tests.tensor.data  as data
-import tests.array.data   as ardata
 
 
 from tadpole.tensor.types import (
@@ -66,7 +65,7 @@ def unary_wrappedfun_dat_002(backend):
         op = unary.tensor_elemwise_unary(x)
         return op.sin()    
 
-    x = data.tensor_dat(ardata.randn)(
+    x = data.tensor_dat(data.randn)(
            backend, ("i","j","k"), (2,3,4), dtype="complex128", seed=1
         )
 
@@ -106,7 +105,7 @@ def binary_wrappedfun_dat_002(backend):
 
     backend = backends.get(backend)
 
-    x = data.tensor_dat(ardata.randn)(
+    x = data.tensor_dat(data.randn)(
            backend, ("i","j","k"), (2,3,4), dtype="complex128", seed=1
         )
     v = x.backend.randn((1,), seed=2)[0]
@@ -128,7 +127,7 @@ def binary_wrappedfun_dat_003(backend):
 
     backend = backends.get(backend)
 
-    x = data.tensor_dat(ardata.randn)(
+    x = data.tensor_dat(data.randn)(
            backend, ("i","j","k"), (2,3,4), dtype="complex128", seed=1
         )
     v = x.backend.randn((1,), seed=2)[0]
@@ -148,10 +147,10 @@ def binary_wrappedfun_dat_004(backend):
         op = binary.tensor_elemwise_binary(x, y)
         return op.mul()    
 
-    x = data.tensor_dat(ardata.randn)(
+    x = data.tensor_dat(data.randn)(
            backend, ("i","j","k"), (2,3,4), dtype="complex128", seed=1
         )
-    y = data.tensor_dat(ardata.randn)(
+    y = data.tensor_dat(data.randn)(
            backend, ("i","j","k"), (2,3,4), dtype="complex128", seed=2
         )
 

@@ -72,6 +72,17 @@ class EngineInteraction(Engine):
        self._train = train
 
 
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+       log.typ(self, other)
+
+       if bool(log):
+          log.val(self._train, other._train)
+
+       return bool(log)
+
+
    def attach(self, data, inds):
 
        return self.__class__(self._train.attach(data, inds))

@@ -12,7 +12,6 @@ import tadpole.index    as tid
 
 import tests.tensor.fakes as fake
 import tests.tensor.data  as data
-import tests.array.data   as ardata
 
 
 from tadpole.tensor.types import (

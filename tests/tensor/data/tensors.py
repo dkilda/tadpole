@@ -12,7 +12,6 @@ import tadpole.index    as tid
 
 import tests.tensor.fakes as fake
 import tests.tensor.data  as data
-import tests.array.data   as ardata
 
 
 from tadpole.tensor.types import (
@@ -43,7 +42,7 @@ IndicesData = collections.namedtuple("TensorSpaceData", [
 def indices_dat(names, shape):
 
     if names is None:
-       names = tuple(zip(*zip(shape, "ijklmnpqr")))[1]
+       names = "".join(tuple(zip(*zip(shape, "ijklmnpqr")))[1])
 
     indlist = [IndexGen(name, size) for name, size in zip(names, shape)]
     inds    = Indices(*indlist)
@@ -138,7 +137,7 @@ def sparse_grad_dat(backend, indnames, shape, dtype, pos, vals):
     x = tensor_dat(densefun)(
            backend, indnames, shape, dtype=dtype
         )
-    w = ardata.arrayspace_dat(backend, shape, dtype)
+    w = data.arrayspace_dat(backend, shape, dtype)
 
     space = tn.TensorSpace(w.space, x.inds)
     grad  = tn.SparseGrad(space, pos, vals)
@@ -177,7 +176,7 @@ def sparse_grad_dat_001(backend, dtype):
     x = tensor_dat(densefun)(
            backend.name(), indnames, shape, dtype=dtype
         )
-    w = ardata.arrayspace_dat(backend.name(), shape, dtype)
+    w = data.arrayspace_dat(backend.name(), shape, dtype)
 
     space = tn.TensorSpace(w.space, x.inds)
     grad  = tn.SparseGrad(space, pos, vals)
@@ -207,7 +206,7 @@ def tensor_dat(datafun):
     def wrap(backend, indnames, shape, **opts):
 
         v = indices_dat(indnames, shape)
-        w = ardata.array_dat(datafun)(backend, shape, **opts)
+        w = data.array_dat(datafun)(backend, shape, **opts)
 
         tensor = tn.TensorGen(w.array, v.inds)
 
@@ -234,7 +233,7 @@ TensorSpaceData = collections.namedtuple("TensorSpaceData", [
 def tensorspace_dat(backend, indnames, shape, dtype):
 
     v = indices_dat(indnames, shape)
-    w = ardata.arrayspace_dat(backend, shape, dtype)
+    w = data.arrayspace_dat(backend, shape, dtype)
 
     space = sp.TensorSpace(w.arrayspace, w.inds)
 

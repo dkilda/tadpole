@@ -10,9 +10,10 @@ import tadpole.array    as ar
 import tadpole.tensor   as tn
 import tadpole.index    as tid
 
+import tadpole.tensor.engine as tne 
+
 import tests.tensor.fakes as fake
 import tests.tensor.data  as data
-import tests.array.data   as ardata
 
 
 from tadpole.tensor.types import (
@@ -42,7 +43,7 @@ TrainData = collections.namedtuple("TrainData", [
 
 
 
-def train_dat(enginetype, backend, indnames, shapes, **opts):
+def train_dat(backend, indnames, shapes, **opts):
 
     ws = []
     for i in range(len(shapes)):
@@ -57,9 +58,9 @@ def train_dat(enginetype, backend, indnames, shapes, **opts):
     datas   = [w.data   for w in ws]
     inds    = [w.inds   for w in ws]
 
-    arrays = util.Sequence(*arrays)
-    inds   = util.Sequence(*inds)
-    train  = TrainTensorData(arrays, inds)
+    arrays = util.Sequence(arrays)
+    inds   = util.Sequence(inds)
+    train  = tne.TrainTensorData(arrays, inds)
 
     return TrainData(
        train, 

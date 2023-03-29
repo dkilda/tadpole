@@ -215,6 +215,19 @@ class EngineDecomp(Engine):
        self._train     = train
 
 
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+       log.typ(self, other)
+
+       if bool(log):
+          log.val(self._alignment, other._alignment)
+          log.val(self._link,      other._link)
+          log.val(self._train,     other._train)
+
+       return bool(log)
+
+
    @property
    def _size(self):
 
