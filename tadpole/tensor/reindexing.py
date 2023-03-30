@@ -122,7 +122,7 @@ class TensorReindex:
            except KeyError:
                pass
 
-       return self._new(data, output_inds) 
+       return self._new(self._data, output_inds) 
 
 
    def transpose(self, *output_inds):
@@ -135,13 +135,14 @@ class TensorReindex:
           f"compatible with the source indices {self._inds}."
        )
 
-       data = ar.transpose(data, self._inds.axes(*output_inds))
+       data = ar.transpose(self._data, self._inds.axes(*output_inds))
        return self._new(data, output_inds)
 
 
    def fuse(self, fusemap):
 
-       inds = self._inds 
+       fused   = self._inds 
+       unfused = self._inds
 
        for inp, out in fusemap.items():
            
@@ -157,10 +158,13 @@ class TensorReindex:
                f"the output size {tid.sizeof(out)}."
            )
 
-           inds = inds.remove(*inp).add(out)
+           fused   = fused.remove(*inp).add(out)
+           unfused = unfused.remove(*inp).add(*inp)
 
-       data = ar.reshape(data, inds.shape)
-       return self._new(data, inds)
+       data = ar.transpose(self._data, self._inds.axes(*unfused)) 
+       data = ar.reshape(data, fused.shape)
+
+       return self._new(data, fused)
 
 
    def split(self, splitmap):
@@ -171,7 +175,7 @@ class TensorReindex:
        
            inp, = self._map(inp)
 
-           assert tid.sizeof(*inp) == tid.sizeof(out), (
+           assert tid.sizeof(inp) == tid.sizeof(*out), (
               f"{type(self).__name__}.split: "
               f"sizes of input index {inp} and output indices {out} must "
               f"match, but the input size {tid.sizeof(inp)} != "
@@ -181,14 +185,14 @@ class TensorReindex:
            axis, = inds.axes(inp)
            inds  = inds.remove(inp).add(*out, axis=axis)
 
-       data = ar.reshape(data, inds.shape)
+       data = ar.reshape(self._data, inds.shape)
        return self._new(data, inds)
 
 
    def squeeze(self, inds=None):
 
        if   inds is None:
-            singletons = (ind for ind in self._inds if len(ind) == 1)   
+            singletons = [ind for ind in self._inds if len(ind) == 1]   
   
        else:
             singletons = self._inds.map(*inds)
@@ -266,7 +270,7 @@ def split(x, splitmap):
 def squeeze(x, inds=None):
 
     op = tensor_reindex(x)
-    return op.squeeze()
+    return op.squeeze(inds)
 
 
 @ad.differentiable

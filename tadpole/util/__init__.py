@@ -12,6 +12,7 @@ from tadpole.util.itertools import (
    concat,
    complement,
    argsort,
+   relsort,
    Loop,
    Sequence,
 )

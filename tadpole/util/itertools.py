@@ -38,10 +38,7 @@ def concat(xs):
 
 def complement(xs, ys):
 
-    xs = list(xs)
-    zs = list(set(xs) - set(ys))
-
-    return list(sorted(zs, key=xs.index))
+    return relsort(set(xs) - set(ys), list(xs))  
 
 
 
@@ -60,6 +57,13 @@ def argsort(xs):
     return sorted(range(len(xs)), key=xs.__getitem__)
 
 
+
+
+# --- Relative sort of xs wrt ys -------------------------------------- #
+
+def relsort(xs, ys):
+
+    return list(sorted(xs, key=ys.index))
 
 
 

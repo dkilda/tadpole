@@ -35,6 +35,309 @@ from tadpole.index import (
 
 
 
+###############################################################################
+###                                                                         ###
+###  Tensor reindexing engine and operator                                  ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Tensor reindexing operator -------------------------------------------- #
+
+@pytest.mark.parametrize("current_backend", ["numpy_backend"], indirect=True)
+class TestTensorReindex:
+
+   @pytest.fixture(autouse=True)
+   def request_backend(self, current_backend):
+
+       self._backend = current_backend
+
+
+   @property
+   def backend(self):
+
+       return self._backend
+
+
+   # --- Reindexing and reshaping methods --- #
+
+   def test_reindex(self):
+
+       i = IndexGen("i",2)
+       j = IndexGen("j",3)
+       k = IndexGen("k",4)
+       p = IndexGen("p",5)
+
+       a = IndexGen("a",4)
+       b = IndexGen("i",2)
+       c = IndexGen("c",5)  
+
+       shape = (2,3,4)
+       inds1 = (i,j,k)
+       inds2 = (b,j,a)   
+
+       w = data.array_dat(data.randn)(
+              self.backend, shape
+           )
+
+       x1 = tn.TensorGen(w.array, inds1)
+       x2 = tn.TensorGen(w.array, inds2)
+
+       indmap = {k: a, i: b, p: c}
+
+       assert tn.reindex(x1, indmap) == x2
+
+
+   def test_reindex_001(self):
+
+       i = IndexGen("i",2)
+       j = IndexGen("j",3)
+       k = IndexGen("k",4)
+       p = IndexGen("p",5)
+
+       a = IndexGen("a",4)
+       b = IndexGen("i",2)
+       c = IndexGen("c",5)  
+
+       shape = (2,3,4)
+       inds  = (i,j,k) 
+
+       w = data.array_dat(data.randn)(
+              self.backend, shape
+           )
+       x = tn.TensorGen(w.array, inds)
+
+       assert tn.reindex(x, {p: c}) == x
+       
+
+   def test_reindex_fail(self):
+
+       i = IndexGen("i",2)
+       j = IndexGen("j",3)
+       k = IndexGen("k",4)
+       p = IndexGen("p",5)
+
+       a = IndexGen("a",6)
+       b = IndexGen("i",2)
+       c = IndexGen("c",5)  
+
+       shape = (2,3,4)
+       inds1 = (i,j,k)
+       inds2 = (b,j,a)   
+
+       w = data.array_dat(data.randn)(
+              self.backend, shape
+           )
+       x = tn.TensorGen(w.array, inds1)
+
+       try:
+           out = tn.reindex(x, {k: a, i: b, p: c})
+       except ValueError:
+           assert True
+       else:
+           assert False
+
+
+   @pytest.mark.parametrize("inds, shape, outinds, outaxes", [
+      ["ijkl", (2,3,4,5), "kjil", (2,1,0,3)],
+      ["ijkl", (2,3,4,5), "jlik", (1,3,0,2)],
+      ["ijkl", (2,3,4,5), "ijkl", (0,1,2,3)],
+   ])
+   def test_transpose(self, inds, shape, outinds, outaxes):
+
+       w = data.tensor_dat(data.randn)(
+              self.backend, inds, shape
+           ) 
+
+       out = tn.transpose(w.tensor, *outinds)
+       ans = ar.transpose(w.array, outaxes) 
+       ans = tn.TensorGen(ans, w.inds.map(*outinds))
+
+       assert out == ans
+
+
+   def test_fuse(self):
+
+       inds  = "ijkl"
+       shape = (2,3,4,5)
+
+       w = data.tensor_dat(data.randn)(
+              self.backend, inds, shape
+           ) 
+
+       a = IndexGen("a",6)
+       b = IndexGen("b",20)
+
+       indmap = {
+                 ("k","l"): b,
+                 ("i","j"): a, 
+                }
+
+       out = tn.fuse(w.tensor, indmap)
+       ans = ar.reshape(ar.transpose(w.array, (0,1,2,3)), (6,20))
+       ans = tn.TensorGen(ans, (a,b))
+
+       assert out == ans
+
+
+   def test_fuse_001(self):
+
+       inds  = "ijklmn"
+       shape = (2,3,4,5,6,7)
+
+       w = data.tensor_dat(data.randn)(
+              self.backend, inds, shape
+           ) 
+
+       a = IndexGen("a",21)
+       b = IndexGen("b",40)
+       m = w.inds.map("m")[0]
+
+       indmap = {
+                 ("i","k","l"): b,
+                 ("j","n"): a, 
+                }
+
+       out = tn.fuse(w.tensor, indmap)
+       ans = ar.reshape(ar.transpose(w.array, (1,5,0,2,3,4)), (21,40,6))
+       ans = tn.TensorGen(ans, (a,b,m))
+
+       assert out == ans
+
+
+   def test_fuse_002(self):
+
+       inds  = "ijkl"
+       shape = (2,3,4,5)
+
+       w = data.tensor_dat(data.randn)(
+              self.backend, inds, shape
+           ) 
+
+       a = IndexGen("a",120)
+
+       indmap = {
+                 ("k","i","j","l"): a,
+                }
+
+       out = tn.fuse(w.tensor, indmap)
+       ans = ar.reshape(ar.transpose(w.array, (2,0,1,3)), (120,))
+       ans = tn.TensorGen(ans, (a,))
+
+       assert out == ans
+
+
+   def test_split(self):
+
+       inds  = "ijkl"
+       shape = (4,3,24,5)
+
+       w = data.tensor_dat(data.randn)(
+              self.backend, inds, shape
+           ) 
+
+       i,j,k,l = w.inds.map(*inds)
+
+       a = IndexGen("a",2)
+       b = IndexGen("b",2)
+       c = IndexGen("c",4)
+       d = IndexGen("d",2)
+       e = IndexGen("e",3)
+
+       indmap = {
+                 "i": (a, b),
+                 "k": (c, d, e), 
+                }
+
+       out = tn.split(w.tensor, indmap)
+       ans = ar.reshape(w.array, (2,2,3,4,2,3,5))
+       ans = tn.TensorGen(ans, (a,b,j,c,d,e,l))
+
+       assert out == ans
+
+
+   def test_split_001(self):
+
+       inds  = "a"
+       shape = (120,)
+
+       w = data.tensor_dat(data.randn)(
+              self.backend, inds, shape
+           ) 
+
+       a = w.inds.map(*inds)
+
+       i = IndexGen("i",2)
+       j = IndexGen("j",3)
+       k = IndexGen("k",4)
+       l = IndexGen("l",5)
+
+       indmap = {
+                 "a": (k,i,j,l),
+                }
+
+       out = tn.split(w.tensor, indmap)
+       ans = ar.reshape(w.array, (4,2,3,5))
+       ans = tn.TensorGen(ans, (k,i,j,l))
+
+       assert out == ans
+
+
+   @pytest.mark.parametrize("inds, shape, squeezed, axes, output", [
+      ["iajkbcl", (2,1,3,4,1,1,5), None, None,  "ijkl"],
+      ["iajkbcl", (2,1,3,4,1,1,5), "ac", (1,5), "ijkbl"],
+   ])
+   def test_squeeze(self, inds, shape, squeezed, axes, output):
+
+       w = data.tensor_dat(data.randn)(
+              self.backend, inds, shape
+           ) 
+
+       if   squeezed is None:
+
+            out = tn.squeeze(w.tensor)
+            ans = ar.squeeze(w.array) 
+            ans = tn.TensorGen(ans, w.inds.map(*output))
+
+       else:
+            out = tn.squeeze(w.tensor, squeezed)
+            ans = ar.squeeze(w.array, axes) 
+            ans = tn.TensorGen(ans, w.inds.map(*output))
+
+       assert out == ans
+
+
+   """
+   @pytest.mark.parametrize("inds1, shape1, inds2, shape2, newinds, newaxes", [
+      ["iajkbcl", (2,1,3,4,1,1,5), "ac", (1,5), "ijkbl"],
+   ])
+   def test_unsqueeze(self, inds1, shape1, inds2, shape2, newinds, newaxes):
+
+       inds  = "ijkl"
+       shape = (2,3,4,5)
+
+       w = data.tensor_dat(data.randn)(
+              self.backend, inds, shape
+           ) 
+
+       out = tn.unsqueeze(w.tensor, newinds)
+       ans = ar.unsqueeze(w.array, axes) 
+       ans = tn.TensorGen(ans, w.inds.map(*output))
+
+       assert out == ans
+   """
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
