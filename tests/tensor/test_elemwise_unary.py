@@ -12,8 +12,7 @@ import tadpole.array    as ar
 import tadpole.tensor   as tn
 import tadpole.index    as tid
 
-import tadpole.array.backends as backends
-
+import tadpole.array.backends        as backends
 import tadpole.tensor.elemwise_unary as tnu
 import tadpole.tensor.engine         as tne 
 
@@ -161,11 +160,12 @@ class TestTensorElemwiseUnary:
        if   inds is None:
             out = tn.flip(w.tensor)
             ans = ar.flip(w.array)
+            ans = tn.TensorGen(ans, w.inds)
+
        else:
             out = tn.flip(w.tensor, inds)
-            ans = ar.flip(w.array, w.inds.axes(*inds))
-
-       ans = tn.TensorGen(ans, w.inds)
+            ans = ar.flip(w.array,  w.inds.axes(*inds))
+            ans = tn.TensorGen(ans, w.inds)
 
        assert tn.allclose(out, ans)
 

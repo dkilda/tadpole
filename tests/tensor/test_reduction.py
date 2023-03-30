@@ -12,9 +12,9 @@ import tadpole.array    as ar
 import tadpole.tensor   as tn
 import tadpole.index    as tid
 
-import tadpole.array.backends          as backends
-import tadpole.tensor.elemwise_ternary as tnt
-import tadpole.tensor.engine           as tne 
+import tadpole.array.backends   as backends
+import tadpole.tensor.reduction as redu
+import tadpole.tensor.engine    as tne 
 
 import tests.tensor.fakes as fake
 import tests.tensor.data  as data
@@ -38,15 +38,15 @@ from tadpole.index import (
 
 ###############################################################################
 ###                                                                         ###
-###  Tensor ternary elementwise engine and operator                         ###
+###  Tensor reduction engine and operator                                   ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- Tensor ternary elementwise operator ----------------------------------- #  
+# --- Tensor reduction operator --------------------------------------------- #  
 
 @pytest.mark.parametrize("current_backend", ["numpy_backend"], indirect=True)
-class TestTensorElemwiseTernary:
+class TestTensorReduce:
 
    @pytest.fixture(autouse=True)
    def request_backend(self, current_backend):
@@ -62,35 +62,54 @@ class TestTensorElemwiseTernary:
 
    # --- Value methods --- #
 
-   @pytest.mark.parametrize("indnames, shape, nvals", [
-      ["ijk", (2,3,4), 5],
+   @pytest.mark.parametrize("winds, wshape, inds", [
+      ["ijk", (2,3,4), None],
+      ["ijk", (2,3,4), "i"],
+      ["ijk", (2,3,4), "ki"],
+      ["ijk", (2,3,4), "kij"],
    ])
-   def test_where(self, indnames, shape, nvals):
+   def test_allof(self, winds, wshape, inds):
 
-       w = data.tensor_dat(data.randn_pos)(
-              self.backend, 
-              indnames, 
-              shape, 
-              seed=1, 
-              dtype="bool", 
-              nvals=nvals, 
-              defaultval=False
-           )
-       x = data.array_dat(data.randn)(
-              self.backend, w.shape, seed=2
-           )
-       y = data.array_dat(data.randn)(
-              self.backend, w.shape, seed=3
+       w = data.tensor_dat(data.randn)(
+              self.backend, winds, wshape
            )
 
-       wtensor = w.tensor
-       xtensor = tn.TensorGen(x.array, w.inds)
-       ytensor = tn.TensorGen(y.array, w.inds)
+       if   inds is None:
+            out = tn.allof(w.tensor)
+            ans = ar.allof(w.array)
+            ans = tn.TensorGen(ans)
 
-       out = tn.where(wtensor, xtensor, ytensor)
-       ans = ar.where(w.array, x.array, y.array)
+       else:
+            output_inds = "".join(util.complement(winds, inds)) 
+
+            out = tn.allof(w.tensor, inds)
+            ans = ar.allof(w.array,  w.inds.axes(*inds))
+            ans = tn.TensorGen(ans,  w.inds.map(*output_inds))
 
        assert tn.allclose(out, ans)
+
+
+
+
+
+
+   # --- Shape methods --- #
+
+
+
+
+
+   # --- Linear algebra methods --- #
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -97,15 +97,12 @@ class TensorReduce:
 
    # --- Private helpers --- #
 
-   def _map(self, inds):
-
-       if isinstance(inds, (str, Index)):
-          inds = (inds, )
+   def _map(self, *inds):
 
        return self._inds.map(*inds) 
 
 
-   def _axes(self, inds):
+   def _axes(self, *inds):
 
        return self._inds.axes(*inds)       
 
@@ -121,8 +118,8 @@ class TensorReduce:
           data = fun(self._data, **opts)
           return core.TensorGen(data, Indices())
 
-       inds = self._map(inds)
-       axes = self._axes(inds)
+       inds = self._map(*inds)
+       axes = self._axes(*inds)
 
        if len(axes) == 1:
           axes, = axes   

@@ -109,7 +109,7 @@ class IndexGen(Index):
 
    def matches_all(self, *tags):
 
-       return set(tags) in set(self._tags)
+       return len(set(tags) - set(self._tags)) == 0
 
 
    def matches_any(self, *tags):

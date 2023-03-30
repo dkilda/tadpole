@@ -12,8 +12,7 @@ import tadpole.array    as ar
 import tadpole.tensor   as tn
 import tadpole.index    as tid
 
-import tadpole.array.backends as backends
-
+import tadpole.array.backends         as backends
 import tadpole.tensor.elemwise_binary as tnb
 import tadpole.tensor.engine          as tne 
 
