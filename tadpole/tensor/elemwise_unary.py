@@ -125,6 +125,20 @@ class TensorElemwiseUnary:
        return self._apply(ar.flip, self._inds.axes(*self._inds.map(*inds)))
 
 
+   def cumsum(self, ind=None, dtype=None, **opts):
+
+       if ind is None:
+
+          data = ar.cumsum(self._data, dtype=dtype, **opts)
+          data = ar.reshape(data, self._inds.shape)
+
+          return core.TensorGen(data, self._inds)
+
+       return self._apply(
+          ar.cumsum, self._inds.axes(ind)[0], dtype=dtype, **opts
+       )
+
+
    # --- Element access --- #
 
    def __getitem__(self, pos):
@@ -304,6 +318,14 @@ def flip(x, inds=None):
     op = tensor_elemwise_unary(x)
 
     return op.flip(inds)
+
+
+@ad.differentiable
+def cumsum(x, ind=None, dtype=None, **opts):
+
+    op = tensor_elemwise_unary(x)
+
+    return op.cumsum(ind, dtype=dtype, **opts)
 
 
 

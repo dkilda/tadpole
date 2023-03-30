@@ -170,6 +170,28 @@ class TestTensorElemwiseUnary:
        assert tn.allclose(out, ans)
 
 
+   @pytest.mark.parametrize("indnames, shape, ind", [
+      ["ijk", (2,3,4), None],
+      ["ijk", (2,3,4), "j"],
+   ])
+   def test_cumsum(self, indnames, shape, ind):
+
+       w = data.tensor_dat(data.randn)(
+              self.backend, indnames, shape
+           )
+
+       if   ind is None:
+            out = tn.cumsum(w.tensor)
+            ans = ar.reshape(ar.cumsum(w.array), w.shape)
+            ans = tn.TensorGen(ans, w.inds)
+
+       else:
+            out = tn.cumsum(w.tensor, ind)
+            ans = ar.cumsum(w.array,  w.inds.axes(ind)[0])
+            ans = tn.TensorGen(ans,   w.inds)
+
+       assert tn.allclose(out, ans)
+
 
    # --- Element access --- #
 

@@ -160,19 +160,14 @@ class TensorReduce:
 
    def sumover(self, inds=None, dtype=None, **opts):
 
-       return self._apply(ar.sumover, inds, dtype, **opts)
-
-
-   def cumsum(self, ind=None, dtype=None, **opts):
-
-       return self._apply(ar.cumsum, ind, dtype, **opts)
+       return self._apply(ar.sumover, inds, dtype=dtype, **opts)
 
 
    # --- Linear algebra methods --- #
 
    def norm(self, inds=None, order=None, **opts):
 
-       return self._apply(ar.norm, inds, order, **opts)
+       return self._apply(ar.norm, inds, order=order, **opts)
 
  
 
@@ -229,14 +224,7 @@ def count_nonzero(x, inds=None, **opts):
 def sumover(x, inds=None, dtype=None, **opts):
 
     op = tensor_reduce(x)
-    return op.sumover(inds, dtype, **opts)  
-
-
-@ad.differentiable
-def cumsum(x, ind=None, dtype=None, **opts):
-
-    op = tensor_reduce(x)
-    return op.cumsum(ind, dtype, **opts)
+    return op.sumover(inds, dtype=dtype, **opts)  
 
 
 

@@ -79,7 +79,7 @@ class Array(types.Array):
 
    def new(self, data):
 
-       return self.__class__(self._backend, data)
+       return asarray(data, backend=self._backend) # self.__class__(self._backend, self._backend.asarray(data))
 
 
    def nary(self):

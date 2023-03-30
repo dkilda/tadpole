@@ -113,7 +113,6 @@ from .reduction import (
 
 from .reduction import (
    sumover,
-   cumsum,
    norm,
 )
 
@@ -142,6 +141,7 @@ from .elemwise_unary import (
    put,
    clip,
    flip,
+   cumsum,
 )
 
 
