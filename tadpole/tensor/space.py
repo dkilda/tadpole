@@ -215,7 +215,7 @@ class TensorSpace(Space):
 
    def fillwith(self, data):
 
-       return core.astensor(data, self._inds)
+       return core.astensor(self._arrayspace.fillwith(data), self._inds)
 
 
    # --- Gradient factories --- #

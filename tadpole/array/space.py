@@ -69,6 +69,18 @@ class ArraySpace(types.Space):
        return bool(log)
 
 
+   # --- Fill the space with data --- #
+
+   def fillwith(self, data):
+
+       data = unary.asarray(data, dtype=self.dtype, backend=self._backend)
+
+       if data.shape != self.shape:
+          data = unary.broadcast_to(data, self.shape)
+
+       return data
+
+
    # --- Space properties --- #
 
    @property

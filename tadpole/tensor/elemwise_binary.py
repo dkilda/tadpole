@@ -6,7 +6,8 @@ import tadpole.autodiff as ad
 import tadpole.array    as ar
 import tadpole.index    as tid
 
-import tadpole.tensor.core as core
+import tadpole.tensor.core       as core
+import tadpole.tensor.reindexing as reidx
 
 
 from tadpole.tensor.types import (

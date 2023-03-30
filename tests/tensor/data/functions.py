@@ -10,8 +10,10 @@ import tadpole.array    as ar
 import tadpole.tensor   as tn
 import tadpole.index    as tid
 
-import tadpole.tensor.elemwise_unary  as unary
-import tadpole.tensor.elemwise_binary as binary
+import tadpole.array.backends as backends
+
+import tadpole.tensor.elemwise_unary  as tnu
+import tadpole.tensor.elemwise_binary as tnb
 
 import tests.tensor.fakes as fake
 import tests.tensor.data  as data
@@ -45,15 +47,15 @@ WrappedFunctionData = collections.namedtuple("WrappedFunctionData", [
 def unary_wrappedfun_dat_001(backend):
 
     def fun(x):
-        op = unary.tensor_elemwise_unary(x)
+        op = tnu.tensor_elemwise_unary(x)
         return op.sin()    
 
     backend = backends.get(backend)
 
     u   = backend.randn((1,), seed=1)[0]
-    out = tn.TensorGen(ar.ArrayGen(backend, backend.sin(u)))
+    out = tn.TensorGen(ar.ArrayUnary(backend, backend.sin(u)))
 
-    wrappedfun = op.typecast_unary(fun)
+    wrappedfun = tnu.typecast_unary(fun)
     return WrappedFunctionData(wrappedfun, fun, out, (u,))
 
 
@@ -62,17 +64,17 @@ def unary_wrappedfun_dat_001(backend):
 def unary_wrappedfun_dat_002(backend):
 
     def fun(x):
-        op = unary.tensor_elemwise_unary(x)
+        op = tnu.tensor_elemwise_unary(x)
         return op.sin()    
 
     x = data.tensor_dat(data.randn)(
            backend, ("i","j","k"), (2,3,4), dtype="complex128", seed=1
         )
 
-    out = ar.ArrayGen(x.backend, x.backend.sin(x.data))
+    out = ar.ArrayUnary(x.backend, x.backend.sin(x.data))
     out = tn.TensorGen(out, x.inds)
 
-    wrappedfun = op.typecast_unary(fun)
+    wrappedfun = tnu.typecast_unary(fun)
     return WrappedFunctionData(wrappedfun, fun, out, (x.tensor,))
 
 
@@ -81,7 +83,7 @@ def unary_wrappedfun_dat_002(backend):
 def binary_wrappedfun_dat_001(backend):
 
     def fun(x, y):
-        op = binary.tensor_elemwise_binary(x, y)
+        op = tnb.tensor_elemwise_binary(x, y)
         return op.mul()    
 
     backend = backends.get(backend)
@@ -89,9 +91,9 @@ def binary_wrappedfun_dat_001(backend):
     u = backend.randn((1,), seed=1)[0]
     v = backend.randn((1,), seed=2)[0]
 
-    out = tn.TensorGen(ar.ArrayGen(backend, backend.mul(u, v)))
+    out = tn.TensorGen(ar.ArrayUnary(backend, backend.mul(u, v)))
 
-    wrappedfun = op.typecast_binary(fun)
+    wrappedfun = tnb.typecast_binary(fun)
     return WrappedFunctionData(wrappedfun, fun, out, (u, v))
 
 
@@ -100,20 +102,20 @@ def binary_wrappedfun_dat_001(backend):
 def binary_wrappedfun_dat_002(backend):
 
     def fun(x, y):
-        op = binary.tensor_elemwise_binary(x, y)
+        op = tnb.tensor_elemwise_binary(x, y)
         return op.mul()    
 
     backend = backends.get(backend)
 
     x = data.tensor_dat(data.randn)(
-           backend, ("i","j","k"), (2,3,4), dtype="complex128", seed=1
+           backend.name(), ("i","j","k"), (2,3,4), dtype="complex128", seed=1
         )
     v = x.backend.randn((1,), seed=2)[0]
 
-    out = ar.ArrayGen(x.backend, x.backend.mul(x.data, v))
+    out = ar.ArrayUnary(x.backend, x.backend.mul(x.data, v))
     out = tn.TensorGen(out, x.inds)
 
-    wrappedfun = op.typecast_binary(fun)
+    wrappedfun = tnb.typecast_binary(fun)
     return WrappedFunctionData(wrappedfun, fun, out, (x.tensor, v))
 
 
@@ -122,20 +124,20 @@ def binary_wrappedfun_dat_002(backend):
 def binary_wrappedfun_dat_003(backend):
 
     def fun(x, y):
-        op = binary.tensor_elemwise_binary(x, y)
+        op = tnb.tensor_elemwise_binary(x, y)
         return op.mul()    
 
     backend = backends.get(backend)
 
     x = data.tensor_dat(data.randn)(
-           backend, ("i","j","k"), (2,3,4), dtype="complex128", seed=1
+           backend.name(), ("i","j","k"), (2,3,4), dtype="complex128", seed=1
         )
     v = x.backend.randn((1,), seed=2)[0]
 
-    out = ar.ArrayGen(x.backend, x.backend.mul(v, x.data))
+    out = ar.ArrayUnary(x.backend, x.backend.mul(v, x.data))
     out = tn.TensorGen(out, x.inds)
 
-    wrappedfun = op.typecast_binary(fun)
+    wrappedfun = tnb.typecast_binary(fun)
     return WrappedFunctionData(wrappedfun, fun, out, (v, x.tensor))
 
 
@@ -144,7 +146,7 @@ def binary_wrappedfun_dat_003(backend):
 def binary_wrappedfun_dat_004(backend):
 
     def fun(x, y):
-        op = binary.tensor_elemwise_binary(x, y)
+        op = tnb.tensor_elemwise_binary(x, y)
         return op.mul()    
 
     x = data.tensor_dat(data.randn)(
@@ -157,10 +159,10 @@ def binary_wrappedfun_dat_004(backend):
     xtensor = tn.TensorGen(x.array, x.inds)
     ytensor = tn.TensorGen(y.array, x.inds)
 
-    out = ar.ArrayGen(x.backend, x.backend.mul(x.data, y.data))
+    out = ar.ArrayUnary(x.backend, x.backend.mul(x.data, y.data))
     out = tn.TensorGen(out, x.inds)
 
-    wrappedfun = op.typecast_binary(fun)
+    wrappedfun = tnb.typecast_binary(fun)
     return WrappedFunctionData(wrappedfun, fun, out, (xtensor, ytensor))
 
 

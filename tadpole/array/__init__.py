@@ -23,10 +23,10 @@ from .types import (
 
 # --- Arrays ---------------------------------------------------------------- #
 
-from tadpole.array.void   import Array as VoidArray
-from tadpole.array.unary  import Array as UnaryArray
-from tadpole.array.binary import Array as BinaryArray
-from tadpole.array.nary   import Array as NaryArray
+from tadpole.array.void   import Array as ArrayVoid
+from tadpole.array.unary  import Array as ArrayUnary
+from tadpole.array.binary import Array as ArrayBinary
+from tadpole.array.nary   import Array as ArrayNary
 
 
 

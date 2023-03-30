@@ -63,6 +63,39 @@ class TestArraySpace:
        assert out == w.space
 
 
+   # --- Fill the space with data --- #
+
+   @pytest.mark.parametrize("shape", [(2,3,4)])
+   @pytest.mark.parametrize("dtype", ["complex128"])   
+   def test_fillwith(self, shape, dtype):
+
+       w = data.arrayspace_dat(self.backend, shape, dtype)
+       x = data.array_dat(data.randn)(self.backend, shape, dtype=dtype)
+
+       assert w.space.fillwith(x.data) == x.array
+
+
+   @pytest.mark.parametrize("shape1, shape2", [[(2,2,3,4), (2,3,4)]])
+   @pytest.mark.parametrize("dtype",          ["complex128"])   
+   def test_fillwith_001(self, shape1, shape2, dtype):
+
+       w = data.arrayspace_dat(self.backend, shape1, dtype)
+       x = data.array_dat(data.randn)(self.backend, shape2, dtype=dtype)
+
+       ans = ar.broadcast_to(x.array, shape1)
+
+       assert w.space.fillwith(x.data) == ans
+
+
+   @pytest.mark.parametrize("shape", [(2,3,4)])
+   def test_fillwith_002(self, shape):
+
+       w = data.arrayspace_dat(self.backend, shape, "complex128")
+       x = data.array_dat(data.randn)(self.backend, shape, dtype="float64")
+
+       assert w.space.fillwith(x.data) == x.array
+
+
    # --- Space properties --- #
 
    @pytest.mark.parametrize("shape", [(2,3,4)])

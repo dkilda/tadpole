@@ -122,7 +122,7 @@ class TensorElemwiseUnary:
        if inds is None:
           return self._apply(ar.flip)
 
-       return self._apply(ar.flip, self._inds.axes(*inds))
+       return self._apply(ar.flip, self._inds.axes(*self._inds.map(*inds)))
 
 
    # --- Element access --- #
@@ -287,7 +287,7 @@ def put(x, pos, vals, accumulate=False):
 
     op = tensor_elemwise_unary(x)
 
-    return op.put(pos, val, accumulate=accumulate)
+    return op.put(pos, vals, accumulate=accumulate)
 
 
 @ad.differentiable
@@ -509,7 +509,7 @@ def arctanh(x):
 def expm(x):
 
     op = tensor_elemwise_unary(x)
-    return op.exmp()
+    return op.expm()
 
 
 

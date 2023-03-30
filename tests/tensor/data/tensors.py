@@ -10,6 +10,8 @@ import tadpole.array    as ar
 import tadpole.tensor   as tn
 import tadpole.index    as tid
 
+import tadpole.array.backends as backends
+
 import tests.tensor.fakes as fake
 import tests.tensor.data  as data
 
@@ -114,15 +116,15 @@ def sample_dat(datafun):
 
 SparseGradData = collections.namedtuple("SparseGradData", [
                     "grad", 
-                    "tensor", "array", "data"
+                    "tensor", "array", "data",
                     "space",  "pos",   "vals", 
-                    "inds",   "shape", "dtype", "backend", "opts",
+                    "inds",   "shape", "dtype", "backend",  "opts",
                  ])
 
 
 
 
-def sparse_grad_dat(backend, indnames, shape, dtype, pos, vals):
+def sparse_grad_dat(backend, indnames, shape, dtype, pos, vals, seed=1):
 
     def densefun(shape, dtype):
 
@@ -135,7 +137,7 @@ def sparse_grad_dat(backend, indnames, shape, dtype, pos, vals):
         return data
 
     x = tensor_dat(densefun)(
-           backend, indnames, shape, dtype=dtype
+           backend, indnames, shape, dtype=dtype, seed=seed
         )
     w = data.arrayspace_dat(backend, shape, dtype)
 
@@ -144,18 +146,18 @@ def sparse_grad_dat(backend, indnames, shape, dtype, pos, vals):
 
     return SparseGradData(
                           grad,         
-                          x.tensor, x.array, x.data,
-                          space,    pos,     vals,
-                          x.inds,   x.shape, x.dtype,  x.backend,  {}
+                          x.tensor, x.array,  x.data,
+                          space,    pos,      vals,
+                          x.inds,   x.shape,  dtype,  x.backend,  {}
                          )
 
 
 
 
-def sparse_grad_dat_001(backend, dtype):
+def sparse_grad_dat_001(backend, dtype, seed=1):
 
     backend  = backends.get(backend) 
-    indnames = ("i", "j", "k")
+    indnames = "ijk"
     shape    = (2,3,4)
 
     pos = (
@@ -163,7 +165,7 @@ def sparse_grad_dat_001(backend, dtype):
            ((0,2,0),),
            ((2,1,3),),
           )
-    vals = backend.randn((len(pos),), dtype=dtype, seed=1)  
+    vals = backend.randn((len(pos),), dtype=dtype, seed=seed)  
 
     dense        = backend.zeros(shape, dtype=dtype)
     dense[1,0,2] = vals[0]
@@ -183,9 +185,9 @@ def sparse_grad_dat_001(backend, dtype):
 
     return SparseGradData(
                           grad,         
-                          x.tensor, x.array, x.data,
-                          space,    pos,     vals,
-                          x.inds,   x.shape, x.dtype,  x.backend,  {}
+                          x.tensor, x.array,  x.data,
+                          space,    pos,      vals,
+                          x.inds,   x.shape,  dtype,  x.backend,  {}
                          )
 
 

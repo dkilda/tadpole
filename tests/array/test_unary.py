@@ -229,7 +229,7 @@ class TestArray:
        w = data.array_dat(data.randn)(
               self.backend, (2,3,4), dtype=dtype)
 
-       assert w.array.iscomplex == iscomplex 
+       assert ar.iscomplex(w.array) == iscomplex 
 
 
    # --- Element access --- #

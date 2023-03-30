@@ -43,6 +43,13 @@ class Array(abc.ABC):
 
 class Space(abc.ABC):
 
+   # --- Fill the space with data --- #
+
+   @abc.abstractmethod
+   def fillwith(self, data):
+       pass
+
+
    # --- Space properties --- #
 
    @property

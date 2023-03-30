@@ -11,8 +11,8 @@ import tadpole.array    as ar
 import tadpole.tensor   as tn
 import tadpole.index    as tid
 
-import tadpole.tensor.elemwise_unary  as unary
-import tadpole.tensor.elemwise_binary as binary
+import tadpole.tensor.elemwise_unary  as tnu
+import tadpole.tensor.elemwise_binary as tnb
 import tadpole.tensor.engine          as tne 
 
 import tests.tensor.fakes as fake
@@ -144,8 +144,8 @@ class TestEngineUnary:
 
        w = data.train_dat(self.backend, indnames, shapes)
 
-       ans = tne.EngineUnary(unary.TensorElemwiseUnary, w.train)
-       out = tne.EngineUnary(unary.TensorElemwiseUnary)
+       ans = tne.EngineUnary(tnu.TensorElemwiseUnary, w.train)
+       out = tne.EngineUnary(tnu.TensorElemwiseUnary)
 
        for array, inds in zip(w.arrays, w.inds):
            out = out.attach(array, inds)
@@ -160,8 +160,8 @@ class TestEngineUnary:
 
        w = data.train_dat(self.backend, indnames, shapes)
 
-       ans = tne.EngineUnary(unary.TensorElemwiseUnary, w.train)
-       out = tne.EngineUnary(unary.TensorElemwiseUnary)
+       ans = tne.EngineUnary(tnu.TensorElemwiseUnary, w.train)
+       out = tne.EngineUnary(tnu.TensorElemwiseUnary)
 
        try:
            for array, inds in zip(w.arrays, w.inds):
@@ -206,8 +206,8 @@ class TestEngineElemwise:
 
        w = data.train_dat(self.backend, indnames, shapes)
 
-       ans = tne.EngineElemwise(binary.TensorElemwiseBinary, 2, w.train)
-       out = tne.EngineElemwise(binary.TensorElemwiseBinary, 2)
+       ans = tne.EngineElemwise(tnb.TensorElemwiseBinary, 2, w.train)
+       out = tne.EngineElemwise(tnb.TensorElemwiseBinary, 2)
 
        for array, inds in zip(w.arrays, w.inds):
            out = out.attach(array, inds)
@@ -222,8 +222,8 @@ class TestEngineElemwise:
 
        w = data.train_dat(self.backend, indnames, shapes)
 
-       ans = tne.EngineElemwise(binary.TensorElemwiseBinary, 2, w.train)
-       out = tne.EngineElemwise(binary.TensorElemwiseBinary, 2)
+       ans = tne.EngineElemwise(tnb.TensorElemwiseBinary, 2, w.train)
+       out = tne.EngineElemwise(tnb.TensorElemwiseBinary, 2)
 
        try:
            for array, inds in zip(w.arrays, w.inds):

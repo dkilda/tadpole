@@ -55,6 +55,9 @@ class NullGrad(Tensor, Pluggable):
 
    def addto(self, other):
 
+       if isinstance(other, self.__class__):
+          return self
+
        return other.addto(self)
 
 
@@ -219,10 +222,10 @@ class SparseGrad(Tensor, Pluggable):
        if isinstance(other, SparseGrad):
           other = other.todense()
 
-       assert self._space == other._space, (
+       assert self.space() == other.space(), (
           f"{type(self).__name__}.addto: "
           f"gradient accumulation cannot be performed for tensors "
-          f"with non-matching spaces {self._space} != {other._space}"
+          f"with non-matching spaces {self.space()} != {other.space()}"
        )
 
        data = ar.put(other._data, self._pos, self._vals, accumulate=True)
@@ -238,10 +241,10 @@ class SparseGrad(Tensor, Pluggable):
 
    def todense(self):
 
-       zeros = self.space().zeros() 
-       data  = ar.put(zeros, self._pos, self._vals)
+       zeros = self.space().zeros()
+       op    = unary.tensor_elemwise_unary(zeros)
 
-       return self.space().fillwith(data)
+       return op.put(self._pos, self._vals)
 
 
    def withdata(self, data):
@@ -450,7 +453,7 @@ class TensorGen(Tensor, Pluggable):
 
    def withdata(self, data):
 
-       return self.__class__(data, self._inds)
+       return self.space().fillwith(data)
 
 
    def space(self):
