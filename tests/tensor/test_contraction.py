@@ -38,6 +38,84 @@ from tadpole.index import (
 
 ###############################################################################
 ###                                                                         ###
+###  The logic of index contraction: figures out the output indices,        ###
+###  generates einsum equations from input and output indices.              ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Create einsum equation from input and output indices ------------------ #
+
+class TestMakeEquation:
+
+   @pytest.mark.parametrize("shapes, inds, outinds, equation", [
+      [[(3,4,4),                   ], ["ijj",              ], "i",    "abb->a"           ],  
+      [[(4,4),                     ], ["jj",               ], "",     "aa->"             ],
+      [[(4,4,4),                   ], ["jjj",              ], "",     "aaa->"            ],
+      [[(3,4,6), (6,3,4)           ], ["ijk", "kij",       ], "",     "abc,cab->"        ], 
+      [[(3,4,6), (6,2,5)           ], ["ijk", "klm",       ], "ijlm", "abc,cde->abde"    ],  
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], "iq",   "abc,cde,efdb->af" ], 
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], "imq",  "abc,cde,efdb->aef"],
+   ]) 
+   def test_make_equation(self, shapes, inds, outinds, equation):
+
+       w = data.nindices_dat(inds, shapes)
+
+       input_inds  = tuple(w.inds.map(*xinds) for xinds in inds)
+       output_inds = w.inds.map(*outinds)
+
+       assert tnc.make_equation(input_inds, output_inds) == equation
+
+
+
+
+# --- Index products -------------------------------------------------------- #
+
+class TestIndexProduct:
+
+   @pytest.mark.parametrize("shapes, inds, outinds", [
+      [[(3,4,4),                   ], ["ijj",              ], "i",  ],  
+      [[(4,4,4),                   ], ["jjj",              ], "",   ],
+      [[(3,4,6), (6,3,4)           ], ["ijk", "kij",       ], "",   ],
+      [[(3,4,6), (6,2,5)           ], ["ijk", "klm",       ], "ijlm"],
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], "imq" ],
+   ])
+   def test_fixed(self, shapes, inds, outinds):
+
+       w = data.nindices_dat(inds, shapes)
+
+       input_inds  = [w.inds.map(*xinds) for xinds in inds]
+       output_inds = w.inds.map(*outinds)
+
+       prod = tnc.FixedIndexProduct(outinds)
+       assert tuple(prod(input_inds)) == output_inds
+
+       prod1 = tnc.FixedIndexProduct(output_inds)
+       assert tuple(prod1(input_inds)) == output_inds
+
+
+   @pytest.mark.parametrize("shapes, inds, outinds", [
+      [[(3,4,4),                   ], ["ijj",              ], "i",  ],  
+      [[(4,4),                     ], ["jj",               ], "",   ],
+      [[(3,4,6), (6,3,4)           ], ["ijk", "kij",       ], "",   ],
+      [[(3,4,6), (6,2,5)           ], ["ijk", "klm",       ], "ijlm"],
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], "iq"  ],
+   ])
+   def test_pairwise(self, shapes, inds, outinds):
+
+       w = data.nindices_dat(inds, shapes)
+
+       input_inds  = [w.inds.map(*xinds) for xinds in inds]
+       output_inds = w.inds.map(*outinds)
+
+       prod = tnc.PairwiseIndexProduct()
+       assert tuple(prod(input_inds)) == output_inds
+
+
+
+
+###############################################################################
+###                                                                         ###
 ###  Tensor contraction operator                                            ###
 ###  (includes contract, dot, and other operations)                         ###
 ###                                                                         ###

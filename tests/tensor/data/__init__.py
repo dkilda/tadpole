@@ -13,6 +13,7 @@ from tests.array.data import (
 
 from .tensors import (
    indices_dat,
+   nindices_dat,
    basis_dat,
    sample_dat,
    sparse_grad_dat,

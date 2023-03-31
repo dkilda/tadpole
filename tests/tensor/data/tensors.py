@@ -54,6 +54,16 @@ def indices_dat(names, shape):
 
 
 
+def nindices_dat(names, shapes):
+
+    names, sizes = util.concat(names), util.concat(shapes)
+    names, sizes = zip(*tuple(set(zip(names, sizes))))
+
+    return indices_dat(tuple(names), tuple(sizes))
+
+
+
+
 # --- Basis data ------------------------------------------------------------ #
 
 BasisData = collections.namedtuple("BasisData", [
@@ -236,10 +246,7 @@ def ntensor_dat(datafun):
 
     def wrap(backend, indnames, shapes, **opts):
 
-        vindnames, vsizes = util.concat(indnames), util.concat(shapes)
-        vindnames, vsizes = zip(*tuple(set(zip(vindnames, vsizes))))
-
-        v = indices_dat(vindnames, vsizes)
+        v = nindices_dat(indnames, shapes)
 
         ws = []
         ts = []
