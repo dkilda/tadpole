@@ -192,7 +192,7 @@ def expand_like(x, target, inds=None):
        inds = tuple(complement_inds(target, x))
 
     out = reidx.expand(x, inds)
-    out = transpose_like(out, target)
+    out = reidx.transpose(out, *overlap_inds(target, out))
 
     return out
 
@@ -218,7 +218,7 @@ def reshape_like(x, target, keepinds=False):
 def transpose_like(x, target):
 
     diff = tuple(complement_inds(x, target))
-
+          
     if len(diff) == 0:
        return reidx.transpose(x, *union_inds(target))
 
@@ -229,11 +229,9 @@ def transpose_like(x, target):
           f"and {target} have more than one index differing: {diff}."
        )
 
-    diff,   = diff
-    overlap = overlap_inds(x, target)
-
+    diff,       = diff
     output_inds = (
-                   ind if ind in overlap else diff 
+                   ind if ind in union_inds(x) else diff 
                       for ind in union_inds(target)
                   )
 

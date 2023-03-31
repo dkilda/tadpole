@@ -148,6 +148,28 @@ class TestTensorInteraction:
        assert out       == ans
 
 
+   @pytest.mark.parametrize("shapes, inds, newinds, outinds", [
+      [[(3,4,5),   (3,4,5)      ], ["ijk",  "ijk"   ], "",    "ijk"], 
+      [[(3,4,5),   (3,1,4,5)    ], ["ijk",  "imjk"  ], "m",   "imjk"],
+      [[(3,4,5),   (3,2,4,5)    ], ["ijk",  "imjk"  ], "m",   "imjk"], 
+      [[(3,4,5),   (3,2,1,4,1,5)], ["ijk",  "imnjpk"], "mnp", "imnjpk"],
+      [[(3,4,5),   (3,2,6,4,7,5)], ["ijk",  "imnjpk"], None,  "imnjpk"],
+      [[(3,4,5),   (3,2,6,4,7,5)], ["ijk",  "imnjpk"], "mp",  "imjpk"],
+   ])
+   def test_expand_like(self, shapes, inds, newinds, outinds):
+
+       w = data.ntensor_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+       if  newinds is None:
+           out = tn.expand_like(*w.tensors)
+       else:
+           out = tn.expand_like(*w.tensors, w.inds.map(*newinds))
+
+       assert tuple(tn.union_inds(out)) == w.inds.map(*outinds)
+
+
    @pytest.mark.parametrize("shapes, inds, outinds, keepinds", [
       [[(3,4,5),   (3,4,5)      ], ["ijk",  "ijk"   ], "ijk",    None], 
       [[(3,4,5),   (3,1,4,5)    ], ["ijk",  "imjk"  ], "ijk",    None],
@@ -171,6 +193,24 @@ class TestTensorInteraction:
            out = tn.reshape_like(w.tensors[0], w.tensors[1], keepinds=keepinds)
 
        assert tuple(tn.union_inds(out)) == w.inds.map(*outinds)
+
+
+
+   @pytest.mark.parametrize("shapes, inds, outinds, outaxes", [
+      [[(2,3,4,5),   (4,3,2,5)],   ["ijkl",  "kjil"],  "kjil",  (2,1,0,3)], 
+      [[(2,3,4,5),   (4,3,7,5)],   ["ijkl",  "kjml"],  "kjil",  (2,1,0,3)], 
+   ])
+   def test_transpose_like(self, shapes, inds, outinds, outaxes):
+
+       w = data.ntensor_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+       out = tn.transpose_like(*w.tensors)
+       ans = ar.transpose(w.arrays[0], outaxes) 
+       ans = tn.TensorGen(ans, w.inds.map(*outinds))
+
+       assert out == ans
 
 
    @pytest.mark.parametrize("shape, inds, diffinds", [
