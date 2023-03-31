@@ -91,11 +91,12 @@ from .interaction import (
    union_inds,
    overlap_inds,
    complement_inds,
-   match_type,
-   match_shape,
    match,
+   astype_like,
+   reshape_like,
    transpose_like,
-   expand_grad,
+   expand_like,
+   unreduce_like,
 )
 
 

@@ -128,7 +128,7 @@ class TestTensorInteraction:
       [["float64",    "complex128"], "complex128"],
       [["complex128", "float64"   ], "float64"   ],
    ])
-   def test_match_type(self, dtypes, outdtype):
+   def test_astype_like(self, dtypes, outdtype):
 
        inds  = "ijk"
        shape = (2,3,4)
@@ -140,7 +140,7 @@ class TestTensorInteraction:
               self.backend, inds, shape, dtype=dtypes[1], seed=2
            )
 
-       out = tn.match_type(x.tensor, y.tensor)
+       out = tn.astype_like(x.tensor, y.tensor)
        ans = tn.TensorGen(x.array, x.inds)
        ans = tn.astype(ans, dtypes[1])
 
@@ -159,27 +159,25 @@ class TestTensorInteraction:
       [[(3,4,5),   (3,2,1,4,1,5)], ["ijk",  "imnjpk"], "imjk",   False],
       [[(3,4,5),   (3,2,1,4,1,5)], ["ijk",  "imnjpk"], "imnjpk", True],
    ])
-   def test_match_shape(self, shapes, inds, outinds, keepinds):
+   def test_reshape_like(self, shapes, inds, outinds, keepinds):
 
        w = data.ntensor_dat(data.randn)(
               self.backend, inds, shapes
            )
 
        if  keepinds is None:
-           out = tn.match_shape(w.tensors[0], w.tensors[1])
+           out = tn.reshape_like(w.tensors[0], w.tensors[1])
        else:
-           out = tn.match_shape(w.tensors[0], w.tensors[1], keepinds=keepinds)
+           out = tn.reshape_like(w.tensors[0], w.tensors[1], keepinds=keepinds)
 
        assert tuple(tn.union_inds(out)) == w.inds.map(*outinds)
 
-
-   # --- Tensor matching (for gradients specifically) --- #
 
    @pytest.mark.parametrize("shape, inds, diffinds", [
       [(2,3,4), "ijk", "k"],  
       [(2,3,4), "ijk", None],     
    ])
-   def test_expand_grad(self, shape, inds, diffinds):
+   def test_unreduce_like(self, shape, inds, diffinds):
 
        w = data.tensor_dat(data.randn)(
               self.backend, inds, shape
@@ -189,9 +187,9 @@ class TestTensorInteraction:
        x      = tn.amax(target, diffinds)
 
        if   diffinds is None:
-            fun = tn.expand_grad(x, target)
+            fun = tn.unreduce_like(x, target)
        else:
-            fun = tn.expand_grad(x, target, w.inds.map(*diffinds))
+            fun = tn.unreduce_like(x, target, w.inds.map(*diffinds))
 
        out    = fun(x)
        outmax = tn.amax(out, diffinds)

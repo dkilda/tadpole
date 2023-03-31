@@ -166,7 +166,14 @@ def complement_inds(*xs):
 
 # --- Tensor matching ------------------------------------------------------- #
 
-def match_type(x, target):
+def match(x, target, **opts):
+
+    return astype_like(reshape_like(x, target, **opts), target)
+
+
+
+
+def astype_like(x, target):
 
     if unary.iscomplex(x) and not unary.iscomplex(target):
        return unary.astype(unary.real(x), target.dtype)
@@ -179,7 +186,20 @@ def match_type(x, target):
 
 
 
-def match_shape(x, target, keepinds=False): 
+def expand_like(x, target, inds=None):
+
+    if inds is None:
+       inds = tuple(complement_inds(target, x))
+
+    out = reidx.expand(x, inds)
+    out = transpose_like(out, target)
+
+    return out
+
+
+
+
+def reshape_like(x, target, keepinds=False): 
 
     if  not keepinds:
         target = reidx.squeeze(target) 
@@ -219,31 +239,19 @@ def transpose_like(x, target):
 
     return reidx.transpose(x, *output_inds)
 
+ 
 
 
-
-def match(x, target, **opts):
-
-    return match_type(match_shape(x, target, **opts), target)
-
-
-
-
-# --- Tensor matching (for gradients specifically) -------------------------- #
-
-def expand_grad(x, target, inds=None): 
-
-    if inds is None:
-       inds = tuple(complement_inds(target, x))
+def unreduce_like(x, target, inds=None): 
 
     def fun(g):
 
-        g1 = transpose_like(reidx.expand(g, inds), target)
-        x1 = transpose_like(reidx.expand(x, inds), target)
+        g1 = expand_like(g, target, inds)  
+        x1 = expand_like(x, target, inds)  
 
         mask = binary.isequal(target, x1)
 
-        return g1 * mask / transpose_like(reidx.expand(redu.sumover(mask, inds), inds), target)
+        return g1 * mask / expand_like(redu.sumover(mask, inds), target, inds)  
 
     return fun
 
