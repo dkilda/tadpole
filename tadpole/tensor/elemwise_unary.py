@@ -153,6 +153,13 @@ class TensorElemwiseUnary:
        return ar.iscomplex(self._data)
 
 
+   # --- Data type methods --- #
+
+   def astype(self, dtype):
+
+       return self._apply(ar.astype, dtype=dtype)
+
+
    # --- Standard math --- #
 
    def neg(self):
@@ -351,6 +358,19 @@ def iscomplex(x):
     op = tensor_elemwise_unary(x)
 
     return op.iscomplex()
+
+
+
+
+# --- Data type methods ----------------------------------------------------- #
+
+@ad.nondifferentiable
+@typecast_unary
+def astype(x, dtype):
+
+    op = tensor_elemwise_unary(x)
+
+    return op.astype(dtype)
 
 
 

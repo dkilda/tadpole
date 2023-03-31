@@ -94,7 +94,8 @@ from .interaction import (
    match_type,
    match_shape,
    match,
-   expand_grad
+   transpose_like,
+   expand_grad,
 )
 
 
@@ -147,6 +148,7 @@ from .elemwise_unary import (
 
 from .elemwise_unary import (
    iscomplex,
+   astype,
    getitem,
    expm,
 )

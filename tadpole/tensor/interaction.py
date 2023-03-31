@@ -50,7 +50,7 @@ from tadpole.index import (
 
 def tensor_interaction(*xs):
 
-    engine = EngineInteraction(product)
+    engine = EngineInteraction()
 
     for x in xs:
         engine = x.pluginto(engine)
@@ -111,17 +111,23 @@ class TensorInteraction:
 
    def union_inds(self):
 
-       return reduce(operator_.and_, self._inds)
+       out = reduce(operator_.or_, self._inds)
+
+       return iter(util.unique(out))
 
 
    def overlap_inds(self):
 
-       return reduce(operator_.or_, self._inds)   
+       out = reduce(operator_.and_, self._inds)   
+
+       return iter(util.unique(out))
 
 
    def complement_inds(self):
 
-       return reduce(operator_.xor_, self._inds)
+       out = reduce(operator_.xor, self._inds)
+
+       return iter(util.unique(out))
 
 
 
@@ -135,18 +141,21 @@ class TensorInteraction:
 
 # --- Mutual index methods -------------------------------------------------- #
 
+@ad.nondifferentiable
 def union_inds(*xs):
 
     op = tensor_interaction(*xs)
     return op.union_inds()
 
 
+@ad.nondifferentiable
 def overlap_inds(*xs):
 
     op = tensor_interaction(*xs)
     return op.overlap_inds()
 
 
+@ad.nondifferentiable
 def complement_inds(*xs):
 
     op = tensor_interaction(*xs)
@@ -160,10 +169,10 @@ def complement_inds(*xs):
 def match_type(x, target):
 
     if unary.iscomplex(x) and not unary.iscomplex(target):
-       return unary.real(x)
+       return unary.astype(unary.real(x), target.dtype)
 
     if not unary.iscomplex(x) and unary.iscomplex(target):
-       return x + 0j
+       return unary.astype(x, target.dtype) 
 
     return x
 
@@ -175,13 +184,40 @@ def match_shape(x, target, keepinds=False):
     if  not keepinds:
         target = reidx.squeeze(target) 
 
-    for ind in complement_inds(x, target):   
-        x = redu.sumover(x, ind)
+    for ind in complement_inds(x, target): 
+        x = redu.sumover(x, (ind,))
 
-    for ind in complement_inds(target, x):  
-        x = reidx.expand(x, ind)
+    for ind in complement_inds(target, x):    
+        x = reidx.expand(x, (ind,))
 
-    return x
+    return transpose_like(x, target)
+
+
+
+
+def transpose_like(x, target):
+
+    diff = tuple(complement_inds(x, target))
+
+    if len(diff) == 0:
+       return reidx.transpose(x, *union_inds(target))
+
+    if len(diff) > 1:
+       raise ValueError(
+          f"transpose_like: "
+          f"transposition is ill-defined because tensors {x} "
+          f"and {target} have more than one index differing: {diff}."
+       )
+
+    diff,   = diff
+    overlap = overlap_inds(x, target)
+
+    output_inds = (
+                   ind if ind in overlap else diff 
+                      for ind in union_inds(target)
+                  )
+
+    return reidx.transpose(x, *output_inds)
 
 
 
@@ -198,16 +234,16 @@ def match(x, target, **opts):
 def expand_grad(x, target, inds=None): 
 
     if inds is None:
-       inds = complement_inds(target, x)
+       inds = tuple(complement_inds(target, x))
 
     def fun(g):
 
-        g1 = reidx.expand(g, inds)
-        x1 = reidx.expand(x, inds)
+        g1 = transpose_like(reidx.expand(g, inds), target)
+        x1 = transpose_like(reidx.expand(x, inds), target)
 
         mask = binary.isequal(target, x1)
 
-        return g1 * mask / redu.sumover(mask, inds)
+        return g1 * mask / transpose_like(reidx.expand(redu.sumover(mask, inds), inds), target)
 
     return fun
 
