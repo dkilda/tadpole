@@ -18,6 +18,7 @@ from .tensors import (
    sparse_grad_dat,
    sparse_grad_dat_001,
    tensor_dat,
+   ntensor_dat,
    tensorspace_dat,
 )
 

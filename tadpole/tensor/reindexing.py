@@ -144,7 +144,7 @@ class TensorReindex:
        fused   = self._inds 
        unfused = self._inds
 
-       for inp, out in fusemap.items():
+       for inp, out in reversed(fusemap.items()):
            
            inp = self._map(*inp)
 

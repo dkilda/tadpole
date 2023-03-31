@@ -34,11 +34,22 @@ def concat(xs):
 
 
 
+# --- Select unique items from an iterable ---------------------------------- #
+
+def unique(xs):
+
+    xs = list(xs)
+    return relsort(set(xs), xs)
+
+
+
+
 # --- Relative complement of xs wrt ys -------------------------------------- #
 
 def complement(xs, ys):
 
-    return relsort(set(xs) - set(ys), list(xs))  
+    xs = list(xs)
+    return relsort(set(xs) - set(ys), xs)  
 
 
 

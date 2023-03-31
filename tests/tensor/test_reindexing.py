@@ -187,8 +187,8 @@ class TestTensorReindex:
        b = IndexGen("b",20)
 
        indmap = {
-                 ("k","l"): b,
                  ("i","j"): a, 
+                 ("k","l"): b,
                 }
 
        out = tn.fuse(w.tensor, indmap)
@@ -212,8 +212,8 @@ class TestTensorReindex:
        m = w.inds.map("m")[0]
 
        indmap = {
-                 ("i","k","l"): b,
                  ("j","n"): a, 
+                 ("i","k","l"): b,
                 }
 
        out = tn.fuse(w.tensor, indmap)

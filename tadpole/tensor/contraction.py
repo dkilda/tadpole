@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import itertools
 import functools
+import collections
 import opt_einsum as oe
 
 import tadpole.util     as util
@@ -108,7 +110,7 @@ class FixedIndexProduct(IndexProduct):
 
   def __call__(self, inds):
 
-      inds = Indices(*util.concat(inds)) 
+      inds = Indices(*util.unique(util.concat(inds))) 
   
       return iter(inds.map(*self._inds))
 
@@ -121,7 +123,7 @@ class PairwiseIndexProduct(IndexProduct):
 
    def __call__(self, inds):
 
-       for ind, freq in util.frequencies(inds).items():
+       for ind, freq in util.frequencies(util.concat(inds)).items():
 
            if freq > 2:
               raise ValueError(
@@ -191,13 +193,15 @@ class EngineContract(Engine):
 
    def attach(self, data, inds):
 
-       return self.__class__(self._train.attach(data, inds))
+       return self.__class__(self._product, self._train.attach(data, inds))
 
 
    def operator(self):
 
        return TensorContract(
-                 self._train.data(), self._train.inds(), self._product
+                 tuple(self._train.data()), 
+                 tuple(self._train.inds()), 
+                 self._product
               )
 
 
@@ -243,10 +247,10 @@ class EngineDot(Engine):
    def operator(self):
 
        return TensorContract(
-                             self._train.data(), 
-                             self._train.inds(), 
-                             PairwiseIndexProduct()
-                            )
+                 tuple(self._train.data()), 
+                 tuple(self._train.inds()), 
+                 PairwiseIndexProduct()
+              )
 
 
 
@@ -281,7 +285,7 @@ class TensorContract:
 
    def _output_inds(self):
 
-       return self._product(self._inds)
+       return tuple(self._product(self._inds))
 
 
    def _output_tensor(self, data):
@@ -321,7 +325,7 @@ def contract(*xs, product=None):
 
     op = tensor_contract(*xs, product=product)
 
-    return op.einsum(optimize) 
+    return op.contract() 
 
 
 
@@ -342,7 +346,7 @@ def dot(x, y):
 
 def kron(x, y, kronmap):
 
-    return reidx.fuse(einsum(x, y), kronmap)
+    return reidx.fuse(contract(x, y), kronmap)
 
 
 

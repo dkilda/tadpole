@@ -10,6 +10,7 @@ from tadpole.util.cache import (
 from tadpole.util.itertools import (
    frequencies,
    concat,
+   unique,
    complement,
    argsort,
    relsort,

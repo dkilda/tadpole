@@ -222,6 +222,50 @@ def tensor_dat(datafun):
 
 
 
+# --- N-Tensor data --------------------------------------------------------- #
+
+NTensorData = collections.namedtuple("NTensorData", [
+                "tensors", "arrays", "datas", 
+                "inds", "shapes", "backend", "opts",
+             ])
+
+
+
+
+def ntensor_dat(datafun):
+
+    def wrap(backend, indnames, shapes, **opts):
+
+        vindnames, vsizes = util.concat(indnames), util.concat(shapes)
+        vindnames, vsizes = zip(*tuple(set(zip(vindnames, vsizes))))
+
+        v = indices_dat(vindnames, vsizes)
+
+        ws = []
+        ts = []
+
+        for i in range(len(shapes)):
+
+            w = data.array_dat(datafun)(backend, shapes[i], seed=i+1)
+            ws.append(w)
+
+            t = tn.TensorGen(w.array, v.inds.map(*indnames[i]))
+            ts.append(t)  
+
+        tensors = ts
+        arrays  = [w.array for w in ws]
+        datas   = [w.data  for w in ws]
+        
+        return NTensorData(
+           tensors, arrays, datas, 
+           v.inds, shapes, backend, opts
+        )
+
+    return wrap
+
+
+
+
 # --- TensorSpace data ------------------------------------------------------ #
 
 TensorSpaceData = collections.namedtuple("TensorSpaceData", [
