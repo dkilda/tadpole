@@ -156,6 +156,24 @@ class TestTensorReindex:
        assert out == ans
 
 
+   @pytest.mark.parametrize("inds, shape, outinds, outaxes", [
+      ["ijkl", (2,3,4,5), "kjil", (2,1,0,3)],
+      ["ijkl", (2,3,4,5), "jlik", (1,3,0,2)],
+      ["ijkl", (2,3,4,5), "ijkl", (0,1,2,3)],
+   ])
+   def test_htranspose(self, inds, shape, outinds, outaxes):
+
+       w = data.tensor_dat(data.randn)(
+              self.backend, inds, shape
+           ) 
+
+       out = tn.htranspose(w.tensor, *outinds)
+       ans = ar.transpose(ar.conj(w.array), outaxes) 
+       ans = tn.TensorGen(ans, w.inds.map(*outinds))
+
+       assert out == ans
+
+
    def test_fuse(self):
 
        inds  = "ijkl"
@@ -307,46 +325,54 @@ class TestTensorReindex:
        assert out == ans
 
 
-   """
-   @pytest.mark.parametrize("inds1, shape1, inds2, shape2, newinds, newaxes", [
-      ["iajkbcl", (2,1,3,4,1,1,5), "ac", (1,5), "ijkbl"],
+   @pytest.mark.parametrize("inds, shape, newinds", [
+      ["ijkl", (2,3,4,5), "ab"],
+      ["ijkl", (2,3,4,5), ""],
    ])
-   def test_unsqueeze(self, inds1, shape1, inds2, shape2, newinds, newaxes):
+   def test_unsqueeze(self, inds, shape, newinds): 
 
-       inds  = "ijkl"
-       shape = (2,3,4,5)
+       inds1   = newinds + inds
+       shape1  = (1,)*len(newinds) + shape
+       newaxes = tuple(range(len(newinds))) 
 
-       w = data.tensor_dat(data.randn)(
-              self.backend, inds, shape
+       v = data.array_dat(data.randn)(
+              self.backend, shape
            ) 
+       w = data.tensor_dat(data.randn)(
+              self.backend, inds1, shape1
+           ) 
+       x = tn.TensorGen(v.array, w.inds.map(*inds))
 
-       out = tn.unsqueeze(w.tensor, newinds)
-       ans = ar.unsqueeze(w.array, axes) 
-       ans = tn.TensorGen(ans, w.inds.map(*output))
+       out = tn.unsqueeze(x,       w.inds.map(*newinds))
+       ans = ar.unsqueeze(v.array, newaxes) 
+       ans = tn.TensorGen(ans,     w.inds.map(*inds1))
 
        assert out == ans
-   """
 
 
+   @pytest.mark.parametrize("inds, shape, newinds, newsizes", [
+      ["ijkl", (2,3,4,5), "ab", (6,7)],
+      ["ijkl", (2,3,4,5), "", tuple()],
+   ])
+   def test_expand(self, inds, shape, newinds, newsizes): 
 
+       inds1   = newinds  + inds
+       shape1  = newsizes + shape
+       newaxes = tuple(range(len(newinds))) 
 
+       v = data.array_dat(data.randn)(
+              self.backend, shape
+           ) 
+       w = data.tensor_dat(data.randn)(
+              self.backend, inds1, shape1
+           ) 
+       x = tn.TensorGen(v.array, w.inds.map(*inds))
 
+       out = tn.expand(x, w.inds.map(*newinds))
+       ans = ar.broadcast_to(v.array, shape1) 
+       ans = tn.TensorGen(ans, w.inds.map(*inds1))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+       assert out == ans
 
 
 
