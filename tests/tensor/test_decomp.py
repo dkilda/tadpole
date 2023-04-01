@@ -306,6 +306,70 @@ class TestTensorDecomp:
        assert ar.allclose(error, 0)
        assert tn.allclose(tn.contract(U, S, V, product=w.xinds), w.xtensor)
 
+
+   @pytest.mark.parametrize("eigdat", [
+      data.eig_tensor_dat,
+   ])
+   @pytest.mark.parametrize("alignment", [
+      "left", 
+      "right",
+   ])
+   def test_eig(self, eigdat, alignment):
+
+       w = eigdat(data.randn, self.backend)
+
+       U, S, V, error = tn.eig(
+                           w.xtensor, 
+                           {"left": w.linds, "right": w.rinds}[alignment], 
+                           alignment, 
+                           "s"
+                        )
+
+       sind, = tn.overlap_inds(U, S)
+       U1    = tn.reindex(w.ltensor, {w.sind: sind})
+       S1    = tn.reindex(w.stensor, {w.sind: sind})
+       V1    = tn.reindex(w.rtensor, {w.sind: sind})
+
+       assert U.space() == U1.space()
+       assert S.space() == S1.space()
+       assert V.space() == V1.space()
+
+       assert tn.allclose(S, S1)
+       assert ar.allclose(error, 0)
+       assert tn.allclose(tn.contract(U, S, V, product=w.xinds), w.xtensor)
+
+
+   @pytest.mark.parametrize("eighdat", [
+      data.eigh_tensor_dat,
+   ])
+   @pytest.mark.parametrize("alignment", [
+      "left", 
+      "right",
+   ])
+   def test_eigh(self, eighdat, alignment):
+
+       w = eighdat(data.randn, self.backend)
+
+       U, S, V, error = tn.eigh(
+                           w.xtensor, 
+                           {"left": w.linds, "right": w.rinds}[alignment], 
+                           alignment, 
+                           "s"
+                        )
+
+       sind, = tn.overlap_inds(U, S)
+       U1    = tn.reindex(w.ltensor, {w.sind: sind})
+       S1    = tn.reindex(w.stensor, {w.sind: sind})
+       V1    = tn.reindex(w.rtensor, {w.sind: sind})
+
+       assert U.space() == U1.space()
+       assert S.space() == S1.space()
+       assert V.space() == V1.space()
+
+       assert tn.allclose(S, S1)
+       assert ar.allclose(error, 0)
+       assert tn.allclose(tn.contract(U, S, V, product=w.xinds), w.xtensor)
+
        
    # --- Hidden-rank decompositions --- #
 
@@ -337,6 +401,34 @@ class TestTensorDecomp:
        assert tn.allclose(Q, Q1)
        assert tn.allclose(R, R1)
 
+
+   @pytest.mark.parametrize("lqdat", [
+      data.lq_tensor_dat,
+   ])
+   @pytest.mark.parametrize("alignment", [
+      "left", 
+      "right",
+   ])
+   def test_lq(self, lqdat, alignment):
+
+       w = lqdat(data.randn, self.backend)
+
+       L, Q = tn.lq(
+                    w.xtensor, 
+                    {"left": w.linds, "right": w.rinds}[alignment], 
+                    alignment, 
+                    "s"
+                   )
+
+       sind, = tn.overlap_inds(L, Q)
+       L1    = tn.reindex(w.ltensor, {w.sind: sind})
+       Q1    = tn.reindex(w.rtensor, {w.sind: sind})
+
+       assert L.space() == L1.space()
+       assert Q.space() == Q1.space()
+
+       assert tn.allclose(L, L1)
+       assert tn.allclose(Q, Q1)
 
 
 

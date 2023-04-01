@@ -30,17 +30,17 @@ from tadpole.index import (
 
 
 
-# --- Decomp data ----------------------------------------------------------- #
+# --- Truncation data ------------------------------------------------------- #
 
-SvdData = collections.namedtuple("SvdData", [
-             "array", "U", "S", "VH", 
-             "size", "shape", "backend",
-          ])
-
-
+TruncData = collections.namedtuple("TruncData", [
+               "array", "U", "S", "VH", 
+               "size", "shape", "backend",
+            ])
 
 
-def svd_dat():
+
+
+def svd_trunc_dat():
 
     backend = backends.get(backend)
 
@@ -59,7 +59,7 @@ def svd_dat():
 
     array = ar.dot(U, ar.dot(ar.diag(S), VH))
 
-    return SvdData(
+    return SvdTruncData(
               array, U, S, VH, 
               size, shape, backend,
            )
@@ -67,13 +67,7 @@ def svd_dat():
 
 
 
-
-
-
-
-
-
-
+# --- Decomposition input data ---------------------------------------------- #
 
 DecompInputData = collections.namedtuple("DecompInputData", [
                      "inds",  "shape",  
@@ -83,6 +77,9 @@ DecompInputData = collections.namedtuple("DecompInputData", [
                   ])
 
 
+
+
+# --- Hidden-rank decomposition data ---------------------------------------- #
 
 HiddenDecompData = collections.namedtuple("HiddenDecompData", [
                       "xtensor", "ltensor", "rtensor", 
@@ -104,16 +101,15 @@ def hidden_decomp_data(datafun):
         v = data.indices_dat(w.inds + w.sind, w.shape + (w.srank,))
         x = data.array_dat(datafun)(backend, (w.lsize, w.rsize), **opts)  
 
-        xarray = x.array
-        xarray = ar.reshape(xarray,   (*w.lshape, *w.rshape))  
-        xarray = ar.transpose(xarray, v.inds.axes(*(w.linds + w.rinds)))      
+        xmatrix = x.array
+        xarray  = ar.reshape(xmatrix,   (*w.lshape, *w.rshape))  
+        xarray  = ar.transpose(xarray, v.inds.axes(*(w.linds + w.rinds)))      
 
         larray, rarray = {
                           "qr": ar.qr,
                           "lq": ar.lq,
-                         }[method](x.array)
+                         }[method](xmatrix)
 
-        xmatrix = x.array
         lmatrix = larray
         rmatrix = rarray
 
@@ -143,6 +139,8 @@ def hidden_decomp_data(datafun):
 
 
 
+# --- QR decomposition data ------------------------------------------------- #
+
 def qr_tensor_dat(datafun, backend, **opts):
 
     w = DecompInputData(
@@ -169,8 +167,35 @@ def qr_tensor_dat(datafun, backend, **opts):
 
 
 
+# --- LQ decomposition data ------------------------------------------------- #
+
+def lq_tensor_dat(datafun, backend, **opts):
+
+    w = DecompInputData(
+
+           inds   = "ijk",     
+           shape  = (2,3,4),
+
+           linds  = "ik",
+           lshape = (2,4),
+           lsize  = 8,
+           laxes  = (0,2),
+
+           rinds  = "j",
+           rshape = (3,),
+           rsize  = 3,
+           raxes  = (1,),
+
+           sind   = "s",
+           srank  = 3,
+        )
+
+    return hidden_decomp_data(datafun)("lq", backend, w, **opts)
 
 
+
+
+# --- Explicit-rank decomposition data ---------------------------------------- #
 
 ExplicitDecompData = collections.namedtuple("ExplicitDecompData", [
                         "xtensor", "ltensor", "rtensor", "stensor",
@@ -190,19 +215,21 @@ def explicit_decomp_data(datafun):
 
         w = decomp_input_dat 
         v = data.indices_dat(w.inds + w.sind, w.shape + (w.srank,))
-        x = data.array_dat(datafun)(backend, (w.lsize, w.rsize), **opts)  
+        x = data.array_dat(datafun)(backend, (w.lsize, w.rsize), **opts) 
 
-        xarray = x.array
-        xarray = ar.reshape(xarray,   (*w.lshape, *w.rshape))  
-        xarray = ar.transpose(xarray, v.inds.axes(*(w.linds + w.rinds)))      
+        xmatrix = x.array
+        if method == "eigh":
+           xmatrix = ar.add(xmatrix, ar.transpose(ar.conj(xmatrix), (1,0))) 
+           
+        xarray  = ar.reshape(xmatrix,   (*w.lshape, *w.rshape))  
+        xarray  = ar.transpose(xarray, v.inds.axes(*(w.linds + w.rinds)))      
 
         larray, sarray, rarray = {
                                   "svd":  ar.svd,
                                   "eig":  ar.eig,
                                   "eigh": ar.eigh,
-                                 }[method](x.array)
+                                 }[method](xmatrix)
 
-        xmatrix = x.array
         lmatrix = larray
         rmatrix = rarray
         smatrix = sarray
@@ -234,6 +261,9 @@ def explicit_decomp_data(datafun):
 
 
 
+
+# --- SVD decomposition data ------------------------------------------------ #
+
 def svd_tensor_dat(datafun, backend, **opts):
 
     w = DecompInputData(
@@ -260,6 +290,58 @@ def svd_tensor_dat(datafun, backend, **opts):
 
 
 
+# --- Eigenvalue decomposition data ----------------------------------------- #
+
+def eig_tensor_dat(datafun, backend, **opts):
+
+    w = DecompInputData(
+
+           inds   = "ijk",     
+           shape  = (2,3,4),
+
+           linds  = "ik",
+           lshape = (2,4),
+           lsize  = 8,
+           laxes  = (0,2),
+
+           rinds  = "j",
+           rshape = (3,),
+           rsize  = 3,
+           raxes  = (1,),
+
+           sind   = "s",
+           srank  = 3,
+        )
+
+    return explicit_decomp_data(datafun)("eig", backend, w, **opts)
+
+
+
+
+# --- Hermitian eigenvalue decomposition data ------------------------------- #
+
+def eigh_tensor_dat(datafun, backend, **opts):
+
+    w = DecompInputData(
+
+           inds   = "ijk",     
+           shape  = (2,8,4),
+
+           linds  = "ik",
+           lshape = (2,4),
+           lsize  = 8,
+           laxes  = (0,2),
+
+           rinds  = "j",
+           rshape = (8,),
+           rsize  = 8,
+           raxes  = (1,),
+
+           sind   = "s",
+           srank  = 8,
+        )
+
+    return explicit_decomp_data(datafun)("eigh", backend, w, **opts)
 
 
 
@@ -275,6 +357,9 @@ def svd_tensor_dat(datafun, backend, **opts):
 
 
 
-    
+
+
+
+
 
 
