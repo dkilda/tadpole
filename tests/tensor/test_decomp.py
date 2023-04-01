@@ -162,12 +162,14 @@ class TestPartition:
        return self._backend
 
 
-   @pytest.mark.parametrize("svddat", [
-      data.svd_tensor_dat,
+   @pytest.mark.parametrize("decomp_input", [
+      data.decomp_input_001,
    ])
-   def test_aligndata(self, svddat):
+   def test_aligndata(self, decomp_input):
 
-       w = svddat(data.randn, self.backend)
+       w = data.svd_tensor_dat(decomp_input)(
+              data.randn, self.backend
+           )
        x = decomp.Partition(
                             Indices(*w.xinds), 
                             Indices(*w.linds), 
@@ -178,14 +180,16 @@ class TestPartition:
        assert ar.allclose(x.aligndata(w.xarray), w.xmatrix)
 
 
-   @pytest.mark.parametrize("svddat", [
-      data.svd_tensor_dat,
+   @pytest.mark.parametrize("decomp_input", [
+      data.decomp_input_001,
    ])
-   def test_ltensor(self, svddat):
+   def test_ltensor(self, decomp_input):
 
        link = decomp.Link("s")
 
-       w = svddat(data.randn, self.backend)
+       w = data.svd_tensor_dat(decomp_input)(
+              data.randn, self.backend
+           )
        x = decomp.Partition(
                             Indices(*w.xinds), 
                             Indices(*w.linds), 
@@ -201,14 +205,16 @@ class TestPartition:
        assert tn.allclose(out, ans)
 
 
-   @pytest.mark.parametrize("svddat", [
-      data.svd_tensor_dat,
+   @pytest.mark.parametrize("decomp_input", [
+      data.decomp_input_001,
    ])
-   def test_rtensor(self, svddat):
+   def test_rtensor(self, decomp_input):
 
        link = decomp.Link("s")
 
-       w = svddat(data.randn, self.backend)
+       w = data.svd_tensor_dat(decomp_input)(
+              data.randn, self.backend
+           )
        x = decomp.Partition(
                             Indices(*w.xinds), 
                             Indices(*w.linds), 
@@ -224,14 +230,16 @@ class TestPartition:
        assert tn.allclose(out, ans)
 
 
-   @pytest.mark.parametrize("svddat", [
-      data.svd_tensor_dat,
+   @pytest.mark.parametrize("decomp_input", [
+      data.decomp_input_001,
    ])
-   def test_stensor(self, svddat):
+   def test_stensor(self, decomp_input):
 
        link = decomp.Link("s")
 
-       w = svddat(data.randn, self.backend)
+       w = data.svd_tensor_dat(decomp_input)(
+              data.randn, self.backend
+           )
        x = decomp.Partition(
                             Indices(*w.xinds), 
                             Indices(*w.linds), 
@@ -275,16 +283,18 @@ class TestTensorDecomp:
 
    # --- Explicit-rank decompositions --- #
 
-   @pytest.mark.parametrize("svddat", [
-      data.svd_tensor_dat,
+   @pytest.mark.parametrize("decomp_input", [
+      data.decomp_input_001,
    ])
    @pytest.mark.parametrize("alignment", [
       "left", 
       "right",
    ])
-   def test_svd(self, svddat, alignment):
+   def test_svd(self, decomp_input, alignment):
 
-       w = svddat(data.randn, self.backend)
+       w = data.svd_tensor_dat(decomp_input)(
+              data.randn, self.backend
+           )
 
        U, S, V, error = tn.svd(
                            w.xtensor, 
@@ -307,16 +317,18 @@ class TestTensorDecomp:
        assert tn.allclose(tn.contract(U, S, V, product=w.xinds), w.xtensor)
 
 
-   @pytest.mark.parametrize("eigdat", [
-      data.eig_tensor_dat,
+   @pytest.mark.parametrize("decomp_input", [
+      data.decomp_input_001,
    ])
    @pytest.mark.parametrize("alignment", [
       "left", 
       "right",
    ])
-   def test_eig(self, eigdat, alignment):
+   def test_eig(self, decomp_input, alignment):
 
-       w = eigdat(data.randn, self.backend)
+       w = data.eig_tensor_dat(decomp_input)(
+              data.randn, self.backend
+           )
 
        U, S, V, error = tn.eig(
                            w.xtensor, 
@@ -339,16 +351,18 @@ class TestTensorDecomp:
        assert tn.allclose(tn.contract(U, S, V, product=w.xinds), w.xtensor)
 
 
-   @pytest.mark.parametrize("eighdat", [
-      data.eigh_tensor_dat,
+   @pytest.mark.parametrize("decomp_input", [
+      data.decomp_input_002,
    ])
    @pytest.mark.parametrize("alignment", [
       "left", 
       "right",
    ])
-   def test_eigh(self, eighdat, alignment):
+   def test_eigh(self, decomp_input, alignment):
 
-       w = eighdat(data.randn, self.backend)
+       w = data.eigh_tensor_dat(decomp_input)(
+              data.randn, self.backend
+           )
 
        U, S, V, error = tn.eigh(
                            w.xtensor, 
@@ -373,16 +387,18 @@ class TestTensorDecomp:
        
    # --- Hidden-rank decompositions --- #
 
-   @pytest.mark.parametrize("qrdat", [
-      data.qr_tensor_dat,
+   @pytest.mark.parametrize("decomp_input", [
+      data.decomp_input_001,
    ])
    @pytest.mark.parametrize("alignment", [
       "left", 
       "right",
    ])
-   def test_qr(self, qrdat, alignment):
+   def test_qr(self, decomp_input, alignment):
 
-       w = qrdat(data.randn, self.backend)
+       w = data.qr_tensor_dat(decomp_input)(
+              data.randn, self.backend
+           )
 
        Q, R = tn.qr(
                     w.xtensor, 
@@ -402,16 +418,18 @@ class TestTensorDecomp:
        assert tn.allclose(R, R1)
 
 
-   @pytest.mark.parametrize("lqdat", [
-      data.lq_tensor_dat,
+   @pytest.mark.parametrize("decomp_input", [
+      data.decomp_input_001,
    ])
    @pytest.mark.parametrize("alignment", [
       "left", 
       "right",
    ])
-   def test_lq(self, lqdat, alignment):
+   def test_lq(self, decomp_input, alignment):
 
-       w = lqdat(data.randn, self.backend)
+       w = data.lq_tensor_dat(decomp_input)(
+              data.randn, self.backend
+           )
 
        L, Q = tn.lq(
                     w.xtensor, 

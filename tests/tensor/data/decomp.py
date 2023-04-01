@@ -81,6 +81,54 @@ DecompInputData = collections.namedtuple("DecompInputData", [
 
 
 
+def decomp_input_001():
+
+    return DecompInputData(
+
+       inds   = "ijk",     
+       shape  = (2,3,4),
+
+       linds  = "ik",
+       lshape = (2,4),
+       lsize  = 8,
+       laxes  = (0,2),
+
+       rinds  = "j",
+       rshape = (3,),
+       rsize  = 3,
+       raxes  = (1,),
+
+       sind   = "s",
+       srank  = 3,
+    )
+
+
+
+
+def decomp_input_002():
+
+    return DecompInputData(
+
+       inds   = "ijk",     
+       shape  = (2,8,4),
+
+       linds  = "ik",
+       lshape = (2,4),
+       lsize  = 8,
+       laxes  = (0,2),
+
+       rinds  = "j",
+       rshape = (8,),
+       rsize  = 8,
+       raxes  = (1,),
+
+       sind   = "s",
+       srank  = 8,
+    )
+
+
+
+
 # --- Hidden-rank decomposition data ---------------------------------------- #
 
 HiddenDecompData = collections.namedtuple("HiddenDecompData", [
@@ -143,56 +191,28 @@ def hidden_decomp_data(datafun):
 
 # --- QR decomposition data ------------------------------------------------- #
 
-def qr_tensor_dat(datafun, backend, **opts):
+def qr_tensor_dat(decomp_input):
 
-    w = DecompInputData(
+    def wrap(datafun, backend, **opts):
 
-           inds   = "ijk",     
-           shape  = (2,3,4),
-
-           linds  = "ik",
-           lshape = (2,4),
-           lsize  = 8,
-           laxes  = (0,2),
-
-           rinds  = "j",
-           rshape = (3,),
-           rsize  = 3,
-           raxes  = (1,),
-
-           sind   = "s",
-           srank  = 3,
-        )
-
-    return hidden_decomp_data(datafun)("qr", backend, w, **opts)
+        return hidden_decomp_data(datafun)(
+                  "qr", backend, decomp_input(), **opts
+               )
+    return wrap
 
 
 
 
 # --- LQ decomposition data ------------------------------------------------- #
 
-def lq_tensor_dat(datafun, backend, **opts):
+def lq_tensor_dat(decomp_input):
 
-    w = DecompInputData(
+    def wrap(datafun, backend, **opts):
 
-           inds   = "ijk",     
-           shape  = (2,3,4),
-
-           linds  = "ik",
-           lshape = (2,4),
-           lsize  = 8,
-           laxes  = (0,2),
-
-           rinds  = "j",
-           rshape = (3,),
-           rsize  = 3,
-           raxes  = (1,),
-
-           sind   = "s",
-           srank  = 3,
-        )
-
-    return hidden_decomp_data(datafun)("lq", backend, w, **opts)
+        return hidden_decomp_data(datafun)(
+                  "lq", backend, decomp_input(), **opts
+               )
+    return wrap
 
 
 
@@ -266,101 +286,42 @@ def explicit_decomp_data(datafun):
 
 # --- SVD decomposition data ------------------------------------------------ #
 
-def svd_tensor_dat(datafun, backend, **opts):
+def svd_tensor_dat(decomp_input):
 
-    w = DecompInputData(
+    def wrap(datafun, backend, **opts):
 
-           inds   = "ijk",     
-           shape  = (2,3,4),
-
-           linds  = "ik",
-           lshape = (2,4),
-           lsize  = 8,
-           laxes  = (0,2),
-
-           rinds  = "j",
-           rshape = (3,),
-           rsize  = 3,
-           raxes  = (1,),
-
-           sind   = "s",
-           srank  = 3,
-        )
-
-    return explicit_decomp_data(datafun)("svd", backend, w, **opts)
+        return explicit_decomp_data(datafun)(
+                  "svd", backend, decomp_input(), **opts
+               )
+    return wrap
 
 
 
 
 # --- Eigenvalue decomposition data ----------------------------------------- #
 
-def eig_tensor_dat(datafun, backend, **opts):
+def eig_tensor_dat(decomp_input):
 
-    w = DecompInputData(
+    def wrap(datafun, backend, **opts):
 
-           inds   = "ijk",     
-           shape  = (2,3,4),
-
-           linds  = "ik",
-           lshape = (2,4),
-           lsize  = 8,
-           laxes  = (0,2),
-
-           rinds  = "j",
-           rshape = (3,),
-           rsize  = 3,
-           raxes  = (1,),
-
-           sind   = "s",
-           srank  = 3,
-        )
-
-    return explicit_decomp_data(datafun)("eig", backend, w, **opts)
+        return explicit_decomp_data(datafun)(
+                  "eig", backend, decomp_input(), **opts
+               )
+    return wrap
 
 
 
 
 # --- Hermitian eigenvalue decomposition data ------------------------------- #
 
-def eigh_tensor_dat(datafun, backend, **opts):
+def eigh_tensor_dat(decomp_input):
 
-    w = DecompInputData(
+    def wrap(datafun, backend, **opts):
 
-           inds   = "ijk",     
-           shape  = (2,8,4),
-
-           linds  = "ik",
-           lshape = (2,4),
-           lsize  = 8,
-           laxes  = (0,2),
-
-           rinds  = "j",
-           rshape = (8,),
-           rsize  = 8,
-           raxes  = (1,),
-
-           sind   = "s",
-           srank  = 8,
-        )
-
-    return explicit_decomp_data(datafun)("eigh", backend, w, **opts)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        return explicit_decomp_data(datafun)(
+                  "eigh", backend, decomp_input(), **opts
+               )
+    return wrap
 
 
 
