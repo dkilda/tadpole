@@ -281,6 +281,44 @@ class TestTensorDecomp:
        return self._backend
 
 
+   # --- Explicit-rank decompositions with truncation --- #
+
+   @pytest.mark.parametrize("alignment", [
+      "left", 
+      "right",
+   ])
+   @pytest.mark.parametrize("trunc, rank", [
+      [tn.TruncRel(1e-5), 8]
+   ])
+   def test_svd_trunc(self, alignment, trunc, rank):
+
+       w = data.svd_tensor_dat(data.decomp_input_000)(
+              data.randn_decomp_000, self.backend
+           )
+
+       U, S, V, error = tn.svd(
+                           w.xtensor, 
+                           {"left": w.linds, "right": w.rinds}[alignment], 
+                           alignment, 
+                           "s",
+                           trunc,
+                        )
+
+       sind, = tn.overlap_inds(U, S)
+       U1    = tn.reindex(w.ltensor, {w.sind: sind})[]
+       S1    = tn.reindex(w.stensor, {w.sind: sind})[]
+       V1    = tn.reindex(w.rtensor, {w.sind: sind})[]
+
+       assert U.space() == U1.space()
+       assert S.space() == S1.space()
+       assert V.space() == V1.space()
+
+       assert tn.allclose(S, S1)
+       assert ar.allclose(error, 0)
+       assert tn.allclose(tn.contract(U, S, V, product=w.xinds), w.xtensor)
+
+
+
    # --- Explicit-rank decompositions --- #
 
    @pytest.mark.parametrize("decomp_input", [

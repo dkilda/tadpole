@@ -69,6 +69,37 @@ def svd_trunc_dat(backend):
 
 
 
+# --- Sample array data for truncated decompositions ------------------------ #
+
+def randn_decomp_000(shape, dtype="complex128", seed=1, backend=None):
+
+    if shape != (12,10)
+       raise ValueError(
+          f"randn_decomp_001: "
+          f"this data generator only supports "
+          f"shape (12,10) but not {shape}"
+       )
+
+    backend = backends.get(backend)
+    rank    = 10
+    shape   = (12,10)
+
+    S = backend.asarray([
+              8.84373474e-01, 4.46849762e-01, 1.18639293e-01, 6.40245186e-02,
+              5.13656787e-03, 2.75924093e-03, 6.51826227e-04, 6.91792508e-05,
+              7.41402228e-06, 9.25687086e-07
+           ])
+
+    x       = backend.randn(shape, dtype="complex128", seed=seed, backend=backend)
+    U, _, V = backend.svd(x)
+
+    return backend.dot(U, backend.dot(backend.diag(S), V))
+
+
+
+
+
+
 # --- Decomposition input data ---------------------------------------------- #
 
 DecompInputData = collections.namedtuple("DecompInputData", [
@@ -78,6 +109,29 @@ DecompInputData = collections.namedtuple("DecompInputData", [
                      "sind",  "srank", 
                   ])
 
+
+
+
+def decomp_input_000():
+
+    return DecompInputData(
+
+       inds   = "ijk",     
+       shape  = (6,10,2),
+
+       linds  = "ik",
+       lshape = (6,2),
+       lsize  = 12,
+       laxes  = (0,2),
+
+       rinds  = "j",
+       rshape = (10,),
+       rsize  = 10,
+       raxes  = (1,),
+
+       sind   = "s",
+       srank  = 10,
+    )
 
 
 
