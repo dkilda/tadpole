@@ -189,7 +189,7 @@ class EngineElemwise(Engine):
 
        assert set(util.concat(self._train.inds())) == set(inds), (
           f"\n{type(self).__name__}.operator: "
-          f"An elementwise operation cannot be performed for tensors"
+          f"An elementwise operation cannot be performed for tensors "
           f"with incompatible indices {tuple(self._train.inds())}."
        )
 

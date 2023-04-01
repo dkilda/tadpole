@@ -41,6 +41,8 @@ from .engines import (
 
 from .decomp import (
    svd_dat,
+   qr_tensor_dat,
+   svd_tensor_dat,
 )
 
 

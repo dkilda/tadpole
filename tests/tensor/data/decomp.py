@@ -54,7 +54,7 @@ def svd_dat():
            ])
     S = Array(backend, data)
 
-    x        = ar.randn(shape, dtype="complex128", seed=1)
+    x        = ar.randn(shape, dtype="complex128", seed=1, backend=backend)
     U, _, VH = ar.svd(x)
 
     array = ar.dot(U, ar.dot(ar.diag(S), VH))
@@ -63,6 +63,203 @@ def svd_dat():
               array, U, S, VH, 
               size, shape, backend,
            )
+
+
+
+
+
+
+
+
+
+
+
+
+DecompInputData = collections.namedtuple("DecompInputData", [
+                     "inds",  "shape",  
+                     "linds", "lshape", "lsize", "laxes", 
+                     "rinds", "rshape", "rsize", "raxes",
+                     "sind",  "srank", 
+                  ])
+
+
+
+HiddenDecompData = collections.namedtuple("HiddenDecompData", [
+                      "xtensor", "ltensor", "rtensor", 
+                      "xarray",  "larray",  "rarray",
+                      "xinds",   "linds",   "rinds",  "sind",  
+                      "shape",   "lshape",  "rshape", "srank",
+                      "backend", 
+                   ])
+
+
+
+
+def hidden_decomp_data(datafun):
+
+    def wrap(method, backend, decomp_input_dat, **opts):
+
+        w = decomp_input_dat 
+        v = data.indices_dat(w.inds + w.sind, w.shape + (w.srank,))
+        x = data.array_dat(datafun)(backend, (w.lsize, w.rsize), **opts)  
+
+        xarray = x.array
+        xarray = ar.reshape(xarray,   (*w.lshape, *w.rshape))  
+        xarray = ar.transpose(xarray, v.inds.axes(*(w.linds + w.rinds)))      
+
+        larray, rarray = {
+                          "qr": ar.qr,
+                          "lq": ar.lq,
+                         }[method](x.array)
+
+        larray = ar.reshape(larray, (*w.lshape, w.srank))
+        rarray = ar.reshape(rarray, (w.srank, *w.rshape))
+
+        sind  = v.inds.map(*w.sind)[0]
+        linds = v.inds.map(*w.linds)     
+        rinds = v.inds.map(*w.rinds)  
+        xinds = v.inds.map(*w.inds)
+
+        ltensor = tn.TensorGen(larray, (*linds, sind))
+        rtensor = tn.TensorGen(rarray, (sind,   *rinds))
+        xtensor = tn.TensorGen(xarray, xinds)
+
+        return HiddenDecompData(
+                  xtensor,  ltensor,   rtensor, 
+                  x.array,  larray,    rarray,
+                  xinds,    linds,     rinds,     sind,
+                  w.shape,  w.lshape,  w.rshape,  w.srank,
+                  x.backend 
+               )
+
+    return wrap
+
+
+
+
+def qr_tensor_dat(datafun, backend, **opts):
+
+    w = DecompInputData(
+
+           inds   = "ijk",     
+           shape  = (2,3,4),
+
+           linds  = "ik",
+           lshape = (2,4),
+           lsize  = 8,
+           laxes  = (0,2),
+
+           rinds  = "j",
+           rshape = (3,),
+           rsize  = 3,
+           raxes  = (1,),
+
+           sind   = "s",
+           srank  = 3,
+        )
+
+    return hidden_decomp_data(datafun)("qr", backend, w, **opts)
+
+
+
+
+
+
+
+ExplicitDecompData = collections.namedtuple("ExplicitDecompData", [
+                        "xtensor", "ltensor", "rtensor", "stensor",
+                        "xarray",  "larray",  "rarray",  "sarray",
+                        "xinds",   "linds",   "rinds",   "sind",  
+                        "shape",   "lshape",  "rshape",  "srank",
+                        "backend", 
+                     ])
+
+
+
+
+def explicit_decomp_data(datafun):
+
+    def wrap(method, backend, decomp_input_dat, **opts):
+
+        w = decomp_input_dat 
+        v = data.indices_dat(w.inds + w.sind, w.shape + (w.srank,))
+        x = data.array_dat(datafun)(backend, (w.lsize, w.rsize), **opts)  
+
+        xarray = x.array
+        xarray = ar.reshape(xarray,   (*w.lshape, *w.rshape))  
+        xarray = ar.transpose(xarray, v.inds.axes(*(w.linds + w.rinds)))      
+
+        larray, sarray, rarray = {
+                                  "svd":  ar.svd,
+                                  "eig":  ar.eig,
+                                  "eigh": ar.eigh,
+                                 }[method](x.array)
+
+        larray = ar.reshape(larray, (*w.lshape, w.srank))
+        rarray = ar.reshape(rarray, (w.srank, *w.rshape))
+
+        sind  = v.inds.map(*w.sind)[0]
+        linds = v.inds.map(*w.linds)     
+        rinds = v.inds.map(*w.rinds)  
+        xinds = v.inds.map(*w.inds)
+
+        ltensor = tn.TensorGen(larray, (*linds, sind))
+        rtensor = tn.TensorGen(rarray, (sind,   *rinds))
+        stensor = tn.TensorGen(sarray, (sind,))
+        xtensor = tn.TensorGen(xarray, xinds)
+
+        return ExplicitDecompData(
+                  xtensor,  ltensor,   rtensor,   stensor,
+                  x.array,  larray,    rarray,    sarray,
+                  xinds,    linds,     rinds,     sind,
+                  w.shape,  w.lshape,  w.rshape,  w.srank,
+                  x.backend 
+               )
+
+    return wrap
+
+
+
+def svd_tensor_dat(datafun, backend, **opts):
+
+    w = DecompInputData(
+
+           inds   = "ijk",     
+           shape  = (2,3,4),
+
+           linds  = "ik",
+           lshape = (2,4),
+           lsize  = 8,
+           laxes  = (0,2),
+
+           rinds  = "j",
+           rshape = (3,),
+           rsize  = 3,
+           raxes  = (1,),
+
+           sind   = "s",
+           srank  = 3,
+        )
+
+    return explicit_decomp_data(datafun)("svd", backend, w, **opts)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     
 

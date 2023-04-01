@@ -375,5 +375,71 @@ class TestTensorReindex:
        assert out == ans
 
 
+   @pytest.mark.parametrize("winds, wshape, ind", [
+      ["i", (4,), "j"],
+   ])
+   def test_diag(self, winds, wshape, ind): 
+
+       w = data.tensor_dat(data.randn)(
+              self.backend, winds, wshape
+           )
+
+       ind = IndexGen(ind, wshape[0]) 
+
+       out = tn.diag(w.tensor, ind)
+       ans = ar.diag(w.array)
+       ans = tn.TensorGen(ans, (ind, *w.inds))
+
+       assert out == ans
+
+
+   @pytest.mark.parametrize("winds, wshape", [
+      ["i", (4,)],
+   ])
+   def test_diag_001(self, winds, wshape): 
+
+       w = data.tensor_dat(data.randn)(
+              self.backend, winds, wshape
+           )
+
+       out = tn.diag(w.tensor)
+       ans = ar.diag(w.array)
+       ans = tn.TensorGen(ans, (*w.inds, *w.inds))
+ 
+       assert out == ans
+       
+
+   @pytest.mark.parametrize("winds, wshape, ind", [
+      ["ij", (5,5), "i"],
+   ])
+   def test_diag_002(self, winds, wshape, ind): 
+
+       w = data.tensor_dat(data.randn)(
+              self.backend, winds, wshape
+           )
+
+       ind = w.inds.map(ind)[0]
+
+       out = tn.diag(w.tensor, ind)
+       ans = ar.diag(w.array)
+       ans = tn.TensorGen(ans, (ind,))
+
+       assert out == ans
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

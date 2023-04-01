@@ -227,6 +227,26 @@ class TensorReindex:
        return self._new(output_data, output_inds) 
 
 
+   def diag(self, ind=None):
+
+       if ind is None:
+          ind = self._inds[0]
+
+       if not isinstance(ind, Index):
+          ind = IndexGen(ind, len(self._inds[0]))
+
+       if self._inds.ndim == 1:
+          return core.TensorGen(ar.diag(self._data), (ind, *self._inds))
+
+       if self._inds.ndim == 2:
+          return core.TensorGen(ar.diag(self._data), (ind,))
+
+       raise ValueError(
+          f"TensorReindex.diag: "
+          f"diag is only supported for tensors with "
+          f"ndim = 1 or 2, but ndim != {self._inds.ndim}."
+       )
+
 
 
 ###############################################################################
@@ -250,6 +270,11 @@ def transpose(x, *output_inds):
 
     op = tensor_reindex(x)
     return op.transpose(*output_inds)
+
+
+def htranspose(x, *output_inds):
+
+    return transpose(unary.conj(x), *output_inds)
 
 
 @ad.differentiable
@@ -287,10 +312,13 @@ def expand(x, inds):
     return op.expand(inds)
 
 
-def htranspose(x, *output_inds):
+@ad.differentiable
+def diag(x, ind=None):
 
-    return transpose(unary.conj(x), *output_inds)
+    op = tensor_reindex(x)
+    return op.diag(ind)
 
+     
 
 
 

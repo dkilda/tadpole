@@ -282,11 +282,11 @@ class IndexProduct(abc.ABC):
 class Alignment(abc.ABC):
 
    @abc.abstractmethod
-   def left(self, inds):
+   def linds(self, inds):
        pass
 
    @abc.abstractmethod
-   def right(self, inds):
+   def rinds(self, inds):
        pass
 
 

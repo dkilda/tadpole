@@ -56,14 +56,19 @@ class LeftAlignment(Alignment):
        self._partial_inds = partial_inds
 
 
+   def _mapto(self, inds):
+
+       return inds.map(*self._partial_inds)
+
+
    def linds(self, inds):
 
-       return self._partial_inds
+       return Indices(*self._mapto(inds))
        
 
    def rinds(self, inds):
 
-       return inds.remove(*self._partial_inds) 
+       return Indices(*inds.remove(*self._mapto(inds))) 
 
 
 
@@ -77,14 +82,19 @@ class RightAlignment(Alignment):
        self._partial_inds = partial_inds
 
 
+   def _mapto(self, inds):
+
+       return inds.map(*self._partial_inds)
+
+
    def linds(self, inds):
 
-       return inds.remove(*self._partial_inds)
+       return Indices(*inds.remove(*self._mapto(inds))) 
        
 
    def rinds(self, inds):
 
-       return self._partial_inds
+       return Indices(*self._mapto(inds))
 
 
 
@@ -159,7 +169,7 @@ class Partition:
 
    def rtensor(self, data):
 
-       data = ar.reshape(rdata, (-1, *self._rinds.shape))
+       data = ar.reshape(data, (-1, *self._rinds.shape))
 
        sind = self._link.ind(data.shape[0])
        inds = self._rinds.add(sind)
@@ -196,7 +206,7 @@ def tensor_decomp(x, inds, alignment, link):
     engine = EngineDecomp(alignment, link)
     engine = x.pluginto(engine)
 
-    return engine
+    return engine.operator()
 
 
 
@@ -239,7 +249,11 @@ class EngineDecomp(Engine):
        if self._train.size() == self._size:
           raise TooManyArgsError(self, self._size)
 
-       return self.__class__(self._train.attach(data, inds))
+       return self.__class__(
+          self._alignment, 
+          self._link, 
+          self._train.attach(data, inds)
+       )
 
 
    def operator(self):
@@ -249,8 +263,8 @@ class EngineDecomp(Engine):
 
        partition = Partition(
           inds, 
-          self._alignment.linds(), 
-          self._alignment.rinds(), 
+          self._alignment.linds(inds), 
+          self._alignment.rinds(inds), 
           self._link
        )
 

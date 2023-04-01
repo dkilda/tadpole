@@ -132,6 +132,7 @@ from .reindexing import (
    squeeze,
    unsqueeze,
    expand,
+   diag,
 )
 
 
