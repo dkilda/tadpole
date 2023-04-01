@@ -44,14 +44,207 @@ from tadpole.index import (
 ###############################################################################
 
 
-# --- Alignment ------------------------------------------------------------- #
+# --- Left alignment -------------------------------------------------------- #
+
+class TestLeftAlignment:
+
+   @pytest.mark.parametrize("shape, inds, partial, rest", [
+      [(2,3,4), "ijk", "ik", "j"],
+   ])
+   def test_linds(self, shape, inds, partial, rest):
+
+       v = data.indices_dat(inds, shape)
+       x = decomp.LeftAlignment(partial)
+
+       assert x.linds(v.inds) == Indices(*v.inds.map(*partial))
+
+
+   @pytest.mark.parametrize("shape, inds, partial, rest", [
+      [(2,3,4), "ijk", "ik", "j"],
+   ])
+   def test_rinds(self, shape, inds, partial, rest):
+
+       v = data.indices_dat(inds, shape)
+       x = decomp.LeftAlignment(partial)
+
+       assert x.rinds(v.inds) == Indices(*v.inds.map(*rest))
+
+
+
+
+# --- Right alignment -------------------------------------------------------- #
+
+class TestRightAlignment:
+
+   @pytest.mark.parametrize("shape, inds, partial, rest", [
+      [(2,3,4), "ijk", "ik", "j"],
+   ])
+   def test_linds(self, shape, inds, partial, rest):
+
+       v = data.indices_dat(inds, shape)
+       x = decomp.RightAlignment(partial)
+
+       assert x.linds(v.inds) == Indices(*v.inds.map(*rest))
+
+
+   @pytest.mark.parametrize("shape, inds, partial, rest", [
+      [(2,3,4), "ijk", "ik", "j"],
+   ])
+   def test_rinds(self, shape, inds, partial, rest):
+
+       v = data.indices_dat(inds, shape)
+       x = decomp.RightAlignment(partial)
+
+       assert x.rinds(v.inds) == Indices(*v.inds.map(*partial))
+
 
 
 # --- Link between partitions ----------------------------------------------- #
 
+class TestLink:
+
+   @pytest.mark.parametrize("tag, size", [
+      ["i", 3],
+   ])   
+   def test_ind(self, tag, size):
+
+       link = decomp.Link(tag)
+       out  = link.ind(size)
+
+       assert len(out) == size
+       assert out.matches_all(tag) 
+
+
+   @pytest.mark.parametrize("tag, size", [
+      ["i", 3],
+   ])   
+   def test_ind_001(self, tag, size):
+
+       link = decomp.Link(tag)
+       out  = link.ind(size)
+       out1 = link.ind(size)
+
+       assert out == out1
+
+
+   @pytest.mark.parametrize("tag, size", [
+      ["i", 3],
+   ])   
+   def test_ind_002(self, tag, size):
+
+       link = decomp.Link(tag)
+       out  = link.ind(size)
+
+       try:
+          out1 = link.ind(size+1)
+       except ValueError:
+          assert True
+       else:
+          assert False
+
+
 
 
 # --- Partition ------------------------------------------------------------- #
+
+@pytest.mark.parametrize("current_backend", ["numpy_backend"], indirect=True)
+class TestPartition:
+
+   @pytest.fixture(autouse=True)
+   def request_backend(self, current_backend):
+
+       self._backend = current_backend
+
+
+   @property
+   def backend(self):
+
+       return self._backend
+
+
+   @pytest.mark.parametrize("svddat", [
+      data.svd_tensor_dat,
+   ])
+   def test_aligndata(self, svddat):
+
+       w = svddat(data.randn, self.backend)
+       x = decomp.Partition(
+                            Indices(*w.xinds), 
+                            Indices(*w.linds), 
+                            Indices(*w.rinds), 
+                            decomp.Link("s")
+                           )
+
+       assert ar.allclose(x.aligndata(w.xarray), w.xmatrix)
+
+
+   @pytest.mark.parametrize("svddat", [
+      data.svd_tensor_dat,
+   ])
+   def test_ltensor(self, svddat):
+
+       link = decomp.Link("s")
+
+       w = svddat(data.randn, self.backend)
+       x = decomp.Partition(
+                            Indices(*w.xinds), 
+                            Indices(*w.linds), 
+                            Indices(*w.rinds), 
+                            link,
+                           )
+
+       sind = link.ind(len(w.sind))
+
+       out = x.ltensor(w.lmatrix)
+       ans = tn.reindex(w.ltensor, {w.sind: sind})
+
+       assert tn.allclose(out, ans)
+
+
+   @pytest.mark.parametrize("svddat", [
+      data.svd_tensor_dat,
+   ])
+   def test_rtensor(self, svddat):
+
+       link = decomp.Link("s")
+
+       w = svddat(data.randn, self.backend)
+       x = decomp.Partition(
+                            Indices(*w.xinds), 
+                            Indices(*w.linds), 
+                            Indices(*w.rinds), 
+                            link,
+                           )
+
+       sind = link.ind(len(w.sind))
+
+       out = x.rtensor(w.rmatrix)
+       ans = tn.reindex(w.rtensor, {w.sind: sind})
+
+       assert tn.allclose(out, ans)
+
+
+   @pytest.mark.parametrize("svddat", [
+      data.svd_tensor_dat,
+   ])
+   def test_stensor(self, svddat):
+
+       link = decomp.Link("s")
+
+       w = svddat(data.randn, self.backend)
+       x = decomp.Partition(
+                            Indices(*w.xinds), 
+                            Indices(*w.linds), 
+                            Indices(*w.rinds), 
+                            link,
+                           )
+
+       sind = link.ind(len(w.sind))
+
+       out = x.stensor(w.smatrix)
+       ans = tn.reindex(w.stensor, {w.sind: sind})
+
+       assert tn.allclose(out, ans)
 
 
 

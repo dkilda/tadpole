@@ -87,6 +87,7 @@ DecompInputData = collections.namedtuple("DecompInputData", [
 HiddenDecompData = collections.namedtuple("HiddenDecompData", [
                       "xtensor", "ltensor", "rtensor", 
                       "xarray",  "larray",  "rarray",
+                      "xmatrix", "lmatrix", "rmatrix", 
                       "xinds",   "linds",   "rinds",  "sind",  
                       "shape",   "lshape",  "rshape", "srank",
                       "backend", 
@@ -112,6 +113,10 @@ def hidden_decomp_data(datafun):
                           "lq": ar.lq,
                          }[method](x.array)
 
+        xmatrix = x.array
+        lmatrix = larray
+        rmatrix = rarray
+
         larray = ar.reshape(larray, (*w.lshape, w.srank))
         rarray = ar.reshape(rarray, (w.srank, *w.rshape))
 
@@ -126,10 +131,11 @@ def hidden_decomp_data(datafun):
 
         return HiddenDecompData(
                   xtensor,  ltensor,   rtensor, 
-                  x.array,  larray,    rarray,
+                  xarray,   larray,    rarray,
+                  xmatrix,  lmatrix,   rmatrix,   
                   xinds,    linds,     rinds,     sind,
                   w.shape,  w.lshape,  w.rshape,  w.srank,
-                  x.backend 
+                  x.backend,
                )
 
     return wrap
@@ -169,6 +175,7 @@ def qr_tensor_dat(datafun, backend, **opts):
 ExplicitDecompData = collections.namedtuple("ExplicitDecompData", [
                         "xtensor", "ltensor", "rtensor", "stensor",
                         "xarray",  "larray",  "rarray",  "sarray",
+                        "xmatrix", "lmatrix", "rmatrix", "smatrix",
                         "xinds",   "linds",   "rinds",   "sind",  
                         "shape",   "lshape",  "rshape",  "srank",
                         "backend", 
@@ -195,6 +202,11 @@ def explicit_decomp_data(datafun):
                                   "eigh": ar.eigh,
                                  }[method](x.array)
 
+        xmatrix = x.array
+        lmatrix = larray
+        rmatrix = rarray
+        smatrix = sarray
+
         larray = ar.reshape(larray, (*w.lshape, w.srank))
         rarray = ar.reshape(rarray, (w.srank, *w.rshape))
 
@@ -210,10 +222,12 @@ def explicit_decomp_data(datafun):
 
         return ExplicitDecompData(
                   xtensor,  ltensor,   rtensor,   stensor,
-                  x.array,  larray,    rarray,    sarray,
+                  xarray,   larray,    rarray,    sarray,
+                  xmatrix,  lmatrix,   rmatrix,   smatrix,
                   xinds,    linds,     rinds,     sind,
                   w.shape,  w.lshape,  w.rshape,  w.srank,
-                  x.backend 
+                  x.backend, 
+
                )
 
     return wrap

@@ -197,11 +197,14 @@ class Partition:
 
 def tensor_decomp(x, inds, alignment, link):
 
-    link      = Link(link)
-    alignment = {
-                 "left":  LeftAlignment,
-                 "right": RightAlignment,
-                }[alignment](inds)
+    if not isinstance(link, Link):
+       link = Link(link)
+
+    if not isinstance(alignment, Alignment):
+       alignment = {
+                    "left":  LeftAlignment,
+                    "right": RightAlignment,
+                   }[alignment](inds)
 
     engine = EngineDecomp(alignment, link)
     engine = x.pluginto(engine)
