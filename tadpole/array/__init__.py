@@ -148,6 +148,8 @@ from .binary import (
    isclose,
    isequal,
    notequal,
+   ismore,
+   isless,
    logical_and,
    logical_or,
    add,

@@ -312,6 +312,16 @@ class NumpyBackend(backend.Backend):
        return x != y
 
 
+   def ismore(self, x, y):
+       
+       return x > y
+
+
+   def isless(self, x, y):
+       
+       return x < y
+
+
    def logical_and(self, x, y):
 
        return np.logical_and(x, y)

@@ -208,6 +208,14 @@ class Backend(abc.ABC):
        pass
 
    @abc.abstractmethod
+   def ismore(self, x, y):
+       pass
+
+   @abc.abstractmethod
+   def isless(self, x, y):
+       pass
+
+   @abc.abstractmethod
    def logical_and(self, x, y):
        pass
 

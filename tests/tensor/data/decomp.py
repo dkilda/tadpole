@@ -10,6 +10,8 @@ import tadpole.array    as ar
 import tadpole.tensor   as tn
 import tadpole.index    as tid
 
+import tadpole.array.backends as backends
+
 import tests.tensor.fakes as fake
 import tests.tensor.data  as data
 
@@ -33,18 +35,18 @@ from tadpole.index import (
 # --- Truncation data ------------------------------------------------------- #
 
 TruncData = collections.namedtuple("TruncData", [
-               "array", "U", "S", "VH", 
-               "size", "shape", "backend",
+               "array", "U", "S", "V", 
+               "rank", "shape", "backend",
             ])
 
 
 
 
-def svd_trunc_dat():
+def svd_trunc_dat(backend):
 
     backend = backends.get(backend)
 
-    size  = 10
+    rank  = 10
     shape = (13,10)
 
     data = backend.asarray([
@@ -52,16 +54,16 @@ def svd_trunc_dat():
               5.13656787e-03, 2.75924093e-03, 6.51826227e-04, 6.91792508e-05,
               7.41402228e-06, 9.25687086e-07
            ])
-    S = Array(backend, data)
+    S = ar.asarray(data, backend=backend)
 
     x        = ar.randn(shape, dtype="complex128", seed=1, backend=backend)
     U, _, VH = ar.svd(x)
 
     array = ar.dot(U, ar.dot(ar.diag(S), VH))
 
-    return SvdTruncData(
+    return TruncData(
               array, U, S, VH, 
-              size, shape, backend,
+              rank, shape, backend,
            )
 
 

@@ -160,6 +160,20 @@ class Array(types.Array):
        return self.new(data)
 
 
+   def ismore(self):
+
+       data = self._backend.ismore(*self._datas)
+
+       return self.new(data)
+
+        
+   def isless(self):
+
+       data = self._backend.isless(*self._datas)
+
+       return self.new(data)
+
+
    def logical_and(self):
 
        data = self._backend.logical_and(*self._datas)
@@ -266,6 +280,18 @@ def isequal(x, y):
 def notequal(x, y):
 
     return (x | y).notequal()
+
+
+@typecast
+def ismore(x, y):
+
+    return (x | y).ismore()
+
+
+@typecast        
+def isless(x, y):
+
+    return (x | y).isless()
 
 
 @typecast

@@ -54,7 +54,9 @@ class DirectCutoff(CutoffMode):
 
    def apply(self, S):
 
-       return ar.count_nonzero(S, lambda x: x > self._target_cutoff(S))
+       above_cutoff = ar.ismore(S, self._target_cutoff(S))
+
+       return ar.count_nonzero(above_cutoff).item()
 
 
 
@@ -73,18 +75,20 @@ class SumCutoff(CutoffMode):
    def _target_cutoff(self, cumsum):
 
        if self._relative:
-          return self._cutoff * cumsum[-1]
+          return (self._cutoff * cumsum[-1])**self._power
 
-       return self._cutoff
+       return (self._cutoff)**self._power
 
 
    def apply(self, S):
 
-       cumsum = ar.cumsum(S**power, 0)
+       cumsum       = ar.cumsum(S**self._power, 0)
+       above_cutoff = ar.ismore(
+                         cumsum[-1] - cumsum, 
+                         self._target_cutoff(cumsum)
+                      )
 
-       return 1 + ar.count_nonzero(
-                     (cumsum[-1] - cumsum) > self._target_cutoff(cumsum)
-                  ) 
+       return 1 + ar.count_nonzero(above_cutoff).item() 
 
 
 
@@ -111,13 +115,13 @@ class Error(ErrorMode):
        if S.shape[0] == rank: 
           return 0
 
-       cumsum = ar.cumsum(S**power, 0)
+       cumsum = ar.cumsum(S**self._power, 0)
        error  = (cumsum[-1] - cumsum)[rank-1]  
 
        if self._relative:
           error = error / cumsum[-1]
 
-       return error
+       return error**(1.0/self._power)
 
 
 
@@ -216,7 +220,7 @@ class TruncRank(TruncGen):
 
    def __init__(self, max_rank=None, error=None, renorm=None):  
 
-       super().__init__(RankCutoff(), max_rank, error, renorm)       
+       super().__init__(max_rank, RankCutoff(), error, renorm)       
 
 
 
@@ -229,7 +233,7 @@ class TruncAbs(TruncGen):
 
        cutoff = DirectCutoff(cutoff, relative=False)
        
-       super().__init__(cutoff, max_rank, error, renorm) 
+       super().__init__(max_rank, cutoff, error, renorm) 
       
 
 
@@ -242,7 +246,7 @@ class TruncRel(TruncGen):
 
        cutoff = DirectCutoff(cutoff, relative=True)
        
-       super().__init__(cutoff, max_rank, error, renorm)  
+       super().__init__(max_rank, cutoff, error, renorm)  
 
 
 
@@ -263,7 +267,7 @@ def trunc_sum_cls(power, relative):
            if renorm is None:
               renorm = power
 
-           super().__init__(cutoff, max_rank, error, renorm) 
+           super().__init__(max_rank, cutoff, error, renorm) 
 
 
     return TruncSum

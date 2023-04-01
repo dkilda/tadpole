@@ -79,7 +79,7 @@ class Array(types.Array):
 
    def new(self, data):
 
-       return asarray(data, backend=self._backend) # self.__class__(self._backend, self._backend.asarray(data))
+       return asarray(data, backend=self._backend)
 
 
    def nary(self):
@@ -122,7 +122,64 @@ class Array(types.Array):
 
        return False
 
-       
+
+   # --- Element access and arithmetics --- #
+
+   def __getitem__(self, idx):
+
+       return self.new(self._data[idx])
+
+
+   def __add__(self, other):
+
+       return binary.add(self, other)
+
+
+   def __sub__(self, other):
+
+       return binary.sub(self, other)
+
+
+   def __mul__(self, other):
+
+       return binary.mul(self, other)
+
+
+   def __truediv__(self, other):
+
+       return binary.div(self, other)
+
+
+   def __pow__(self, other):
+
+       return binary.power(self, other)
+
+
+   def __radd__(self, other):
+
+       return binary.add(other, self)
+
+
+   def __rsub__(self, other):
+
+       return binary.sub(other, self)
+
+
+   def __rmul__(self, other):
+
+       return binary.mul(other, self)
+
+
+   def __rtruediv__(self, other):
+
+       return binary.div(other, self)
+
+
+   def __rpow__(self, other):
+
+       return binary.power(other, self)
+
+
    # --- Core methods --- #
 
    def copy(self, **opts):
@@ -156,13 +213,6 @@ class Array(types.Array):
    def iscomplex(self):
 
        return self._backend.iscomplex(self._data)
-
-
-   # --- Element access --- #
-
-   def __getitem__(self, idx):
-
-       return self.new(self._data[idx])
 
 
    # --- Shape methods --- #
