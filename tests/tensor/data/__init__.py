@@ -16,11 +16,14 @@ from .tensors import (
    nindices_dat,
    basis_dat,
    sample_dat,
-   sparse_grad_dat,
-   sparse_grad_dat_001,
+   sparsegrad_dat,
+   sparsegrad_dat_001,
+   nullgrad_dat,
+   nullgrad_dat_001,
    tensor_dat,
    ntensor_dat,
    tensorspace_dat,
+   tensorspace_dat_001,
 )
 
 

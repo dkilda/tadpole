@@ -122,7 +122,44 @@ def sample_dat(datafun):
 
 
 
-# --- Gradient data --------------------------------------------------------- #
+# --- Null Gradient data -------------------------------------------------- #
+
+NullGradData = collections.namedtuple("NullGradData", [
+                  "grad",   "space", 
+                  "tensor", "array", "data",  
+                  "inds",   "shape", "dtype", "backend",  
+                  "opts",
+               ])
+
+
+
+
+def nullgrad_dat(backend, indnames, shape, dtype="complex128"):
+
+    w    = tensorspace_dat(backend, indnames, shape, dtype)
+    grad = tn.NullGrad(w.tensorspace)
+
+    data   = w.backend.zeros(shape, dtype=dtype)
+    array  = ar.ArrayUnary(w.backend, data)    
+    tensor = tn.TensorGen(array, w.inds)
+
+    return NullGradData(
+              grad,   w.tensorspace, 
+              tensor, array,   data,
+              w.inds, w.shape, w.dtype, w.backend, {}
+           )
+
+
+
+
+def nullgrad_dat_001(backend):
+
+    return nullgrad_dat(backend, "ijk", (2,3,4), "complex128")
+
+
+
+
+# --- Sparse Gradient data -------------------------------------------------- #
 
 SparseGradData = collections.namedtuple("SparseGradData", [
                     "grad", 
@@ -134,7 +171,7 @@ SparseGradData = collections.namedtuple("SparseGradData", [
 
 
 
-def sparse_grad_dat(backend, indnames, shape, dtype, pos, vals, seed=1):
+def sparsegrad_dat(backend, indnames, shape, dtype, pos, vals, seed=1):
 
     def densefun(shape, dtype):
 
@@ -164,7 +201,7 @@ def sparse_grad_dat(backend, indnames, shape, dtype, pos, vals, seed=1):
 
 
 
-def sparse_grad_dat_001(backend, dtype, seed=1):
+def sparsegrad_dat_001(backend, dtype="complex128", seed=1):
 
     backend  = backends.get(backend) 
     indnames = "ijk"
@@ -206,8 +243,9 @@ def sparse_grad_dat_001(backend, dtype, seed=1):
 # --- Tensor data ----------------------------------------------------------- #
 
 TensorData = collections.namedtuple("TensorData", [
-                "tensor", "array", "data", 
-                "inds", "shape", "backend", "opts",
+                "tensor",  "array",  "data", 
+                "inds",    "shape",  "dtype", 
+                "backend", "opts",
              ])
 
 
@@ -223,8 +261,9 @@ def tensor_dat(datafun):
         tensor = tn.TensorGen(w.array, v.inds)
 
         return TensorData(
-           tensor, w.array, w.data, 
-           v.inds, w.shape, w.backend, w.opts
+           tensor,    w.array,  w.data, 
+           v.inds,    w.shape,  w.array.dtype, 
+           w.backend, w.opts
         )
 
     return wrap
@@ -288,12 +327,25 @@ def tensorspace_dat(backend, indnames, shape, dtype):
     v = indices_dat(indnames, shape)
     w = data.arrayspace_dat(backend, shape, dtype)
 
-    space = sp.TensorSpace(w.arrayspace, w.inds)
+    space = tn.TensorSpace(w.space, v.inds)
 
     return TensorSpaceData(
-       space, w.space, v.inds, 
-       w.shape, w.dtype, w.backend
-    ) 
+              space,   w.space, v.inds, 
+              w.shape, w.dtype, w.backend
+           ) 
+
+
+
+
+def tensorspace_dat_001(backend):
+
+    return tensorspace_dat(
+              backend, "ijk", (2,3,4), "complex128"
+           )
+
+
+
+
 
 
 

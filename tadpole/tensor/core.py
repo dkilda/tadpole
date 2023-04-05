@@ -65,7 +65,7 @@ class NullGrad(Tensor, Pluggable):
 
    def copy(self):
 
-       return self.__class__()
+       return self.__class__(self._space)
 
 
    def todense(self):
@@ -83,9 +83,9 @@ class NullGrad(Tensor, Pluggable):
        return self._space
 
 
-   def item(self):
+   def item(self, *pos):
 
-       return self.todense().item() 
+       return self.todense().item(*pos) 
 
 
    # --- Tensor properties --- #
@@ -293,7 +293,8 @@ class SparseGrad(Tensor, Pluggable):
           log.val(self._pos,   other._pos)
 
        if bool(log):
-          log.val(self._vals, other._vals)  
+          for i in range(len(self._pos)):
+              log.val(self._vals[i], other._vals[i])  
 
        return bool(log)
 
