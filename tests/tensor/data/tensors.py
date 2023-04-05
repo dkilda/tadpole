@@ -34,7 +34,7 @@ from tadpole.index import (
 
 # --- Indices data ---------------------------------------------------------- #
 
-IndicesData = collections.namedtuple("TensorSpaceData", [
+IndicesData = collections.namedtuple("IndicesData", [
                  "inds", "indlist", "names", "shape", 
               ])
 

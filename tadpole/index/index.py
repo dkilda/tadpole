@@ -102,7 +102,7 @@ class IndexGen(Index):
 
    def __reversed__(self):
 
-       return reversed(iter(self))
+       return reversed(range(self._size))
 
 
    # --- General methods --- #
@@ -169,7 +169,7 @@ class Indices(util.TupleLike):
        return str(rep) 
 
 
-   # --- TupleLike methods --- #
+   # --- Tuple-like methods --- #
 
    def __eq__(self, other):
 
