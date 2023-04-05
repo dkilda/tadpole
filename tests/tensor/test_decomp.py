@@ -287,13 +287,17 @@ class TestTensorDecomp:
       "left", 
       "right",
    ])
-   @pytest.mark.parametrize("trunc, rank", [
-      [tn.TruncRel(1e-5), 8]
+   @pytest.mark.parametrize("trunc", [
+      tn.TruncNull(),
+      tn.TruncRel(1e-5),
+      tn.TruncRelSum2(1e-5),
+      tn.TruncRel(1e-5, 7),
+      tn.TruncRelSum2(1e-5, 7),
    ])
-   def test_svd_trunc(self, alignment, trunc, rank):
+   def test_svd_trunc(self, alignment, trunc):
 
        w = data.svd_tensor_dat(data.decomp_input_000)(
-              data.randn_decomp_000, self.backend
+              data.randn_decomp_000, self.backend, trunc=trunc
            )
 
        U, S, V, error = tn.svd(
@@ -305,18 +309,20 @@ class TestTensorDecomp:
                         )
 
        sind, = tn.overlap_inds(U, S)
-       U1    = tn.reindex(w.ltensor, {w.sind: sind})[]
-       S1    = tn.reindex(w.stensor, {w.sind: sind})[]
-       V1    = tn.reindex(w.rtensor, {w.sind: sind})[]
+       U1    = tn.reindex(w.ltensor, {w.sind: sind})
+       S1    = tn.reindex(w.stensor, {w.sind: sind})
+       V1    = tn.reindex(w.rtensor, {w.sind: sind})
+
+       x  = tn.contract(U,  S,  V,  product=w.xinds)
+       x1 = tn.contract(U1, S1, V1, product=w.xinds)
 
        assert U.space() == U1.space()
        assert S.space() == S1.space()
        assert V.space() == V1.space()
 
+       assert ar.allclose(error, w.error)
        assert tn.allclose(S, S1)
-       assert ar.allclose(error, 0)
-       assert tn.allclose(tn.contract(U, S, V, product=w.xinds), w.xtensor)
-
+       assert tn.allclose(x, x1)
 
 
    # --- Explicit-rank decompositions --- #

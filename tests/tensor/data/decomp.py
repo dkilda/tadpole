@@ -73,7 +73,7 @@ def svd_trunc_dat(backend):
 
 def randn_decomp_000(shape, dtype="complex128", seed=1, backend=None):
 
-    if shape != (12,10)
+    if shape != (12,10):
        raise ValueError(
           f"randn_decomp_001: "
           f"this data generator only supports "
@@ -90,7 +90,7 @@ def randn_decomp_000(shape, dtype="complex128", seed=1, backend=None):
               7.41402228e-06, 9.25687086e-07
            ])
 
-    x       = backend.randn(shape, dtype="complex128", seed=seed, backend=backend)
+    x       = backend.randn(shape, dtype="complex128", seed=seed)
     U, _, V = backend.svd(x)
 
     return backend.dot(U, backend.dot(backend.diag(S), V))
@@ -201,9 +201,13 @@ def hidden_decomp_data(datafun):
 
     def wrap(method, backend, decomp_input_dat, **opts):
 
+        # --- Input --- #
+
         w = decomp_input_dat 
         v = data.indices_dat(w.inds + w.sind, w.shape + (w.srank,))
         x = data.array_dat(datafun)(backend, (w.lsize, w.rsize), **opts)  
+
+        # --- Matrix decomp --- #
 
         xmatrix = x.array
         xarray  = ar.reshape(xmatrix,   (*w.lshape, *w.rshape))  
@@ -216,6 +220,8 @@ def hidden_decomp_data(datafun):
 
         lmatrix = larray
         rmatrix = rarray
+
+        # --- Create tensors --- #
 
         larray = ar.reshape(larray, (*w.lshape, w.srank))
         rarray = ar.reshape(rarray, (w.srank, *w.rshape))
@@ -279,7 +285,7 @@ ExplicitDecompData = collections.namedtuple("ExplicitDecompData", [
                         "xmatrix", "lmatrix", "rmatrix", "smatrix",
                         "xinds",   "linds",   "rinds",   "sind",  
                         "shape",   "lshape",  "rshape",  "srank",
-                        "backend", 
+                        "backend", "error", 
                      ])
 
 
@@ -287,31 +293,42 @@ ExplicitDecompData = collections.namedtuple("ExplicitDecompData", [
 
 def explicit_decomp_data(datafun):
 
-    def wrap(method, backend, decomp_input_dat, **opts):
+    def wrap(method, backend, decomp_input_dat, trunc=tn.TruncNull(), **opts):
+
+        # --- Input --- #
 
         w = decomp_input_dat 
-        v = data.indices_dat(w.inds + w.sind, w.shape + (w.srank,))
         x = data.array_dat(datafun)(backend, (w.lsize, w.rsize), **opts) 
+
+        # --- Matrix decomp --- #
 
         xmatrix = x.array
         if method == "eigh":
-           xmatrix = ar.add(xmatrix, ar.transpose(ar.conj(xmatrix), (1,0))) 
-           
-        xarray  = ar.reshape(xmatrix,   (*w.lshape, *w.rshape))  
-        xarray  = ar.transpose(xarray, v.inds.axes(*(w.linds + w.rinds)))      
-
+           xmatrix = xmatrix + ar.transpose(ar.conj(xmatrix), (1,0))
+              
         larray, sarray, rarray = {
                                   "svd":  ar.svd,
                                   "eig":  ar.eig,
                                   "eigh": ar.eigh,
                                  }[method](xmatrix)
 
+        error                  = trunc.error(sarray)
+        srank                  = trunc.rank(sarray)
+        larray, sarray, rarray = trunc.apply(larray, sarray, rarray)
+
         lmatrix = larray
         rmatrix = rarray
         smatrix = sarray
 
-        larray = ar.reshape(larray, (*w.lshape, w.srank))
-        rarray = ar.reshape(rarray, (w.srank, *w.rshape))
+        # --- Create tensors --- #
+
+        v = data.indices_dat(w.inds + w.sind, w.shape + (srank,))
+
+        xarray = ar.reshape(xmatrix,  (*w.lshape, *w.rshape))  
+        xarray = ar.transpose(xarray, v.inds.axes(*(w.linds + w.rinds)))  
+
+        larray = ar.reshape(larray, (*w.lshape, srank))
+        rarray = ar.reshape(rarray, ( srank,    *w.rshape))
 
         sind  = v.inds.map(*w.sind)[0]
         linds = v.inds.map(*w.linds)     
@@ -324,13 +341,12 @@ def explicit_decomp_data(datafun):
         xtensor = tn.TensorGen(xarray, xinds)
 
         return ExplicitDecompData(
-                  xtensor,  ltensor,   rtensor,   stensor,
-                  xarray,   larray,    rarray,    sarray,
-                  xmatrix,  lmatrix,   rmatrix,   smatrix,
-                  xinds,    linds,     rinds,     sind,
-                  w.shape,  w.lshape,  w.rshape,  w.srank,
-                  x.backend, 
-
+                  xtensor,   ltensor,   rtensor,   stensor,
+                  xarray,    larray,    rarray,    sarray,
+                  xmatrix,   lmatrix,   rmatrix,   smatrix,                  
+                  xinds,     linds,     rinds,     sind,
+                  w.shape,   w.lshape,  w.rshape,  srank,
+                  x.backend, error,
                )
 
     return wrap
