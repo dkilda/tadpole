@@ -14,8 +14,8 @@ from tests.array.data import (
 from .tensors import (
    indices_dat,
    nindices_dat,
-   basis_dat,
-   sample_dat,
+   tensor_basis_dat,
+   tensor_sample_dat,
    sparsegrad_dat,
    sparsegrad_dat_001,
    nullgrad_dat,

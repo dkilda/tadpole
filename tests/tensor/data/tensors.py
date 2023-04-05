@@ -66,15 +66,15 @@ def nindices_dat(names, shapes):
 
 # --- Basis data ------------------------------------------------------------ #
 
-BasisData = collections.namedtuple("BasisData", [
-               "tensors", "arrays", "datas", "pos",
-               "inds", "shape", "backend", "dtype"
-            ])
+TensorBasisData = collections.namedtuple("TensorBasisData", [
+                     "tensors", "arrays", "datas", "pos",
+                     "inds", "shape", "backend", "dtype"
+                  ])
 
 
 
 
-def basis_dat(datafun):
+def tensor_basis_dat(datafun):
 
     def wrap(backend, *args, **opts):
               
@@ -83,9 +83,9 @@ def basis_dat(datafun):
 
         tensors = [tn.TensorGen(array, v.inds) for array in w.arrays] 
 
-        return SampleData(
+        return TensorBasisData(
            tensors, w.arrays, w.datas, w.idxs,
-           v.inds, w.shape, w.backend, w.dtype, w.opts
+           v.inds, w.shape, w.backend, w.dtype
         )
 
     return wrap
@@ -95,15 +95,15 @@ def basis_dat(datafun):
 
 # --- Sample data ----------------------------------------------------------- #
 
-SampleData = collections.namedtuple("SampleData", [
-                "tensor", "array", "data", 
-                "inds", "shape", "backend", "dtype", "opts"
-             ])
+TensorSampleData = collections.namedtuple("TensorSampleData", [
+                      "tensor", "array", "data", 
+                      "inds", "shape", "backend", "dtype", "opts"
+                   ])
 
 
 
 
-def sample_dat(datafun):
+def tensor_sample_dat(datafun):
 
     def wrap(backend, *args, **opts):
               
@@ -112,7 +112,7 @@ def sample_dat(datafun):
 
         tensor = tn.TensorGen(w.array, v.inds)
 
-        return SampleData(
+        return TensorSampleData(
            tensor, w.array, w.data, 
            v.inds, w.shape, w.backend, w.dtype, w.opts
         )

@@ -18,6 +18,7 @@ import tadpole.tensor.engine         as tne
 
 import tests.tensor.fakes as fake
 import tests.tensor.data  as data
+import tests.array.data   as ardata
 
 
 from tadpole.tensor.types import (
@@ -45,35 +46,235 @@ from tadpole.index import (
 
 # --- TensorSpace ----------------------------------------------------------- #
 
+@pytest.mark.parametrize("current_backend", ["numpy_backend"], indirect=True)
+class TestTensorSpace:
+
+   @pytest.fixture(autouse=True)
+   def request_backend(self, current_backend):
+
+       self._backend = current_backend
 
 
+   @property
+   def backend(self):
+
+       return self._backend
 
 
+   # --- Fill the space with data --- #
+
+   @pytest.mark.parametrize("inds, shape, dtype", [
+      ["ijk", (2,3,4), "complex128"],
+   ])
+   def test_withdata(self, inds, shape, dtype):
+
+       w = data.tensorspace_dat(self.backend, inds, shape, dtype)
+
+       x = data.array_dat(data.randn)(
+              self.backend, w.shape, dtype=w.dtype
+           )
+   
+       out = w.tensorspace.fillwith(x.array)
+       ans = tn.TensorGen(x.array, w.inds)
+
+       assert out == ans
 
 
+   # --- Gradient factories --- #
+
+   @pytest.mark.parametrize("graddat", [
+      data.sparsegrad_dat_001,
+   ])
+   def test_sparsegrad(self, graddat):
+
+       w = graddat(self.backend)        
+       assert w.space.sparsegrad(w.pos, w.vals) == w.grad
 
 
+   @pytest.mark.parametrize("graddat", [
+      data.nullgrad_dat_001,
+   ])
+   def test_nullgrad(self, graddat):
+
+       w = graddat(self.backend)        
+       assert w.space.nullgrad() == w.grad
 
 
+   # --- Tensor factories --- #
+
+   @pytest.mark.parametrize("sampledat", [
+      ardata.zeros_dat_001,
+   ])
+   def test_zeros(self, sampledat):
+
+       w = data.tensor_sample_dat(sampledat)(
+              self.backend
+           )
+       x = tn.TensorSpace(
+              ar.ArraySpace(w.backend, w.shape, w.dtype), 
+              w.inds
+           ) 
+
+       assert x.zeros() == w.tensor
 
 
+   @pytest.mark.parametrize("sampledat", [
+      ardata.ones_dat_001,
+   ])
+   def test_ones(self, sampledat):
+
+       w = data.tensor_sample_dat(sampledat)(
+              self.backend
+           )
+       x = tn.TensorSpace(
+              ar.ArraySpace(w.backend, w.shape, w.dtype), 
+              w.inds
+           ) 
+
+       assert x.ones() == w.tensor
 
 
+   @pytest.mark.parametrize("basisdat", [
+      ardata.basis_real_dat_001,
+   ])
+   def test_unit(self, basisdat):
+
+       w = data.tensor_basis_dat(basisdat)(
+              self.backend
+           )
+       x = tn.TensorSpace(
+              ar.ArraySpace(w.backend, w.shape, w.dtype), 
+              w.inds
+           ) 
+
+       for pos, tensor in zip(w.pos, w.tensors):
+           assert x.unit(pos) == tensor  
 
 
+   @pytest.mark.parametrize("sampledat", [
+      ardata.rand_real_dat_001,
+      ardata.rand_complex_dat_001,
+   ])
+   def test_rand(self, sampledat):
+
+       w = data.tensor_sample_dat(sampledat)(
+              self.backend, seed=1
+           )
+       x = tn.TensorSpace(
+              ar.ArraySpace(w.backend, w.shape, w.dtype), 
+              w.inds
+           ) 
+
+       assert x.rand(seed=1) == w.tensor     
 
 
+   @pytest.mark.parametrize("sampledat", [
+      ardata.randn_real_dat_001,
+      ardata.randn_complex_dat_001,
+   ])
+   def test_randn(self, sampledat):
+
+       w = data.tensor_sample_dat(sampledat)(
+              self.backend, seed=1
+           )
+       x = tn.TensorSpace(
+              ar.ArraySpace(w.backend, w.shape, w.dtype), 
+              w.inds
+           ) 
+
+       assert x.randn(seed=1) == w.tensor        
 
 
+   @pytest.mark.parametrize("sampledat", [
+      ardata.randuniform_real_dat_001,
+      ardata.randuniform_complex_dat_001,
+   ])
+   def test_randuniform(self, sampledat):
+
+       w = data.tensor_sample_dat(sampledat)(
+              self.backend, seed=1
+           )
+       x = tn.TensorSpace(
+              ar.ArraySpace(w.backend, w.shape, w.dtype), 
+              w.inds
+           ) 
+
+       assert x.randuniform(w.opts["boundaries"], seed=1) == w.tensor  
 
 
+   @pytest.mark.parametrize("basisdat", [
+      ardata.basis_real_dat_001,
+   ])
+   def test_units(self, basisdat):
+
+       w = data.tensor_basis_dat(basisdat)(
+              self.backend
+           )
+       x = tn.TensorSpace(
+              ar.ArraySpace(w.backend, w.shape, w.dtype), 
+              w.inds
+           ) 
+
+       assert tuple(x.units()) == tuple(w.tensors)  
 
 
+   @pytest.mark.parametrize("basisdat", [
+      ardata.basis_real_dat_001,
+      ardata.basis_complex_dat_001,
+   ])
+   def test_basis(self, basisdat):
+
+       w = data.tensor_basis_dat(basisdat)(
+              self.backend
+           )
+       x = tn.TensorSpace(
+              ar.ArraySpace(w.backend, w.shape, w.dtype), 
+              w.inds
+           ) 
+
+       assert tuple(x.basis()) == tuple(w.tensors) 
+ 
+
+   # --- Space properties --- #
+
+   @pytest.mark.parametrize("inds, shape, dtype", [
+      ["ijk", (2,3,4), "complex128"],
+   ])
+   def test_dtype(self, inds, shape, dtype):
+
+       w = data.tensorspace_dat(self.backend, inds, shape, dtype)
+
+       assert w.tensorspace.dtype == w.dtype
 
 
+   @pytest.mark.parametrize("inds, shape, dtype", [
+      ["ijk", (2,3,4), "complex128"],
+   ])
+   def test_size(self, inds, shape, dtype):
+
+       w = data.tensorspace_dat(self.backend, inds, shape, dtype)
+
+       assert w.tensorspace.size == np.prod(w.shape)
 
 
+   @pytest.mark.parametrize("inds, shape, dtype", [
+      ["ijk", (2,3,4), "complex128"],
+   ])
+   def test_ndim(self, inds, shape, dtype):
 
+       w = data.tensorspace_dat(self.backend, inds, shape, dtype)
+
+       assert w.tensorspace.ndim == len(w.shape)
+
+
+   @pytest.mark.parametrize("inds, shape, dtype", [
+      ["ijk", (2,3,4), "complex128"],
+   ])
+   def test_shape(self, inds, shape, dtype):
+
+       w = data.tensorspace_dat(self.backend, inds, shape, dtype)
+
+       assert w.tensorspace.shape == w.shape
 
 
 

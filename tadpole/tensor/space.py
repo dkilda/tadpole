@@ -40,8 +40,6 @@ from tadpole.index import (
 def sparsegrad_from_space(arrayspace, inds, pos, vals):
 
     space = TensorSpace(arrayspace, inds)
-    vals  = ar.asarray(vals, dtype=space.dtype)
-
     return core.SparseGrad(space, pos, vals)
 
 
@@ -100,7 +98,7 @@ def randn_from_space(arrayspace, inds, **opts):
 @ad.nondifferentiable
 def randuniform_from_space(arrayspace, inds, boundaries, **opts):
 
-    data = arrayspace.randn(boundaries, **opts)
+    data = arrayspace.randuniform(boundaries, **opts)
     return core.astensor(data, inds)
 
 
@@ -131,7 +129,9 @@ def auto_arrayspace(fun):
 
     def wrap(inds, **opts):
 
-        inds       = Indices(*inds)
+        if not isinstance(inds, Indices):
+           inds = Indices(*inds)
+
         arrayspace = ar.arrayspace(inds.shape, **opts)
 
         return fun(arrayspace, inds, **opts)
