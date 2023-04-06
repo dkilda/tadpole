@@ -71,11 +71,22 @@ def vjp_unsqueeze(g, out, x, inds):
 
 def vjp_expand(g, out, x, inds):
 
-    return tn.transpose_like(tn.squeeze(g, inds), x)
+    return tn.reshape_like(g, x)
 
 
 
+def vjp_diag(g, out, x, ind=None):
 
+    if not ind:
+       return tn.diag(g)
+
+    xinds = tuple(tn.union_inds(x))
+
+    return tn.reindex(tn.diag(g), {ind: xinds})
+
+
+
+    
 ad.makevjp(tn.reindex,    vjp_reindex)
 ad.makevjp(tn.transpose,  vjp_transpose)    
 ad.makevjp(tn.fuse,       vjp_fuse)
@@ -83,46 +94,7 @@ ad.makevjp(tn.split,      vjp_split)
 ad.makevjp(tn.squeeze,    vjp_squeeze)
 ad.makevjp(tn.unsqueeze,  vjp_unsqueeze)
 ad.makevjp(tn.expand,     vjp_expand)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+ad.makevjp(tn.diag,       vjp_diag)
 
 
 
