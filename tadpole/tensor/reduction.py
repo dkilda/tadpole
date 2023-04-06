@@ -181,14 +181,14 @@ class TensorReduce:
 
 # --- Value methods --------------------------------------------------------- #
 
-@ad.differentiable
+@ad.nondifferentiable
 def allof(x, inds=None, **opts):
 
     op = tensor_reduce(x)
     return op.allof(inds, **opts)  
 
 
-@ad.differentiable
+@ad.nondifferentiable
 def anyof(x, inds=None, **opts):
 
     op = tensor_reduce(x)
@@ -209,7 +209,7 @@ def amin(x, inds=None, **opts):
     return op.amin(inds, **opts)  
 
 
-@ad.differentiable
+@ad.nondifferentiable
 def count_nonzero(x, inds=None, **opts):
 
     op = tensor_reduce(x)

@@ -10,7 +10,7 @@ import tadpole.tensor   as tn
 
 ###############################################################################
 ###                                                                         ###
-###  Standalone functions corresponding to TensorElemwiseTernary methods    ###
+###  VJP's of tensor ternary elementwise functions                          ###
 ###                                                                         ###
 ###############################################################################
 
