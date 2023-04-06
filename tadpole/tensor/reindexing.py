@@ -118,7 +118,7 @@ class TensorReindex:
 
        for i, ind in enumerate(self._inds):
            try:
-               output_inds[i] = indmap[ind]
+               output_inds[i] = indmap[ind] #.pop(ind) #[ind]
            except KeyError:
                pass
 

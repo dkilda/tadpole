@@ -385,7 +385,7 @@ def neg(x):
     return op.neg()
 
    
-@ad.differentiable
+@ad.nondifferentiable
 @typecast_unary
 def sign(x):
 

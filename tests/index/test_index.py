@@ -520,8 +520,8 @@ class TestIndices:
 
 
    @pytest.mark.parametrize("tags, shape, inds1, inds2, result", [ 
-      ["ijklm", (2,3,4,5,6), [0],     [4,3],     [0,4,3]],
-      ["ijklm", (2,3,4,5,6), [0,1,2], [0,2],     [0,1,2,0,2]],
+      ["ijklm", (2,3,4,5,6), [0],     [4,3],  [0,4,3]],
+      ["ijklm", (2,3,4,5,6), [0,1,2], [0,2],  [0,1,2,0,2]],
    ])
    def test_or(self, tags, shape, inds1, inds2, result):
 

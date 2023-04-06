@@ -8,6 +8,27 @@ import tadpole.tensor   as tn
 
 
 
+###############################################################################
+###                                                                         ###
+###  Standalone functions corresponding to TensorElemwiseTernary methods    ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Value methods --------------------------------------------------------- #
+
+def vjp1_where(g, out, condition, x, y):
+
+    return tn.where(condition, g, tn.space(g).zeros())
+
+
+def vjp2_where(g, out, condition, x, y):
+
+    return tn.where(condition, tn.space(g).zeros(), g)
+
+
+ad.makevjp(tn.where, None, vjp1_where, vjp2_where)
+
 
 
 

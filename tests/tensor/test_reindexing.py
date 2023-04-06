@@ -407,8 +407,8 @@ class TestTensorReindex:
        ans = tn.TensorGen(ans, (*w.inds, *w.inds))
  
        assert out == ans
-       
 
+       
    @pytest.mark.parametrize("winds, wshape, ind", [
       ["ij", (5,5), "i"],
    ])
