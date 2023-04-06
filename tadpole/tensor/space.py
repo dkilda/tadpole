@@ -36,7 +36,7 @@ from tadpole.index import (
 
 # --- Gradient factories ---------------------------------------------------- #
 
-@ad.differentiable
+@ad.nondifferentiable
 def sparsegrad_from_space(arrayspace, inds, pos, vals):
 
     space = TensorSpace(arrayspace, inds)
@@ -185,6 +185,13 @@ class TensorSpace(Space):
 
        if not isinstance(inds, Indices):
           inds = Indices(*inds)
+
+       if arrayspace.shape != inds.shape:
+          raise ValueError((
+             f"{type(self).__name__}: "
+             f"array space and indices must have matching shapes, but array "
+             f"space shape {arrayspace.shape} != index shape {inds.shape}"
+          ))
 
        self._arrayspace = arrayspace
        self._inds       = inds
