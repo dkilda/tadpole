@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import abc
+import functools
 import tadpole.util as util
 
 
@@ -135,6 +136,7 @@ class Outputs(TupleLike):
 
 def return_outputs(fun):
      
+    @functools.wraps(fun)
     def wrap(*args, **kwargs):
 
         out = fun(*args, **kwargs)
