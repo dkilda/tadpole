@@ -14,6 +14,7 @@ from tadpole.util.itertools import (
    complement,
    argsort,
    relsort,
+   inverted_dict,
    Loop,
    Sequence,
 )

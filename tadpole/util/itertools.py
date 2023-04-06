@@ -11,7 +11,7 @@ import tadpole.util as util
 
 ###############################################################################
 ###                                                                         ###
-### Concatenation tools.                                                    ###
+### Concatenation tools                                                     ###
 ###                                                                         ###
 ###############################################################################
 
@@ -70,11 +70,32 @@ def argsort(xs):
 
 
 
-# --- Relative sort of xs wrt ys -------------------------------------- #
+# --- Relative sort of xs wrt ys -------------------------------------------- #
 
 def relsort(xs, ys):
 
     return list(sorted(xs, key=ys.index))
+
+
+
+
+###############################################################################
+###                                                                         ###
+### Mapping tools                                                           ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Inverted dictionary --------------------------------------------------- #
+
+def inverted_dict(dct):
+
+    inverted_dct = {}
+
+    for k, v in dct.items():
+        inverted_dct[v] = inverted_dct.get(v, tuple()) + (k,)
+
+    return dct
 
 
 

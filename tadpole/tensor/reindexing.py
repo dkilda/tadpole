@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import itertools
+
 import tadpole.util     as util
 import tadpole.autodiff as ad
 import tadpole.array    as ar
@@ -29,6 +31,43 @@ from tadpole.index import (
    Indices,
 )
 
+
+
+
+###############################################################################
+###                                                                         ###
+###  Helpers                                                                ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Reindexing map -------------------------------------------------------- #
+
+class ReindexMap:
+
+   def __init__(self, source):
+
+       self._source = source
+
+  
+   @util.cacheable
+   def _indmap(self):
+
+       def _iter(x):
+
+           if isinstance(x, Index):
+              return itertools.repeat(x)
+
+           return iter(x)
+
+       return {inp: _iter(out) for inp, out in self._source.items()}
+
+
+   def __getitem__(self, inp):
+
+       return next(self._indmap()[inp])
+       
+       
 
 
 ###############################################################################
@@ -114,11 +153,12 @@ class TensorReindex:
 
    def reindex(self, indmap):
 
+       indmap      = ReindexMap(indmap)
        output_inds = list(self._inds)
 
        for i, ind in enumerate(self._inds):
            try:
-               output_inds[i] = indmap[ind] #.pop(ind) #[ind]
+               output_inds[i] = indmap[ind] 
            except KeyError:
                pass
 

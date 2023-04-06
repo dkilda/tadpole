@@ -11,18 +11,7 @@ import tadpole.tensor   as tn
 
 def vjp_reindex(g, out, x, indmap):
 
-    inputs  = Indices(*tn.union_inds(x))
-    outputs = Indices(*tn.union_inds(out))
-
-    for ind in tn.complement_inds(x, out):
-
-        axis, = inputs.axes(ind)
-        {indmap[ind]: ind}
- 
-
-    # reverse_indmap = {v: k for k,v in indmap.items()}
-
-    return tn.reindex(g, reverse_indmap) 
+    return tn.reindex(g, util.inverted_dict(indmap)) 
 
 
 
