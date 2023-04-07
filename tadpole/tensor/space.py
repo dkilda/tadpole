@@ -218,11 +218,20 @@ class TensorSpace(Space):
        return bool(log)
 
 
-   # --- Fill the space with data --- #
+   # --- Fill space with data --- #
 
    def fillwith(self, data):
 
        return core.astensor(self._arrayspace.fillwith(data), self._inds)
+
+
+   # --- Reshape space --- #
+
+   def reshape(self, inds):
+
+       arrayspace = self._arrayspace.reshape(tid.shapeof(*inds))
+
+       return self.__class__(arrayspace, inds)
 
 
    # --- Gradient factories --- #

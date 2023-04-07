@@ -61,7 +61,7 @@ class TestTensorSpace:
        return self._backend
 
 
-   # --- Fill the space with data --- #
+   # --- Fill space with data --- #
 
    @pytest.mark.parametrize("inds, shape, dtype", [
       ["ijk", (2,3,4), "complex128"],
@@ -78,6 +78,34 @@ class TestTensorSpace:
        ans = tn.TensorGen(x.array, w.inds)
 
        assert out == ans
+
+
+   # --- Reshape space --- #
+
+   @pytest.mark.parametrize("dtype", [
+      "complex128"
+   ])
+   @pytest.mark.parametrize("shape, inds, inds1, inds2", [
+      [(2,3,4,5,6,7), "ijklmn", "ijk", "mjlin"],
+   ])
+   def test_reshape(self, dtype, shape, inds, inds1, inds2):
+
+       v = data.indices_dat(inds, shape)
+
+       inds1 = Indices(*v.inds.map(*inds1))
+       inds2 = Indices(*v.inds.map(*inds2))
+
+       x = tn.TensorSpace(
+              ar.ArraySpace(backends.get(self.backend), inds1.shape, dtype), 
+              inds1
+           )
+
+       ans = tn.TensorSpace(
+              ar.ArraySpace(backends.get(self.backend), inds2.shape, dtype), 
+              inds2
+           )
+
+       assert x.reshape(inds2) == ans
 
 
    # --- Gradient factories --- #

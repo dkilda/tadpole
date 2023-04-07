@@ -6,6 +6,12 @@ import tadpole.autodiff as ad
 import tadpole.tensor   as tn
 
 
+from tadpole.index import (
+   Index,
+   IndexGen, 
+   Indices,
+)
+
 
 
 ###############################################################################
@@ -17,17 +23,17 @@ import tadpole.tensor   as tn
 
 # --- Value methods --------------------------------------------------------- #
 
-def vjp1_where(g, out, condition, x, y):
+def vjpA_where(g, out, condition, x, y):
 
     return tn.where(condition, g, tn.space(g).zeros())
 
 
-def vjp2_where(g, out, condition, x, y):
+def vjpB_where(g, out, condition, x, y):
 
     return tn.where(condition, tn.space(g).zeros(), g)
 
 
-ad.makevjp(tn.where, None, vjp1_where, vjp2_where)
+ad.makevjp(tn.where, None, vjpA_where, vjpB_where)
 
 
 

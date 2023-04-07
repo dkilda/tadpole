@@ -69,7 +69,7 @@ class ArraySpace(types.Space):
        return bool(log)
 
 
-   # --- Fill the space with data --- #
+   # --- Fill space with data --- #
 
    def fillwith(self, data):
 
@@ -79,6 +79,13 @@ class ArraySpace(types.Space):
           data = unary.broadcast_to(data, self.shape)
 
        return data
+
+
+   # --- Reshape space --- #
+
+   def reshape(self, shape):
+
+       return self.__class__(self._backend, shape, self._dtype)
 
 
    # --- Space properties --- #

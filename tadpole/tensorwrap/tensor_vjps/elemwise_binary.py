@@ -6,6 +6,12 @@ import tadpole.autodiff as ad
 import tadpole.tensor   as tn
 
 
+from tadpole.index import (
+   Index,
+   IndexGen, 
+   Indices,
+)
+
 
 
 ###############################################################################
@@ -37,19 +43,19 @@ ad.makevjp(tn.div, lambda g, out, x, y: tn.match( g / y,        x),
 )
 
 
-def vjp1_power(g, out, x, y):
+def vjpA_power(g, out, x, y):
 
     g1 = g * y * (x ** tn.where(y, y-1, 1.))
     return tn.match(g1, x)
 
 
-def vjp2_power(g, out, x, y):
+def vjpB_power(g, out, x, y):
 
     g1 = g * out * tn.log(tn.where(x, x, 1.))
     return tn.match(g1, y)
 
 
-ad.makevjp(tn.power, vjp1_power, vjp2_power)
+ad.makevjp(tn.power, vjpA_power, vjpB_power)
 
 
 

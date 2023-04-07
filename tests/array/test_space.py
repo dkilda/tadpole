@@ -63,7 +63,7 @@ class TestArraySpace:
        assert out == w.space
 
 
-   # --- Fill the space with data --- #
+   # --- Fill space with data --- #
 
    @pytest.mark.parametrize("shape", [(2,3,4)])
    @pytest.mark.parametrize("dtype", ["complex128"])   
@@ -96,15 +96,29 @@ class TestArraySpace:
        assert w.space.fillwith(x.data) == x.array
 
 
+   # --- Reshape space --- #
+
+   @pytest.mark.parametrize("shape1, shape2", [
+      [(2,3,4), (5,2,6)]
+   ])
+   @pytest.mark.parametrize("dtype", ["complex128"]) 
+   def test_reshape(self, shape1, shape2, dtype):
+
+       w = data.arrayspace_dat(self.backend, shape1, dtype)
+       
+       out = w.space.reshape(shape2)
+       ans = ar.ArraySpace(w.backend, shape2, w.dtype)
+
+       assert out == ans 
+
+
    # --- Space properties --- #
 
    @pytest.mark.parametrize("shape", [(2,3,4)])
    @pytest.mark.parametrize("dtype", ["complex128"])   
    def test_dtype(self, shape, dtype):
 
-       w   = data.arrayspace_dat(self.backend, shape, dtype)
-       out = ar.arrayspace(w.shape, w.dtype, backend=w.backend.name())
-
+       w = data.arrayspace_dat(self.backend, shape, dtype)
        assert w.space.dtype == w.dtype 
 
 
@@ -112,9 +126,7 @@ class TestArraySpace:
    @pytest.mark.parametrize("dtype", ["complex128"])   
    def test_size(self, shape, dtype):
 
-       w   = data.arrayspace_dat(self.backend, shape, dtype)
-       out = ar.arrayspace(w.shape, w.dtype, backend=w.backend.name())
-
+       w = data.arrayspace_dat(self.backend, shape, dtype)
        assert w.space.size == np.prod(w.shape)
 
 
@@ -122,9 +134,7 @@ class TestArraySpace:
    @pytest.mark.parametrize("dtype", ["complex128"])   
    def test_ndim(self, shape, dtype):
 
-       w   = data.arrayspace_dat(self.backend, shape, dtype)
-       out = ar.arrayspace(w.shape, w.dtype, backend=w.backend.name())
-
+       w = data.arrayspace_dat(self.backend, shape, dtype)
        assert w.space.ndim == len(w.shape)
 
 
@@ -132,9 +142,7 @@ class TestArraySpace:
    @pytest.mark.parametrize("dtype", ["complex128"])   
    def test_shape(self, shape, dtype):
 
-       w   = data.arrayspace_dat(self.backend, shape, dtype)
-       out = ar.arrayspace(w.shape, w.dtype, backend=w.backend.name())
-
+       w = data.arrayspace_dat(self.backend, shape, dtype)
        assert w.space.shape == w.shape
 
 

@@ -286,14 +286,27 @@ def array_dat(datafun):
 
     def wrap(backend, shape, **opts):
 
-        data = datafun(shape, **opts)
-        data = {
-                "numpy": np.asarray,
-                #"torch": torch.as_array, 
-               }[backend](data)
+        if  len(shape) == 0:
+
+            data = datafun((1,), **opts)
+            data = {
+                    "numpy": np.asarray,
+                    #"torch": torch.as_array, 
+                   }[backend](data)
+            data = {
+                    "numpy": np.squeeze,
+                    #"torch": torch.squeeze, 
+                   }[backend](data)
+
+        else:
+            data = datafun(shape, **opts)
+            data = {
+                    "numpy": np.asarray,
+                    #"torch": torch.as_array, 
+                   }[backend](data)
 
         backend = backends.get(backend)
-        array  = unary.Array(backend, data)
+        array   = unary.Array(backend, data) 
 
         return ArrayData(array, backend, data, shape, opts)
 

@@ -6,6 +6,13 @@ import tadpole.autodiff as ad
 import tadpole.tensor   as tn
 
 
+from tadpole.index import (
+   Index,
+   IndexGen, 
+   Indices,
+)
+
+
 
 
 ###############################################################################
@@ -21,6 +28,11 @@ def vjp_unreduce(g, out, x, inds=None):
 
     return tn.unreduce_like(out, x, inds=inds)(g)
 
+
+# TODO: create tensorwrap.util module for vjp/jvp supporting functions
+# -- move unreduce_like there, rename it to vjp_reduce 
+# -- also create jvp_reduce
+# (these are analogous to grad_chooser/fw_grad_chooser)
 
 ad.makevjp(tn.amax, vjp_unreduce)
 ad.makevjp(tn.amin, vjp_unreduce)

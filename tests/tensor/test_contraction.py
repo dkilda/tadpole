@@ -144,7 +144,8 @@ class TestTensorContract:
    @pytest.mark.parametrize("shapes, inds, outinds, equation", [
       [[(3,4,4),                   ], ["ijj",              ], "i",    "ijj->i"          ],  
       [[(4,4),                     ], ["jj",               ], "",     "jj->"            ],
-      [[(3,4,6), (6,3,4)           ], ["ijk", "kij",       ], "",     "ijk,kij->"       ], 
+      [[(3,4,6), (6,3,4)           ], ["ijk", "kij",       ], "",     "ijk,kij->"       ],
+      [[(3,4,6), tuple(), (6,2,5)  ], ["ijk",  "",   "klm" ], "ijlm", "ijk,,klm->ijlm"  ],  
       [[(3,4,6), (6,2,5)           ], ["ijk", "klm",       ], "ijlm", "ijk,klm->ijlm"   ],  
       [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], "iq",   "ijk,klm,mqlj->iq"], 
    ])   
