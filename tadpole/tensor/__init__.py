@@ -91,6 +91,7 @@ from .interaction import (
    union_inds,
    overlap_inds,
    complement_inds,
+   partition_inds,
    match,
    astype_like,
    reshape_like,
@@ -203,6 +204,11 @@ from .elemwise_binary import (
    notequal,
    logical_and,
    logical_or,
+)
+
+
+from .elemwise_binary import (
+   combos,
 )
 
 

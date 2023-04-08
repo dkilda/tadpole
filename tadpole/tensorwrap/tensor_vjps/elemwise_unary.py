@@ -100,7 +100,7 @@ ad.makevjp(tn.arccosh, lambda g, out, x:  g / tn.sqrt(x**2 - 1))
 ad.makevjp(tn.arctanh, lambda g, out, x:  g / (1 - x**2))
 
 
-# ad.makevjp(tn.expm, lambda g, out, x:  g / (1 - x**2))
+
 
 
 

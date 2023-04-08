@@ -119,6 +119,27 @@ class TestTensorInteraction:
        assert out == ans
 
 
+   @pytest.mark.parametrize("shapes, inds, output", [
+      [[(3,4,5),                   ], ["ijk",                 ], ["ijk", "ijk", "ijk"]],  
+      [[(3,4,6), (6,3,4)           ], ["ijk",   "kij",        ], ["",    "ijk", ""   ]], 
+      [[(3,4,6), (6,2,5)           ], ["ijk",   "klm",        ], ["ij",  "k",   "lm" ]],  
+      [[(6,2,5), (3,4,6),          ], ["klm",   "ijk",        ], ["lm",  "k",   "ij" ]],
+      [[(3,4,6), (6,   ), (6,2,5)  ], ["ijk",   "k",    "klm" ], ["ij",  "k",   "lm" ]],  
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk",   "klm",  "mqlj"], ["i",   "",    "q"  ]], 
+   ])
+   def test_partition_inds(self, shapes, inds, output):
+
+       w = data.ntensor_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+       linds, sinds, rinds = tn.partition_inds(*w.tensors)
+
+       assert tuple(linds) == w.inds.map(*output[0])
+       assert tuple(sinds) == w.inds.map(*output[1])
+       assert tuple(rinds) == w.inds.map(*output[2])
+
+
    # --- Tensor matching --- #
 
    @pytest.mark.filterwarnings('ignore::RuntimeWarning')

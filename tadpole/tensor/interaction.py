@@ -162,6 +162,16 @@ def complement_inds(*xs):
     return op.complement_inds()
 
 
+@ad.nondifferentiable
+def partition_inds(*xs):
+
+    linds = complement_inds(*xs)
+    rinds = complement_inds(*reversed(xs))
+    sinds = overlap_inds(*xs)
+
+    return linds, sinds, rinds
+
+
 
 
 # --- Tensor matching ------------------------------------------------------- #

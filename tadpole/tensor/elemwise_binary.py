@@ -6,8 +6,9 @@ import tadpole.autodiff as ad
 import tadpole.array    as ar
 import tadpole.index    as tid
 
-import tadpole.tensor.core       as core
-import tadpole.tensor.reindexing as reidx
+import tadpole.tensor.core        as core
+import tadpole.tensor.reindexing  as reidx
+import tadpole.tensor.interaction as tni
 
 
 from tadpole.tensor.types import (
@@ -322,6 +323,29 @@ def logical_or(x, y):
 
     op = tensor_elemwise_binary(x, y)
     return op.logical_or() 
+
+
+
+
+# --- Combinations ---------------------------------------------------------- #
+
+def combos(fun, x, indA, indB):
+
+    ind1 = indA.retagged("i1")
+    ind2 = indB.retagged("i2")
+
+    x1 = reidx.reindex(x, {indA: ind1})
+    x2 = reidx.reindex(x, {indA: ind2})
+
+    inds12 = tuple(tni.overlap_inds(x1, x2))
+
+    x1 = reidx.transpose(reidx.expand(x1, (indB,)), *inds12, ind1, indB)
+    x2 = reidx.transpose(reidx.expand(x2, (indA,)), *inds12, indA, ind2)
+
+    x1 = reidx.reindex(x1, {ind1: indA})
+    x2 = reidx.reindex(x2, {ind2: indB})
+
+    return fun(x1, x2)
 
 
 
