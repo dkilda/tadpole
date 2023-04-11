@@ -555,6 +555,7 @@ class TestTensorElemwiseBinary:
    # --- Combinations --- #
 
    @pytest.mark.parametrize("fullshape, fullinds, inds, indA, indB", [
+      [(2,),      "i",    "i",   "i", "i"],
       [(2,2),     "ij",   "i",   "i", "j"],
       [(3,2,2),   "mij",  "mi",  "i", "j"],
       [(3,4,2,2), "mnij", "min", "i", "j"],
@@ -582,27 +583,6 @@ class TestTensorElemwiseBinary:
 
        assert out.space() == ans.space()
        assert tn.allclose(out, ans)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

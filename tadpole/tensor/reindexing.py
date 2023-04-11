@@ -167,6 +167,9 @@ class TensorReindex:
 
    def transpose(self, *output_inds):
 
+       if len(output_inds) == 0:
+          output_inds = tuple(reversed(self._inds))
+
        output_inds = self._map(*output_inds)
 
        assert set(self._inds) == set(output_inds), (
