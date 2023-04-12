@@ -105,6 +105,23 @@ def vjp_eig(g, out, x):
 
 
 
+def jvp_eig(g, out, x): # TODO move to JVPs
+
+    v, s = out
+    f    = fmatrix(s)
+
+    dv = v @ (f * (tn.inv(v) @ g @ v))
+    ds = tn.space(s).eye() * (tn.inv(v) @ g @ v)
+
+    return (dv, ds)
+
+    
+
+
+
+
+
+
 # --- Eigendecomposition (Hermitian) ---------------------------------------- #
 
 def vjp_eigh(g, out, x):
