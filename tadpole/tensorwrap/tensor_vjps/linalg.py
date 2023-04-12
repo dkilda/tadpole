@@ -250,7 +250,7 @@ def vjp_lq(g, out, x):
 
 
 
-# --- Adding decomp VJP's to VJP map ---------------------------------------- # 
+# --- Adding decomp VJPs to VJP map ----------------------------------------- # 
 
 ad.makevjp(tn.svd,  vjp_svd)
 ad.makevjp(tn.eig,  vjp_eig)
@@ -353,6 +353,55 @@ def jvp_norm(g, out, x, order=None):
 
 
 
+def vjp_inv(g, out, x):
+
+    return - out.T @ g @ out.T
+
+
+
+def jvp_inv(g, out, x):
+
+    return - out @ g @ out
+
+
+
+
+def vjp_det(g, out, x):
+
+    return g * out * inv(x).T
+
+
+
+def jvp_det(g, out, x):
+
+    return out * tn.trace(inv(x) * g)  
+
+
+
+def vjp_trace(g, out, x):
+
+    return tn.space(x).eye() * g
+
+
+def jvp_trace(g, out, x):
+
+    return tn.trace(g)
+
+     
+
+
+
+
+
+
+
+
+
+# --- Adding standard linalg VJPs to VJP map -------------------------------- #
+
+ad.makevjp(tn.norm, vjp_norm)
+
+
 
 
 ###############################################################################
@@ -363,24 +412,88 @@ def jvp_norm(g, out, x, order=None):
 
 
 
+def vjpA_solve(g, out, a, b):
+
+    return - tn.solve(a.H, g) @ out.T
 
 
-# --- Linear algebra methods ------------------------------------------------ #
+def vjpB_solve(g, out, a, b):
 
-def vjp_norm(g, out, x, inds=None, order=None, **opts):
+    return tn.solve(a.H, g)
+
+
+
+
+def jvpA_solve(g, out, a, b):
+
+    return - tn.solve(a, g @ out)
+
+
+
+def jvpB_solve(g, out, a, b):
+
+    return tn.solve(a, g)
+
+
+
+
+
+
+
+
+def tri(which):
+
+    return {
+            "lower": tn.tril, 
+            "upper": tn.triu,
+           }[which]
+
+
+
+
+def vjpA_trisolve(g, out, a, b, which="upper"):
+
+    return - tri(which)(tn.trisolve(a.H, g, which) @ out.T)
+    
+
+def vjpB_trisolve(g, out, a, b, which="upper"):
+
+    return tn.trisolve(a.H, g, which)
+
+    
+
+    
+
+def jvpA_solve(g, out, a, b, which="upper"):
+
+    return - tri(which)(tn.trisolve(a, g @ out, which))
+
+
+
+def jvpB_solve(g, out, a, b, which="upper"):
+
+    return tn.trisolve(a, g, which)
+
+
+
+
+
+ad.makevjp(tn.tril, lambda g, out, x, which=0: tn.tril(g, which=which))
+ad.makevjp(tn.triu, lambda g, out, x, which=0: tn.triu(g, which=which))
+
+
+ad.makejvp(tn.tril, lambda g, out, x, which=0: tn.tril(g, which=which))
+ad.makejvp(tn.triu, lambda g, out, x, which=0: tn.triu(g, which=which))
+
+
+
+
+# TODO to avoid confusion, rename concat -> stack
+# TODO note the swapped args!
+
+def vjp_concat(adx, out, ind, *xs):
 
     pass
-
-# TODO: create tensor.linalg module, move norm there.
-# Also move there all the other linalg ops like trace, inv, det, etc.
-# We may end up merging this with decomp, cuz they share a lot in common!  
-
-
-ad.makevjp(tn.norm, vjp_norm)
-
-
-
-
 
 
 
