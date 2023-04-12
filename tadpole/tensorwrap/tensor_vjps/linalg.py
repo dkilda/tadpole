@@ -10,7 +10,7 @@ import tadpole.tensor   as tn
 
 ###############################################################################
 ###                                                                         ###
-###  VJP's of tensor decomposition functions                                ###
+###  VJP's of tensor decompositions                                         ###
 ###                                                                         ###
 ###############################################################################
 
@@ -250,7 +250,7 @@ def vjp_lq(g, out, x):
 
 
 
-# --- Adding VJP's for every type of decomposition -------------------------- # 
+# --- Adding decomp VJP's to VJP map ---------------------------------------- # 
 
 ad.makevjp(tn.svd,  vjp_svd)
 ad.makevjp(tn.eig,  vjp_eig)
@@ -268,6 +268,91 @@ ad.makevjp(tn.lq,   vjp_lq)
 ###############################################################################
 
 
+# --- Norm ------------------------------------------------------------------ #
+
+def vjp_norm(g, out, x, order=None):
+
+    """
+    https://people.maths.ox.ac.uk/gilesm/files/NA-08-01.pdf
+    https://en.wikipedia.org/wiki/Norm_(mathematics)#p-norm
+
+    """
+
+    if order in (None, 'fro'):
+
+       return (g / out) * x
+
+
+    if order == 'nuc':
+
+       U, S, VH = tn.svd(x)
+
+       return g * (U @ VH)
+
+
+    if isinstance(order, int):
+
+       if not (x.ldim == 1 or x.rdim == 1):
+          raise ValueError(
+             f"vjp_norm: an integer norm order {order} is only valid for " 
+             f"vectors, but x has dimensions ({x.ldim}, {x.rdim})."
+          )
+
+       return (g / out**(order-1)) * x * tn.abs(x)**(order-2)
+
+
+    raise ValueError(
+       f"vjp_norm: invalid norm order {order} provided. The order must "
+       f"be one of: None, 'fro', 'nuc', or an integer vector norm order."
+    )
+
+
+
+
+# --- Norm ------------------------------------------------------------------ #
+
+# TODO move this to tensor_jvps/linalg.py
+
+def jvp_norm(g, out, x, order=None):
+
+    """
+    https://people.maths.ox.ac.uk/gilesm/files/NA-08-01.pdf
+    https://en.wikipedia.org/wiki/Norm_(mathematics)#p-norm
+
+    """
+
+    if order in (None, 'fro'):
+
+       return tn.sum(x * g) / out
+
+
+    if order == 'nuc':
+
+       U, S, VH = tn.svd(x)
+
+       return tn.sum(g * (U @ VH))
+
+
+    if isinstance(order, int):
+
+       if not (x.ldim == 1 or x.rdim == 1):
+          raise ValueError(
+             f"jvp_norm: an integer norm order {order} is only valid for " 
+             f"vectors, but x has dimensions ({x.ldim}, {x.rdim})."
+          )
+
+       return tn.sum(g * x * tn.abs(x)**(order-2)) / out**(order-1) 
+
+
+    raise ValueError(
+       f"jvp_norm: invalid norm order {order} provided. The order must "
+       f"be one of: None, 'fro', 'nuc', or an integer vector norm order."
+    )
+
+
+
+
+
 
 
 ###############################################################################
@@ -280,7 +365,18 @@ ad.makevjp(tn.lq,   vjp_lq)
 
 
 
+# --- Linear algebra methods ------------------------------------------------ #
 
+def vjp_norm(g, out, x, inds=None, order=None, **opts):
+
+    pass
+
+# TODO: create tensor.linalg module, move norm there.
+# Also move there all the other linalg ops like trace, inv, det, etc.
+# We may end up merging this with decomp, cuz they share a lot in common!  
+
+
+ad.makevjp(tn.norm, vjp_norm)
 
 
 

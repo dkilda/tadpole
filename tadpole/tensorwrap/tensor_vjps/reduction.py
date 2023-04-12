@@ -53,18 +53,7 @@ ad.makevjp(tn.sumover, vjp_sumover)
 
 
 
-# --- Linear algebra methods ------------------------------------------------ #
 
-def vjp_norm(g, out, x, inds=None, order=None, **opts):
-
-    pass
-
-# TODO: create tensor.linalg module, move norm there.
-# Also move there all the other linalg ops like trace, inv, det, etc.
-# We may end up merging this with decomp, cuz they share a lot in common!  
-
-
-ad.makevjp(tn.norm, vjp_norm)
 
 
 
