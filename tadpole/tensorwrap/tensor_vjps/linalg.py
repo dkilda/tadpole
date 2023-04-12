@@ -201,7 +201,7 @@ def vjp_qr(g, out, x):
     dx1 = kernel(q, dq + x2 @ dr2.H, r1, dr1)
     dx2 = q @ dr2
 
-    return tn.concat((dx1, dx2), "right")
+    return tn.stack((dx1, dx2), "right")
 
 
 
@@ -245,7 +245,7 @@ def vjp_lq(g, out, x):
     dx1 = kernel(l1, dl1, q, dq + dl2.H @ x2)
     dx2 = dl2 @ q
 
-    return tn.concat((dx1, dx2), "left")
+    return tn.stack((dx1, dx2), "left")
 
 
 
@@ -488,19 +488,36 @@ ad.makejvp(tn.triu, lambda g, out, x, which=0: tn.triu(g, which=which))
 
 
 
-# TODO to avoid confusion, rename concat -> stack
-# TODO note the swapped args!
+def vjp_stack(g, adx, out, xs, ind): # TODO def stack for matrices only! 
+                                     #      def Matrix .slice(slicemap), .dim(ind) methods                                
+    start = sum([x.dim(ind) for x in xs[:adx]])
+    size  = xs[adx].dim(ind) 
 
-def vjp_concat(adx, out, ind, *xs):
+    adx_slice = out.slice({ind: slice(start, start + size)})
 
-    pass
-
-
-
-
+    return g[adx_slice] 
 
 
+ad.makevjp_combo(tn.stack, vjp_stack)
 
+
+
+
+def jvp_stack(g, adx, out, xs, ind):
+
+    def grad(idx):
+
+        if idx == adx:
+           return g
+
+        return tn.space(xs[idx]).zeros()
+
+    gs = tuple(grad(idx) for idx in range(len(xs)))
+      
+    return tn.stack(gs, ind)
+
+
+ad.makejvp_combo(tn.stack, jvp_stack)
 
 
 
