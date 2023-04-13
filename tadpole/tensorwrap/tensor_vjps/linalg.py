@@ -217,7 +217,7 @@ def vjp_lq(g, out, x):
 
     def trisolve(l, a):
 
-        return tn.trisolve(l.H, a, "lower")
+        return tn.trisolve(l.H, a, "upper")
 
 
     def hcopyltu(m):
@@ -238,9 +238,9 @@ def vjp_lq(g, out, x):
     if x.ldim <= x.rdim:
        return kernel(l, dl, q, dq)
 
-    x1,  x2  =  x[: x.ldim, :],  x[x.ldim :, :]
-    l1,  l2  =  l[: x.ldim, :],  l[x.ldim :, :]
-    dl1, dl2 = dl[: x.ldim, :], dl[x.ldim :, :]
+    x1,  x2  =  x[: x.rdim, :],  x[x.rdim :, :]
+    l1,  l2  =  l[: x.rdim, :],  l[x.rdim :, :]
+    dl1, dl2 = dl[: x.rdim, :], dl[x.rdim :, :]
 
     dx1 = kernel(l1, dl1, q, dq + dl2.H @ x2)
     dx2 = dl2 @ q

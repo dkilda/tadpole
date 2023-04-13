@@ -26,11 +26,38 @@ from tadpole.tensorwrap.tensor_vjps.linalg import (
 def jvp_svd(g, out, x):
 
     """
-    https://j-towns.github.io/papers/svd-derivative.pdf
     https://arxiv.org/pdf/1909.02659.pdf
+    https://j-towns.github.io/papers/svd-derivative.pdf
+
+    Eq. 16-18
 
     """
 
+    u, s, v = out[0], out[1], out[2].H   
+
+    f = fmatrix(s**2)
+
+    g1 = u.H @ dx   @ v
+    g2 = v.H @ dx.H @ u 
+
+    ds = 0.5 * tn.space(s).eye() * (g1 + g2)
+    du = u @ (f * (g1  * s  + s.T * g2))
+    dv = v @ (f * (s.T * g1 + g2  * s))
+
+
+    if x.ldim < x.rdim:
+
+       vvH = v @ v.H
+       dv  = dv + (tn.space(vvH).eye() - vvH) @ dx.H @ (u / s)
+
+
+    if x.ldim > x.rdim:
+
+       uuH = u @ u.H
+       du  = du + (tn.space(uuH).eye() - uuH) @ dx @ (v / s) 
+
+
+    return du, ds, dv.H
 
 
 
@@ -64,6 +91,14 @@ def jvp_eigh(g, out, x):
 
     """
 
+    v, s = out
+    f    = fmatrix(s)
+
+    dv = v @ (f * (v.H @ g @ v))
+    ds = tn.space(s).eye() * (v.H @ g @ v)
+
+    return (dv, ds)
+
 
 
 
@@ -74,8 +109,48 @@ def jvp_qr(g, out, x):
     """
     https://arxiv.org/abs/2009.10071
 
+    p.3, p.7, p.17 (Variations)
+
     """
 
+    def trisolve(r, a):
+    
+        return tn.trisolve(r.H, a.H, "lower").H
+
+
+    def trisym(m):
+
+        space = tn.space(m)
+        E     = 2 * space.tril() + space.eye()
+
+        return 0.5 * (m + m.H) * E.H
+
+
+    def kernel(q, r, dx):
+
+        c = trisolve(r, q.H @ dx) 
+
+        dr = trisym(c) @ r
+        dq = trisolve(r, dx - q @ dr)
+
+        return dq, dr
+
+
+    q, r = out
+
+    if x.ldim >= x.rdim:
+       return kernel(q, r, g)
+
+    dx1, dx2 = g[:, : x.ldim], g[:, x.ldim :]
+    x1,  x2  = x[:, : x.ldim], x[:, x.ldim :]
+    r1,  r2  = r[:, : x.ldim], r[:, x.ldim :]
+
+    dq, dr1 = kernel(q, r1, dx1)
+    dr2     = q.H @ (dx2 - dq @ r2) 
+
+    dr = tn.stack((dr1, dr2), "right")
+
+    return dq, dr
 
 
 
@@ -87,7 +162,48 @@ def jvp_lq(g, out, x):
     """
     https://arxiv.org/abs/2009.10071
 
+    p. 16
+
     """
+
+    def trisolve(l, a):
+    
+        return tn.trisolve(l, a, "lower")
+
+
+    def trisym(m):
+
+        space = tn.space(m)
+        E     = 2 * space.tril() + space.eye()
+
+        return 0.5 * (m + m.H) * E
+
+
+    def kernel(l, q, dx):
+
+        c = trisolve(l, dx @ q.H) 
+
+        dl = l @ trisym(c)
+        dq = trisolve(l, dx - dl @ q)
+
+        return dl, dq
+
+
+    l, q = out
+
+    if x.ldim <= x.rdim:
+       return kernel(l, q, g)
+
+    dx1, dx2 = g[: x.rdim, :], g[: x.rdim, :]
+    x1,  x2  = x[: x.rdim, :], x[: x.rdim, :]
+    l1,  l2  = l[: x.rdim, :], l[: x.rdim, :]
+
+    dl1, dq = kernel(l1, q, dx1)
+    dl2     = (dx2 - l2 @ dq) @ q.H 
+
+    dl = tn.stack((dl1, dl2), "left")
+
+    return dl, dq
 
 
 
