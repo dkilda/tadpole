@@ -24,15 +24,7 @@ from tadpole.index import (
 
 # --- Contraction ----------------------------------------------------------- #
 
-def jvp_contract(g, adx, out, *xs, **opts):
-
-    xs      = list(xs)
-    xs[adx] = g
-
-    return tn.contract(*xs, **opts)
-
-    
-ad.makevjp_combo(tn.contract, jvp_contract)
+ad.makejvp_combo(tn.contract, "linear")
 
 
 

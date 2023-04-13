@@ -105,23 +105,6 @@ def vjp_eig(g, out, x):
 
 
 
-def jvp_eig(g, out, x): # TODO move to JVPs
-
-    v, s = out
-    f    = fmatrix(s)
-
-    dv = v @ (f * (tn.inv(v) @ g @ v))
-    ds = tn.space(s).eye() * (tn.inv(v) @ g @ v)
-
-    return (dv, ds)
-
-    
-
-
-
-
-
-
 # --- Eigendecomposition (Hermitian) ---------------------------------------- #
 
 def vjp_eigh(g, out, x):
@@ -267,7 +250,7 @@ def vjp_lq(g, out, x):
 
 
 
-# --- Adding decomp VJPs to VJP map ----------------------------------------- # 
+# --- Record decomp VJPs ---------------------------------------------------- # 
 
 ad.makevjp(tn.svd,  vjp_svd)
 ad.makevjp(tn.eig,  vjp_eig)
@@ -326,49 +309,7 @@ def vjp_norm(g, out, x, order=None):
 
 
 
-# --- Norm ------------------------------------------------------------------ #
-
-# TODO move this to tensor_jvps/linalg.py
-
-def jvp_norm(g, out, x, order=None):
-
-    """
-    https://people.maths.ox.ac.uk/gilesm/files/NA-08-01.pdf
-    https://en.wikipedia.org/wiki/Norm_(mathematics)#p-norm
-
-    """
-
-    if order in (None, 'fro'):
-
-       return tn.sum(x * g) / out
-
-
-    if order == 'nuc':
-
-       U, S, VH = tn.svd(x)
-
-       return tn.sum(g * (U @ VH))
-
-
-    if isinstance(order, int):
-
-       if not (x.ldim == 1 or x.rdim == 1):
-          raise ValueError(
-             f"jvp_norm: an integer norm order {order} is only valid for " 
-             f"vectors, but x has dimensions ({x.ldim}, {x.rdim})."
-          )
-
-       return tn.sum(g * x * tn.abs(x)**(order-2)) / out**(order-1) 
-
-
-    raise ValueError(
-       f"jvp_norm: invalid norm order {order} provided. The order must "
-       f"be one of: None, 'fro', 'nuc', or an integer vector norm order."
-    )
-
-
-
-
+# --- Inverse --------------------------------------------------------------- #
 
 def vjp_inv(g, out, x):
 
@@ -376,47 +317,54 @@ def vjp_inv(g, out, x):
 
 
 
-def jvp_inv(g, out, x):
 
-    return - out @ g @ out
-
-
-
+# --- Determinant ----------------------------------------------------------- #
 
 def vjp_det(g, out, x):
 
-    return g * out * inv(x).T
+    return g * out * tn.inv(x).T
 
 
 
-def jvp_det(g, out, x):
 
-    return out * tn.trace(inv(x) * g)  
-
-
+# --- Trace ----------------------------------------------------------------- #
 
 def vjp_trace(g, out, x):
 
     return tn.space(x).eye() * g
 
 
-def jvp_trace(g, out, x):
-
-    return tn.trace(g)
-
-     
 
 
+# --- Stack matrices -------------------------------------------------------- #
+
+def vjp_stack(g, adx, out, xs, ind): # TODO def stack for matrices only! 
+                                     #      def Matrix .slice(slicemap), .dim(ind) methods                                
+    start = sum([x.dim(ind) for x in xs[:adx]])
+    size  = xs[adx].dim(ind) 
+
+    adx_slice = out.slice({ind: slice(start, start + size)})
+
+    return g[adx_slice] 
 
 
 
 
+# --- Record standard linalg VJPs ------------------------------------------- #
 
+ad.makevjp(tn.norm,  vjp_norm)
+ad.makevjp(tn.inv,   vjp_inv)
+ad.makevjp(tn.det,   vjp_det)
+ad.makevjp(tn.trace, vjp_trace)
 
+ad.makevjp(tn.tril, lambda g, out, x, which=0: tn.tril(g, which=which))
+ad.makevjp(tn.triu, lambda g, out, x, which=0: tn.triu(g, which=which))
 
-# --- Adding standard linalg VJPs to VJP map -------------------------------- #
+ad.makevjp(tn.dot, lambda g, out, x, y: tn.match(g @ y.T, x),
+                   lambda g, out, x, y: tn.match(x.T @ g, y),
+)
 
-ad.makevjp(tn.norm, vjp_norm)
+ad.makevjp_combo(tn.stack, vjp_stack)
 
 
 
@@ -428,6 +376,7 @@ ad.makevjp(tn.norm, vjp_norm)
 ###############################################################################
 
 
+# --- Solve the equation ax = b --------------------------------------------- #
 
 def vjpA_solve(g, out, a, b):
 
@@ -441,22 +390,7 @@ def vjpB_solve(g, out, a, b):
 
 
 
-def jvpA_solve(g, out, a, b):
-
-    return - tn.solve(a, g @ out)
-
-
-
-def jvpB_solve(g, out, a, b):
-
-    return tn.solve(a, g)
-
-
-
-
-
-
-
+# --- Solve the equation ax = b, assuming a is a triangular matrix ---------- #
 
 def tri(which):
 
@@ -464,8 +398,6 @@ def tri(which):
             "lower": tn.tril, 
             "upper": tn.triu,
            }[which]
-
-
 
 
 def vjpA_trisolve(g, out, a, b, which="upper"):
@@ -477,78 +409,14 @@ def vjpB_trisolve(g, out, a, b, which="upper"):
 
     return tn.trisolve(a.H, g, which)
 
+
+
+
+# --- Record linalg solver VJPs --------------------------------------------- #
+
+ad.makevjp(tn.solve,    vjpA_solve,    vjpB_solve)
+ad.makevjp(tn.trisolve, vjpA_trisolve, vjpB_trisolve)
     
 
     
-
-def jvpA_solve(g, out, a, b, which="upper"):
-
-    return - tri(which)(tn.trisolve(a, g @ out, which))
-
-
-
-def jvpB_solve(g, out, a, b, which="upper"):
-
-    return tn.trisolve(a, g, which)
-
-
-
-
-
-ad.makevjp(tn.tril, lambda g, out, x, which=0: tn.tril(g, which=which))
-ad.makevjp(tn.triu, lambda g, out, x, which=0: tn.triu(g, which=which))
-
-
-ad.makejvp(tn.tril, lambda g, out, x, which=0: tn.tril(g, which=which))
-ad.makejvp(tn.triu, lambda g, out, x, which=0: tn.triu(g, which=which))
-
-
-
-
-def vjp_stack(g, adx, out, xs, ind): # TODO def stack for matrices only! 
-                                     #      def Matrix .slice(slicemap), .dim(ind) methods                                
-    start = sum([x.dim(ind) for x in xs[:adx]])
-    size  = xs[adx].dim(ind) 
-
-    adx_slice = out.slice({ind: slice(start, start + size)})
-
-    return g[adx_slice] 
-
-
-ad.makevjp_combo(tn.stack, vjp_stack)
-
-
-
-
-def jvp_stack(g, adx, out, xs, ind):
-
-    def grad(idx):
-
-        if idx == adx:
-           return g
-
-        return tn.space(xs[idx]).zeros()
-
-    gs = tuple(grad(idx) for idx in range(len(xs)))
-      
-    return tn.stack(gs, ind)
-
-
-ad.makejvp_combo(tn.stack, jvp_stack)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

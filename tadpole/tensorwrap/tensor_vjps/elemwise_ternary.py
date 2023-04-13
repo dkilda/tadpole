@@ -33,7 +33,7 @@ def vjpB_where(g, out, condition, x, y):
     return tn.where(condition, tn.space(g).zeros(), g)
 
 
-ad.makevjp(tn.where, None, vjpA_where, vjpB_where)
+ad.makevjp(tn.where, "null", vjpA_where, vjpB_where)
 
 
 
