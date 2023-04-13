@@ -16,7 +16,7 @@ from tadpole.index import (
 
 ###############################################################################
 ###                                                                         ###
-###  VJP's of tensor unary elementwise functions                            ###
+###  Unary elementwise functions                                            ###
 ###                                                                         ###
 ###############################################################################
 
@@ -98,36 +98,6 @@ ad.makevjp(tn.tanh,    lambda g, out, x:  g / (tn.cosh(x)**2))
 ad.makevjp(tn.arcsinh, lambda g, out, x:  g / tn.sqrt(x**2 + 1))
 ad.makevjp(tn.arccosh, lambda g, out, x:  g / tn.sqrt(x**2 - 1))
 ad.makevjp(tn.arctanh, lambda g, out, x:  g / (1 - x**2))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

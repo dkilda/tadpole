@@ -16,7 +16,7 @@ from tadpole.index import (
 
 ###############################################################################
 ###                                                                         ###
-###  VJP's of tensor ternary elementwise functions                          ###
+###  Ternary elementwise functions                                          ###
 ###                                                                         ###
 ###############################################################################
 
@@ -34,53 +34,6 @@ def vjpB_where(g, out, condition, x, y):
 
 
 ad.makevjp(tn.where, "null", vjpA_where, vjpB_where)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

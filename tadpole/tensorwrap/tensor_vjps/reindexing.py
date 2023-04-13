@@ -14,9 +14,10 @@ from tadpole.index import (
 
 
 
+
 ###############################################################################
 ###                                                                         ###
-###  VJP's of tensor reindexing functions                                   ###
+###  Tensor reindexing functions                                            ###
 ###                                                                         ###
 ###############################################################################
 
@@ -89,17 +90,8 @@ def vjp_expand(g, out, x, inds):
 
 
 
-def vjp_diag(g, out, x, ind=None):
 
-    if not ind:
-       return tn.diag(g)
-
-    xinds = tuple(tn.union_inds(x))
-
-    return tn.reindex(tn.diag(g), {ind: xinds})
-
-
-
+# --- Record reindexing and reshaping VJPs ---------------------------------- #
     
 ad.makevjp(tn.reindex,    vjp_reindex)
 ad.makevjp(tn.transpose,  vjp_transpose)    
@@ -108,7 +100,6 @@ ad.makevjp(tn.split,      vjp_split)
 ad.makevjp(tn.squeeze,    vjp_squeeze)
 ad.makevjp(tn.unsqueeze,  vjp_unsqueeze)
 ad.makevjp(tn.expand,     vjp_expand)
-ad.makevjp(tn.diag,       vjp_diag)
 
 
 

@@ -350,12 +350,22 @@ def vjp_stack(g, adx, out, xs, ind): # TODO def stack for matrices only!
 
 
 
+# --- Diagonal -------------------------------------------------------------- #
+
+def vjp_diag(g, out, x): # TODO move diag from reindexing to linalg, keep it for Matrix objects only!
+
+    return tn.diag(g)
+
+
+
+
 # --- Record standard linalg VJPs ------------------------------------------- #
 
 ad.makevjp(tn.norm,  vjp_norm)
 ad.makevjp(tn.inv,   vjp_inv)
 ad.makevjp(tn.det,   vjp_det)
 ad.makevjp(tn.trace, vjp_trace)
+ad.makevjp(tn.diag,  vjp_diag)
 
 ad.makevjp(tn.tril, lambda g, out, x, which=0: tn.tril(g, which=which))
 ad.makevjp(tn.triu, lambda g, out, x, which=0: tn.triu(g, which=which))

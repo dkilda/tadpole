@@ -5,6 +5,7 @@ import tadpole.util     as util
 import tadpole.autodiff as ad
 import tadpole.tensor   as tn
 
+
 from tadpole.tensorwrap.tensor_vjps.linalg import (
    fmatrix,
    tri,
@@ -201,6 +202,7 @@ ad.makejvp(tn.norm,  jvp_norm)
 ad.makejvp(tn.inv,   jvp_inv)
 ad.makejvp(tn.det,   jvp_det)
 ad.makejvp(tn.trace, jvp_trace)
+ad.makejvp(tn.diag,  "linear")
 
 ad.makejvp(tn.tril,  lambda g, out, x, which=0: tn.tril(g, which=which))
 ad.makejvp(tn.triu,  lambda g, out, x, which=0: tn.triu(g, which=which))

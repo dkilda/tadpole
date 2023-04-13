@@ -6,54 +6,31 @@ import tadpole.autodiff as ad
 import tadpole.tensor   as tn
 
 
+from tadpole.index import (
+   Index,
+   IndexGen, 
+   Indices,
+)
 
 
 
 
+###############################################################################
+###                                                                         ###
+###  Tensor reindexing functions                                            ###
+###                                                                         ###
+###############################################################################
 
 
+# --- Reindexing and reshaping methods -------------------------------------- #
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+ad.makejvp(tn.reindex,    "linear")
+ad.makejvp(tn.transpose,  "linear")    
+ad.makejvp(tn.fuse,       "linear")
+ad.makejvp(tn.split,      "linear")
+ad.makejvp(tn.squeeze,    "linear")
+ad.makejvp(tn.unsqueeze,  "linear")
+ad.makejvp(tn.expand,     "linear")
 
 
 

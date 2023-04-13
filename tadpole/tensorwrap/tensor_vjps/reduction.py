@@ -17,12 +17,21 @@ from tadpole.index import (
 
 ###############################################################################
 ###                                                                         ###
-###  VJP's of tensor reduction functions                                    ###
+###  Tensor reduction functions                                             ###
 ###                                                                         ###
 ###############################################################################
 
 
 # --- Value methods --------------------------------------------------------- #
+
+def vjp_reduce(g, out, x, inds=None): 
+
+    g    = tn.expand_like(g,   x, inds)  
+    out  = tn.expand_like(out, x, inds)  
+    mask = tn.isequal(x, out)
+
+    return g * mask / tn.expand_like(tn.sumover(mask, inds), x, inds) 
+
 
 ad.makevjp(tn.amax, vjp_reduce)
 ad.makevjp(tn.amin, vjp_reduce)
@@ -38,63 +47,6 @@ def vjp_sumover(g, out, x, inds=None, **opts):
 
 
 ad.makevjp(tn.sumover, vjp_sumover)
-
-
-
-
-
-
-
-def vjp_reduce(g, out, x, inds=None): 
-
-    g    = tn.expand_like(g,   x, inds)  
-    out  = tn.expand_like(out, x, inds)  
-    mask = tn.isequal(x, out)
-
-    return g * mask / tn.expand_like(tn.sumover(mask, inds), x, inds)  
-
-
-
-
-def jvp_reduce(g, out, x, inds=None):
-
-    out  = tn.expand_like(out, x, inds)
-    mask = tn.isequal(x, out)
-     
-    return tn.sum(g * mask, inds) / tn.sum(mask, inds) 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

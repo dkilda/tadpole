@@ -6,81 +6,64 @@ import tadpole.autodiff as ad
 import tadpole.tensor   as tn
 
 
+from tadpole.index import (
+   Index,
+   IndexGen, 
+   Indices,
+)
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Tensor binary elementwise functions                                    ###
+###                                                                         ###
+###############################################################################
 
 
 # --- Standard math --------------------------------------------------------- #
 
-ad.makejvp(tn.add, lambda g, out, x, y: tn.match(g, x), 
-                   lambda g, out, x, y: tn.match(g, y)
+ad.makejvp(tn.add, lambda g, out, x, y: tn.match(g, out), 
+                   lambda g, out, x, y: tn.match(g, out)
 )
 
 
-ad.makejvp(tn.sub, lambda g, out, x, y: tn.match( g, x), 
-                   lambda g, out, x, y: tn.match(-g, y)
+ad.makejvp(tn.sub, lambda g, out, x, y: tn.match( g, out), 
+                   lambda g, out, x, y: tn.match(-g, out)
 )
 
 
-ad.makejvp(tn.mul, lambda g, out, x, y: tn.match(y * g, x), 
-                   lambda g, out, x, y: tn.match(x * g, y)
+ad.makejvp(tn.mul, lambda g, out, x, y: tn.match(y * g, out), 
+                   lambda g, out, x, y: tn.match(x * g, out)
 )
 
 
-ad.makejvp(tn.div, lambda g, out, x, y: tn.match( g / y,        x),   
-                   lambda g, out, x, y: tn.match(-g * x / y**2, y)
+ad.makejvp(tn.div, lambda g, out, x, y: tn.match( g / y,        out),   
+                   lambda g, out, x, y: tn.match(-g * x / y**2, out)
 )
+
+
+def jvpA_power(g, out, x, y):
+
+    g1 = g * y * (x ** tn.where(y, y-1, 1.))
+    return tn.match(g1, x)
+
+
+def jvpB_power(g, out, x, y):
+
+    g1 = g * out * tn.log(tn.where(x, x, 1.))
+    return tn.match(g1, y)
+
+
+ad.makejvp(tn.power, jvpA_power, jvpB_power)
 
 
 
 
 # --- Gradient accumulation ------------------------------------------------- #
 
-ad.makejvp(tn.addgrads, lambda g, out, x, y: g, 
-                        lambda g, out, x, y: g
-)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+ad.makejvp(tn.addgrads, "identity", "identity") 
 
 
 

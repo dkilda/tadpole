@@ -25,6 +25,15 @@ class AdjFunNull:
 
 
 
+class AdjFunIdentity:
+
+   def __call__(self, g, out, *args, **kwargs):
+
+       return g
+
+
+
+
 class AdjFunLinear:
 
    def __init__(self, fun, adx):
@@ -76,6 +85,9 @@ def make_adjfun(adjfun, fun=None, adx=None):
 
     if adjfun is None or adjfun == "null": 
        return AdjFunNull()  
+
+    if adjfun == "identity":
+       return AdjFunIdentity()
 
     if adjfun == "linear" and adx is not None:
        return AdjFunLinear(fun, adx)

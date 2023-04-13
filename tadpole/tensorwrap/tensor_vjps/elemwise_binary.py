@@ -16,7 +16,7 @@ from tadpole.index import (
 
 ###############################################################################
 ###                                                                         ###
-###  VJP's of tensor binary elementwise functions                           ###
+###  Binary elementwise functions                                           ###
 ###                                                                         ###
 ###############################################################################
 
@@ -62,50 +62,7 @@ ad.makevjp(tn.power, vjpA_power, vjpB_power)
 
 # --- Gradient accumulation ------------------------------------------------- #
 
-ad.makevjp(tn.addgrads, lambda g, out, x, y: g, 
-                        lambda g, out, x, y: g
-)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+ad.makevjp(tn.addgrads, "identity", "identity")
 
 
 
