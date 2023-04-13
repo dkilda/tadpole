@@ -162,16 +162,6 @@ def complement_inds(*xs):
     return op.complement_inds()
 
 
-@ad.nondifferentiable
-def partition_inds(*xs):
-
-    linds = complement_inds(*xs)
-    rinds = complement_inds(*reversed(xs))
-    sinds = overlap_inds(*xs)
-
-    return linds, sinds, rinds
-
-
 
 
 # --- Tensor matching ------------------------------------------------------- #
@@ -248,21 +238,5 @@ def transpose_like(x, target):
     return reidx.transpose(x, *output_inds)
 
  
-
-
-def unreduce_like(x, target, inds=None): 
-
-    def fun(g):
-
-        g1 = expand_like(g, target, inds)  
-        x1 = expand_like(x, target, inds)  
-
-        mask = binary.isequal(target, x1)
-
-        return g1 * mask / expand_like(redu.sumover(mask, inds), target, inds)  
-
-    return fun
-
-
 
 

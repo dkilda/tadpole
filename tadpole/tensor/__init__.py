@@ -91,13 +91,11 @@ from .interaction import (
    union_inds,
    overlap_inds,
    complement_inds,
-   partition_inds,
    match,
    astype_like,
    reshape_like,
    transpose_like,
    expand_like,
-   unreduce_like,
 )
 
 
@@ -133,7 +131,7 @@ from .reindexing import (
    squeeze,
    unsqueeze,
    expand,
-   diag,
+   diag, # TODO move diag to linalg!
 )
 
 
@@ -153,7 +151,6 @@ from .elemwise_unary import (
    iscomplex,
    astype,
    getitem,
-   expm,
 )
 
 

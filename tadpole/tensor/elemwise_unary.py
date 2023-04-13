@@ -548,7 +548,7 @@ def arctanh(x):
 
 @ad.differentiable
 @typecast_unary
-def expm(x):
+def expm(x): # TODO: not part of the API because vjp/jvp are not available yet! 
 
     op = tensor_elemwise_unary(x)
     return op.expm()

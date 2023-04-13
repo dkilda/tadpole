@@ -270,7 +270,7 @@ class TensorReindex:
        return self._new(output_data, output_inds) 
 
 
-   def diag(self, ind=None):
+   def diag(self, ind=None): # TODO move diag to linalg!
 
        if ind is None:
           ind = self._inds[0]

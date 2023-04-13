@@ -576,7 +576,7 @@ class TestTensorElemwiseUnary:
               self.backend, indnames, shape
            )
 
-       out = tn.expm(w.tensor)
+       out = tnu.expm(w.tensor)
        ans = ar.expm(w.array)
        ans = tn.TensorGen(ans, w.inds)
 
