@@ -55,7 +55,7 @@ class TestAdjfun:
        answers = arepeat(fake.Value, valency)
        adjfuns = [fake.Fun(ans, g, out, *args) for ans in answers]
 
-       adjfun = adj.concatenate_adjfuns(*adjfuns)
+       adjfun = adj.concatenate_adjfuns(fake.Fun(None), *adjfuns)
 
        for adx in range(valency):
            assert adjfun(g, adx, out, *args) == answers[adx]
@@ -76,7 +76,7 @@ class TestAdjfun:
        answers = arepeat(fake.Value, valency)
        adjfuns = [fake.Fun(ans, g, out, *args) for ans in answers]
 
-       adjfun = adj.concatenate_adjfuns(*adjfuns, adxs=adxs)
+       adjfun = adj.concatenate_adjfuns(fake.Fun(None), *adjfuns, adxs=adxs)
 
        for adx in adxs:
            assert adjfun(g, adx, out, *args) == answers[adx]
