@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import abc
+import functools
 import tadpole.util as util
 
 
@@ -14,11 +15,60 @@ import tadpole.util as util
 ###############################################################################
 
 
+# --- Unary operator -------------------------------------------------------- #
+
+class UnaryOp:
+
+   def __init__(self, op, *args, **kwargs):
+
+       self._op     = op
+       self._args   = args
+       self._kwargs = kwargs
+
+
+   def __repr__(self):
+
+       rep = util.ReprChain()
+
+       rep.typ(self)
+
+       rep.val("op",     self._op)
+       rep.val("args",   self._args)
+       rep.val("kwargs", self._kwargs)
+
+       return str(rep)
+
+
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+
+       log.typ(self, other)
+
+       if bool(log):
+
+          log.val(self._op,     other._op)
+          log.val(self._args,   other._args)
+          log.val(self._kwargs, other._kwargs)
+
+       return bool(log)
+
+
+   def __call__(self, unary_fun, args):  
+
+       return self._op(unary_fun, args, *self._args, **self._kwargs)
+
+
+
+
 # --- Nary operator --------------------------------------------------------- #
 
 class NaryOp:
 
    def __init__(self, unary_op, fun, argproxy):
+
+       if not isinstance(unary_op, UnaryOp):
+          unary_op = UnaryOp(unary_op)
 
        self._unary_op = unary_op
        self._fun      = fun
@@ -30,8 +80,9 @@ class NaryOp:
        rep = util.ReprChain()
 
        rep.typ(self)
-       rep.val("unary_op", self._unary_op)
+
        rep.val("fun",      self._fun)
+       rep.val("unary_op", self._unary_op)
        rep.val("argproxy", self._argproxy)
 
        return str(rep)
@@ -42,8 +93,9 @@ class NaryOp:
        log = util.LogicalChain()
 
        log.typ(self, other)
-       log.val(self._unary_op, other._unary_op)
+
        log.val(self._fun,      other._fun)
+       log.val(self._unary_op, other._unary_op)
        log.val(self._argproxy, other._argproxy)
 
        return bool(log)
@@ -63,8 +115,12 @@ class NaryOp:
 
 def nary_op(unary_op):
 
-    def wrap(fun, adx=None):
-        return NaryOp(unary_op, fun, argproxy(adx))
+    @functools.wraps(unary_op)
+    def wrap(fun, adx=None, *args, **kwargs):
+
+        op = UnaryOp(unary_op, *args, **kwargs)
+
+        return NaryOp(op, fun, argproxy(adx))
 
     return wrap
 

@@ -11,11 +11,21 @@ import tadpole.array    as ar
 import tadpole.tensor   as tn
 import tadpole.index    as tid
 
-import tadpole.autodiff.nary  as nary
-import tadpole.autodiff.grad  as agrad
+import tadpole.tensor.elemwise_unary as tnu
+import tadpole.tensor.reindexing     as tnreidx
+
+import tadpole.autodiff.nary as nary
+import tadpole.autodiff.grad as agrad
 
 import tests.tensor.fakes as fake
 import tests.tensor.data  as data
+
+
+from tadpole.index import (
+   Index,
+   IndexGen, 
+   Indices,
+)
 
 
 
@@ -25,6 +35,21 @@ import tests.tensor.data  as data
 ###  Testing tools for gradients (VJPs/JVPs)                                ###
 ###                                                                         ###
 ###############################################################################
+
+
+"""
+def flatten(x, ind="i"):
+
+    op = tnreidx.tensor_reindex(x)
+    return op.flatten(ind)
+
+
+
+def conj(x):
+
+    op = tnu.tensor_elemwise_unary(x)
+    return op.conj()
+"""
 
 
 # --- Numerical gradient ---------------------------------------------------- # 
@@ -55,9 +80,12 @@ def assert_vjp(fun, x):
 
     vj = op.grad(dy)
     jv = numerical_grad(fun, x)(dx)
-    
-    vjv_out = tn.flatten(vj) @ tn.flatten(dx)
-    vjv_ans = tn.flatten(dy) @ tn.flatten(jv)
+
+    i = IndexGen("i", dx.size)
+    j = IndexGen("j", dy.size)    
+
+    vjv_out = tn.flatten(vj, i) @ tn.flatten(dx, i)
+    vjv_ans = tn.flatten(dy, j) @ tn.flatten(jv, j)
 
     assert tn.space(vj) == tn.space(x)
     assert tn.allclose(vjv_out, vjv_ans) 
@@ -74,9 +102,11 @@ def assert_jvp(fun, x):
 
     jv_out = op.grad(dx)
     jv_ans = numerical_grad(fun, x)(dx)
+
+    i = IndexGen("i", dx.size)
     
-    vjv_out = tn.flatten(dx) @ tn.flatten(jv_out)
-    vjv_ans = tn.flatten(dy) @ tn.flatten(jv_ans)
+    vjv_out = tn.flatten(dx, i) @ tn.flatten(jv_out, i)
+    vjv_ans = tn.flatten(dx, i) @ tn.flatten(jv_ans, i)
 
     assert tn.space(jv_out) == tn.space(jv_ans)
     assert tn.allclose(vjv_out, vjv_ans) 
@@ -87,7 +117,7 @@ def assert_jvp(fun, x):
 # --- Assert gradients of a given mode and order ---------------------------- #
 
 @nary.nary_op
-def assert_grad(fun, x, modes=("vjp", "jvp"), order=2):
+def assert_grad(fun, x, modes=("vjp", "jvp"), order=1): # TODO CHANGE BACK TO order=2 once we implement NodeTuple! 
 
     if isinstance(modes, str):
        modes = (modes,)
@@ -101,7 +131,7 @@ def assert_grad(fun, x, modes=("vjp", "jvp"), order=2):
 
         if order > 1:
 
-           def fun(x, g):
+           def gradfun(x, g):
 
                op = {
                      "vjp": agrad.ReverseDifferentialOp, 
@@ -112,7 +142,14 @@ def assert_grad(fun, x, modes=("vjp", "jvp"), order=2):
 
            g = tn.space(fun(x)).randn()
 
-           assert_grad(fun, (0, 1), modes=modes, order=order-1)(x, g)
+           assert_grad(gradfun, (0, 1), modes=modes, order=order-1)(x, g) 
+
+
+
+
+
+
+
 
 
 

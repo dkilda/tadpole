@@ -131,6 +131,7 @@ from .reindexing import (
    squeeze,
    unsqueeze,
    expand,
+   flatten,
    diag, # TODO move diag to linalg!
 )
 

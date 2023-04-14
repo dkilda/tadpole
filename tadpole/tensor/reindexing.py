@@ -270,6 +270,11 @@ class TensorReindex:
        return self._new(output_data, output_inds) 
 
 
+   def flatten(self, ind="flat"):    
+
+       return self.fuse({self._inds: ind})
+
+
    def diag(self, ind=None): # TODO move diag to linalg!
 
        if ind is None:
@@ -355,13 +360,19 @@ def expand(x, inds):
     return op.expand(inds)
 
 
+@ad.differentiable     
+def flatten(x, ind):    
+
+    op = tensor_reindex(x)
+    return op.flatten(ind)
+
+
 @ad.differentiable
 def diag(x, ind=None):
 
     op = tensor_reindex(x)
     return op.diag(ind)
 
-     
 
 
 

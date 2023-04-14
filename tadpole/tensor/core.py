@@ -7,6 +7,7 @@ import tadpole.array    as ar
 import tadpole.index    as tid
 
 import tadpole.tensor.space           as sp
+import tadpole.tensor.contraction     as contraction
 import tadpole.tensor.elemwise_unary  as unary
 import tadpole.tensor.elemwise_binary as binary
 
@@ -539,6 +540,11 @@ class TensorGen(Tensor, Pluggable):
        return binary.power(self, other)
 
 
+   def __matmul__(self, other):
+
+       return contraction.contract(self, other)
+
+
    def __radd__(self, other):
 
        return binary.add(other, self)
@@ -562,6 +568,11 @@ class TensorGen(Tensor, Pluggable):
    def __rpow__(self, other):
 
        return binary.power(other, self)
+
+
+   def __rmatmul__(self, other):
+
+       return contraction.contract(other, self)
 
 
 
