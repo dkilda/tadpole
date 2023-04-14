@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import functools
+
 import tadpole.util     as util
 import tadpole.autodiff as ad
 import tadpole.array    as ar
@@ -287,6 +289,7 @@ class TensorElemwiseUnary:
 
 def typecast_unary(fun):
 
+    @functools.wraps(fun)
     def wrap(x, *args, **kwargs):
 
         try:

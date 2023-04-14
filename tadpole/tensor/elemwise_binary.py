@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import functools
+
 import tadpole.util     as util
 import tadpole.autodiff as ad
 import tadpole.array    as ar
@@ -188,6 +190,7 @@ class TensorElemwiseBinary:
 
 def typecast_binary(fun):
 
+    @functools.wraps(fun)
     def wrap(x, y, *args, **kwargs):
 
         try:

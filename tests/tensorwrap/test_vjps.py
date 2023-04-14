@@ -12,24 +12,21 @@ import tadpole.array    as ar
 import tadpole.tensor   as tn
 import tadpole.index    as tid
 
-import tadpole.array.backends         as backends
+import tadpole.array.backends as backends
+
 import tadpole.tensorwrap.tensor_vjps as tvjps
 
 import tests.tensorwrap.fakes as fake
 import tests.tensorwrap.data  as data
 
 
+from tests.tensorwrap.util import (
+   assert_grad,
+)
+
 from tests.tensorwrap.conftest import (
    available_backends,
 )
-
-
-from tadpole.tensor.types import (
-   Pluggable,
-   Tensor, 
-   Space,
-)
-
 
 from tadpole.index import (
    Index,
