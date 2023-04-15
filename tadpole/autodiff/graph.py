@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import abc
-
 import tadpole.util          as util
 import tadpole.autodiff.misc as misc
 import tadpole.autodiff.node as an
 
-from tadpole.util import TupleLike
+
+from tadpole.autodiff.types import (
+   DifferentiableFun, 
+   Args,
+   Sequential,
+   Cohesive,
+   Pack,
+   Envelope
+)
 
 
 
@@ -19,28 +25,9 @@ from tadpole.util import TupleLike
 ###############################################################################
 
 
-# --- GraphLike interface --------------------------------------------------- #
-
-class GraphLike(abc.ABC):
-
-   @abc.abstractmethod
-   def __enter__(self):
-       pass
-
-   @abc.abstractmethod
-   def __exit__(self, exception_type, exception_val, trace):
-       pass
-
-   @abc.abstractmethod
-   def build(self, fun, x):
-       pass
-
-
-
-
 # --- Graph ----------------------------------------------------------------- #
 
-class Graph(GraphLike):
+class Graph:
 
    _layer = misc.minlayer() 
 
@@ -63,9 +50,10 @@ class Graph(GraphLike):
    def __eq__(self, other):
 
        log = util.LogicalChain()
-
        log.typ(self, other)
-       log.ref(self._root, other._root)
+
+       if bool(log):
+          log.ref(self._root, other._root)
 
        return bool(log)
        
@@ -98,28 +86,9 @@ class Graph(GraphLike):
 ###############################################################################
 
 
-# --- FunWithAdjoint interface ---------------------------------------------- #
-
-class FunWithAdjoint(abc.ABC):
-
-   @abc.abstractmethod
-   def __call__(self, *args, **kwargs):
-       pass
-
-   @abc.abstractmethod
-   def vjp(self, *args, **kwargs): 
-       pass
-
-   @abc.abstractmethod
-   def jvp(self, *args, **kwargs):
-       pass
-
-
-
-
 # --- Differentiable function wrap ------------------------------------------ #
 
-class Differentiable(FunWithAdjoint):
+class Differentiable(DifferentiableFun):
 
    def __init__(self, fun, envelope, vjpmap, jvpmap):
 
@@ -132,7 +101,6 @@ class Differentiable(FunWithAdjoint):
    def __repr__(self):
 
        rep = util.ReprChain()
-
        rep.typ(self)
        rep.val("fun", self._fun)
 
@@ -172,7 +140,6 @@ class NonDifferentiable:
    def __repr__(self):
 
        rep = util.ReprChain()
-
        rep.typ(self)
        rep.val("fun", self._fun)
 
@@ -195,32 +162,9 @@ class NonDifferentiable:
 ###############################################################################
 
 
-# --- ArgsLike interface ---------------------------------------------------- #
+# --- General function arguments -------------------------------------------- #
 
-class ArgsLike(abc.ABC):
-
-   @abc.abstractmethod
-   def nodify(self):
-       pass
-
-   @abc.abstractmethod
-   def concat(self):
-       pass
-
-   @abc.abstractmethod
-   def pack(self, **kwargs):
-       pass
-
-   @abc.abstractmethod
-   def deshelled(self):
-       pass
-
-
-
-
-# --- Function arguments ---------------------------------------------------- #
-
-class Args(ArgsLike, TupleLike):  
+class ArgsGen(Args):  
 
    def __init__(self, *args):
 
@@ -230,7 +174,6 @@ class Args(ArgsLike, TupleLike):
    def __repr__(self):
 
        rep = util.ReprChain()
-
        rep.typ(self)
        rep.val("args", self._args)
 
@@ -240,9 +183,10 @@ class Args(ArgsLike, TupleLike):
    def __eq__(self, other):
 
        log = util.LogicalChain()
-
        log.typ(self, other) 
-       log.val(self._args, other._args)
+
+       if bool(log):
+          log.val(self._args, other._args)
 
        return bool(log)
 
@@ -276,7 +220,7 @@ class Args(ArgsLike, TupleLike):
 
        for arg in self._args:
 
-           if isinstance(arg, an.NodeLike):
+           if isinstance(arg, an.Node):
               yield arg
               continue
 
@@ -286,7 +230,7 @@ class Args(ArgsLike, TupleLike):
    @util.cacheable
    def concat(self):
 
-       concat = Concatenation() 
+       concat = ConcatArgs() 
 
        for node in self.nodify():
            concat = node.concat(concat)
@@ -296,7 +240,7 @@ class Args(ArgsLike, TupleLike):
  
    def pack(self, **kwargs):
 
-       return Pack(self.concat(), **kwargs)
+       return PackArgs(self.concat(), **kwargs)
 
 
    def deshelled(self):
@@ -311,47 +255,9 @@ class Args(ArgsLike, TupleLike):
 
 
 
-# --- Concatenable interface ------------------------------------------------ #
+# --- Concatenation of arguments -------------------------------------------- #
 
-class Concatenable(abc.ABC):
-
-   @abc.abstractmethod
-   def attach(self, node, source, layer):
-       pass
-
-
-
-
-# --- Cohesive interface ---------------------------------------------------- #
-
-class Cohesive(abc.ABC):
-
-   @abc.abstractmethod
-   def innermost(self):
-       pass
-
-   @abc.abstractmethod
-   def layer(self):
-       pass
-
-   @abc.abstractmethod
-   def adxs(self):
-       pass
-
-   @abc.abstractmethod
-   def parents(self):
-       pass
-
-   @abc.abstractmethod
-   def deshell(self):
-       pass
-
-
-
-
-# --- Concatenation of nodes ------------------------------------------------ #
-
-class Concatenation(Concatenable, Cohesive):
+class ConcatArgs(Sequential, Cohesive):
 
    def __init__(self, nodes=None, sources=None, layers=None): 
 
@@ -361,7 +267,7 @@ class Concatenation(Concatenable, Cohesive):
 
        self._nodes   = nodes
        self._sources = sources
-       self._layers  = layers  
+       self._layers  = layers    
 
 
    def __repr__(self):
@@ -379,11 +285,12 @@ class Concatenation(Concatenable, Cohesive):
    def __eq__(self, other):
 
        log = util.LogicalChain()
-
        log.typ(self, other) 
-       log.val(self._nodes,   other._nodes)
-       log.val(self._sources, other._sources)
-       log.val(self._layers,  other._layers)
+
+       if bool(log):
+          log.val(self._nodes,   other._nodes)
+          log.val(self._sources, other._sources)
+          log.val(self._layers,  other._layers)
 
        return bool(log)
 
@@ -392,7 +299,7 @@ class Concatenation(Concatenable, Cohesive):
 
        return id(self)
 
-
+      
    def attach(self, node, source, layer):
 
        return self.__class__(
@@ -400,7 +307,6 @@ class Concatenation(Concatenable, Cohesive):
                              self._sources.push(source), 
                              self._layers.push(layer)
                             )
-
 
    @util.cacheable
    def innermost(self):
@@ -431,14 +337,14 @@ class Concatenation(Concatenable, Cohesive):
        nodes = list(self._nodes)
        nodes = [nodes[adx] for adx in self.adxs()] 
 
-       return an.Parents(*nodes)
+       return an.ParentsGen(*nodes)
 
 
    @util.cacheable
    def deshell(self):
 
        if self.innermost():
-          return Args(*self._sources)
+          return ArgsGen(*self._sources)
 
        args    = list(self._nodes)
        sources = list(self._sources)
@@ -446,7 +352,7 @@ class Concatenation(Concatenable, Cohesive):
        for adx in self.adxs():
            args[adx] = sources[adx] 
 
-       return Args(*args)
+       return ArgsGen(*args)
 
 
 
@@ -459,32 +365,9 @@ class Concatenation(Concatenable, Cohesive):
 ###############################################################################
 
 
-# --- Packable interface ---------------------------------------------------- #
-
-class Packable(abc.ABC):
-
-   @abc.abstractmethod
-   def innermost(self):
-       pass
-
-   @abc.abstractmethod
-   def deshell(self):
-       pass
-
-   @abc.abstractmethod
-   def deshelled(self):
-       pass
-
-   @abc.abstractmethod
-   def fold(self, funwrap, out):
-       pass
-
-
-
-
 # --- Argument pack (of concatenated nodes) --------------------------------- #
 
-class Pack(Packable):
+class PackArgs(Pack):
 
    def __init__(self, concat, **kwargs):
 
@@ -505,9 +388,10 @@ class Pack(Packable):
    def __eq__(self, other):
 
        log = util.LogicalChain()
-
        log.typ(self, other) 
-       log.val(self._concat, other._concat)
+
+       if bool(log):
+          log.val(self._concat, other._concat)
 
        return bool(log)
 
@@ -541,7 +425,6 @@ class Pack(Packable):
        return self._concat.parents()
 
 
-
    def innermost(self):
 
        return self._concat.innermost() 
@@ -562,7 +445,7 @@ class Pack(Packable):
        if self.innermost():
           return an.point(out)
 
-       op = an.AdjointOp(
+       op = an.AdjointOpGen(
           funwrap, self._adxs, outputs, self._args, self._kwargs
        )
 
@@ -577,41 +460,24 @@ class Pack(Packable):
        return outputs.apply(_fold)
 
 
-       
-
-# --- EnvelopeLike interface ------------------------------------------------ #
-
-class EnvelopeLike(abc.ABC): 
-
-   @abc.abstractmethod
-   def packs(self):
-       pass
-
-   @abc.abstractmethod
-   def apply(self, fun):
-       pass
-
-   @abc.abstractmethod
-   def applywrap(self, funwrap, out):
-       pass
-
-
 
 
 # --- Argument envelope ----------------------------------------------------- #
 
-class Envelope(EnvelopeLike):
+class EnvelopeArgs(Envelope):
 
    def __init__(self, *args, **kwargs):
 
        if len(args) == 0:
-          raise ValueError("Envelope must have at least one input")
+          raise ValueError(
+             f"{type(self).__name__} must have at least one input"
+          )
 
-       if len(args) == 1 and isinstance(args[0], ArgsLike):
+       if len(args) == 1 and isinstance(args[0], Args):
           args, = args
           
-       if not isinstance(args, ArgsLike):
-          args = Args(*args)
+       if not isinstance(args, Args):
+          args = ArgsGen(*args)
             
        self._args   = args
        self._kwargs = kwargs
@@ -631,10 +497,11 @@ class Envelope(EnvelopeLike):
    def __eq__(self, other):
 
        log = util.LogicalChain()
-
        log.typ(self, other) 
-       log.ref(self._args,   other._args)
-       log.ref(self._kwargs, other._kwargs)
+
+       if bool(log):
+          log.ref(self._args,   other._args)
+          log.ref(self._kwargs, other._kwargs)
 
        return bool(log)
 

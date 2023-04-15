@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import abc
 import collections
 from functools import reduce
 
@@ -10,6 +9,14 @@ import tadpole.util as util
 import tadpole.autodiff.nary  as nary
 import tadpole.autodiff.node  as an
 import tadpole.autodiff.graph as ag
+
+
+from tadpole.autodiff.types import (
+   Propagation,
+   Traceable,
+   Countable,
+   Cumulative,
+)
 
 
 
@@ -26,7 +33,7 @@ import tadpole.autodiff.graph as ag
 @nary.nary_op
 def gradient(fun, x):  
 
-    op  = ReverseDifferentialOp(fun, x)
+    op  = DifferentialOpReverse(fun, x)
     out = op.evaluate()
 
     return op.grad(out.space().ones())
@@ -39,7 +46,7 @@ def gradient(fun, x):
 @nary.nary_op
 def derivative(fun, x):
 
-    op  = ForwardDifferentialOp(fun, x)
+    op  = DifferentialOpForward(fun, x)
     out = op.evaluate()
 
     return op.grad(out.space().ones())
@@ -54,32 +61,9 @@ def derivative(fun, x):
 ###############################################################################
 
 
-# --- Differential interface ------------------------------------------------ #
-
-class Differential(abc.ABC):
-
-   @abc.abstractmethod
-   def graphop(self):
-       pass
-
-   @abc.abstractmethod
-   def end(self):
-       pass
-
-   @abc.abstractmethod
-   def evaluate(self):
-       pass
-
-   @abc.abstractmethod
-   def grad(self, seed):
-       pass
-
-
-
-
 # --- Differential operator ------------------------------------------------- #
 
-class DifferentialOp(Differential):
+class DifferentialOp:
 
    def __init__(self, propagation, fun, x):
 
@@ -103,11 +87,12 @@ class DifferentialOp(Differential):
    def __eq__(self, other):
 
        log = util.LogicalChain()
-
        log.typ(self, other)
-       log.val(self._prop, other._prop)
-       log.val(self._fun,  other._fun)
-       log.val(self._x,    other._x)
+
+       if bool(log):
+          log.val(self._prop, other._prop)
+          log.val(self._fun,  other._fun)
+          log.val(self._x,    other._x)
 
        return bool(log)
 
@@ -140,22 +125,22 @@ class DifferentialOp(Differential):
 
 # --- Forward differential operator ----------------------------------------- #
 
-class ForwardDifferentialOp(DifferentialOp):
+class DifferentialOpForward(DifferentialOp):
 
    def __init__(self, fun, x):
 
-       super().__init__(ForwardPropagation(), fun, x)
+       super().__init__(PropagationForward(), fun, x)
 
 
 
 
 # --- Reverse differential operator ----------------------------------------- #
 
-class ReverseDifferentialOp(DifferentialOp):
+class DifferentialOpReverse(DifferentialOp):
 
    def __init__(self, fun, x):
 
-       super().__init__(ReversePropagation(), fun, x)
+       super().__init__(PropagationReverse(), fun, x)
 
 
 
@@ -167,24 +152,9 @@ class ReverseDifferentialOp(DifferentialOp):
 ###############################################################################
 
 
-# --- Gradient propagation interface ---------------------------------------- #
-
-class Propagation(abc.ABC):
-
-   @abc.abstractmethod
-   def graphop(self, fun, x):
-       pass
-
-   @abc.abstractmethod
-   def accum(self, end, seed):
-       pass
-
-
-
-
 # --- Forward gradient propagation ------------------------------------------ #
 
-class ForwardPropagation(Propagation):
+class PropagationForward(Propagation):
 
    def __repr__(self):
 
@@ -195,7 +165,7 @@ class ForwardPropagation(Propagation):
 
    def graphop(self, fun, x):
 
-       return GraphOp(an.ForwardGate(), fun, x)
+       return GraphOp(an.GateForward(), fun, x)
 
 
    def accum(self, end, seed):
@@ -207,7 +177,7 @@ class ForwardPropagation(Propagation):
 
 # --- Reverse gradient propagation ------------------------------------------ #
 
-class ReversePropagation(Propagation):
+class PropagationReverse(Propagation):
 
    def __repr__(self):
 
@@ -218,7 +188,7 @@ class ReversePropagation(Propagation):
 
    def graphop(self, fun, x):
 
-       return GraphOp(an.ReverseGate(), fun, x)
+       return GraphOp(an.GateReverse(), fun, x)
 
 
    def accum(self, end, seed):
@@ -235,33 +205,14 @@ class ReversePropagation(Propagation):
 
 ###############################################################################
 ###                                                                         ###
-###  Computation graph operator.                                            ###
+###  Computation graph operator                                             ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- Graphable interface --------------------------------------------------- #
-
-class Graphable(abc.ABC):
-
-   @abc.abstractmethod
-   def graph(self):
-       pass
-
-   @abc.abstractmethod
-   def end(self):
-       pass
-
-   @abc.abstractmethod
-   def evaluate(self):
-       pass
-
-
-
-
 # --- Graph operator -------------------------------------------------------- #
 
-class GraphOp(Graphable):
+class GraphOp:
 
    def __init__(self, root, fun, x):
 
@@ -285,11 +236,12 @@ class GraphOp(Graphable):
    def __eq__(self, other):
 
        log = util.LogicalChain()
-
        log.typ(self, other)
-       log.val(self._root, other._root)
-       log.val(self._fun,  other._fun)
-       log.val(self._x,    other._x)
+
+       if bool(log):
+          log.val(self._root, other._root)
+          log.val(self._fun,  other._fun)
+          log.val(self._x,    other._x)
 
        return bool(log)
 
@@ -311,7 +263,7 @@ class GraphOp(Graphable):
    @util.cacheable
    def evaluate(self):
 
-       args = ag.Args(self.end())
+       args = ag.ArgsGen(self.end())
        args = args.deshelled()
 
        return args[0]
@@ -324,36 +276,6 @@ class GraphOp(Graphable):
 ###  Topological sort of the computation graph                              ###
 ###                                                                         ###
 ###############################################################################
-
-
-# --- Traceable interface --------------------------------------------------- #
-
-class Traceable(abc.ABC):
-
-   @abc.abstractmethod
-   def record(self, node, parents):
-       pass
-
-
-
-
-# --- Countable interface --------------------------------------------------- #
-
-class Countable(abc.ABC):
-
-   @abc.abstractmethod
-   def collect(self, node):
-       pass
-
-   @abc.abstractmethod
-   def increase(self, node):
-       pass
-
-   @abc.abstractmethod
-   def decrease(self, node):
-       pass
-
-
 
 
 # --- Child count ----------------------------------------------------------- #
@@ -384,10 +306,11 @@ class ChildCount(Traceable, Countable):
    def __eq__(self, other):
 
        log = util.LogicalChain()
-
        log.typ(self, other)
-       log.val(self._parents, other._parents)
-       log.val(self._count,   other._count)
+
+       if bool(log):
+          log.val(self._parents, other._parents)
+          log.val(self._count,   other._count)
 
        return bool(log)
 
@@ -435,24 +358,9 @@ class ChildCount(Traceable, Countable):
 
 
 
-# --- Traversable interface ------------------------------------------------- #
-
-class Traversable(abc.ABC):
-
-   @abc.abstractmethod
-   def sweep(self, step):
-       pass
-
-   @abc.abstractmethod
-   def apply(self, step):
-       pass
-
-
-
-
 # --- Traversal ------------------------------------------------------------- #
 
-class Traversal(Traversable):
+class Traversal:
 
    def __init__(self, end):
 
@@ -488,24 +396,9 @@ class Traversal(Traversable):
 
 
 
-# --- Sortable interface ---------------------------------------------------- #
-
-class Sortable(abc.ABC):
-
-   @abc.abstractmethod
-   def traverse(self):
-       pass
-
-   @abc.abstractmethod
-   def __iter__(self):
-       pass
-
-
-
-
 # --- Topological sort ------------------------------------------------------ #
 
-class TopoSort(Sortable):
+class TopoSort:
 
    def __init__(self, traversal, count):
 
@@ -556,25 +449,6 @@ def toposort(end):
 ###############################################################################
 
 
-# --- Cumulative interface -------------------------------------------------- #
-
-class Cumulative(abc.ABC):
-
-   @abc.abstractmethod
-   def add(self, nodes, parents):
-       pass
-
-   @abc.abstractmethod
-   def pick(self, nodes):
-       pass
-
-   @abc.abstractmethod
-   def result(self):
-       pass
-
-
-
-
 # --- Gradient addition function (a shortcut) ------------------------------- #
 
 def addgrads(x, y):
@@ -612,10 +486,11 @@ class GradSum(Cumulative):
    def __eq__(self, other):
 
        log = util.LogicalChain()
-
        log.typ(self, other)
-       log.val(self._seed,  other._seed)
-       log.val(self._grads, other._grads)
+
+       if bool(log):
+          log.val(self._seed,  other._seed)
+          log.val(self._grads, other._grads)
 
        return bool(log)
 
@@ -672,9 +547,10 @@ class GradAccum(Cumulative):
    def __eq__(self, other):
 
        log = util.LogicalChain()
-
        log.typ(self, other)
-       log.val(self._grads, other._grads)
+
+       if bool(log):
+          log.val(self._grads, other._grads)
 
        return bool(log)
 

@@ -6,15 +6,16 @@ import collections
 from tests.common import arepeat, arange, amap
 
 import tests.autodiff.fakes as fake
-import tests.autodiff.data  as data
 
 import tadpole.util           as util
-import tadpole.autodiff.misc  as misc
+import tadpole.autodiff.types as at
 import tadpole.autodiff.node  as an
 import tadpole.autodiff.graph as ag
 import tadpole.autodiff.grad  as ad
+import tadpole.autodiff.misc  as misc
 
-import tadpole.autodiff.wrappers as aw 
+import tadpole.autodiff.wrappers   as aw 
+import tadpole.autodiff.adjointmap as adj 
 
 
 
@@ -40,8 +41,8 @@ def graph_dat(which="REVERSE", layer=None,
               x=None, out=None, start=None, end=None):
 
     root = {
-            "REVERSE": an.ReverseGate,
-            "FORWARD": an.ForwardGate,
+            "REVERSE": an.GateReverse,
+            "FORWARD": an.GateForward,
            }[which]()
 
     if layer is None:
@@ -57,7 +58,7 @@ def graph_dat(which="REVERSE", layer=None,
        start = an.node(x, layer, root) 
 
     if end is None:
-       end = an.node(out, layer, fake.GateLike())
+       end = an.node(out, layer, fake.Gate())
 
     fun     = fake.Fun(end, start)
     graph   = ag.Graph(root)
@@ -80,9 +81,9 @@ def graph_dat(which="REVERSE", layer=None,
 # --- Differentiable/NonDifferentiable function wrappers -------------------- #
 
 FunWrapData = collections.namedtuple("FunWrapData", [
-                 "funwrap", "fun", 
-                 "make_envelope", "envelope", 
-                 "args", "out"
+                 "funwrap",        "fun", 
+                 "make_envelope",  "envelope", 
+                 "args",           "out"
               ])
 
 
@@ -96,10 +97,10 @@ def differentiable_funwrap_dat(args, vjpmap=None, jvpmap=None):
     if jvpmap is None:
        jvpmap = aw._JVPMAP
 
-    out = fake.NodeLike()
+    out = fake.Node()
 
     applywrap     = fake.Fun(util.Outputs(out))
-    envelope      = fake.EnvelopeLike(applywrap=applywrap)
+    envelope      = fake.Envelope(applywrap=applywrap)
     make_envelope = fake.Fun(envelope, *args)
 
     fun     = fake.Fun(None)
@@ -114,10 +115,10 @@ def differentiable_funwrap_dat(args, vjpmap=None, jvpmap=None):
 
 def nondifferentiable_funwrap_dat(args):
 
-    out = fake.NodeLike()
+    out = fake.Node()
 
     applyfun      = fake.Fun(util.Outputs(out))
-    envelope      = fake.EnvelopeLike(**{"apply": applyfun})
+    envelope      = fake.Envelope(**{"apply": applyfun})
     make_envelope = fake.Fun(envelope, *args)
 
     fun     = fake.Fun(None)
@@ -158,9 +159,9 @@ def args_dat(n=1, adxs=(0,), layers=(0,)):
         value = fake.Value()
 
         if   i in adxs: 
-             source = fake.NodeLike()
+             source = fake.Node()
              layer  = layers.pop()
-             node   = an.node(source, layer, fake.GateLike())
+             node   = an.node(source, layer, fake.Gate())
              rawarg = node
 
         else:
@@ -172,17 +173,20 @@ def args_dat(n=1, adxs=(0,), layers=(0,)):
         info.append([rawarg, node, source, layer, value])
 
     rawargs, nodes, sources, layers, values = zip(*info)
-    args = ag.Args(*rawargs)
 
-    concat = ag.Concatenation(
-                              util.Sequence(nodes), 
-                              util.Sequence(sources), 
-                              util.Sequence(layers)
-                             )
-    pack = ag.Pack(concat)
+    args   = ag.ArgsGen(*rawargs)
+    concat = ag.ConcatArgs(
+                           util.Sequence(nodes), 
+                           util.Sequence(sources), 
+                           util.Sequence(layers)
+                          )
+    pack = ag.PackArgs(concat)
 
-    return ArgsData(args, concat, pack,
-                    adxs, nodes, sources, layers, values, rawargs)
+    return ArgsData(
+                    args,   concat, pack,
+                    adxs,   nodes,  sources, 
+                    layers, values, rawargs
+                   )
 
 
 
@@ -220,7 +224,7 @@ def concat_dat(n, adxs, layers):
         _sources = util.Sequence(x.sources[:size])
         _layers  = util.Sequence(x.layers[:size])
 
-        _concat  = ag.Concatenation(_nodes, _sources, _layers)
+        _concat  = ag.ConcatArgs(_nodes, _sources, _layers)
 
         concat_history.append(_concat)
          
@@ -228,7 +232,7 @@ def concat_dat(n, adxs, layers):
     sources = util.Sequence(x.sources)
     layers  = util.Sequence(x.layers)
 
-    concat  = ag.Concatenation(nodes, sources, layers)
+    concat  = ag.ConcatArgs(nodes, sources, layers)
 
     return ConcatData(concat, concat_history, attach_history, 
                       nodes, sources, layers)
@@ -305,8 +309,13 @@ def concat_output_dat(n, adxs, layers):
            }[n, adxs, layers]()
 
 
-    return ConcatOutputData(x.concat, case[0], case[1], 
-                            an.Parents(*case[2]), ag.Args(*case[3]))
+    return ConcatOutputData(
+              x.concat, 
+              case[0], 
+              case[1], 
+              an.ParentsGen(*case[2]), 
+              ag.ArgsGen(*case[3])
+           )
 
 
 
@@ -331,20 +340,20 @@ PackData = collections.namedtuple("PackData", [
 
 def pack_dat(valency=1, layer=0):
  
-    deshelled_pack = fake.Packable()
-    deshelled_args = fake.ArgsLike(pack=fake.Fun(deshelled_pack))
+    deshelled_pack = fake.Pack()
+    deshelled_args = fake.Args(pack=fake.Fun(deshelled_pack))
 
     if   layer == misc.minlayer():
          source  = fake.Value()
          node    = an.point(source)         
     else:
-         source  = fake.NodeLike()
-         node    = fake.NodeLike()
+         source  = fake.Node()
+         node    = fake.Node()
 
     funwrap = fake.Fun(None)
     adxs    = arepeat(fake.Value, valency)
-    op      = an.AdjointOp(funwrap, adxs, source, deshelled_args)
-    parents = fake.Parental(next=fake.Fun(node, source, layer, op))  
+    op      = an.AdjointOpGen(funwrap, adxs, source, deshelled_args)
+    parents = fake.Parents(next=fake.Fun(node, source, layer, op))  
 
     concat = fake.Cohesive(
                            layer=fake.Fun(layer),
@@ -352,7 +361,7 @@ def pack_dat(valency=1, layer=0):
                            parents=fake.Fun(parents),
                            deshell=fake.Fun(deshelled_args)
                           )
-    pack = ag.Pack(concat)
+    pack = ag.PackArgs(concat)
 
     return PackData(
                     pack, 
@@ -387,7 +396,7 @@ def envelope_dat(stackdat):
 
         for _nodes in nodes:
 
-           _args  = ag.Args(*_nodes)
+           _args  = ag.ArgsGen(*_nodes)
            _packs = _args.pack()
 
            packs.append(_packs)
@@ -397,10 +406,9 @@ def envelope_dat(stackdat):
 
     packs = make_packs()
 
-    outnode = stackdat.outnodes[-1]
-    args    = ag.Args(*stackdat.nodes[-1])
-
-    envelope = ag.Envelope(args)
+    outnode  = stackdat.outnodes[-1]
+    args     = ag.ArgsGen(*stackdat.nodes[-1])
+    envelope = ag.EnvelopeArgs(args)
 
     return EnvelopeData(
                         envelope, 
@@ -435,13 +443,13 @@ def node_stack_dat_001(gatetype="REVERSE"):
     def gate(parents, op=None):
 
         if op is None:
-           op = fake.OpWithAdjoint()
+           op = fake.AdjointOp()
 
-        parents = an.Parents(*parents)
+        parents = an.ParentsGen(*parents)
 
         return {
-                "REVERSE": an.ReverseGate, 
-                "FORWARD": an.ForwardGate,
+                "REVERSE": an.GateReverse, 
+                "FORWARD": an.GateForward,
                }[gatetype](parents, op)
 
 
@@ -459,10 +467,10 @@ def node_stack_dat_001(gatetype="REVERSE"):
     adxsC = (1,2)
     adxsD = (0,)
 
-    parentsA = (tuple(),                   tuple(),                   tuple())
-    parentsB = (tuple(),                   arepeat(fake.NodeLike, 3), tuple()) 
-    parentsC = (parentsB[0],               arepeat(fake.NodeLike, 1), arepeat(fake.NodeLike, 2))
-    parentsD = (arepeat(fake.NodeLike, 2), parentsC[1],               parentsC[2])
+    parentsA = (tuple(),               tuple(),               tuple())
+    parentsB = (tuple(),               arepeat(fake.Node, 3), tuple()) 
+    parentsC = (parentsB[0],           arepeat(fake.Node, 1), arepeat(fake.Node, 2))
+    parentsD = (arepeat(fake.Node, 2), parentsC[1],           parentsC[2])
 
     nodesA = amap(an.point, values)
     nodesB = (
@@ -500,18 +508,18 @@ def node_stack_dat_001(gatetype="REVERSE"):
     funwrap = fake.Fun(None)
 
     outnodeA = an.point(outvalue)
-    outnodeB = an.node(outnodeA, 0, gate(outparentsB, an.AdjointOp(funwrap, adxsB, outnodeA, ag.Args(*nodesA))))
-    outnodeC = an.node(outnodeB, 1, gate(outparentsC, an.AdjointOp(funwrap, adxsC, outnodeB, ag.Args(*nodesB))))
-    outnodeD = an.node(outnodeC, 2, gate(outparentsD, an.AdjointOp(funwrap, adxsD, outnodeC, ag.Args(*nodesC))))
+    outnodeB = an.node(outnodeA, 0, gate(outparentsB, an.AdjointOpGen(funwrap, adxsB, outnodeA, ag.ArgsGen(*nodesA))))
+    outnodeC = an.node(outnodeB, 1, gate(outparentsC, an.AdjointOpGen(funwrap, adxsC, outnodeB, ag.ArgsGen(*nodesB))))
+    outnodeD = an.node(outnodeC, 2, gate(outparentsD, an.AdjointOpGen(funwrap, adxsD, outnodeC, ag.ArgsGen(*nodesC))))
 
     outnodes   = (outnodeA,    outnodeB,    outnodeC,    outnodeD)
     outparents = (outparentsA, outparentsB, outparentsC, outparentsD)
 
     return NodeStackData(
                          outnodes, outparents, outvalue, 
-                         nodes, parents, values,
-                         layers, adxs,
-                         fun, funwrap,
+                         nodes,    parents,   values,
+                         layers,   adxs,
+                         fun,      funwrap,
                         )
 
 
@@ -547,20 +555,10 @@ def node_stack_dat_002(gatetype="REVERSE"):
 
     return NodeStackData(
                          outnodes, outparents, outvalue, 
-                         nodes, parents, values,
-                         layers, adxs,
-                         fun, funwrap,
+                         nodes,    parents,    values,
+                         layers,   adxs,
+                         fun,      funwrap,
                         )
-
-
-
-
-
-
-
-
-
-
 
 
 

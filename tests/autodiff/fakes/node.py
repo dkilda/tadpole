@@ -3,8 +3,8 @@
 
 from tests.common import arepeat, arange, amap
 
-import tests.autodiff.fakes  as fake
-import tadpole.autodiff.node as an
+import tests.autodiff.fakes   as fake
+import tadpole.autodiff.types as at
 
 
 
@@ -17,9 +17,9 @@ import tadpole.autodiff.node as an
 ###############################################################################
 
 
-# --- OpWithAdjoint interface ----------------------------------------------- #
+# --- Adjoint operator ------------------------------------------------------ #
 
-class OpWithAdjoint(an.OpWithAdjoint):
+class AdjointOp(at.AdjointOp):
 
    def __init__(self, **data):  
 
@@ -45,9 +45,9 @@ class OpWithAdjoint(an.OpWithAdjoint):
 ###############################################################################
 
 
-# --- FlowLike interface ---------------------------------------------------- #
+# --- Flow ------------------------------------------------------------------ #
 
-class FlowLike(an.FlowLike):
+class Flow(at.Flow):
 
    def __init__(self, **data):  
 
@@ -76,7 +76,7 @@ class FlowLike(an.FlowLike):
  
    def gate(self, parents, op):
 
-       return self._fun["gate", GateLike()](parents, op)
+       return self._fun["gate", Gate()](parents, op)
 
 
 
@@ -88,9 +88,9 @@ class FlowLike(an.FlowLike):
 ###############################################################################
 
 
-# --- GateLike interface ---------------------------------------------------- #
+# --- Gate type ------------------------------------------------------------- #
 
-class GateLike(an.GateLike):
+class Gate(at.Gate):
 
    def __init__(self, **data):  
 
@@ -99,7 +99,7 @@ class GateLike(an.GateLike):
 
    def flow(self):
 
-       return self._fun["flow", FlowLike()]()
+       return self._fun["flow", Flow()]()
 
 
    def trace(self, node, traceable):
@@ -121,9 +121,9 @@ class GateLike(an.GateLike):
 ###############################################################################
 
 
-# --- NodeLike interface ---------------------------------------------------- #
+# --- Node type ------------------------------------------------------------- #
 
-class NodeLike(an.NodeLike):
+class Node(at.Node):
 
    def __init__(self, **data):  
 
@@ -142,7 +142,7 @@ class NodeLike(an.NodeLike):
 
    def flow(self):
 
-       return self._fun["flow", FlowLike()]()
+       return self._fun["flow", Flow()]()
 
 
    def trace(self, traceable):
@@ -164,18 +164,54 @@ class NodeLike(an.NodeLike):
 ###############################################################################
 
 
-# --- Parental interface ---------------------------------------------------- #
+# --- Parents type ---------------------------------------------------------- #
 
-class Parental(an.Parental):
+class Parents(at.Parents):
 
    def __init__(self, **data):  
 
        self._fun = fake.FunMap(**data)
 
 
+   @property
+   def _items(self):
+
+       return self._fun["items", tuple()]()
+
+
+   def __eq__(self, other):
+
+       return id(self) == id(other)
+
+
+   def __hash__(self):
+
+       return id(self)
+
+
+   def __len__(self):
+
+       return len(self._items)
+
+
+   def __contains__(self, x):
+
+       return x in self._items
+
+
+   def __iter__(self):
+
+       return iter(self._items)
+
+
+   def __getitem__(self, idx):
+
+       return self._items[idx] 
+
+
    def next(self, source, layer, op):
 
-       return self._fun["next", NodeLike()](source, layer, op)
+       return self._fun["next", Node()](source, layer, op)
 
 
 

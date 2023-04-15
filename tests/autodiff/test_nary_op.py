@@ -7,8 +7,9 @@ from tests.common import arepeat, arange, amap
 import tests.autodiff.fakes as fake
 import tests.autodiff.data  as data
 
-import tadpole.util          as util
-import tadpole.autodiff.nary as nary
+import tadpole.util           as util
+import tadpole.autodiff.types as at
+import tadpole.autodiff.nary  as nary
 
 
 
@@ -25,8 +26,8 @@ import tadpole.autodiff.nary as nary
 class TestNaryOp:
 
    @pytest.mark.parametrize("args, adx", [
-      [(fake.NodeLike(), fake.NodeLike(), fake.Value()),    0],
-      [(fake.NodeLike(), fake.Value(),    fake.NodeLike()), 1],
+      [(fake.Node(), fake.Node(),  fake.Value()),    0],
+      [(fake.Node(), fake.Value(), fake.Node()), 1],
    ])  
    def test_call(self, args, adx):
 
@@ -69,7 +70,7 @@ class TestNaryOp:
 
 # --- Singular argument proxy (represents a single variable in args) -------- #
 
-class TestSingularArgProxy:
+class TestArgProxySingular:
 
    @pytest.mark.parametrize("adx", [0,1,2,3])
    def test_insert(self, adx):
@@ -98,9 +99,9 @@ class TestSingularArgProxy:
    def test_argproxy(self, adx):
 
        if   adx is None:
-            ans = nary.SingularArgProxy(0)
+            ans = nary.ArgProxySingular(0)
        else:
-            ans = nary.SingularArgProxy(adx)
+            ans = nary.ArgProxySingular(adx)
 
        assert nary.argproxy(adx) == ans       
 
@@ -109,7 +110,7 @@ class TestSingularArgProxy:
 
 # --- Plural argument proxy (represents an ntuple variable in args) --------- #
 
-class TestPluralArgProxy:
+class TestArgProxyPlural:
 
    @pytest.mark.parametrize("adx", [
       (1,), (0,1), (1,3), (0,2,3), (0,3)
@@ -143,7 +144,7 @@ class TestPluralArgProxy:
    ])
    def test_argproxy(self, adx):
 
-       ans = nary.PluralArgProxy(adx)
+       ans = nary.ArgProxyPlural(adx)
        assert nary.argproxy(adx) == ans
 
 

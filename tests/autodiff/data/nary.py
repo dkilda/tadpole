@@ -6,10 +6,10 @@ import collections
 from tests.common import arepeat, arange, amap
 
 import tests.autodiff.fakes as fake
-import tests.autodiff.data  as data
 
-import tadpole.autodiff.nary as nary
-import tadpole.util          as util
+import tadpole.util           as util
+import tadpole.autodiff.types as at
+import tadpole.autodiff.nary  as nary
 
 
 
@@ -34,8 +34,8 @@ NaryOpData = collections.namedtuple("NaryOpData", [
 def nary_op_dat(args, adx):
 
     x   = args[adx]
-    x1  = fake.NodeLike()
-    out = fake.NodeLike()
+    x1  = fake.Node()
+    out = fake.Node()
 
     args1      = list(args)
     args1[adx] = x1
@@ -65,8 +65,8 @@ NaryOpCreatorData = collections.namedtuple("NaryOpCreatorData", [
 def nary_op_creator_dat(adx, proxytype):
 
     argproxy = {
-                "SINGULAR": nary.SingularArgProxy,
-                "PLURAL":   nary.PluralArgProxy,
+                "SINGULAR": nary.ArgProxySingular,
+                "PLURAL":   nary.ArgProxyPlural,
                }[proxytype](adx)  
 
     def fun(*args): 
@@ -102,7 +102,7 @@ def singular_argproxy_dat(adx):
              3: lambda: (args[0], args[1], args[2], x),
             }[adx]()
 
-    argproxy = nary.SingularArgProxy(adx)
+    argproxy = nary.ArgProxySingular(adx)
 
     return ArgProxyData(argproxy, adx, x, args, args1)
 
@@ -121,7 +121,7 @@ def plural_argproxy_dat(adx):
              (0,3):   lambda: (x[0],    args[1], args[2], x[1]),
             }[adx]()
 
-    argproxy = nary.PluralArgProxy(adx)
+    argproxy = nary.ArgProxyPlural(adx)
 
     return ArgProxyData(argproxy, adx, x, args, args1)
 
@@ -136,7 +136,7 @@ def singular_argproxy_dat_001():
     args  = tuple()
     args1 = (x,)
 
-    argproxy = nary.SingularArgProxy(adx)
+    argproxy = nary.ArgProxySingular(adx)
 
     return ArgProxyData(argproxy, adx, x, args, args1)
 
@@ -151,7 +151,7 @@ def plural_argproxy_dat_001():
     args  = tuple()
     args1 = tuple(x)
 
-    argproxy = nary.PluralArgProxy(adx)
+    argproxy = nary.ArgProxyPlural(adx)
 
     return ArgProxyData(argproxy, adx, x, args, args1)    
 

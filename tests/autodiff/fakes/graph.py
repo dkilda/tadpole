@@ -6,9 +6,8 @@ from tests.common import arepeat, arange, amap
 import tests.autodiff.fakes as fake
 
 import tadpole.util           as util
+import tadpole.autodiff.types as at
 import tadpole.autodiff.misc  as misc
-import tadpole.autodiff.node  as an
-import tadpole.autodiff.graph as ag
 
 
 
@@ -21,9 +20,9 @@ import tadpole.autodiff.graph as ag
 ###############################################################################
 
 
-# --- FunWithAdjoint interface ---------------------------------------------- #
+# --- Differentiable function type ------------------------------------------ #
 
-class FunWithAdjoint(ag.FunWithAdjoint):
+class DifferentiableFun(at.DifferentiableFun):
 
    def __init__(self, **data):  
 
@@ -54,28 +53,64 @@ class FunWithAdjoint(ag.FunWithAdjoint):
 ###############################################################################
 
 
-# --- ArgsLike interface ---------------------------------------------------- #
+# --- Function arguments ---------------------------------------------------- #
 
-class ArgsLike(ag.ArgsLike):
+class Args(at.Args):
 
    def __init__(self, **data):  
 
        self._fun = fake.FunMap(**data)
 
 
+   @property
+   def _items(self):
+
+       return self._fun["items", tuple()]()
+
+
+   def __eq__(self, other):
+
+       return id(self) == id(other)
+
+
+   def __hash__(self):
+
+       return id(self)
+
+
+   def __len__(self):
+
+       return len(self._items)
+
+
+   def __contains__(self, x):
+
+       return x in self._items
+
+
+   def __iter__(self):
+
+       return iter(self._items)
+
+
+   def __getitem__(self, idx):
+
+       return self._items[idx] 
+
+
    def nodify(self):
 
-       return self._fun["nodify", arepeat(fake.NodeLike, 2)]()
+       return self._fun["nodify", arepeat(fake.Node, 2)]()
 
  
    def concat(self):
 
-       return self._fun["concat", Concatenable()]()
+       return self._fun["concat", Sequential()]()
 
  
    def pack(self):
 
-       return self._fun["pack", Packable()]()
+       return self._fun["pack", Pack()]()
 
  
    def deshelled(self):
@@ -84,9 +119,10 @@ class ArgsLike(ag.ArgsLike):
 
 
 
-# --- Concatenable interface ------------------------------------------------ #
 
-class Concatenable(ag.Concatenable):
+# --- Sequential type ------------------------------------------------------- #
+
+class Sequential(at.Sequential):
 
    def __init__(self, **data):  
 
@@ -100,9 +136,9 @@ class Concatenable(ag.Concatenable):
 
 
 
-# --- Cohesive interface ---------------------------------------------------- #
+# --- Cohesive type --------------------------------------------------------- #
 
-class Cohesive(ag.Cohesive):
+class Cohesive(at.Cohesive):
 
    def __init__(self, **data):  
 
@@ -126,12 +162,12 @@ class Cohesive(ag.Cohesive):
 
    def parents(self):
 
-       return self._fun["parents", fake.Parental()]()
+       return self._fun["parents", fake.Parents()]()
 
 
    def deshell(self):
 
-       return self._fun["deshell", ArgsLike()]()
+       return self._fun["deshell", Args()]()
 
 
 
@@ -144,9 +180,9 @@ class Cohesive(ag.Cohesive):
 ###############################################################################
 
 
-# --- Packable interface ---------------------------------------------------- #
+# --- Pack type ------------------------------------------------------------- #
 
-class Packable(ag.Packable):
+class Pack(at.Pack):
 
    def __init__(self, **data):  
 
@@ -160,7 +196,7 @@ class Packable(ag.Packable):
 
    def deshell(self):
 
-       return self._fun["deshell", ArgsLike()]()
+       return self._fun["deshell", Args()]()
 
 
    def deshelled(self):
@@ -170,14 +206,14 @@ class Packable(ag.Packable):
 
    def fold(self, funwrap, out):
 
-       return self._fun["fold", fake.NodeLike()](funwrap, out)
+       return self._fun["fold", fake.Node()](funwrap, out)
 
 
 
 
-# --- EnvelopeLike interface ------------------------------------------------ #
+# --- Envelope type --------------------------------------------------------- #
 
-class EnvelopeLike(ag.EnvelopeLike): 
+class Envelope(at.Envelope): 
 
    def __init__(self, **data):  
 
@@ -187,8 +223,8 @@ class EnvelopeLike(ag.EnvelopeLike):
    def packs(self):
 
        default = util.Loop(
-                           Packable(), 
-                           lambda x: Packable(), 
+                           Pack(), 
+                           lambda x: Pack(), 
                            lambda x: True
                           )
 
@@ -202,7 +238,7 @@ class EnvelopeLike(ag.EnvelopeLike):
 
    def applywrap(self, funwrap, fun):
 
-       return self._fun["applywrap", fake.NodeLike()](funwrap, fun)
+       return self._fun["applywrap", fake.Node()](funwrap, fun)
 
 
 

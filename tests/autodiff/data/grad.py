@@ -9,6 +9,7 @@ import tests.autodiff.fakes as fake
 import tests.autodiff.data  as data
 
 import tadpole.util           as util
+import tadpole.autodiff.types as at
 import tadpole.autodiff.node  as an
 import tadpole.autodiff.graph as ag
 import tadpole.autodiff.grad  as ad
@@ -55,11 +56,11 @@ def diffop_dat(which):
 # --- Child count ----------------------------------------------------------- #
 
 ChildCountData = collections.namedtuple("ChildCountData", [
-                    "count", "count1", "count2",
+                    "count",     "count1",     "count2",
                     "parentmap", "parentmap1", "parentmap2",
-                    "countmap", "countmap1", "countmap2",
-                    "node", "node1", 
-                    "parents", "parents1",
+                    "countmap",  "countmap1",  "countmap2",
+                    "node",      "node1", 
+                    "parents",   "parents1",
                  ])
 
 
@@ -82,10 +83,10 @@ def childcount_dat(valency=1, **countmaps):
     count1 = ad.ChildCount(parentmap1, countmap1)
     count2 = ad.ChildCount(parentmap2, countmap2) 
 
-    return ChildCountData(count, count1, count2,     
-                          parentmap, parentmap1, parentmap2, 
-                          countmap, countmap1, countmap2,
-                          dat.node, dat1.node, 
+    return ChildCountData(count,       count1,       count2,     
+                          parentmap,   parentmap1,   parentmap2, 
+                          countmap,    countmap1,    countmap2,
+                          dat.node,    dat1.node, 
                           dat.parents, dat1.parents)
 
 

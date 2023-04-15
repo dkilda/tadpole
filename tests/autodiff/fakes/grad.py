@@ -6,6 +6,7 @@ from tests.common import arepeat, arange, amap
 import tests.autodiff.fakes as fake
 
 import tadpole.util           as util
+import tadpole.autodiff.types as at
 import tadpole.autodiff.node  as an
 import tadpole.autodiff.graph as ag
 import tadpole.autodiff.grad  as ad
@@ -22,7 +23,7 @@ import tadpole.autodiff.grad  as ad
 
 # --- Gradient propagation interface ---------------------------------------- #
 
-class Propagation(ad.Propagation):
+class Propagation(at.Propagation):
 
    def __init__(self, **data):  
 
@@ -31,7 +32,7 @@ class Propagation(ad.Propagation):
 
    def graphop(self, fun, x):
 
-       graphop = ad.GraphOp(fake.GateLike(), fun, x)
+       graphop = ad.GraphOp(fake.Gate(), fun, x)
 
        return self._fun["graphop", graphop](fun, x)
 
@@ -52,7 +53,7 @@ class Propagation(ad.Propagation):
 
 # --- Traceable interface --------------------------------------------------- #
 
-class Traceable(ad.Traceable):
+class Traceable(at.Traceable):
 
    def __init__(self, **data):  
 
@@ -68,7 +69,7 @@ class Traceable(ad.Traceable):
 
 # --- Countable interface --------------------------------------------------- #
 
-class Countable(ad.Countable):
+class Countable(at.Countable):
 
    def __init__(self, **data):  
 
@@ -101,7 +102,7 @@ class Countable(ad.Countable):
 
 # --- Cumulative interface -------------------------------------------------- #
 
-class Cumulative(ad.Cumulative):
+class Cumulative(at.Cumulative):
 
    def __init__(self, **data):  
 

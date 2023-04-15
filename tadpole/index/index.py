@@ -139,7 +139,7 @@ class IndexGen(Index):
 
 # --- Indices --------------------------------------------------------------- #
 
-class Indices(util.TupleLike):
+class Indices(util.Tuple):
 
    # --- Construction --- #
 

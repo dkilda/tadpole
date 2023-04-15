@@ -9,6 +9,7 @@ import tests.autodiff.fakes as fake
 import tests.autodiff.data  as data
 
 import tadpole.util                as util
+import tadpole.autodiff.types      as at
 import tadpole.autodiff.adjointmap as adj
 
 

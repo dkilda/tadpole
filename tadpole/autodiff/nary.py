@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import abc
 import functools
 import tadpole.util as util
 
+
+from tadpole.autodiff.types import (
+   ArgProxy,
+)
 
 
 
@@ -136,24 +139,9 @@ def nary_op(unary_op):
 ###############################################################################
 
 
-# --- Argument proxy interface ---------------------------------------------- #
-
-class ArgProxy(abc.ABC):
-
-   @abc.abstractmethod
-   def insert(self, args, x):
-       pass
-
-   @abc.abstractmethod
-   def extract(self, args):
-       pass
-
-
-
-
 # --- Singular argument proxy (represents a single variable in args) -------- #
 
-class SingularArgProxy(ArgProxy):
+class ArgProxySingular(ArgProxy):
 
    def __init__(self, adx):
 
@@ -173,9 +161,10 @@ class SingularArgProxy(ArgProxy):
    def __eq__(self, other):
 
        log = util.LogicalChain()
-
        log.typ(self, other)
-       log.val(self._adx, other._adx)
+
+       if bool(log):
+          log.val(self._adx, other._adx)
 
        return bool(log)
 
@@ -197,7 +186,7 @@ class SingularArgProxy(ArgProxy):
 
 # --- Plural argument proxy (represents an ntuple variable in args) --------- #
 
-class PluralArgProxy(ArgProxy):
+class ArgProxyPlural(ArgProxy):
 
    def __init__(self, adx):
 
@@ -217,9 +206,10 @@ class PluralArgProxy(ArgProxy):
    def __eq__(self, other):
 
        log = util.LogicalChain()
-
        log.typ(self, other)
-       log.val(self._adx, other._adx)
+
+       if bool(log):
+          log.val(self._adx, other._adx)
 
        return bool(log)
 
@@ -249,9 +239,9 @@ def argproxy(adx):
        adx = 0
 
     if isinstance(adx, int):
-       return SingularArgProxy(adx)
+       return ArgProxySingular(adx)
 
-    return PluralArgProxy(adx)
+    return ArgProxyPlural(adx)
 
 
 

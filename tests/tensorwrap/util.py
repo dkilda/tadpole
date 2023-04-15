@@ -69,7 +69,7 @@ def numerical_grad(fun, x, eps=1e-6):
 
 def assert_vjp(fun, x):
 
-    op = agrad.ReverseDifferentialOp(fun, x)
+    op = agrad.DifferentialOpReverse(fun, x)
     y  = op.evaluate()
 
     dx = tn.space(x).randn()
@@ -97,7 +97,7 @@ def assert_vjp(fun, x):
 
 def assert_jvp(fun, x):
 
-    op = agrad.ForwardDifferentialOp(fun, x)
+    op = agrad.DifferentialOpForward(fun, x)
     dx = tn.space(x).randn()
 
     jv_out = op.grad(dx)
@@ -134,8 +134,8 @@ def assert_grad(fun, x, modes=("vjp", "jvp"), order=1): # TODO CHANGE BACK TO or
            def gradfun(x, g):
 
                op = {
-                     "vjp": agrad.ReverseDifferentialOp, 
-                     "jvp": agrad.ForwardDifferentialOp,
+                     "vjp": agrad.DifferentialOpReverse, 
+                     "jvp": agrad.DifferentialOpForward,
                     }[mode](fun, x)
 
                return op.grad(g)

@@ -20,7 +20,7 @@ from tadpole.tensor import (
 
 # --- Node wrapper for TensorLike objects ----------------------------------- #
 
-class Node(an.Node, tn.Tensor): 
+class Node(an.NodeGen, tn.Tensor): 
 
    # --- Tensor methods: gradient accumulation --- #
 

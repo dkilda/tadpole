@@ -8,6 +8,13 @@ import tadpole.autodiff.adjointmap as adjointmap
 
 
 
+###############################################################################
+###                                                                         ###
+###  Adjoint map wrappers                                                   ###
+###                                                                         ###
+###############################################################################
+
+
 # --- A global instance of VJP map and its access ports --------------------- # 
 
 _VJPMAP = adjointmap.VjpMap()
@@ -52,12 +59,19 @@ def makejvp_raw(fun, adjfun):
 
 
 
+###############################################################################
+###                                                                         ###
+###  Differentiable and non-differentiable function wrappers                ###
+###                                                                         ###
+###############################################################################
+
+
 # --- Differentiable function wrap ------------------------------------------ #
 
 def differentiable(fun):
 
     def envelope(*args, **kwargs):
-        return ag.Envelope(*args, **kwargs)
+        return ag.EnvelopeArgs(*args, **kwargs)
 
     fun = util.return_outputs(fun)
 
@@ -71,7 +85,7 @@ def differentiable(fun):
 def nondifferentiable(fun):
 
     def envelope(*args, **kwargs):
-        return ag.Envelope(*args, **kwargs)
+        return ag.EnvelopeArgs(*args, **kwargs)
 
     fun = util.return_outputs(fun)
 

@@ -8,6 +8,7 @@ import tests.autodiff.fakes as fake
 import tests.autodiff.data  as data
 
 import tadpole.util           as util
+import tadpole.autodiff.types as at
 import tadpole.autodiff.node  as an
 import tadpole.autodiff.graph as ag
 import tadpole.autodiff.grad  as ad
@@ -58,12 +59,12 @@ class TestDifferentialOp:
 
 # --- Forward gradient propagation ------------------------------------------ #
 
-class TestForwardPropagation:
+class TestPropagationForward:
 
    def test_graphop(self):
 
        dat  = data.graph_dat("FORWARD")
-       prop = ad.ForwardPropagation()
+       prop = ad.PropagationForward()
 
        assert prop.graphop(dat.fun, dat.x) == dat.graphop
 
@@ -72,7 +73,7 @@ class TestForwardPropagation:
    def test_accum(self, layer):
 
        network = data.forward_node_network_dat(layer)
-       prop    = ad.ForwardPropagation()
+       prop    = ad.PropagationForward()
 
        end   = network.end
        start = network.leaves[0]
@@ -87,12 +88,12 @@ class TestForwardPropagation:
 
 # --- Reverse gradient propagation ------------------------------------------ #
 
-class TestReversePropagation:
+class TestPropagationReverse:
 
    def test_graphop(self):
 
        dat  = data.graph_dat("REVERSE")
-       prop = ad.ReversePropagation()
+       prop = ad.PropagationReverse()
 
        assert prop.graphop(dat.fun, dat.x) == dat.graphop
 
@@ -101,7 +102,7 @@ class TestReversePropagation:
    def test_accum(self, layer):
 
        network = data.reverse_node_network_dat(layer)
-       prop    = ad.ReversePropagation()
+       prop    = ad.PropagationReverse()
 
        end   = network.end
        start = network.leaves[0]

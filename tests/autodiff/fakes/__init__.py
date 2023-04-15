@@ -17,21 +17,21 @@ from .nary import (
 
 
 from .node import (
-   OpWithAdjoint,
-   FlowLike,
-   GateLike,
-   NodeLike,
-   Parental,
+   AdjointOp,
+   Flow,
+   Gate,
+   Node,
+   Parents,
 )
 
 
 from .graph import (
-   FunWithAdjoint,
-   ArgsLike,
-   Concatenable,
+   DifferentiableFun,
+   Args,
+   Sequential,
    Cohesive,
-   Packable,
-   EnvelopeLike,
+   Pack,
+   Envelope,
 )
 
 

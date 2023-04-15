@@ -9,10 +9,11 @@ import tests.autodiff.fakes as fake
 import tests.autodiff.data  as data
 
 import tadpole.util           as util
-import tadpole.autodiff.misc  as misc
+import tadpole.autodiff.types as at
 import tadpole.autodiff.node  as an
 import tadpole.autodiff.graph as ag
 import tadpole.autodiff.grad  as ad
+import tadpole.autodiff.misc  as misc
 
 import tadpole.autodiff.adjointmap as adj 
 
@@ -55,7 +56,7 @@ class TestGraph:
 
        dat = data.graph_dat(which, 1)
 
-       with ag.Graph(fake.GateLike()) as graph0:
+       with ag.Graph(fake.Gate()) as graph0:
           with ag.Graph(dat.root) as graph1:
              assert graph1.build(dat.fun, dat.x) == dat.end
 
@@ -65,8 +66,8 @@ class TestGraph:
 
        dat = data.graph_dat(which, 2)
 
-       with ag.Graph(fake.GateLike()) as graph0:
-          with ag.Graph(fake.GateLike()) as graph1:
+       with ag.Graph(fake.Gate()) as graph0:
+          with ag.Graph(fake.Gate()) as graph1:
              with ag.Graph(dat.root) as graph2:
                 assert graph2.build(dat.fun, dat.x) == dat.end
 
@@ -79,7 +80,7 @@ class TestGraph:
        dat = data.graph_dat(which, 0)
 
        with ag.Graph(dat.root) as graph0:
-          with ag.Graph(fake.GateLike()) as graph1:
+          with ag.Graph(fake.Gate()) as graph1:
              pass
           assert graph0.build(dat.fun, dat.x) == dat.end
 
@@ -90,8 +91,8 @@ class TestGraph:
        dat = data.graph_dat(which, 0)
 
        with ag.Graph(dat.root) as graph0:
-          with ag.Graph(fake.GateLike()) as graph1:
-             with ag.Graph(fake.GateLike()) as graph2:
+          with ag.Graph(fake.Gate()) as graph1:
+             with ag.Graph(fake.Gate()) as graph2:
                 pass
           assert graph0.build(dat.fun, dat.x) == dat.end
 
@@ -252,8 +253,8 @@ class TestArgs:
 
        x = data.args_dat(n, adxs, layers)
 
-       argsA = ag.Args(*x.nodes)
-       argsB = ag.Args(*x.nodes)
+       argsA = ag.ArgsGen(*x.nodes)
+       argsB = ag.ArgsGen(*x.nodes)
 
        assert argsA == argsB
 
@@ -270,8 +271,8 @@ class TestArgs:
        x = data.args_dat(n, adxs, layers)
        y = data.args_dat(n, adxs, layers)
 
-       argsA = ag.Args(*x.nodes)
-       argsB = ag.Args(*y.nodes)
+       argsA = ag.ArgsGen(*x.nodes)
+       argsB = ag.ArgsGen(*y.nodes)
 
        assert argsA != argsB
 

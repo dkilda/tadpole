@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import tadpole.autodiff.nary as nary
-import tests.util.fakes      as fake
+import tadpole.autodiff.types as at
+import tests.util.fakes       as fake
 
 
 
@@ -18,7 +18,7 @@ import tests.util.fakes      as fake
 
 # --- Argument proxy -------------------------------------------------------- #
 
-class ArgProxy(nary.ArgProxy):
+class ArgProxy(at.ArgProxy):
 
    def __init__(self, **data):  
 
@@ -42,10 +42,6 @@ class ArgProxy(nary.ArgProxy):
        default = fake.Fun(fake.Value())
 
        return self._get("extract", default)(args)
-
-
-
-
 
 
 

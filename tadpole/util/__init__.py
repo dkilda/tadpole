@@ -2,6 +2,11 @@
 # -*- coding: utf-8 -*-
 
 
+from tadpole.util.types import (
+   Tuple,
+)
+
+
 from tadpole.util.cache import (
    cacheable,
 )
@@ -21,7 +26,6 @@ from tadpole.util.itertools import (
 
 
 from tadpole.util.containers import (
-   TupleLike,
    Outputs,
    return_outputs,
 )

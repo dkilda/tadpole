@@ -1,14 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import abc
 import functools
 
 import tadpole.util          as util     
 import tadpole.autodiff.misc as misc
 
-from tadpole.util import TupleLike
- 
+
+from tadpole.autodiff.types import (
+   AdjointOp, 
+   Flow,
+   Gate,
+   Node,
+   Parents,
+)
+
 
 
 
@@ -20,24 +26,9 @@ from tadpole.util import TupleLike
 ###############################################################################
 
 
-# --- OpWithAdjoint interface ----------------------------------------------- #
+# --- General adjoint operator ---------------------------------------------- #
 
-class OpWithAdjoint(abc.ABC):
-
-   @abc.abstractmethod
-   def vjp(self, seed):
-       pass
-
-   @abc.abstractmethod
-   def jvp(self, seed):
-       pass
-
-
-
-
-# --- Adjoint operator ------------------------------------------------------ #
-
-class AdjointOp(OpWithAdjoint):
+class AdjointOpGen(AdjointOp):
 
    def __init__(self, fun, adxs, out, args, kwargs=None):
 
@@ -71,13 +62,14 @@ class AdjointOp(OpWithAdjoint):
    def __eq__(self, other):
 
        log = util.LogicalChain()
-
        log.typ(self, other) 
-       log.val(self._fun,    other._fun)
-       log.val(self._adxs,   other._adxs)
-       log.val(self._out,    other._out)
-       log.val(self._args,   other._args)
-       log.val(self._kwargs, other._kwargs)
+
+       if bool(log):
+          log.val(self._fun,    other._fun)
+          log.val(self._adxs,   other._adxs)
+          log.val(self._out,    other._out)
+          log.val(self._args,   other._args)
+          log.val(self._kwargs, other._kwargs)
 
        return bool(log)
 
@@ -106,7 +98,7 @@ class AdjointOp(OpWithAdjoint):
 
 # --- Null adjoint operator ------------------------------------------------- #
 
-class NullAdjointOp(OpWithAdjoint):
+class AdjointOpNull(AdjointOp):
 
    def __repr__(self):
 
@@ -144,36 +136,9 @@ class NullAdjointOp(OpWithAdjoint):
 ###############################################################################
 
 
-# --- FlowLike interface ---------------------------------------------------- #
+# --- General flow ---------------------------------------------------------- # 
 
-class FlowLike(abc.ABC):
-
-   @abc.abstractmethod
-   def __eq__(self, other):
-       pass
-
-   @abc.abstractmethod
-   def __hash__(self):
-       pass
-
-   @abc.abstractmethod
-   def __add__(self, other):
-       pass
-
-   @abc.abstractmethod
-   def __radd__(self, other):
-       pass
-
-   @abc.abstractmethod
-   def gate(self, parents, op):
-       pass
-
-
-
-
-# --- Flow ------------------------------------------------------------------ # 
-
-class Flow(FlowLike):
+class FlowGen(Flow):
 
    def __init__(self, name, fun):
 
@@ -194,9 +159,10 @@ class Flow(FlowLike):
    def __eq__(self, other):
 
        log = util.LogicalChain()
-
        log.typ(self, other)
-       log.val(self._name, other._name)
+
+       if bool(log):
+          log.val(self._name, other._name)
 
        return bool(log)
 
@@ -214,8 +180,10 @@ class Flow(FlowLike):
        if self == other:
           return self
 
-       raise ValueError((f"Flow.__add__: cannot add flows "
-                         f"with different directions {self}, {other}"))
+       raise ValueError(
+          f"{type(self).__name__}.__add__: cannot add "
+          f"flows with different directions {self}, {other}"
+       )
 
 
    def __radd__(self, other):
@@ -237,28 +205,9 @@ class Flow(FlowLike):
 ###############################################################################
 
 
-# --- GateLike interface ---------------------------------------------------- #
-
-class GateLike(abc.ABC):
-
-   @abc.abstractmethod
-   def flow(self):
-       pass
-
-   @abc.abstractmethod
-   def trace(self, node, traceable):
-       pass
-
-   @abc.abstractmethod
-   def grads(self, node, grads):
-       pass
-
-
-
-
 # --- Null logic gate ------------------------------------------------------- #
 
-class NullGate(GateLike):
+class GateNull(Gate):
 
    def __repr__(self):
 
@@ -274,10 +223,9 @@ class NullGate(GateLike):
 
    def flow(self):
 
-       return Flow(
-                   "NULL", 
-                   lambda parents, op: self.__class__()
-                  )
+       return FlowGen(
+          "NULL", lambda parents, op: self.__class__()
+       )
 
 
    def trace(self, node, traceable):
@@ -294,12 +242,12 @@ class NullGate(GateLike):
 
 # --- Forward logic gate ---------------------------------------------------- #
 
-class ForwardGate(GateLike):
+class GateForward(Gate):
 
    def __init__(self, parents=None, op=None):
 
        if parents is None: parents = tuple()
-       if op      is None: op      = NullAdjointOp()
+       if op      is None: op      = AdjointOpNull()
 
        self._parents = parents
        self._op      = op
@@ -319,10 +267,11 @@ class ForwardGate(GateLike):
    def __eq__(self, other):
 
        log = util.LogicalChain()
-
        log.typ(self, other) 
-       log.val(self._parents, other._parents)
-       log.val(self._op,      other._op)
+
+       if bool(log):
+          log.val(self._parents, other._parents)
+          log.val(self._op,      other._op)
 
        return bool(log)
 
@@ -334,10 +283,9 @@ class ForwardGate(GateLike):
 
    def flow(self):
 
-       return Flow(
-                   "FORWARD", 
-                   lambda parents, op: self.__class__(parents, op)
-                  )
+       return FlowGen(
+          "FORWARD", lambda parents, op: self.__class__(parents, op)
+       )
 
 
    def trace(self, node, traceable):
@@ -359,12 +307,12 @@ class ForwardGate(GateLike):
 
 # --- Reverse logic gate ---------------------------------------------------- #
 
-class ReverseGate(GateLike):
+class GateReverse(Gate):
 
    def __init__(self, parents=None, op=None):
 
        if parents is None: parents = tuple()
-       if op      is None: op      = NullAdjointOp()
+       if op      is None: op      = AdjointOpNull()
 
        self._parents = parents
        self._op      = op
@@ -384,10 +332,11 @@ class ReverseGate(GateLike):
    def __eq__(self, other):
 
        log = util.LogicalChain()
-
        log.typ(self, other) 
-       log.val(self._parents, other._parents)
-       log.val(self._op,      other._op)
+
+       if bool(log):
+          log.val(self._parents, other._parents)
+          log.val(self._op,      other._op)
 
        return bool(log)
 
@@ -399,10 +348,9 @@ class ReverseGate(GateLike):
 
    def flow(self):
 
-       return Flow(
-                   "REVERSE", 
-                   lambda parents, op: self.__class__(parents, op)
-                  )
+       return FlowGen(
+          "REVERSE", lambda parents, op: self.__class__(parents, op)
+       )
 
 
    def trace(self, node, traceable):
@@ -425,36 +373,9 @@ class ReverseGate(GateLike):
 ###############################################################################
 
 
-# --- NodeLike interface ---------------------------------------------------- #
+# --- General node ---------------------------------------------------------- #
 
-class NodeLike(abc.ABC):
-
-   @abc.abstractmethod
-   def connected(self):
-       pass
-
-   @abc.abstractmethod
-   def flow(self):
-       pass
-
-   @abc.abstractmethod
-   def concat(self, concatenable):
-       pass
-
-   @abc.abstractmethod
-   def trace(self, traceable):
-       pass
-
-   @abc.abstractmethod
-   def grads(self, grads):
-       pass
-
-
-
-
-# --- Node ------------------------------------------------------------------ #
-
-class Node(NodeLike): 
+class NodeGen(Node): 
 
    # --- Construction --- #
 
@@ -548,18 +469,18 @@ class NodeScape:
        try:
           return self._types[type(source)](source, layer, gate)
        except KeyError:
-          return Node(source, layer, gate)
+          return NodeGen(source, layer, gate)
 
 
    def node(self, source, layer, gate):
 
        if not (layer > misc.minlayer()):
-          raise ValueError((
-             f"NodeScape.node(): the input layer {layer} must "
-             f"be higher than the minimum layer {misc.minlayer()}."
-          ))
+          raise ValueError(
+             f"{type(self).__name__}.node(): the input layer {layer} "
+             f"must be higher than the minimum layer {misc.minlayer()}."
+          )
 
-       if not isinstance(source, NodeLike):
+       if not isinstance(source, Node):
           source = self.point(source)
 
        return self._create(source, layer, gate) 
@@ -567,7 +488,7 @@ class NodeScape:
 
    def point(self, source):
 
-       return self._create(source, misc.minlayer(), NullGate()) 
+       return self._create(source, misc.minlayer(), GateNull()) 
 
 
 
@@ -601,26 +522,17 @@ def point(source):
 ###############################################################################
 
 
-# --- Parental interface ---------------------------------------------------- #
+# --- General parents ------------------------------------------------------- #
 
-class Parental(abc.ABC):
-
-   @abc.abstractmethod
-   def next(self, source, layer, op):
-       pass
-
-
-
-
-# --- Parents --------------------------------------------------------------- #
-
-class Parents(Parental, TupleLike):  
+class ParentsGen(Parents):  
 
    def __init__(self, *parents):
 
        if not all(parent.connected() for parent in parents):
-          raise ValueError((f"Parents: all parent nodes {parents} "
-                            f"must be connected nodes. "))
+          raise ValueError(
+             f"{type(self).__name__}: all parent nodes {parents} "
+             f"must be connected nodes. "
+          )
 
        self._parents = parents
     
@@ -638,9 +550,10 @@ class Parents(Parental, TupleLike):
    def __eq__(self, other):
 
        log = util.LogicalChain()
-
        log.typ(self, other) 
-       log.ref(self._parents, other._parents)
+
+       if bool(log):
+          log.ref(self._parents, other._parents)
 
        return bool(log)
 

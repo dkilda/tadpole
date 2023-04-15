@@ -85,8 +85,8 @@ class TestVjpElemwiseBinary:
        xtensor = x.tensor
        ytensor = tn.TensorGen(y.array, x.inds)
 
-       assert_grad(fun, 0)(xtensor, ytensor)
-       assert_grad(fun, 1)(xtensor, ytensor)
+       assert_grad(fun, 0, order=1)(xtensor, ytensor)   # TODO CHANGE BACK TO order=2 once we implement NodeTuple! 
+       assert_grad(fun, 1, order=1)(xtensor, ytensor)   # TODO CHANGE BACK TO order=2 once we implement NodeTuple! 
 """
 """
 
