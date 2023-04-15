@@ -110,9 +110,8 @@ class Differentiable(DifferentiableFun):
    def __call__(self, *args, **kwargs):
 
        envelope = self._envelope(*args, **kwargs)
-       out      = envelope.applywrap(self, self._fun)
 
-       return out.unpack() 
+       return envelope.applywrap(self, self._fun)
 
 
    def vjp(self, *args, **kwargs):
@@ -148,9 +147,9 @@ class NonDifferentiable:
 
    def __call__(self, *args, **kwargs):
 
-       out = self._envelope(*args, **kwargs).apply(self._fun)
+       envelope = self._envelope(*args, **kwargs)
 
-       return out.unpack()
+       return envelope.apply(self._fun)
 
 
 
@@ -327,7 +326,7 @@ class ConcatArgs(Sequential, Cohesive):
           return tuple()
 
        return tuple( 
-          i for i,x in enumerate(self._layers) if x == self.layer()
+          i for i, x in enumerate(self._layers) if x == self.layer()
        )
 
 
@@ -440,24 +439,16 @@ class PackArgs(Pack):
        return self._args.pack(**self._kwargs)
 
 
-   def _fold(self, funwrap, outputs, out):
+   def fold(self, funwrap, out):
 
        if self.innermost():
           return an.point(out)
 
        op = an.AdjointOpGen(
-          funwrap, self._adxs, outputs, self._args, self._kwargs
+          funwrap, self._adxs, out, self._args, self._kwargs
        )
 
-       return self._parents.next(out, self._layer, op) 
-
-
-   def fold(self, funwrap, outputs):
-
-       def _fold(out):
-           return self._fold(funwrap, outputs, out)
-
-       return outputs.apply(_fold)
+       return self._parents.next(out, self._layer, op)
 
 
 

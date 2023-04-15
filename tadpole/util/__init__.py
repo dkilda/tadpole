@@ -25,12 +25,6 @@ from tadpole.util.itertools import (
 )
 
 
-from tadpole.util.containers import (
-   Outputs,
-   return_outputs,
-)
-
-
 from tadpole.util.misc import (
    LogicalChain,
    ReprChain,

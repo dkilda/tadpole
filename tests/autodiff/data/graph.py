@@ -99,7 +99,7 @@ def differentiable_funwrap_dat(args, vjpmap=None, jvpmap=None):
 
     out = fake.Node()
 
-    applywrap     = fake.Fun(util.Outputs(out))
+    applywrap     = fake.Fun(out)
     envelope      = fake.Envelope(applywrap=applywrap)
     make_envelope = fake.Fun(envelope, *args)
 
@@ -117,7 +117,7 @@ def nondifferentiable_funwrap_dat(args):
 
     out = fake.Node()
 
-    applyfun      = fake.Fun(util.Outputs(out))
+    applyfun      = fake.Fun(out)
     envelope      = fake.Envelope(**{"apply": applyfun})
     make_envelope = fake.Fun(envelope, *args)
 
@@ -331,8 +331,8 @@ def concat_output_dat(n, adxs, layers):
 # --- Argument pack (of concatenated nodes) --------------------------------- #
 
 PackData = collections.namedtuple("PackData", [
-              "pack", "deshelled", "deshell", "concat", 
-              "nodes", "sources", "funwrap", 
+              "pack",  "deshelled", "deshell", "concat", 
+              "nodes", "sources",   "funwrap", 
            ])
 
 
@@ -368,8 +368,8 @@ def pack_dat(valency=1, layer=0):
                     deshelled_pack, 
                     deshelled_args, 
                     concat, 
-                    util.Outputs(node), 
-                    util.Outputs(source), 
+                    node, 
+                    source, 
                     funwrap
                    )
 
@@ -415,8 +415,8 @@ def envelope_dat(stackdat):
                         args, 
                         packs, 
                         stackdat.nodes, 
-                        util.Outputs(outnode), 
-                        util.Outputs(stackdat.outvalue), 
+                        outnode, 
+                        stackdat.outvalue, 
                         stackdat.fun, 
                         stackdat.funwrap
                        )
@@ -504,7 +504,7 @@ def node_stack_dat_001(gatetype="REVERSE"):
     outparentsC = (nodesC[1], nodesC[2])
     outparentsD = (nodesD[0],          )
 
-    fun     = fake.Fun(util.Outputs(outvalue), *values)
+    fun     = fake.Fun(outvalue, *values)
     funwrap = fake.Fun(None)
 
     outnodeA = an.point(outvalue)
@@ -517,7 +517,7 @@ def node_stack_dat_001(gatetype="REVERSE"):
 
     return NodeStackData(
                          outnodes, outparents, outvalue, 
-                         nodes,    parents,   values,
+                         nodes,    parents,    values,
                          layers,   adxs,
                          fun,      funwrap,
                         )
@@ -550,7 +550,7 @@ def node_stack_dat_002(gatetype="REVERSE"):
     outnodes   = (outnodeA,    )
     outparents = (outparentsA, )
 
-    fun     = fake.Fun(util.Outputs(outvalue), *values)
+    fun     = fake.Fun(outvalue, *values)
     funwrap = fake.Fun(None)
 
     return NodeStackData(

@@ -32,9 +32,6 @@ class AdjointOpGen(AdjointOp):
 
    def __init__(self, fun, adxs, out, args, kwargs=None):
 
-       if not isinstance(out, util.Outputs):
-          out = util.Outputs(out)
-
        if kwargs is None:
           kwargs = {} 
  
@@ -81,7 +78,7 @@ class AdjointOpGen(AdjointOp):
 
    def _apply(self, fun):
 
-       return fun(self._adxs, self._out.unpack(), *self._args, **self._kwargs)
+       return fun(self._adxs, self._out, *self._args, **self._kwargs)
 
 
    def vjp(self, seed):

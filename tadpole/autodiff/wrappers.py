@@ -73,8 +73,6 @@ def differentiable(fun):
     def envelope(*args, **kwargs):
         return ag.EnvelopeArgs(*args, **kwargs)
 
-    fun = util.return_outputs(fun)
-
     return ag.Differentiable(fun, envelope, _VJPMAP, _JVPMAP)
 
 
@@ -86,8 +84,6 @@ def nondifferentiable(fun):
 
     def envelope(*args, **kwargs):
         return ag.EnvelopeArgs(*args, **kwargs)
-
-    fun = util.return_outputs(fun)
 
     return ag.NonDifferentiable(fun, envelope)
 
