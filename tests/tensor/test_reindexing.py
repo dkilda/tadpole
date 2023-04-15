@@ -409,6 +409,31 @@ class TestTensorReindex:
        assert out == ans
 
 
+   @pytest.mark.parametrize("inds, shape, ind, size", [
+      ["ijkl", (2,3,4,5), None, 120],
+      ["ijkl", (2,3,4,5), "a",  120],
+      ["i",    (3,),      "a",  3],
+      ["i",    (1,),      "a",  1],
+   ])
+   def test_flatten(self, inds, shape, ind, size):
+
+       w = data.tensor_dat(data.randn)(
+              self.backend, inds, shape
+           ) 
+
+       if   ind is None:
+            out  = tn.flatten(w.tensor)
+            ind, = tuple(tn.union_inds(out))
+       else:
+            ind = IndexGen(ind, size)
+            out = tn.flatten(w.tensor, ind)
+
+       ans  = ar.reshape(w.array, (size,)) 
+       ans  = tn.TensorGen(ans, (ind,))
+
+       assert out == ans
+
+
    @pytest.mark.parametrize("winds, wshape, ind", [
       ["i", (4,), "j"],
    ])

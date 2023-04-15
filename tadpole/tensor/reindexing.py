@@ -270,7 +270,10 @@ class TensorReindex:
        return self._new(output_data, output_inds) 
 
 
-   def flatten(self, ind="flat"):    
+   def flatten(self, ind=None):
+
+       if ind is None:
+          ind = "flat"    
 
        return self.fuse({self._inds: ind})
 
@@ -294,6 +297,7 @@ class TensorReindex:
           f"diag is only supported for tensors with "
           f"ndim = 1 or 2, but ndim != {self._inds.ndim}."
        )
+
 
 
 
@@ -361,7 +365,7 @@ def expand(x, inds):
 
 
 @ad.differentiable     
-def flatten(x, ind):    
+def flatten(x, ind=None):    
 
     op = tensor_reindex(x)
     return op.flatten(ind)
