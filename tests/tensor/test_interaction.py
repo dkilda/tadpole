@@ -218,34 +218,5 @@ class TestTensorInteraction:
        assert out == ans
 
 
-   """
-   @pytest.mark.parametrize("shape, inds, diffinds", [
-      [(2,3,4), "ijk", "k"],  
-      [(2,3,4), "ijk", None],     
-   ])
-   def test_unreduce_like(self, shape, inds, diffinds): # TODO move to tensorwrap tests (test vjp/jvp_reduce)
-
-       w = data.tensor_dat(data.randn)(
-              self.backend, inds, shape
-           )
-
-       target = w.tensor
-       x      = tn.amax(target, diffinds)
-
-       if   diffinds is None:
-            fun = tn.unreduce_like(x, target)
-       else:
-            fun = tn.unreduce_like(x, target, w.inds.map(*diffinds))
-
-       out    = fun(x)
-       outmax = tn.amax(out, diffinds)
-
-       assert out.space() == target.space()
-       assert tn.allclose(outmax, x)
-   """
-       
-
-
-
 
 

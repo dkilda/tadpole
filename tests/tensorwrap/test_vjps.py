@@ -61,12 +61,6 @@ class TestVjpElemwiseBinary:
        return self._backend
 
 
-   def test_vjp(self): # TODO dummy test, replace it!
-
-       backend = backends.get(self.backend)
-       assert backend.name() == self.backend
-
-
    @pytest.mark.parametrize("indnames, shape", [
       ["ijk", (2,3,4)],
    ])
@@ -87,14 +81,38 @@ class TestVjpElemwiseBinary:
 
        assert_grad(fun, 0, order=1)(xtensor, ytensor)   # TODO CHANGE BACK TO order=2 once we implement NodeTuple! 
        assert_grad(fun, 1, order=1)(xtensor, ytensor)   # TODO CHANGE BACK TO order=2 once we implement NodeTuple! 
+
+
+
+
+
+
 """
+   @pytest.mark.parametrize("shape, inds, diffinds", [
+      [(2,3,4), "ijk", "k"],  
+      [(2,3,4), "ijk", None],     
+   ])
+   def test_unreduce_like(self, shape, inds, diffinds): # TODO move to tensorwrap tests (test vjp/jvp_reduce)
+
+       w = data.tensor_dat(data.randn)(
+              self.backend, inds, shape
+           )
+
+       target = w.tensor
+       x      = tn.amax(target, diffinds)
+
+       if   diffinds is None:
+            fun = tn.unreduce_like(x, target)
+       else:
+            fun = tn.unreduce_like(x, target, w.inds.map(*diffinds))
+
+       out    = fun(x)
+       outmax = tn.amax(out, diffinds)
+
+       assert out.space() == target.space()
+       assert tn.allclose(outmax, x)
 """
-
-
-
-
-
-
+       
 
 
 
