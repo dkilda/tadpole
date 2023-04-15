@@ -12,6 +12,10 @@ import tadpole.util           as util
 import tadpole.array          as ar
 import tadpole.array.backends as backends
 
+from tests.common import (
+   available_backends,
+)
+
 
 
 

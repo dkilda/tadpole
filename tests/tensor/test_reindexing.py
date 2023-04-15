@@ -20,6 +20,11 @@ import tests.tensor.fakes as fake
 import tests.tensor.data  as data
 
 
+from tests.common import (
+   available_backends,
+)
+
+
 from tadpole.tensor.types import (
    Pluggable,
    Tensor, 
@@ -45,7 +50,7 @@ from tadpole.index import (
 
 # --- Tensor reindexing operator -------------------------------------------- #
 
-@pytest.mark.parametrize("current_backend", ["numpy_backend"], indirect=True)
+@pytest.mark.parametrize("current_backend", available_backends, indirect=True)
 class TestTensorReindex:
 
    @pytest.fixture(autouse=True)

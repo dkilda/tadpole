@@ -21,11 +21,11 @@ import tadpole.array.backends as backends
 
 from tests.common import (
    options,
+   available_backends,
 )
 
 
-# TODO use this: 
-# pytest util autodiff global array
+
 
 ###############################################################################
 ###                                                                         ###
@@ -36,7 +36,7 @@ from tests.common import (
 
 # --- Array Space ----------------------------------------------------------- #
 
-@pytest.mark.parametrize("current_backend", ["numpy_backend"], indirect=True)
+@pytest.mark.parametrize("current_backend", available_backends, indirect=True)
 class TestArraySpace:
 
    @pytest.fixture(autouse=True)

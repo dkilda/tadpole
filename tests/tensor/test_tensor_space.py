@@ -21,6 +21,11 @@ import tests.tensor.data  as data
 import tests.array.data   as ardata
 
 
+from tests.common import (
+   available_backends,
+)
+
+
 from tadpole.tensor.types import (
    Pluggable,
    Tensor, 
@@ -46,7 +51,7 @@ from tadpole.index import (
 
 # --- TensorSpace ----------------------------------------------------------- #
 
-@pytest.mark.parametrize("current_backend", ["numpy_backend"], indirect=True)
+@pytest.mark.parametrize("current_backend", available_backends, indirect=True)
 class TestTensorSpace:
 
    @pytest.fixture(autouse=True)

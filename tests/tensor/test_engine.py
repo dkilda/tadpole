@@ -19,6 +19,11 @@ import tests.tensor.fakes as fake
 import tests.tensor.data  as data
 
 
+from tests.common import (
+   available_backends,
+)
+
+
 from tadpole.tensor.types import (
    Pluggable,
    Tensor, 
@@ -44,7 +49,7 @@ from tadpole.index import (
 
 # --- Train of tensor data/metadata ----------------------------------------- #
 
-@pytest.mark.parametrize("current_backend", ["numpy_backend"], indirect=True)
+@pytest.mark.parametrize("current_backend", available_backends, indirect=True)
 class TestTrainTensorData:
 
    @pytest.fixture(autouse=True)
@@ -122,7 +127,7 @@ class TestTrainTensorData:
 
 # --- Unary engine ---------------------------------------------------------- #
 
-@pytest.mark.parametrize("current_backend", ["numpy_backend"], indirect=True)
+@pytest.mark.parametrize("current_backend", available_backends, indirect=True)
 class TestEngineUnary:
 
    @pytest.fixture(autouse=True)
@@ -184,7 +189,7 @@ class TestEngineUnary:
 
 # --- Elementwise engine ---------------------------------------------------- #
 
-@pytest.mark.parametrize("current_backend", ["numpy_backend"], indirect=True)
+@pytest.mark.parametrize("current_backend", available_backends, indirect=True)
 class TestEngineElemwise:
 
    @pytest.fixture(autouse=True)

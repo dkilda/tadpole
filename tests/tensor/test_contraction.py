@@ -20,6 +20,11 @@ import tests.tensor.fakes as fake
 import tests.tensor.data  as data
 
 
+from tests.common import (
+   available_backends,
+)
+
+
 from tadpole.tensor.types import (
    Pluggable,
    Tensor, 
@@ -124,7 +129,7 @@ class TestIndexProduct:
 
 # --- Tensor contraction operator ------------------------------------------- #
 
-@pytest.mark.parametrize("current_backend", ["numpy_backend"], indirect=True)
+@pytest.mark.parametrize("current_backend", available_backends, indirect=True)
 class TestTensorContract:
 
    @pytest.fixture(autouse=True)

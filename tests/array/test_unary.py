@@ -20,7 +20,9 @@ import tadpole.array.backends as backends
 
 from tests.common import (
    options,
+   available_backends,
 )
+
 
 
 
@@ -33,7 +35,7 @@ from tests.common import (
 
 # --- Type cast for unary functions ----------------------------------------- #
 
-@pytest.mark.parametrize("current_backend", ["numpy_backend"], indirect=True)
+@pytest.mark.parametrize("current_backend", available_backends, indirect=True)
 class TestTypeCast:
 
    @pytest.fixture(autouse=True)
@@ -69,7 +71,7 @@ class TestTypeCast:
 
 # --- Unary Array ----------------------------------------------------------- #
 
-@pytest.mark.parametrize("current_backend", ["numpy_backend"], indirect=True)
+@pytest.mark.parametrize("current_backend", available_backends, indirect=True)
 class TestArray:
 
    @pytest.fixture(autouse=True)
@@ -976,7 +978,7 @@ class TestArray:
 
    # --- Linear algebra: matrix exponential --- #
 
-   @pytest.mark.parametrize("shape", [(4,4)]) # TODO update your scipy to enable non-matrix arrays!
+   @pytest.mark.parametrize("shape", [(4,4)]) 
    @pytest.mark.parametrize("dtype", ["complex128"])
    def test_expm(self, shape, dtype):
 

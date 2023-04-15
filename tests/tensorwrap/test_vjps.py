@@ -20,12 +20,12 @@ import tests.tensorwrap.fakes as fake
 import tests.tensorwrap.data  as data
 
 
-from tests.tensorwrap.util import (
-   assert_grad,
+from tests.common import (
+   available_backends,
 )
 
-from tests.tensorwrap.conftest import (
-   available_backends,
+from tests.tensorwrap.util import (
+   assert_grad,
 )
 
 from tadpole.index import (

@@ -9,6 +9,13 @@ import numpy as np
 
 
 
+# --- Available backends ---------------------------------------------------- #
+
+available_backends = ["numpy_backend"]
+
+
+
+
 # --- Equality comparisons -------------------------------------------------- #
 
 def allclose(x, y, rtol=2**(-16), atol=2**(-32)):

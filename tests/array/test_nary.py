@@ -20,6 +20,7 @@ import tadpole.array.backends as backends
 
 from tests.common import (
    options,
+   available_backends,
 )
 
 
@@ -34,7 +35,7 @@ from tests.common import (
 
 # --- Nary Array ------------------------------------------------------------ #
 
-@pytest.mark.parametrize("current_backend", ["numpy_backend"], indirect=True)
+@pytest.mark.parametrize("current_backend", available_backends, indirect=True)
 class TestArray:
 
    @pytest.fixture(autouse=True)
