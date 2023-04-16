@@ -24,25 +24,29 @@ class Pluggable(abc.ABC):
 
 
 
-# --- Tensor ---------------------------------------------------------------- #
+# --- Grad ------------------------------------------------------------------ #
 
-class Tensor(abc.ABC):
-
-   # --- Gradient accumulation --- #
+class Grad(abc.ABC):
 
    @abc.abstractmethod
    def addto(self, other):
        pass
 
+   @abc.abstractmethod
+   def todense(self):
+       pass
+
+
+
+
+# --- Tensor ---------------------------------------------------------------- #
+
+class Tensor(abc.ABC):
 
    # --- Basic functionality --- #
 
    @abc.abstractmethod
    def copy(self, **opts):
-       pass
-
-   @abc.abstractmethod
-   def todense(self):
        pass
 
    @abc.abstractmethod

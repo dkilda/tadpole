@@ -11,7 +11,7 @@ from . import tensor_jvps
 
 
 from .node import (
-   Node,
+   NodeTensor,
 )
 
 

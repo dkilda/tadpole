@@ -25,7 +25,7 @@ def allclose(x, y, rtol=2**(-16), atol=2**(-32)):
 
 
 
-# --- Tuple-of-objects creation --------------------------------------------- #
+# --- Create object containers ---------------------------------------------- #
 
 def arepeat(creator, n): 
 

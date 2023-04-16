@@ -228,7 +228,7 @@ class TestIndices:
        assert out is not w.inds
 
        
-   # --- Tuple-like methods --- #
+   # --- Container methods --- #
 
    @pytest.mark.parametrize("tags, shape", [ 
       ["ijk", (2,3,4)],

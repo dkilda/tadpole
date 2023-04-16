@@ -9,9 +9,10 @@ import tadpole.util as util
 
 
 
+
 ###############################################################################
 ###                                                                         ###
-### Concatenation tools                                                     ###
+###  General content manipulation tools                                     ###
 ###                                                                         ###
 ###############################################################################
 
@@ -54,9 +55,18 @@ def complement(xs, ys):
 
 
 
+# --- Create range from slice ----------------------------------------------- #
+
+def range_from_slice(x):
+
+    return range(*x.indices(x.stop)) 
+
+
+
+
 ###############################################################################
 ###                                                                         ###
-### Sorting tools.                                                          ###
+###  Sorting tools                                                          ###
 ###                                                                         ###
 ###############################################################################
 
@@ -81,7 +91,7 @@ def relsort(xs, ys):
 
 ###############################################################################
 ###                                                                         ###
-### Mapping tools                                                           ###
+###  Mapping tools                                                          ###
 ###                                                                         ###
 ###############################################################################
 
@@ -102,10 +112,10 @@ def inverted_dict(dct):
 
 ###############################################################################
 ###                                                                         ###
-### Customized loop iterator.                                               ###
-### Defined by the first item and the next and stop functions, instead of   ###
-### a range. Can be traversed in forward and reverse directions, keeps      ###
-### track of the last item of the loop.                                     ###
+###  Customized loop iterator.                                              ###
+###  Defined by the first item and the next and stop functions, instead of  ###
+###  a range. Can be traversed in forward and reverse directions, keeps     ###
+###  track of the last item of the loop.                                    ###
 ###                                                                         ###
 ###############################################################################
 

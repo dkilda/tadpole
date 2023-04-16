@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import abc
-from tadpole.util import Tuple
+from tadpole.util import Container
 
 
 
@@ -126,7 +126,7 @@ class Node(abc.ABC):
 
 # --- Parents --------------------------------------------------------------- #
 
-class Parents(Tuple, abc.ABC):
+class Parents(Container, abc.ABC):
 
    @abc.abstractmethod
    def next(self, source, layer, op):
@@ -163,7 +163,7 @@ class DifferentiableFun(abc.ABC):
 
 # --- Function arguments ---------------------------------------------------- #
 
-class Args(Tuple, abc.ABC):
+class Args(Container, abc.ABC):
 
    @abc.abstractmethod
    def nodify(self):

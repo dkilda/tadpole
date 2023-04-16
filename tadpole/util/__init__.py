@@ -3,7 +3,7 @@
 
 
 from tadpole.util.types import (
-   Tuple,
+   Container,
 )
 
 
@@ -17,6 +17,7 @@ from tadpole.util.itertools import (
    concat,
    unique,
    complement,
+   range_from_slice,
    argsort,
    relsort,
    inverted_dict,

@@ -1,35 +1,42 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import abc
-import numpy as np
 
-import tadpole.util   as util
-import tadpole.tensor as tn
+import tadpole.util     as util
+import tadpole.autodiff as ad
+import tadpole.tensor   as tn
 
-import tadpole.autodiff.node as an
-
-from tadpole.tensor import (
-   TensorGen, 
-   NullGrad, 
-   SparseGrad,
-)
+import tadpole.autodiff.node        as an
+import tadpole.tensorwrap.container as tc
 
 
 
 
-# --- Node wrapper for TensorLike objects ----------------------------------- #
+###############################################################################
+###                                                                         ###
+###  Node for Tensor objects                                                ###
+###  (implements Node, Tensor, and Grad interfaces)                         ###
+###                                                                         ###
+###############################################################################
 
-class Node(an.NodeGen, tn.Tensor): 
 
-   # --- Tensor methods: gradient accumulation --- #
+# --- Node for Tensor objects ----------------------------------------------- #
+
+class NodeTensor(an.NodeGen, tn.Tensor, tn.Grad): 
+
+   # --- Gradient operations --- #
 
    def addto(self, other):
 
        if not other:
-          other = NullGrad(self.space())
+          other = tn.NullGrad(self.space())
 
        return tn.addgrads(self, other)
+
+ 
+   def todense(self):
+
+       return tn.todense(self)
 
 
    # --- Tensor methods: basic functionality --- #
@@ -37,11 +44,6 @@ class Node(an.NodeGen, tn.Tensor):
    def copy(self, **opts):
 
        return tn.copy(self, **opts)
-
- 
-   def todense(self):
-
-       return tn.todense(self)
 
 
    def withdata(self, data):
@@ -142,10 +144,71 @@ class Node(an.NodeGen, tn.Tensor):
 
 
 
-an.register(TensorGen,  Node)
-an.register(SparseGrad, Node)
-an.register(NullGrad,   Node)
+# --- Register NodeTensor with the types it can wrap ------------------------ #
 
+an.register(tn.TensorGen,  NodeTensor)
+an.register(tn.SparseGrad, NodeTensor)
+an.register(tn.NullGrad,   NodeTensor)
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Node for Tuple objects                                                 ###
+###  (implements Node, Container, and Grad interfaces)                      ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Node for Container objects -------------------------------------------- #
+
+class NodeContainer(an.NodeGen, util.Container, tn.Grad):
+
+   # --- Gradient operations --- #
+
+   def addto(self, other):
+
+       if not other:
+          other = tc.NullGrad(len(self))
+
+       return tn.addgrads(self, other)
+
+ 
+   def todense(self):
+
+       return tc.todense(self)
+
+
+   # --- Container methods --- #
+
+   def __len__(self):
+
+       return tc.size(self) 
+
+
+   def __contains__(self, x):
+       
+       return tc.contains(self, x)
+
+
+   def __iter__(self):
+
+       return tc.iterate(self)
+
+
+   def __getitem__(self, idx):
+       
+       return tc.getitem(self, idx)
+
+
+ 
+
+# --- Register NodeContainer with the types it can wrap --------------------- #
+
+an.register(tuple,           NodeContainer)
+an.register(list,            NodeContainer)
+an.register(util.Container,  NodeContainer)
 
 
 

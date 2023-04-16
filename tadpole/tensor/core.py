@@ -14,6 +14,7 @@ import tadpole.tensor.elemwise_binary as binary
 
 from tadpole.tensor.types import (
    Tensor, 
+   Grad,
    Pluggable,
 )
 
@@ -36,7 +37,7 @@ from tadpole.index import (
 
 # --- Null gradient --------------------------------------------------------- #
 
-class NullGrad(Tensor, Pluggable):
+class NullGrad(Tensor, Grad, Pluggable):
 
    # --- Construction --- #
 
@@ -52,7 +53,7 @@ class NullGrad(Tensor, Pluggable):
        return self.todense().pluginto(engine)
 
 
-   # --- Gradient accumulation --- #
+   # --- Gradient operations --- #
 
    def addto(self, other):
 
@@ -62,16 +63,16 @@ class NullGrad(Tensor, Pluggable):
        return other.addto(self)
 
 
+   def todense(self):
+
+       return self.space().zeros()
+
+
    # --- Basic functionality --- #
 
    def copy(self):
 
        return self.__class__(self._space)
-
-
-   def todense(self):
-
-       return self.space().zeros()
 
 
    def withdata(self, data):
@@ -195,7 +196,7 @@ class NullGrad(Tensor, Pluggable):
 
 # --- Sparse gradient ------------------------------------------------------- #
 
-class SparseGrad(Tensor, Pluggable):
+class SparseGrad(Tensor, Grad, Pluggable):
 
    # --- Construction --- #
 
@@ -213,7 +214,7 @@ class SparseGrad(Tensor, Pluggable):
        return self.todense().pluginto(engine)
 
 
-   # --- Gradient accumulation --- #
+   # --- Gradient operations --- #
 
    def addto(self, other):
 
@@ -232,13 +233,6 @@ class SparseGrad(Tensor, Pluggable):
        data = ar.put(other._data, self._pos, self._vals, accumulate=True)
        return other.withdata(data)
 
-       
-   # --- Basic functionality --- #
-
-   def copy(self):
-
-       return self.__class__(self._space, self._pos, self._vals)
-
 
    def todense(self):
 
@@ -246,6 +240,13 @@ class SparseGrad(Tensor, Pluggable):
        op    = unary.tensor_elemwise_unary(zeros)
 
        return op.put(self._pos, self._vals)
+
+       
+   # --- Basic functionality --- #
+
+   def copy(self):
+
+       return self.__class__(self._space, self._pos, self._vals)
 
 
    def withdata(self, data):
@@ -389,7 +390,7 @@ def astensor(data, inds=None, **opts):
 
 # --- General tensor -------------------------------------------------------- #
 
-class TensorGen(Tensor, Pluggable):
+class TensorGen(Tensor, Grad, Pluggable):
 
    # --- Construction --- #
 
@@ -419,7 +420,7 @@ class TensorGen(Tensor, Pluggable):
        return engine.attach(self._data, self._inds)
 
 
-   # --- Gradient accumulation --- #
+   # --- Gradient operations --- #
 
    def addto(self, other):
 
@@ -439,6 +440,11 @@ class TensorGen(Tensor, Pluggable):
        return other.withdata(data)
 
 
+   def todense(self):
+
+       return self
+
+
    # --- Basic functionality --- #
 
    def copy(self, virtual=False, **opts):
@@ -446,11 +452,6 @@ class TensorGen(Tensor, Pluggable):
        data = self._data if virtual else self._data.copy(**opts)
 
        return self.__class__(data, self._inds)
-
-
-   def todense(self):
-
-       return self
 
 
    def withdata(self, data):

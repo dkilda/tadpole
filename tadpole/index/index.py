@@ -139,7 +139,7 @@ class IndexGen(Index):
 
 # --- Indices --------------------------------------------------------------- #
 
-class Indices(util.Tuple):
+class Indices(util.Container):
 
    # --- Construction --- #
 
@@ -169,7 +169,7 @@ class Indices(util.Tuple):
        return str(rep) 
 
 
-   # --- Tuple-like methods --- #
+   # --- Container-like methods --- #
 
    def __eq__(self, other):
 

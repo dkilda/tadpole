@@ -8,14 +8,14 @@ import abc
 
 ###############################################################################
 ###                                                                         ###
-###  Generic interface for tuple-like types                                 ###
+###  Minimal interface for container types                                  ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- Tuple ----------------------------------------------------------------- #
+# --- Container ------------------------------------------------------------- #
 
-class Tuple(abc.ABC):
+class Container(abc.ABC):
 
    @abc.abstractmethod
    def __eq__(self, other):

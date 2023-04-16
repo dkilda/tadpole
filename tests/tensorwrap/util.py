@@ -117,7 +117,7 @@ def assert_jvp(fun, x):
 # --- Assert gradients of a given mode and order ---------------------------- #
 
 @nary.nary_op
-def assert_grad(fun, x, modes=("vjp", "jvp"), order=1): # TODO CHANGE BACK TO order=2 once we implement NodeTuple! 
+def assert_grad(fun, x, modes=("vjp", "jvp"), order=1): # TODO CHANGE BACK TO order=2 once we implement NodeContainer! 
 
     if isinstance(modes, str):
        modes = (modes,)

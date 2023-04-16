@@ -616,21 +616,21 @@ class TestNodeScape:
        from tadpole.tensor     import randn
        from tadpole.tensor     import TensorGen
        from tadpole.index      import IndexGen
-       from tadpole.tensorwrap import Node 
+       from tadpole.tensorwrap import NodeTensor 
 
        w = data.reverse_node_dat()
 
        nodescape = an.NodeScape()
-       nodescape.register(TensorGen, Node)
+       nodescape.register(TensorGen, NodeTensor)
 
        source = randn((IndexGen("i",2), IndexGen("j",3), IndexGen("k",4)))
        layer  = 0
        gate   = fake.Gate()      
 
        out = nodescape.node(source, layer, gate)
-       ans = Node(Node(source, -1, an.GateNull()), layer, gate) 
+       ans = NodeTensor(NodeTensor(source, -1, an.GateNull()), layer, gate) 
 
-       assert isinstance(out, Node)
+       assert isinstance(out, NodeTensor)
        assert allclose(out, ans)
        assert out == ans
 

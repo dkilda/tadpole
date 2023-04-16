@@ -6,6 +6,7 @@
 
 from .types import (
    Pluggable,
+   Grad,
    Tensor,
    Space,
 )
