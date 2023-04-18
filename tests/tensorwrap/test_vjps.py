@@ -26,6 +26,7 @@ from tests.common import (
 
 from tests.tensorwrap.util import (
    assert_grad,
+   assert_vjp,
 )
 
 from tadpole.index import (
@@ -67,7 +68,7 @@ class TestVjpElemwiseBinary:
    def test_add(self, indnames, shape):
 
        def fun(x, y):
-           return x + y
+           return x ** y
 
        x = data.tensor_dat(data.randn)(
               self.backend, indnames, shape, seed=1
@@ -79,9 +80,40 @@ class TestVjpElemwiseBinary:
        xtensor = x.tensor
        ytensor = tn.TensorGen(y.array, x.inds)
 
-       assert_grad(fun, 0, order=1)(xtensor, ytensor)   # TODO CHANGE BACK TO order=2 once we implement NodeContainer! 
-       assert_grad(fun, 1, order=1)(xtensor, ytensor)   # TODO CHANGE BACK TO order=2 once we implement NodeContainer! 
+       assert_grad(fun, 1)(xtensor, ytensor)
 
+
+"""
+   @pytest.mark.parametrize("indnames, shape", [
+      ["ijk", (2,3,4)],
+   ])
+   def test_add(self, indnames, shape):
+
+       #def fun(x, y):
+       #    return x + y
+
+       x = data.tensor_dat(data.randn)(
+              self.backend, indnames, shape, seed=1
+           )
+       y = data.tensor_dat(data.randn)(
+              self.backend, indnames, shape, seed=2
+           )
+
+       xtensor = x.tensor
+       ytensor = tn.TensorGen(y.array, x.inds)
+
+       def fun(x):
+         def fun1(y):
+             return x ** y
+         return ad.gradient(fun1)(x)
+
+       grad = ad.gradient(fun, 0)(xtensor)
+       assert_vjp(fun, xtensor)
+       #assert False
+
+       #assert_grad(fun, 0, order=2)(xtensor, ytensor)   
+       #assert_grad(fun, 1, order=1)(xtensor, ytensor) 
+"""
 
 
 

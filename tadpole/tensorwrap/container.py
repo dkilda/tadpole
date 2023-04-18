@@ -219,7 +219,10 @@ def iterate(x):
 @ad.differentiable
 def getitem(x, pos):
 
-    return x.item(pos)
+    try:
+       return x.item(pos)
+    except (AttributeError, TypeError):
+       return x[pos]
 
 
 @ad.differentiable

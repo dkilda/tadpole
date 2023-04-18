@@ -255,7 +255,7 @@ class GraphOp:
    def end(self):
 
        with self.graph() as graph:
-          end = graph.build(self._fun, self._x)   
+          end = graph.build(self._fun, self._x)  
 
        return end
          

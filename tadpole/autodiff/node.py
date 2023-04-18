@@ -463,8 +463,6 @@ class NodeScape:
 
    def _create(self, source, layer, gate):
 
-       print("\nCREATE: ", type(source), source, layer, gate)
-
        try:
           return self._types[type(source)](source, layer, gate)
        except KeyError:

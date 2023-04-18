@@ -117,7 +117,52 @@ def assert_jvp(fun, x):
 # --- Assert gradients of a given mode and order ---------------------------- #
 
 @nary.nary_op
-def assert_grad(fun, x, modes=("vjp", "jvp"), order=1): # TODO CHANGE BACK TO order=2 once we implement NodeContainer! 
+def assert_grad(fun, x, *args, order=2, **kwargs):
+
+    assert_vjp(fun, x)
+
+    if order > 1:
+
+       def fun1(x):
+           return ad.gradient(fun)(x)
+
+       assert_grad(fun1, order=order-1)(x)
+
+
+
+"""
+#@nary.nary_op
+def assert_grad(fun, x, y, *args, **kwargs): #funA, x, modes=("vjp",), order=2): # , "jvp"
+
+    def fun1(x):
+        return ad.gradient(fun)(x, y)
+
+    assert_vjp(fun1, x)
+"""
+
+
+
+"""
+    assert_vjp(fun, x)
+
+    if order > 1:
+
+       def fun2(x):
+          def fun1(y):
+              return y + y
+          return ad.gradient(fun)(x)
+
+       assert_vjp(fun2, x)
+"""
+
+
+
+
+
+
+"""
+@nary.nary_op
+def assert_grad(fun, x, modes=("vjp", "jvp"), order=2): 
 
     if isinstance(modes, str):
        modes = (modes,)
@@ -143,6 +188,7 @@ def assert_grad(fun, x, modes=("vjp", "jvp"), order=1): # TODO CHANGE BACK TO or
            g = tn.space(fun(x)).randn()
 
            assert_grad(gradfun, (0, 1), modes=modes, order=order-1)(x, g) 
+"""
 
 
 

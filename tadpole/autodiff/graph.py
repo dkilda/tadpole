@@ -12,7 +12,8 @@ from tadpole.autodiff.types import (
    Sequential,
    Cohesive,
    Pack,
-   Envelope
+   Envelope,
+   Node,
 )
 
 
@@ -71,9 +72,12 @@ class Graph:
 
    def build(self, fun, x):
 
-       start = an.node(x, type(self)._layer, self._root)   
+       start = an.node(x, type(self)._layer, self._root)  
 
-       return fun(start)
+       return fun(start)  
+
+
+
 
 
 

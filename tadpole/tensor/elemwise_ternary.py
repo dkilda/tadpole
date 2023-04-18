@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import functools
+
 import tadpole.util     as util
 import tadpole.autodiff as ad
 import tadpole.array    as ar
@@ -20,6 +22,11 @@ from tadpole.tensor.engine import (
    EngineElemwise,
    TrainTensorData,
    TooManyArgsError,
+)
+
+
+from tadpole.tensor.elemwise_binary import (
+   typecast_binary,
 )
 
 
@@ -127,14 +134,65 @@ class TensorElemwiseTernary:
 ###############################################################################
 
 
+# --- Helper: binary typecast ----------------------------------------------- #
+
+def typecast_ternary(fun):
+
+    @functools.wraps(fun)
+    def wrap(x, y, z, *args, **kwargs):
+
+        try:
+            return fun(x, y, z, *args, **kwargs)       
+ 
+        except (AttributeError, TypeError):
+
+            pluggables = [v for v in (x,y,z) if isinstance(v, Pluggable)]
+
+            if len(pluggables) == 0:
+               x = core.astensor(x)
+               y = core.astensor(y) 
+               z = core.astensor(z) 
+
+            if not isinstance(x, Pluggable):
+               x = pluggables[0].withdata(x) 
+
+            if not isinstance(y, Pluggable):
+               y = pluggables[0].withdata(y) 
+
+            if not isinstance(z, Pluggable):
+               z = pluggables[0].withdata(z) 
+
+            return fun(x, y, z, *args, **kwargs)
+         
+    return wrap
+
+
 # --- Value methods --------------------------------------------------------- #
 
 @ad.differentiable
+@typecast_ternary
 def where(condition, x, y):
 
     op = tensor_elemwise_ternary(condition, x, y)
+
     return op.where()
 
+
+
+"""
+@ad.differentiable
+def where(condition, x, y):
+
+    print("WHERE: ", condition, x, y)
+
+    @typecast_binary
+    def fun(x, y):
+
+        op = tensor_elemwise_ternary(condition, x, y)
+        return op.where()
+
+    return fun(x, y)
+"""
 
 
 

@@ -18,7 +18,7 @@ class AdjFunNull:
 
    def __call__(self, g, out, *args, **kwargs):
 
-       return 0
+       return 0 * g # TODO introduce a no-op zero grad operation!
 
 
 

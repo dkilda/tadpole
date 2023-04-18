@@ -146,6 +146,8 @@ class NodeTensor(an.NodeGen, tn.Tensor, tn.Grad):
 
 # --- Register NodeTensor with the types it can wrap ------------------------ #
 
+an.register(int,  NodeTensor)
+
 an.register(tn.TensorGen,  NodeTensor)
 an.register(tn.SparseGrad, NodeTensor)
 an.register(tn.NullGrad,   NodeTensor)

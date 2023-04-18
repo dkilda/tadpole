@@ -43,7 +43,7 @@ class TestAdjfun:
        out  = fake.Value()
        args = arepeat(fake.Value, nargs)
 
-       assert adjfun(g, out, *args) == 0
+       assert adjfun(g, out, *args) == 0 * g
 
 
    @pytest.mark.parametrize("valency", [1,2,3])
