@@ -37,21 +37,6 @@ from tadpole.index import (
 ###############################################################################
 
 
-"""
-def flatten(x, ind="i"):
-
-    op = tnreidx.tensor_reindex(x)
-    return op.flatten(ind)
-
-
-
-def conj(x):
-
-    op = tnu.tensor_elemwise_unary(x)
-    return op.conj()
-"""
-
-
 # --- Numerical gradient ---------------------------------------------------- # 
 
 def numerical_grad(fun, x, eps=1e-6):
@@ -117,55 +102,10 @@ def assert_jvp(fun, x):
 # --- Assert gradients of a given mode and order ---------------------------- #
 
 @nary.nary_op
-def assert_grad(fun, x, *args, order=2, **kwargs):
+def assert_grad(fun, x, modes=("vjp","jvp"), order=2):
 
-    assert_vjp(fun, x)
-
-    if order > 1:
-
-       def fun1(x):
-           return ad.gradient(fun)(x)
-
-       assert_grad(fun1, order=order-1)(x)
-
-
-
-"""
-#@nary.nary_op
-def assert_grad(fun, x, y, *args, **kwargs): #funA, x, modes=("vjp",), order=2): # , "jvp"
-
-    def fun1(x):
-        return ad.gradient(fun)(x, y)
-
-    assert_vjp(fun1, x)
-"""
-
-
-
-"""
-    assert_vjp(fun, x)
-
-    if order > 1:
-
-       def fun2(x):
-          def fun1(y):
-              return y + y
-          return ad.gradient(fun)(x)
-
-       assert_vjp(fun2, x)
-"""
-
-
-
-
-
-
-"""
-@nary.nary_op
-def assert_grad(fun, x, modes=("vjp", "jvp"), order=2): 
-
-    if isinstance(modes, str):
-       modes = (modes,)
+    if  isinstance(modes, str):
+        modes = (modes,)
 
     for mode in modes:
 
@@ -174,9 +114,13 @@ def assert_grad(fun, x, modes=("vjp", "jvp"), order=2):
          "jvp": assert_jvp,
         }[mode](fun, x)   
 
+        assert_vjp(fun, x)
+
         if order > 1:
 
-           def gradfun(x, g):
+           g = tn.space(fun(x)).randn()
+
+           def gradfun(x):
 
                op = {
                      "vjp": agrad.DifferentialOpReverse, 
@@ -185,17 +129,7 @@ def assert_grad(fun, x, modes=("vjp", "jvp"), order=2):
 
                return op.grad(g)
 
-           g = tn.space(fun(x)).randn()
-
-           assert_grad(gradfun, (0, 1), modes=modes, order=order-1)(x, g) 
-"""
-
-
-
-
-
-
-
+           assert_grad(gradfun, modes=modes, order=order-1)(x)
 
 
 
