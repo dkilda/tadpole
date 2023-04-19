@@ -452,6 +452,29 @@ class TestNodeGen:
            assert nodeA != nodeB
 
 
+   @pytest.mark.parametrize("layer1, layer2, result", [
+      [ 0,  0,  True], 
+      [ 1,  1,  True],
+      [ 0,  1,  False],
+      [ 1,  0,  False],
+      [-1, -1,  False],
+      [-1,  0,  False]
+   ])
+   def test_connected(self, layer1, layer2, result):
+
+       if   layer1 > -1:
+            x = data.node_dat(layer1).node
+       else:
+            x = data.point_dat().point
+
+       if   layer2 > -1:
+            y = data.node_dat(layer2).node
+       else:
+            y = data.point_dat().point
+
+       assert x.connected(y) == result
+
+       
    def test_concat(self):
 
        x = data.node_dat()

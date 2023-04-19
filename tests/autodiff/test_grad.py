@@ -35,6 +35,13 @@ class TestDifferentialOp:
 
 
    @pytest.mark.parametrize("which", ["REVERSE", "FORWARD"])
+   def test_start(self, which):
+
+       w = data.diffop_dat(which)
+       assert w.diffop.start() == w.start
+
+
+   @pytest.mark.parametrize("which", ["REVERSE", "FORWARD"])
    def test_end(self, which):
 
        w = data.diffop_dat(which)
@@ -81,7 +88,7 @@ class TestPropagationForward:
 
        grads = ad.GradSum(seed, network.gradmap) 
 
-       assert prop.accum(end, seed) == grads
+       assert prop.accum(start, end, seed) == grads
 
 
 
@@ -110,7 +117,7 @@ class TestPropagationReverse:
 
        grads = ad.GradAccum({None: network.gradmap[start]})
 
-       assert prop.accum(end, seed) == grads
+       assert prop.accum(start, end, seed) == grads
 
 
 
@@ -131,6 +138,13 @@ class TestGraphOp:
 
        dat = data.graph_dat(which)
        assert dat.graphop.graph() == dat.graph
+
+
+   @pytest.mark.parametrize("which", ["REVERSE", "FORWARD"])
+   def test_start(self, which):
+
+       dat = data.graph_dat(which)
+       assert dat.graphop.start() == dat.start
 
 
    @pytest.mark.parametrize("which", ["REVERSE", "FORWARD"])

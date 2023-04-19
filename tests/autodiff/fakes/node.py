@@ -130,9 +130,9 @@ class Node(at.Node):
        self._fun = fake.FunMap(**data)
 
 
-   def connected(self):
+   def connected(self, other):
  
-       return self._fun["connected", True]()
+       return self._fun["connected", True](other)
 
 
    def concat(self, concatenable):

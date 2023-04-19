@@ -417,9 +417,15 @@ class NodeGen(Node):
 
    # --- Node methods --- #
 
-   def connected(self):
-       
-       return self._layer > misc.minlayer()
+   def connected(self, other):
+
+       if self._layer == misc.minlayer():
+          return False
+
+       if other._layer == misc.minlayer():
+          return False 
+
+       return self._layer == other._layer
 
 
    def concat(self, concatenable):
@@ -525,7 +531,7 @@ class ParentsGen(Parents):
 
    def __init__(self, *parents):
 
-       if not all(parent.connected() for parent in parents):
+       if not all(parent.connected(parents[0]) for parent in parents):
           raise ValueError(
              f"{type(self).__name__}: all parent nodes {parents} "
              f"must be connected nodes. "

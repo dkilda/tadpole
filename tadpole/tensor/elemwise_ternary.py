@@ -179,20 +179,4 @@ def where(condition, x, y):
 
 
 
-"""
-@ad.differentiable
-def where(condition, x, y):
-
-    print("WHERE: ", condition, x, y)
-
-    @typecast_binary
-    def fun(x, y):
-
-        op = tensor_elemwise_ternary(condition, x, y)
-        return op.where()
-
-    return fun(x, y)
-"""
-
-
 

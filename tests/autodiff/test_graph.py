@@ -46,7 +46,7 @@ class TestGraph:
        dat = data.graph_dat(which, 0)
 
        with ag.Graph(dat.root) as graph:
-          assert graph.build(dat.fun, dat.x) == dat.end
+          assert graph.build(dat.fun, dat.x) == (dat.start, dat.end)
 
 
    # --- Test enter --- #
@@ -58,7 +58,7 @@ class TestGraph:
 
        with ag.Graph(fake.Gate()) as graph0:
           with ag.Graph(dat.root) as graph1:
-             assert graph1.build(dat.fun, dat.x) == dat.end
+             assert graph1.build(dat.fun, dat.x) == (dat.start, dat.end)
 
 
    @pytest.mark.parametrize("which", ["REVERSE", "FORWARD"])
@@ -69,7 +69,7 @@ class TestGraph:
        with ag.Graph(fake.Gate()) as graph0:
           with ag.Graph(fake.Gate()) as graph1:
              with ag.Graph(dat.root) as graph2:
-                assert graph2.build(dat.fun, dat.x) == dat.end
+                assert graph2.build(dat.fun, dat.x) == (dat.start, dat.end)
 
 
    # --- Test exit and build --- #
@@ -82,7 +82,7 @@ class TestGraph:
        with ag.Graph(dat.root) as graph0:
           with ag.Graph(fake.Gate()) as graph1:
              pass
-          assert graph0.build(dat.fun, dat.x) == dat.end
+          assert graph0.build(dat.fun, dat.x) == (dat.start, dat.end)
 
 
    @pytest.mark.parametrize("which", ["REVERSE", "FORWARD"])
@@ -94,7 +94,7 @@ class TestGraph:
           with ag.Graph(fake.Gate()) as graph1:
              with ag.Graph(fake.Gate()) as graph2:
                 pass
-          assert graph0.build(dat.fun, dat.x) == dat.end
+          assert graph0.build(dat.fun, dat.x) == (dat.start, dat.end)
 
 
 

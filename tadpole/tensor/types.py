@@ -36,6 +36,10 @@ class Grad(abc.ABC):
    def todense(self):
        pass
 
+   @abc.abstractmethod
+   def tonull(self):
+       pass
+
 
 
 

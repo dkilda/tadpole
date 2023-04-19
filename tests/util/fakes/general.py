@@ -176,6 +176,11 @@ class Value:
        return self + other
 
 
+   def tonull(self):
+
+       return None     
+
+
 
 
 # --- Fun ------------------------------------------------------------------- #

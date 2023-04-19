@@ -38,6 +38,12 @@ class NodeTensor(an.NodeGen, tn.Tensor, tn.Grad):
 
        return tn.todense(self)
 
+ 
+   def tonull(self):
+
+       return tn.tonull(self)
+
+
 
    # --- Tensor methods: basic functionality --- #
 
@@ -180,6 +186,11 @@ class NodeContainer(an.NodeGen, util.Container, tn.Grad):
    def todense(self):
 
        return tc.todense(self)
+
+ 
+   def tonull(self):
+
+       return tc.tonull(self)
 
 
    # --- Container methods --- #

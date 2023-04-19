@@ -68,6 +68,11 @@ class NullGrad(Tensor, Grad, Pluggable):
        return self.space().zeros()
 
 
+   def tonull(self):
+
+       return self
+
+
    # --- Basic functionality --- #
 
    def copy(self):
@@ -240,6 +245,11 @@ class SparseGrad(Tensor, Grad, Pluggable):
        op    = unary.tensor_elemwise_unary(zeros)
 
        return op.put(self._pos, self._vals)
+
+
+   def tonull(self):
+
+       return NullGrad(self.space())
 
        
    # --- Basic functionality --- #
@@ -445,6 +455,11 @@ class TensorGen(Tensor, Grad, Pluggable):
        return self
 
 
+   def tonull(self):
+
+       return NullGrad(self.space())
+
+
    # --- Basic functionality --- #
 
    def copy(self, virtual=False, **opts):
@@ -597,6 +612,12 @@ def copy(x, **opts):
 def todense(x):
 
     return x.todense()
+
+
+@ad.nondifferentiable
+def tonull(x):
+
+    return x.tonull()
 
 
 @ad.nondifferentiable

@@ -73,8 +73,9 @@ class Graph:
    def build(self, fun, x):
 
        start = an.node(x, type(self)._layer, self._root)  
+       end   = fun(start)  
 
-       return fun(start)  
+       return start, end
 
 
 

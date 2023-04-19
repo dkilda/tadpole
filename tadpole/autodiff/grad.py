@@ -12,6 +12,7 @@ import tadpole.autodiff.graph as ag
 
 
 from tadpole.autodiff.types import (
+   Node,
    Propagation,
    Traceable,
    Countable,
@@ -103,13 +104,16 @@ class DifferentialOp:
        return self._prop.graphop(self._fun, self._x)
 
 
-   @util.cacheable
+   def start(self):
+
+       return self.graphop().start()
+
+
    def end(self):
 
        return self.graphop().end()
 
 
-   @util.cacheable
    def evaluate(self):
 
        return self.graphop().evaluate()
@@ -117,7 +121,7 @@ class DifferentialOp:
 
    def grad(self, seed):
 
-       grads = self._prop.accum(self.end(), seed)       
+       grads = self._prop.accum(self.start(), self.end(), seed)       
        return grads.result()
 
 
@@ -168,7 +172,10 @@ class PropagationForward(Propagation):
        return GraphOp(an.GateForward(), fun, x)
 
 
-   def accum(self, end, seed):
+   def accum(self, start, end, seed):
+
+       if not isinstance(end, Node) or not end.connected(start):
+          return GradSum(seed, {None: end.tonull()})
 
        return end.grads(GradSum(seed))
 
@@ -191,7 +198,10 @@ class PropagationReverse(Propagation):
        return GraphOp(an.GateReverse(), fun, x)
 
 
-   def accum(self, end, seed):
+   def accum(self, start, end, seed):
+
+       if not isinstance(end, Node) or not end.connected(start):
+          return GradAccum({None: start.tonull()})
 
        grads = GradAccum({end: seed})
 
@@ -246,19 +256,29 @@ class GraphOp:
        return bool(log)
 
 
+   @util.cacheable
+   def _build(self):
+
+       with self.graph() as graph:
+          start, end = graph.build(self._fun, self._x)  
+
+       return start, end
+
+
    def graph(self):
 
        return ag.Graph(self._root)
 
 
-   @util.cacheable
+   def start(self):
+
+       return self._build()[0]
+
+
    def end(self):
 
-       with self.graph() as graph:
-          end = graph.build(self._fun, self._x)  
+       return self._build()[1]
 
-       return end
-         
 
    @util.cacheable
    def evaluate(self):

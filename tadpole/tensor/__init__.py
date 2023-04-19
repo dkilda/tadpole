@@ -74,6 +74,7 @@ from .core import (
    astensor,
    copy,
    todense,
+   tonull,
    withdata,
    space,
    item,

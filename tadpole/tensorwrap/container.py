@@ -202,6 +202,11 @@ def todense(x):
     return x.todense()
 
 
+@ad.nondifferentiable
+def tonull(x):
+
+    return x.tonull()
+
 
 
 # --- Iteration ------------------------------------------------------------- #
@@ -303,6 +308,11 @@ class ContainerGen(util.Container, tn.Grad):
 
 
    # --- Grad methods --- #
+
+   def tonull(self):
+
+       return zeros(len(self))
+
 
    def todense(self):
 
