@@ -15,6 +15,7 @@ import tadpole.index    as tid
 import tadpole.array.backends as backends
 
 import tadpole.tensorwrap.tensor_vjps as tvjps
+import tadpole.tensorwrap.tensor_jvps as tjvps
 
 import tests.tensorwrap.fakes as fake
 import tests.tensorwrap.data  as data
@@ -26,7 +27,6 @@ from tests.common import (
 
 from tests.tensorwrap.util import (
    assert_grad,
-   assert_vjp,
 )
 
 from tadpole.index import (
@@ -40,12 +40,12 @@ from tadpole.index import (
 
 ###############################################################################
 ###                                                                         ###
-###  Binary elementwise VJPs                                                ###
+###  Binary elementwise grads                                               ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- Binary elementwise VJPs ----------------------------------------------- #
+# --- Binary elementwise grad ----------------------------------------------- #
 
 @pytest.mark.parametrize("current_backend", available_backends, indirect=True)
 class TestVjpElemwiseBinary:
