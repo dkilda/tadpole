@@ -135,6 +135,11 @@ class TensorElemwiseBinary:
        return self._apply(ar.div)
  
 
+   def mod(self):
+
+       return self._apply(ar.mod)
+ 
+
    def power(self):
 
        return self._apply(ar.power)
@@ -165,6 +170,26 @@ class TensorElemwiseBinary:
    def notequal(self): 
 
        return self._apply(ar.notequal)
+
+
+   def greater(self): 
+
+       return self._apply(ar.greater)
+
+
+   def less(self): 
+
+       return self._apply(ar.less)
+
+
+   def greater_equal(self): 
+
+       return self._apply(ar.greater_equal)
+
+
+   def less_equal(self): 
+
+       return self._apply(ar.less_equal)
 
 
    def logical_and(self): 
@@ -262,6 +287,14 @@ def div(x, y):
 
 @ad.differentiable
 @typecast_binary
+def mod(x, y):
+
+    op = tensor_elemwise_binary(x, y)
+    return op.mod() 
+ 
+
+@ad.differentiable
+@typecast_binary
 def power(x, y):
 
     op = tensor_elemwise_binary(x, y)
@@ -311,6 +344,38 @@ def notequal(x, y):
     op = tensor_elemwise_binary(x, y)
     return op.notequal() 
 
+
+@ad.nondifferentiable
+@typecast_binary
+def greater(x, y): 
+
+    op = tensor_elemwise_binary(x, y)
+    return op.greater() 
+
+
+@ad.nondifferentiable
+@typecast_binary
+def less(x, y): 
+
+    op = tensor_elemwise_binary(x, y)
+    return op.less() 
+
+
+@ad.nondifferentiable
+@typecast_binary
+def greater_equal(x, y): 
+
+    op = tensor_elemwise_binary(x, y)
+    return op.greater_equal() 
+
+
+@ad.nondifferentiable
+@typecast_binary
+def less_equal(x, y): 
+
+    op = tensor_elemwise_binary(x, y)
+    return op.less_equal()
+ 
 
 @ad.nondifferentiable
 @typecast_binary

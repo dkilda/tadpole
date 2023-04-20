@@ -367,14 +367,24 @@ class TorchBackend(backend.Backend):
        return torch.ne(x, y)
 
 
-   def ismore(self, x, y):
+   def greater(self, x, y):
        
        return x > y
 
 
-   def isless(self, x, y):
+   def less(self, x, y):
        
        return x < y
+
+
+   def greater_equal(self, x, y):
+       
+       return x >= y
+
+
+   def less_equal(self, x, y):
+       
+       return x <= y
 
 
    def logical_and(self, x, y):
@@ -504,6 +514,11 @@ class TorchBackend(backend.Backend):
    def div(self, x, y):
 
        return torch.div(x, y) 
+       
+
+   def mod(self, x, y):
+
+       return torch.remainder(x, y) 
 
 
    def power(self, x, y):

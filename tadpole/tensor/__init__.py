@@ -192,6 +192,7 @@ from .elemwise_binary import (
    sub,
    mul,
    div,
+   mod,
    power,
 )
 
@@ -202,6 +203,10 @@ from .elemwise_binary import (
    allequal,
    isequal,
    notequal,
+   greater,
+   less,
+   greater_equal,
+   less_equal,
    logical_and,
    logical_or,
 )

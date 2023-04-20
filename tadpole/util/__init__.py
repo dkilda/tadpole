@@ -4,6 +4,7 @@
 
 from tadpole.util.types import (
    Container,
+   Scalar,
 )
 
 

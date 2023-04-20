@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-
 import tadpole.util     as util
 import tadpole.autodiff as ad
 import tadpole.tensor   as tn
@@ -15,7 +14,7 @@ import tadpole.tensorwrap.container as tc
 ###############################################################################
 ###                                                                         ###
 ###  Node for Tensor objects                                                ###
-###  (implements Node, Tensor, and Grad interfaces)                         ###
+###  (implements Node, Tensor, Grad interfaces)                             ###
 ###                                                                         ###
 ###############################################################################
 
@@ -28,7 +27,7 @@ class NodeTensor(an.NodeGen, tn.Tensor, tn.Grad):
 
    def addto(self, other):
 
-       if not other:
+       if not other: # and not isinstance(other, tn.NullGrad):
           other = tn.NullGrad(self.space())
 
        return tn.addgrads(self, other)
@@ -42,7 +41,6 @@ class NodeTensor(an.NodeGen, tn.Tensor, tn.Grad):
    def tonull(self):
 
        return tn.tonull(self)
-
 
 
    # --- Tensor methods: basic functionality --- #
@@ -152,8 +150,6 @@ class NodeTensor(an.NodeGen, tn.Tensor, tn.Grad):
 
 # --- Register NodeTensor with the types it can wrap ------------------------ #
 
-an.register(int,  NodeTensor)
-
 an.register(tn.TensorGen,  NodeTensor)
 an.register(tn.SparseGrad, NodeTensor)
 an.register(tn.NullGrad,   NodeTensor)
@@ -163,8 +159,144 @@ an.register(tn.NullGrad,   NodeTensor)
 
 ###############################################################################
 ###                                                                         ###
-###  Node for Tuple objects                                                 ###
-###  (implements Node, Container, and Grad interfaces)                      ###
+###  Node for Scalar objects                                                ###
+###  (implements Node, Tensor, Grad interfaces)                             ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Node for Scalar objects ----------------------------------------------- #
+
+class NodeScalar(an.NodeGen, util.Scalar, tn.Grad):
+
+   # --- Gradient operations --- #
+
+   def addto(self, other):
+
+       if not other: 
+          other = self.tonull()
+
+       return tn.addgrads(self, other)
+
+ 
+   def todense(self):
+
+       return self
+
+ 
+   def tonull(self):
+
+       return tn.nullgrad(tuple())
+
+
+   # --- Comparison --- #
+
+   def __ne__(self, other):
+
+       return tn.notequal(self, other)
+
+
+   def __gt__(self, other):
+
+       return tn.greater(self, other)
+
+
+   def __lt__(self, other):
+
+       return tn.less(self, other)
+
+
+   def __ge__(self, other):
+
+       return tn.greater_equal(self, other)
+
+
+   def __le__(self, other):
+
+       return tn.less_equal(self, other)
+   
+
+   # --- Arithmetics --- #
+
+   def __neg__(self):
+
+       return tn.neg(self)  
+
+
+   def __add__(self, other): 
+
+       return tn.add(self, other)
+
+
+   def __sub__(self, other): 
+
+       return tn.sub(self, other) 
+
+
+   def __mul__(self, other):
+
+       return tn.mul(self, other)
+
+
+   def __truediv__(self, other):
+
+       return tn.div(self, other) 
+
+
+   def __mod__(self, other):
+
+       return tn.mod(self, other)
+
+
+   def __pow__(self, other):
+
+       return tn.pow(self, other)  
+
+
+   def __radd__(self, other): 
+
+       return tn.add(other, self)
+
+
+   def __rsub__(self, other): 
+
+       return tn.sub(other, self)
+
+
+   def __rmul__(self, other):
+
+       return tn.mul(other, self)
+
+
+   def __rtruediv__(self, other):
+
+       return tn.div(other, self)
+
+
+   def __rmod__(self, other):
+
+       return tn.mod(other, self)
+
+
+   def __rpow__(self, other):
+
+       return tn.pow(other, self) 
+
+
+
+
+# --- Register NodeScalar with the types it can wrap ------------------------ #
+
+an.register(bool,    NodeScalar)
+an.register(int,     NodeScalar)
+an.register(float,   NodeScalar)
+an.register(complex, NodeScalar)
+
+
+###############################################################################
+###                                                                         ###
+###  Node for Container objects                                             ###
+###  (implements Node, Container, Grad interfaces)                          ###
 ###                                                                         ###
 ###############################################################################
 

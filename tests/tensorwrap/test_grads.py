@@ -68,7 +68,7 @@ class TestVjpElemwiseBinary:
    def test_add(self, indnames, shape):
 
        def fun(x, y):
-           return x + y
+           return x / y
 
        x = data.tensor_dat(data.randn)(
               self.backend, indnames, shape, seed=1

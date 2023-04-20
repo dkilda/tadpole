@@ -312,14 +312,24 @@ class NumpyBackend(backend.Backend):
        return x != y
 
 
-   def ismore(self, x, y):
+   def greater(self, x, y):
        
        return x > y
 
 
-   def isless(self, x, y):
+   def less(self, x, y):
        
        return x < y
+
+
+   def greater_equal(self, x, y):
+       
+       return x >= y
+
+
+   def less_equal(self, x, y):
+       
+       return x <= y
 
 
    def logical_and(self, x, y):
@@ -447,6 +457,11 @@ class NumpyBackend(backend.Backend):
 
 
    def div(self, x, y):
+
+       return x / y
+
+
+   def mod(self, x, y):
 
        return x / y
 

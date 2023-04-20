@@ -91,7 +91,7 @@ class Array(types.Array):
 
    def new(self, data):
 
-       return unary.asarray(data, backend=self._backend) # unary.Array(self._backend, self._backend.asarray(data))
+       return unary.asarray(data, backend=self._backend) 
 
 
    def nary(self):
@@ -160,16 +160,30 @@ class Array(types.Array):
        return self.new(data)
 
 
-   def ismore(self):
+   def greater(self):
 
-       data = self._backend.ismore(*self._datas)
+       data = self._backend.greater(*self._datas)
 
        return self.new(data)
 
         
-   def isless(self):
+   def less(self):
 
-       data = self._backend.isless(*self._datas)
+       data = self._backend.less(*self._datas)
+
+       return self.new(data)
+
+
+   def greater_equal(self):
+
+       data = self._backend.greater_equal(*self._datas)
+
+       return self.new(data)
+
+        
+   def less_equal(self):
+
+       data = self._backend.less_equal(*self._datas)
 
        return self.new(data)
 
@@ -214,6 +228,13 @@ class Array(types.Array):
    def div(self):
 
        data = self._backend.div(*self._datas)
+
+       return self.new(data)
+
+
+   def mod(self):
+
+       data = self._backend.mod(*self._datas)
 
        return self.new(data)
 
@@ -283,15 +304,27 @@ def notequal(x, y):
 
 
 @typecast
-def ismore(x, y):
+def greater(x, y):
 
-    return (x | y).ismore()
+    return (x | y).greater()
 
 
 @typecast        
-def isless(x, y):
+def less(x, y):
 
-    return (x | y).isless()
+    return (x | y).less()
+
+
+@typecast        
+def greater_equal(x, y):
+
+    return (x | y).greater_equal()
+
+
+@typecast        
+def less_equal(x, y):
+
+    return (x | y).less_equal()
 
 
 @typecast
@@ -332,6 +365,12 @@ def mul(x, y):
 def div(x, y):
 
     return (x | y).div()
+
+
+@typecast       
+def mod(x, y):
+
+    return (x | y).mod()
 
 
 @typecast

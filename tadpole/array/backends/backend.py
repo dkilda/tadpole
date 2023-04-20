@@ -208,11 +208,19 @@ class Backend(abc.ABC):
        pass
 
    @abc.abstractmethod
-   def ismore(self, x, y):
+   def greater(self, x, y):
        pass
 
    @abc.abstractmethod
-   def isless(self, x, y):
+   def less(self, x, y):
+       pass
+
+   @abc.abstractmethod
+   def greater_equal(self, x, y):
+       pass
+
+   @abc.abstractmethod
+   def less_equal(self, x, y):
        pass
 
    @abc.abstractmethod
@@ -319,6 +327,10 @@ class Backend(abc.ABC):
 
    @abc.abstractmethod
    def div(self, x, y):
+       pass
+
+   @abc.abstractmethod
+   def mod(self, x, y):
        pass
 
    @abc.abstractmethod

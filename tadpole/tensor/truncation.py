@@ -54,7 +54,7 @@ class DirectCutoff(CutoffMode):
 
    def apply(self, S):
 
-       above_cutoff = ar.ismore(S, self._target_cutoff(S))
+       above_cutoff = ar.greater(S, self._target_cutoff(S))
 
        return ar.count_nonzero(above_cutoff).item()
 
@@ -83,7 +83,7 @@ class SumCutoff(CutoffMode):
    def apply(self, S):
 
        cumsum       = ar.cumsum(S**self._power, 0)
-       above_cutoff = ar.ismore(
+       above_cutoff = ar.greater(
                          cumsum[-1] - cumsum, 
                          self._target_cutoff(cumsum)
                       )

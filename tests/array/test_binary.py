@@ -224,13 +224,13 @@ class TestArray:
    @pytest.mark.parametrize("shapes, nvals", [
       [[(2,3,4), (2,3,4)], 5],
    ])
-   def test_ismore(self, shapes, nvals):
+   def test_greater(self, shapes, nvals):
 
        w = data.narray_dat(data.randn_pos)(
               self.backend, shapes, nvals=nvals, defaultval=1+0j
            )
 
-       out = ar.ismore(w.arrays[0], w.arrays[1])
+       out = ar.greater(w.arrays[0], w.arrays[1])
        ans = w.datas[0] > w.datas[1]
        ans = unary.asarray(ans, **options(backend=self.backend))    
 
@@ -240,13 +240,13 @@ class TestArray:
    @pytest.mark.parametrize("shapes, nvals", [
       [[(2,3,4), (2,3,4)], 5],
    ])
-   def test_isless(self, shapes, nvals):
+   def test_less(self, shapes, nvals):
 
        w = data.narray_dat(data.randn_pos)(
               self.backend, shapes, nvals=nvals, defaultval=1+0j
            )
 
-       out = ar.isless(w.arrays[0], w.arrays[1])
+       out = ar.less(w.arrays[0], w.arrays[1])
        ans = w.datas[0] < w.datas[1]
        ans = unary.asarray(ans, **options(backend=self.backend))    
 
