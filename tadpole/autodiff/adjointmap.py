@@ -6,164 +6,125 @@
 
 ###############################################################################
 ###                                                                         ###
-###  Common code for handling adjoint functions (both JVP and VJP)          ### 
-###  from the input.                                                        ###
+###  Setting up adjoint functions                                           ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- Special adjoint functions --------------------------------------------- #
+# --- Setting up VJP functions ---------------------------------------------- #
 
-class AdjFunNull:
+def make_vjpfun(adjfun, fun=None, adx=None):
 
-   def __call__(self, g, out, *args, **kwargs):
-
-       return 0 * g # TODO introduce a no-op zero grad operation!
-
-
-
-
-class AdjFunIdentity:
-
-   def __call__(self, g, out, *args, **kwargs):
-
-       return g
-
-
-
-
-class AdjFunLinear:
-
-   def __init__(self, fun, adx):
-  
-       if not isinstance(fun, AdjFunComboLinear):
-          fun = AdjFunComboLinear(fun)
-
-       if not callable(fun):
-          raise ValueError(
-             f"AdjFunLinear: fun must be callable, but is {fun}"
-          )
-
-       self._fun = fun
-       self._adx = adx
-
-
-   def __call__(self, g, out, *args, **kwargs):
-
-       return self._fun(g, self._adx, out, *args, **kwargs)
-
-
-
-
-class AdjFunComboLinear:
-
-   def __init__(self, fun):
-
-       if not callable(fun):
-          raise ValueError(
-             f"AdjFunComboLinear: fun must be callable, but is {fun}"
-          )
-  
-       self._fun = fun
-
-
-   def __call__(self, g, adx, out, *args, **kwargs):
-
-       args      = list(args)
-       args[adx] = g
-
-       return self._fun(*args, **kwargs)
-
-
-
-
-# --- Set up adjoint function ----------------------------------------------- #
-
-def make_adjfun(adjfun, fun=None, adx=None):
-
-    if adjfun is None or adjfun == "null": 
-       return AdjFunNull()  
+    if adjfun == "null":
+       return lambda g, out, *args, **kwargs: args[adx].tonull()
 
     if adjfun == "identity":
-       return AdjFunIdentity()
+       return lambda g, out, *args, **kwargs: g
 
-    if adjfun == "linear" and adx is not None:
-       return AdjFunLinear(fun, adx)
-
-    if adjfun == "linear":
-       return AdjFunComboLinear(fun)
-
-    assert callable(adjfun), f"make_adjfun(): invalid adjfun {adjfun}"
+    assert callable(adjfun), f"make_vjpfun(): invalid adjfun {adjfun}"
 
     return adjfun
 
 
 
 
-# --- Concatenate adjoint functions ----------------------------------------- #
+# --- Setting up JVP functions ---------------------------------------------- #
 
-def concatenate_adjfuns(fun, *adjfuns, adxs=None):
+def make_jvpfun(adjfun, fun=None, adx=None):
 
-    if adxs is None:
-       adxs = (adx for adx in range(len(adjfuns)))  
+    if adjfun == "null":
+       return lambda g, out, *args, **kwargs: out.tonull()
 
-    adjfun_by_adx = {adx: make_adjfun(adjfuns[adx], fun, adx) for adx in adxs}
+    if adjfun == "identity":
+       return lambda g, out, *args, **kwargs: g
+
+    if adjfun == "linear":
+       return lambda g, out, *args, **kwargs: (
+                 linear_adjfun(fun)(g, adx, out, *args, **kwargs)
+              )
+
+    assert callable(adjfun), f"make_jvpfun(): invalid adjfun {adjfun}"
+
+    return adjfun
+
+
+
+
+# --- Special adjoint functions --------------------------------------------- #
+
+def linear_adjfun(fun):
 
     def adjfun(g, adx, out, *args, **kwargs):
-        return adjfun_by_adx[adx](g, out, *args, **kwargs)
 
-    return adjfun  
+        args      = list(args)
+        args[adx] = g
 
-
-
-
-# --- Adjoint map ----------------------------------------------------------- #
-
-class AdjointMap:
-
-   def __init__(self, factory):
-
-       self._map     = {}
-       self._factory = factory
-
-
-   def get(self, fun): 
-
-       return self._map[fun] 
-
-
-   def _add(self, fun, adjfun):
-
-       self._map[fun] = self._factory(adjfun)
-       return self
-
-
-   def add(self, fun, *adjfuns, adxs=None):
-
-       return self._add(fun, concatenate_adjfuns(fun, *adjfuns, adxs=adxs))
-
-
-   def add_combo(self, fun, adjfun):
-
-       return self._add(fun, make_adjfun(adjfun, fun))
-
-
-   def add_raw(self, fun, adjfun):
-
-       self._map[fun] = make_adjfun(adjfun)
-       return self
+        return fun(*args, **kwargs) 
+       
+    return adjfun
 
 
 
 
 ###############################################################################
 ###                                                                         ###
-###  VJP map                                                                ###
+###  Constructing net (concatenated) adjoint functions                      ###
 ###                                                                         ###
 ###############################################################################
+
+
+# --- Concatenate adjoint functions ----------------------------------------- #
+
+def concat_adjfuns(make_adjfun):
+
+    def concat(fun, *adjfuns, adxs=None):
+
+        if adxs is None:
+           adxs = (adx for adx in range(len(adjfuns)))
+
+        adjfun_by_adx = {adx: make_adjfun(adjfuns[adx], fun, adx) 
+                              for adx in adxs}        
+
+        def adjfun(g, adx, out, *args, **kwargs):
+            return adjfun_by_adx[adx](g, out, *args, **kwargs)
+
+        return adjfun 
+
+    return concat
+
+
+
+
+# --- Concatenate VJP functions --------------------------------------------- #
+
+def concat_vjpfuns(*args, **kwargs):
+
+    return concat_adjfuns(make_vjpfun)(*args, **kwargs)
+
+
+
+
+# --- Concatenate JVP functions --------------------------------------------- #
+
+def concat_jvpfuns(*args, **kwargs):
+
+    return concat_adjfuns(make_jvpfun)(*args, **kwargs)
+
+
 
 
 # --- Net (concatenated) VJP function --------------------------------------- #
+
+def make_net_vjpfun(adjfun):
+
+    if isinstance(adjfun, (tuple, list)):
+
+       adjfun = dict()[funtype](fun)
+
+    return NetVjpFun(adjfun)
+
+
+
 
 class NetVjpFun:
 
@@ -182,25 +143,22 @@ class NetVjpFun:
 
 
 
-# --- VJP map --------------------------------------------------------------- #
-
-class VjpMap(AdjointMap):
-
-   def __init__(self):
-
-       super().__init__(lambda adjfun: NetVjpFun(adjfun))
-
-
-
-
-###############################################################################
-###                                                                         ###
-###  JVP map                                                                ###
-###                                                                         ###
-###############################################################################
-
-
 # --- Net (concatenated) JVP function --------------------------------------- #
+
+def make_net_jvpfun(adjfun):
+
+    if isinstance(adjfun, (tuple, list)):
+
+       funtype, fun = adjfun
+
+       adjfun = {
+                 "linear": linear_adjfun,
+                }[funtype](fun)
+
+    return NetJvpFun(adjfun)
+
+
+
 
 class NetJvpFun:
 
@@ -219,18 +177,75 @@ class NetJvpFun:
 
 
 
+###############################################################################
+###                                                                         ###
+###  Adjoint maps                                                           ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Generic adjoint map --------------------------------------------------- #
+
+class AdjointMap:
+
+   def __init__(self, concat, factory):
+
+       self._map     = {}
+       self._concat  = concat
+       self._factory = factory
+
+
+   def get(self, fun): 
+
+       return self._map[fun] 
+
+
+   def _add(self, fun, adjfun):
+
+       self._map[fun] = self._factory(adjfun)
+       return self
+
+
+   def add(self, fun, *adjfuns, adxs=None):
+
+       return self._add(fun, self._concat(fun, *adjfuns, adxs=adxs))
+
+
+   def add_combo(self, fun, adjfun):
+
+       if isinstance(adjfun, str):
+          adjfun = (adjfun, fun)
+
+       return self._add(fun, adjfun)
+
+
+   def add_raw(self, fun, adjfun):
+
+       self._map[fun] = adjfun 
+       return self
+
+
+
+
+# --- VJP map --------------------------------------------------------------- #
+
+class VjpMap(AdjointMap):
+
+   def __init__(self):
+
+       super().__init__(concat_vjpfuns, make_net_vjpfun)
+
+
+
+
 # --- JVP map --------------------------------------------------------------- #
 
 class JvpMap(AdjointMap):
 
    def __init__(self):
 
-       super().__init__(lambda adjfun: NetJvpFun(adjfun))
+       super().__init__(concat_jvpfuns, make_net_jvpfun)
 
 
 
 
-
-
-     
-  
