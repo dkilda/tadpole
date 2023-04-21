@@ -5,7 +5,6 @@ import tadpole.util     as util
 import tadpole.autodiff as ad
 import tadpole.tensor   as tn
 
-import tadpole.array.backends       as backends
 import tadpole.autodiff.node        as an
 import tadpole.tensorwrap.container as tc
 
@@ -288,12 +287,6 @@ class NodeScalar(an.NodeGen, util.Scalar, tn.Grad):
 
 # --- Register NodeScalar with the types it can wrap ------------------------ #
 
-an.register(bool,    NodeScalar)
-an.register(int,     NodeScalar)
-an.register(float,   NodeScalar)
-an.register(complex, NodeScalar)
-
-
 def register_dtypes():
 
     for dtype in [
@@ -310,6 +303,7 @@ def register_dtypes():
                   "int64",
                   "float",
                   "double",
+                  "complex",
                   "cfloat",
                   "cdouble",
                   "short",
@@ -317,19 +311,8 @@ def register_dtypes():
                   "long",
                   "bool",
                  ]:
-       for backend in backends.available():
-
-           try:
-               backend = backends.get(backend)
-           except ImportError:
-               continue
-
-           try:
-               dtype = backend.get_dtype(dtype)
-           except TypeError:
-               continue
           
-           an.register(dtype, NodeScalar)
+        an.register(dtype, NodeScalar)
 
 
 register_dtypes()

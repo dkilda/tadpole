@@ -469,10 +469,24 @@ class NodeScape:
 
    def _create(self, source, layer, gate):
 
-       try:
-          return self._types[type(source)](source, layer, gate)
-       except KeyError:
-          return NodeGen(source, layer, gate)
+       def _node_by_type(*typefuns):
+
+           if  not typefuns:
+               return NodeGen(source, layer, gate)
+
+           try:
+               typ = typefuns[0](type(source))
+               return self._types[typ](source, layer, gate)
+
+           except KeyError:
+               return _node_by_type(*typefuns[1:])
+           
+       return _node_by_type(
+                    lambda x: x, 
+                    lambda x: str(x), 
+                    lambda x: str(x).split("'")[1],
+                    lambda x: str(x).split("'")[1].split(".")[-1]
+                   ) 
 
 
    def node(self, source, layer, gate):

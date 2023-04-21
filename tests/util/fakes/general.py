@@ -178,7 +178,12 @@ class Value:
 
    def tonull(self):
 
-       return None     
+       return None    
+
+
+   def todense(self):
+
+       return self
 
 
 
