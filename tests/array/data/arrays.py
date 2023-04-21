@@ -193,6 +193,26 @@ def randn_complex_dat_001(backend, seed=1):
 
 
 
+def randuniform_int_dat_001(backend, boundaries=(0,1), seed=1):
+
+    backend = backends.get(backend)
+    shape   = (2,3)
+    dtype   = "int"
+
+    np.random.seed(seed)
+
+    args = (boundaries[0], boundaries[1], tuple(shape))
+
+    data  = np.random.uniform(*args).astype(dtype)
+    data  = backend.asarray(data, dtype=dtype)
+    array = unary.Array(backend, data)
+
+    return SampleData(array, data, 
+                      backend, shape, dtype, 
+                      {"boundaries": boundaries})
+
+
+
 def randuniform_real_dat_001(backend, boundaries=(0,1), seed=1):
 
     backend = backends.get(backend)

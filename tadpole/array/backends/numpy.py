@@ -463,7 +463,7 @@ class NumpyBackend(backend.Backend):
 
    def mod(self, x, y):
 
-       return x / y
+       return x % y
 
 
    def power(self, x, y):

@@ -11,6 +11,7 @@ from .arrays import (
    rand_complex_dat_001,
    randn_real_dat_001,
    randn_complex_dat_001,
+   randuniform_int_dat_001,
    randuniform_real_dat_001,
    randuniform_complex_dat_001,
 )

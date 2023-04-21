@@ -85,11 +85,6 @@ class BackendRegistry:
        return self
 
 
-   def available(self):
-
-       return tuple(type(self)._backends.keys())
-
-
 
 
 # --- A global instance of backend registry and its access ports ------------ #
@@ -110,11 +105,6 @@ def get_from(opts):
 def set_default(backend):
 
     _BACKENDS.set_default(backend)
-
-
-def available():
-
-    return _BACKENDS.available()
 
 
 

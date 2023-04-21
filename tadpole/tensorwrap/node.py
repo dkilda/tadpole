@@ -116,6 +116,11 @@ class NodeTensor(an.NodeGen, tn.Tensor, tn.Grad):
        return tn.div(self, other)
 
 
+   def __mod__(self, other):
+
+       return tn.mod(self, other)
+
+
    def __pow__(self, other):
 
        return tn.power(self, other)
@@ -139,6 +144,11 @@ class NodeTensor(an.NodeGen, tn.Tensor, tn.Grad):
    def __rtruediv__(self, other):
 
        return tn.div(other, self)
+
+
+   def __rmod__(self, other):
+
+       return tn.mod(other, self)
 
 
    def __rpow__(self, other):

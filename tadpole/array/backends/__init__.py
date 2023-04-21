@@ -7,7 +7,6 @@ from .registry import (
    get_from,
    get_str,
    set_default,
-   available,
    common,
 )
 

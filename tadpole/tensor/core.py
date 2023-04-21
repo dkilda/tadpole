@@ -551,6 +551,11 @@ class TensorGen(Tensor, Grad, Pluggable):
        return binary.div(self, other)
 
 
+   def __mod__(self, other):
+
+       return binary.mod(self, other)
+
+
    def __pow__(self, other):
 
        return binary.power(self, other)
@@ -579,6 +584,11 @@ class TensorGen(Tensor, Grad, Pluggable):
    def __rtruediv__(self, other):
 
        return binary.div(other, self)
+
+
+   def __rmod__(self, other):
+
+       return binary.mod(other, self)
 
 
    def __rpow__(self, other):

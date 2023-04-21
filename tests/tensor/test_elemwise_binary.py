@@ -18,6 +18,7 @@ import tadpole.tensor.engine          as tne
 
 import tests.tensor.fakes as fake
 import tests.tensor.data  as data
+import tests.array.data   as ardata
 
 
 from tests.common import (
@@ -365,6 +366,28 @@ class TestTensorElemwiseBinary:
        assert tn.allclose(out, ans)
 
 
+   @pytest.mark.parametrize("sampledat", [
+      ardata.randuniform_int_dat_001,
+   ])
+   def test_mod(self, sampledat):
+
+       x = data.tensor_sample_dat(sampledat)(
+              self.backend, boundaries=(1,11), seed=1
+           )
+       y = data.tensor_sample_dat(sampledat)(
+              self.backend, boundaries=(1,11), seed=2
+           )
+
+       xtensor = x.tensor
+       ytensor = tn.TensorGen(y.array, x.inds)
+
+       out = xtensor % ytensor
+       ans = ar.mod(x.array, y.array)
+       ans = tn.TensorGen(ans, x.inds)
+
+       assert tn.allclose(out, ans)
+
+
    @pytest.mark.parametrize("indnames, shape", [
       ["ijk", (2,3,4)],
    ])
@@ -504,6 +527,102 @@ class TestTensorElemwiseBinary:
 
        out = tn.notequal(xtensor, ytensor) 
        ans = ar.notequal(x.array, y.array)
+       ans = tn.TensorGen(ans, x.inds)
+
+       assert out == ans
+
+
+   @pytest.mark.parametrize("indnames, shape, nvals", [
+      ["ijk", (2,3,4), 5],
+   ])
+   def test_greater(self, indnames, shape, nvals):
+
+       x = data.tensor_dat(data.randn_pos)(
+              self.backend, indnames, shape, 
+              seed=1, nvals=nvals, defaultval=1+0j
+           )
+       y = data.tensor_dat(data.randn_pos)(
+              self.backend, indnames, shape, 
+              seed=2, nvals=nvals, defaultval=1+0j
+           )
+
+       xtensor = x.tensor
+       ytensor = tn.TensorGen(y.array, x.inds)
+
+       out = tn.greater(xtensor, ytensor) 
+       ans = ar.greater(x.array, y.array)
+       ans = tn.TensorGen(ans, x.inds)
+
+       assert out == ans
+
+
+   @pytest.mark.parametrize("indnames, shape, nvals", [
+      ["ijk", (2,3,4), 5],
+   ])
+   def test_less(self, indnames, shape, nvals):
+
+       x = data.tensor_dat(data.randn_pos)(
+              self.backend, indnames, shape, 
+              seed=1, nvals=nvals, defaultval=1+0j
+           )
+       y = data.tensor_dat(data.randn_pos)(
+              self.backend, indnames, shape, 
+              seed=2, nvals=nvals, defaultval=1+0j
+           )
+
+       xtensor = x.tensor
+       ytensor = tn.TensorGen(y.array, x.inds)
+
+       out = tn.less(xtensor, ytensor) 
+       ans = ar.less(x.array, y.array)
+       ans = tn.TensorGen(ans, x.inds)
+
+       assert out == ans
+
+
+   @pytest.mark.parametrize("indnames, shape, nvals", [
+      ["ijk", (2,3,4), 5],
+   ])
+   def test_greater_equal(self, indnames, shape, nvals):
+
+       x = data.tensor_dat(data.randn_pos)(
+              self.backend, indnames, shape, 
+              seed=1, nvals=nvals, defaultval=1+0j
+           )
+       y = data.tensor_dat(data.randn_pos)(
+              self.backend, indnames, shape, 
+              seed=2, nvals=nvals, defaultval=1+0j
+           )
+
+       xtensor = x.tensor
+       ytensor = tn.TensorGen(y.array, x.inds)
+
+       out = tn.greater_equal(xtensor, ytensor) 
+       ans = ar.greater_equal(x.array, y.array)
+       ans = tn.TensorGen(ans, x.inds)
+
+       assert out == ans
+
+
+   @pytest.mark.parametrize("indnames, shape, nvals", [
+      ["ijk", (2,3,4), 5],
+   ])
+   def test_less_equal(self, indnames, shape, nvals):
+
+       x = data.tensor_dat(data.randn_pos)(
+              self.backend, indnames, shape, 
+              seed=1, nvals=nvals, defaultval=1+0j
+           )
+       y = data.tensor_dat(data.randn_pos)(
+              self.backend, indnames, shape, 
+              seed=2, nvals=nvals, defaultval=1+0j
+           )
+
+       xtensor = x.tensor
+       ytensor = tn.TensorGen(y.array, x.inds)
+
+       out = tn.less_equal(xtensor, ytensor) 
+       ans = ar.less_equal(x.array, y.array)
        ans = tn.TensorGen(ans, x.inds)
 
        assert out == ans

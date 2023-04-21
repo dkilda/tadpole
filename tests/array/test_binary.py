@@ -256,6 +256,38 @@ class TestArray:
    @pytest.mark.parametrize("shapes, nvals", [
       [[(2,3,4), (2,3,4)], 5],
    ])
+   def test_greater_equal(self, shapes, nvals):
+
+       w = data.narray_dat(data.randn_pos)(
+              self.backend, shapes, nvals=nvals, defaultval=1+0j
+           )
+
+       out = ar.greater_equal(w.arrays[0], w.arrays[1])
+       ans = w.datas[0] >= w.datas[1]
+       ans = unary.asarray(ans, **options(backend=self.backend))    
+
+       assert out == ans 
+
+
+   @pytest.mark.parametrize("shapes, nvals", [
+      [[(2,3,4), (2,3,4)], 5],
+   ])
+   def test_less_equal(self, shapes, nvals):
+
+       w = data.narray_dat(data.randn_pos)(
+              self.backend, shapes, nvals=nvals, defaultval=1+0j
+           )
+
+       out = ar.less_equal(w.arrays[0], w.arrays[1])
+       ans = w.datas[0] <= w.datas[1]
+       ans = unary.asarray(ans, **options(backend=self.backend))    
+
+       assert out == ans 
+
+
+   @pytest.mark.parametrize("shapes, nvals", [
+      [[(2,3,4), (2,3,4)], 5],
+   ])
    def test_logical_and(self, shapes, nvals):
 
        w = data.narray_dat(data.randn_pos)(
@@ -353,6 +385,23 @@ class TestArray:
        out = ar.div(w.arrays[0], w.arrays[1])
        ans = w.datas[0] / w.datas[1]
        ans = unary.asarray(ans, **options(backend=self.backend))
+
+       assert ar.allclose(out, ans)
+
+
+   @pytest.mark.parametrize("sampledat", [
+      data.randuniform_int_dat_001,
+   ])
+   def test_mod(self, sampledat):
+
+       x = sampledat(self.backend, boundaries=(1,11), seed=1)
+       y = sampledat(self.backend, boundaries=(1,11), seed=2)
+
+       out = ar.mod(x.array, y.array)
+       ans = x.data % y.data
+       ans = unary.asarray(
+                ans, **options(backend=self.backend, dtype=ans.dtype)
+             )
 
        assert ar.allclose(out, ans)
 
