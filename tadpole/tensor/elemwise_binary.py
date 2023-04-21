@@ -140,9 +140,9 @@ class TensorElemwiseBinary:
        return self._apply(ar.mod)
  
 
-   def floor(self):
+   def floordiv(self):
 
-       return self._apply(ar.floor)
+       return self._apply(ar.floordiv)
  
 
    def power(self):
@@ -300,10 +300,10 @@ def mod(x, y):
 
 @ad.nondifferentiable
 @typecast_binary
-def floor(x, y):
+def floordiv(x, y):
 
     op = tensor_elemwise_binary(x, y)
-    return op.floor() 
+    return op.floordiv() 
  
 
 @ad.differentiable

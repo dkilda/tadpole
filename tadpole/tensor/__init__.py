@@ -158,6 +158,7 @@ from .elemwise_unary import (
 
 
 from .elemwise_unary import (
+   floor, 
    neg,
    sign,
    conj,
@@ -193,7 +194,7 @@ from .elemwise_binary import (
    mul,
    div,
    mod,
-   floor,
+   floordiv,
    power,
 )
 

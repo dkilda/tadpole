@@ -391,7 +391,7 @@ class TestTensorElemwiseBinary:
    @pytest.mark.parametrize("sampledat", [
       ardata.randuniform_int_dat_001,
    ])
-   def test_floor(self, sampledat):
+   def test_floordiv(self, sampledat):
 
        x = data.tensor_sample_dat(sampledat)(
               self.backend, boundaries=(1,11), seed=1
@@ -404,7 +404,7 @@ class TestTensorElemwiseBinary:
        ytensor = tn.TensorGen(y.array, x.inds)
 
        out = xtensor // ytensor
-       ans = ar.floor(x.array, y.array)
+       ans = ar.floordiv(x.array, y.array)
        ans = tn.TensorGen(ans, x.inds)
 
        assert tn.allclose(out, ans)

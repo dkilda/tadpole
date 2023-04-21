@@ -259,6 +259,10 @@ class Backend(abc.ABC):
        pass
 
    @abc.abstractmethod
+   def floor(self, array):
+       pass
+
+   @abc.abstractmethod
    def neg(self, array):
        pass
 
@@ -334,7 +338,7 @@ class Backend(abc.ABC):
        pass
 
    @abc.abstractmethod
-   def floor(self, x, y):
+   def floordiv(self, x, y):
        pass
 
    @abc.abstractmethod

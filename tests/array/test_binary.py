@@ -409,12 +409,12 @@ class TestArray:
    @pytest.mark.parametrize("sampledat", [
       data.randuniform_int_dat_001,
    ])
-   def test_floor(self, sampledat):
+   def test_floordiv(self, sampledat):
 
        x = sampledat(self.backend, boundaries=(1,11), seed=1)
        y = sampledat(self.backend, boundaries=(1,11), seed=2)
 
-       out = ar.floor(x.array, y.array)
+       out = ar.floordiv(x.array, y.array)
        ans = x.data // y.data
        ans = unary.asarray(
                 ans, **options(backend=self.backend, dtype=ans.dtype)

@@ -428,6 +428,13 @@ class Array(types.Array):
        return self.new(data) 
 
 
+   def floor(self):
+
+       data = self._backend.floor(self._data)
+
+       return self.new(data) 
+
+
    def neg(self):
 
        data = self._backend.neg(self._data)
@@ -769,6 +776,12 @@ def log(x):
 def exp(x): 
 
     return x.exp()
+
+
+@typecast
+def floor(x):
+
+    return x.floor()
 
 
 @typecast

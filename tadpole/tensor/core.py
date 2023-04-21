@@ -558,7 +558,7 @@ class TensorGen(Tensor, Grad, Pluggable):
 
    def __floordiv__(self, other):
 
-       return binary.floor(self, other)
+       return binary.floordiv(self, other)
 
 
    def __pow__(self, other):
@@ -598,7 +598,7 @@ class TensorGen(Tensor, Grad, Pluggable):
 
    def __rfloordiv__(self, other):
 
-       return binary.floor(other, self)
+       return binary.floordiv(other, self)
 
 
    def __rpow__(self, other):

@@ -429,6 +429,11 @@ class TorchBackend(backend.Backend):
        return torch.exp(array) 
 
 
+   def floor(self, array):
+
+       return torch.floor(array)
+
+
    def neg(self, array):
 
        return torch.neg(array)
@@ -521,7 +526,7 @@ class TorchBackend(backend.Backend):
        return torch.remainder(x, y) 
        
 
-   def floor(self, x, y):
+   def floordiv(self, x, y):
 
        return torch.floor_divide(x, y) 
 

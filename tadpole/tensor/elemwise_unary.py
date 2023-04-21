@@ -164,6 +164,11 @@ class TensorElemwiseUnary:
 
    # --- Standard math --- #
 
+   def floor(self):
+
+       return self._apply(ar.floor)
+
+
    def neg(self):
 
        return self._apply(ar.neg)
@@ -379,6 +384,14 @@ def astype(x, dtype):
 
 
 # --- Standard math --------------------------------------------------------- #
+
+@ad.nondifferentiable
+@typecast_unary
+def floor(x):
+
+    op = tensor_elemwise_unary(x)
+    return op.floor()
+
 
 @ad.differentiable
 @typecast_unary

@@ -638,6 +638,19 @@ class TestArray:
    # --- Standard math --- #
 
    @pytest.mark.parametrize("shape", [(2,3,4)])
+   @pytest.mark.parametrize("dtype", ["float64"])
+   def test_floor(self, shape, dtype):
+
+       w = data.array_dat(data.randn)(self.backend, shape, dtype=dtype)
+
+       out = ar.floor(w.array) 
+       ans = w.backend.floor(w.data)
+       ans = unary.asarray(ans, **options(backend=self.backend))
+
+       assert ar.allclose(out, ans)
+
+
+   @pytest.mark.parametrize("shape", [(2,3,4)])
    @pytest.mark.parametrize("dtype", ["complex128"])
    def test_neg(self, shape, dtype):
 

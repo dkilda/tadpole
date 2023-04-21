@@ -121,6 +121,11 @@ class NodeTensor(an.NodeGen, tn.Tensor, tn.Grad):
        return tn.mod(self, other)
 
 
+   def __floordiv__(self, other):
+
+       return tn.floordiv(self, other)
+
+
    def __pow__(self, other):
 
        return tn.power(self, other)
@@ -149,6 +154,11 @@ class NodeTensor(an.NodeGen, tn.Tensor, tn.Grad):
    def __rmod__(self, other):
 
        return tn.mod(other, self)
+
+
+   def __rfloordiv__(self, other):
+
+       return tn.floordiv(other, self)
 
 
    def __rpow__(self, other):
@@ -258,6 +268,11 @@ class NodeScalar(an.NodeGen, util.Scalar, tn.Grad):
        return tn.mod(self, other)
 
 
+   def __floordiv__(self, other):
+
+       return tn.floordiv(self, other)
+
+
    def __pow__(self, other):
 
        return tn.pow(self, other)  
@@ -286,6 +301,11 @@ class NodeScalar(an.NodeGen, util.Scalar, tn.Grad):
    def __rmod__(self, other):
 
        return tn.mod(other, self)
+
+
+   def __rfloordiv__(self, other):
+
+       return tn.floordiv(other, self)
 
 
    def __rpow__(self, other):

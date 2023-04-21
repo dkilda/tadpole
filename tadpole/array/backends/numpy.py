@@ -374,6 +374,11 @@ class NumpyBackend(backend.Backend):
        return np.exp(array)
 
 
+   def floor(self, array):
+
+       return np.floor(array)
+
+
    def neg(self, array):
 
        return np.negative(array)
@@ -466,7 +471,7 @@ class NumpyBackend(backend.Backend):
        return x % y
 
 
-   def floor(self, x, y):
+   def floordiv(self, x, y):
 
        return x // y
 

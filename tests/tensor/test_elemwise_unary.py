@@ -237,6 +237,22 @@ class TestTensorElemwiseUnary:
    @pytest.mark.parametrize("indnames, shape", [
       ["ijk", (2,3,4)],
    ])
+   def test_floor(self, indnames, shape):
+
+       w = data.tensor_dat(data.randn)(
+              self.backend, indnames, shape, dtype="float64"
+           )
+
+       out = tn.floor(w.tensor)
+       ans = ar.floor(w.array)
+       ans = tn.TensorGen(ans, w.inds)
+
+       assert tn.allclose(out, ans)
+
+
+   @pytest.mark.parametrize("indnames, shape", [
+      ["ijk", (2,3,4)],
+   ])
    def test_neg(self, indnames, shape):
 
        w = data.tensor_dat(data.randn)(

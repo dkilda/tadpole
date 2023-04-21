@@ -239,9 +239,9 @@ class Array(types.Array):
        return self.new(data)
 
 
-   def floor(self):
+   def floordiv(self):
 
-       data = self._backend.floor(*self._datas)
+       data = self._backend.floordiv(*self._datas)
 
        return self.new(data)
 
@@ -381,9 +381,9 @@ def mod(x, y):
 
 
 @typecast       
-def floor(x, y):
+def floordiv(x, y):
 
-    return (x | y).floor()
+    return (x | y).floordiv()
 
 
 @typecast
