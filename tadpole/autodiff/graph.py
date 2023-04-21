@@ -26,6 +26,25 @@ from tadpole.autodiff.types import (
 ###############################################################################
 
 
+# --- Helper: cast function return type to Node ----------------------------- #
+
+def returns_node(fun):
+
+    def wrap(*args, **kwargs):
+
+        out = fun(*args, **kwargs) 
+
+        if not isinstance(out, Node): 
+           return an.point(out)
+
+        return out
+
+    return wrap
+
+
+
+
+
 # --- Graph ----------------------------------------------------------------- #
 
 class Graph:
@@ -73,12 +92,9 @@ class Graph:
    def build(self, fun, x):
 
        start = an.node(x, type(self)._layer, self._root)  
-       end   = fun(start)  
+       end   = returns_node(fun)(start)  
 
        return start, end
-
-
-
 
 
 

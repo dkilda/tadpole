@@ -73,16 +73,21 @@ class BackendRegistry:
        if isinstance(backend, str):
           return self.create(backend)
 
-       raise ValueError((
+       raise ValueError(
           f"Invalid backend '{backend}'. " 
           f"The backend input must be a string or a Backend object."
-       ))
+       )
 
 
    def set_default(self, default):
 
        self._default = default
        return self
+
+
+   def available(self):
+
+       return tuple(type(self)._backends.keys())
 
 
 
@@ -105,6 +110,11 @@ def get_from(opts):
 def set_default(backend):
 
     _BACKENDS.set_default(backend)
+
+
+def available():
+
+    return _BACKENDS.available()
 
 
 
@@ -169,28 +179,6 @@ def common_by_precedence(*backends):
     ]
 
     return backends[precedences.index(max(precedences))]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

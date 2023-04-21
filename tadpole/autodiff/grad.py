@@ -174,7 +174,7 @@ class PropagationForward(Propagation):
 
    def accum(self, start, end, seed):
 
-       if not isinstance(end, Node) or not end.connected(start):
+       if not end.connected(start):
           return GradSum(seed, end.tonull())
 
        return end.grads(GradSum(seed))
@@ -200,7 +200,7 @@ class PropagationReverse(Propagation):
 
    def accum(self, start, end, seed):
 
-       if not isinstance(end, Node) or not end.connected(start):
+       if not end.connected(start):
           return GradAccum(start.tonull())
 
        grads = GradAccum({end: seed})

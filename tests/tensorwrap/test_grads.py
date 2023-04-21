@@ -65,10 +65,22 @@ class TestVjpElemwiseBinary:
    @pytest.mark.parametrize("indnames, shape", [
       ["ijk", (2,3,4)],
    ])
-   def test_add(self, indnames, shape):
+   @pytest.mark.parametrize("op", [
+      "add", 
+      "sub", 
+      "mul", 
+      "div", 
+      "pow",
+   ])
+   def test_arithmetics(self, indnames, shape, op):
 
-       def fun(x, y):
-           return x / y
+       fun = {
+              "add": lambda x, y: x + y,
+              "sub": lambda x, y: x - y,
+              "mul": lambda x, y: x * y,
+              "div": lambda x, y: x / y,
+              "pow": lambda x, y: x ** y,
+             }[op]
 
        x = data.tensor_dat(data.randn)(
               self.backend, indnames, shape, seed=1
@@ -82,6 +94,7 @@ class TestVjpElemwiseBinary:
 
        assert_grad(fun, 0)(xtensor, ytensor)
        assert_grad(fun, 1)(xtensor, ytensor)
+
 
 
 

@@ -5,6 +5,7 @@ import tadpole.util     as util
 import tadpole.autodiff as ad
 import tadpole.tensor   as tn
 
+import tadpole.array.backends       as backends
 import tadpole.autodiff.node        as an
 import tadpole.tensorwrap.container as tc
 
@@ -27,7 +28,7 @@ class NodeTensor(an.NodeGen, tn.Tensor, tn.Grad):
 
    def addto(self, other):
 
-       if not other: # and not isinstance(other, tn.NullGrad):
+       if not other and not isinstance(other, tn.NullGrad):
           other = tn.NullGrad(self.space())
 
        return tn.addgrads(self, other)
@@ -293,6 +294,49 @@ an.register(float,   NodeScalar)
 an.register(complex, NodeScalar)
 
 
+def register_dtypes():
+
+    for dtype in [
+                  "float32",
+                  "float64",
+                  "float128",
+                  "complex64",
+                  "complex128",
+                  "complex256",
+                  "uint8",
+                  "int8",
+                  "int16",
+                  "int32",
+                  "int64",
+                  "float",
+                  "double",
+                  "cfloat",
+                  "cdouble",
+                  "short",
+                  "int",
+                  "long",
+                  "bool",
+                 ]:
+       for backend in backends.available():
+
+           try:
+               backend = backends.get(backend)
+           except ImportError:
+               continue
+
+           try:
+               dtype = backend.get_dtype(dtype)
+           except TypeError:
+               continue
+          
+           an.register(dtype, NodeScalar)
+
+
+register_dtypes()
+
+
+
+
 ###############################################################################
 ###                                                                         ###
 ###  Node for Container objects                                             ###
@@ -309,7 +353,7 @@ class NodeContainer(an.NodeGen, util.Container, tn.Grad):
 
    def addto(self, other):
 
-       if not other:
+       if not other and not isinstance(other, tc.NullGrad):
           other = tc.NullGrad(len(self))
 
        return tn.addgrads(self, other)
