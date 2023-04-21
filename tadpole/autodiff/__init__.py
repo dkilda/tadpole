@@ -8,6 +8,7 @@ from . import wrappers as wrappers
 from .wrappers import (
    differentiable,
    nondifferentiable,
+   checkpoint,
 )
 
 

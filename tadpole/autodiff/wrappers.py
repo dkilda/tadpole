@@ -2,7 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import tadpole.util                as util
+import tadpole.autodiff.nary       as nary
 import tadpole.autodiff.graph      as ag
+import tadpole.autodiff.grad       as ad
 import tadpole.autodiff.adjointmap as adjointmap
 
 
@@ -87,6 +89,25 @@ def nondifferentiable(fun):
 
     return ag.NonDifferentiable(fun, envelope)
 
+
+
+
+# --- Checkpointed function wrap -------------------------------------------- #
+
+def checkpoint(fun):
+
+    checkpointed_fun = differentiable(fun)
+
+    @nary.nary_op
+    def grad(fun, x):
+        op = ad.DifferentialOpReverse(fun, x)
+        return lambda g: op.grad(g)
+
+    def checkpointed_vjpfun(g, adx, out, *args, **kwargs):
+        return grad(fun, adx)(*args, **kwargs)(g)
+
+    makevjp_combo(checkpointed_fun, checkpointed_vjpfun)
+    return checkpointed_fun
 
 
 
