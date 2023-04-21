@@ -406,6 +406,23 @@ class TestArray:
        assert ar.allclose(out, ans)
 
 
+   @pytest.mark.parametrize("sampledat", [
+      data.randuniform_int_dat_001,
+   ])
+   def test_floor(self, sampledat):
+
+       x = sampledat(self.backend, boundaries=(1,11), seed=1)
+       y = sampledat(self.backend, boundaries=(1,11), seed=2)
+
+       out = ar.floor(x.array, y.array)
+       ans = x.data // y.data
+       ans = unary.asarray(
+                ans, **options(backend=self.backend, dtype=ans.dtype)
+             )
+
+       assert ar.allclose(out, ans)
+
+
    @pytest.mark.parametrize("shapes", [
       [(2,3,4), (2,3,4)],
    ])

@@ -334,6 +334,10 @@ class Backend(abc.ABC):
        pass
 
    @abc.abstractmethod
+   def floor(self, x, y):
+       pass
+
+   @abc.abstractmethod
    def power(self, x, y):
        pass
 

@@ -466,6 +466,11 @@ class NumpyBackend(backend.Backend):
        return x % y
 
 
+   def floor(self, x, y):
+
+       return x // y
+
+
    def power(self, x, y):
 
        return np.power(x, y)

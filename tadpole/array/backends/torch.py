@@ -519,6 +519,11 @@ class TorchBackend(backend.Backend):
    def mod(self, x, y):
 
        return torch.remainder(x, y) 
+       
+
+   def floor(self, x, y):
+
+       return torch.floor_divide(x, y) 
 
 
    def power(self, x, y):

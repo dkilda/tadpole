@@ -239,6 +239,13 @@ class Array(types.Array):
        return self.new(data)
 
 
+   def floor(self):
+
+       data = self._backend.floor(*self._datas)
+
+       return self.new(data)
+
+
    def power(self):
 
        data = self._backend.power(*self._datas)
@@ -371,6 +378,12 @@ def div(x, y):
 def mod(x, y):
 
     return (x | y).mod()
+
+
+@typecast       
+def floor(x, y):
+
+    return (x | y).floor()
 
 
 @typecast

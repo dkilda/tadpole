@@ -193,6 +193,7 @@ from .elemwise_binary import (
    mul,
    div,
    mod,
+   floor,
    power,
 )
 

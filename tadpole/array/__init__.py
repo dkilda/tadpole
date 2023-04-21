@@ -159,6 +159,7 @@ from .binary import (
    mul,
    div,
    mod,
+   floor,
    power,
    dot,
    kron,

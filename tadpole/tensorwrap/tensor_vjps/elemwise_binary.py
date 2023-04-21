@@ -43,6 +43,11 @@ ad.makevjp(tn.div, lambda g, out, x, y: tn.match( g / y,        x),
 )
 
 
+ad.makevjp(tn.mod, lambda g, out, x, y: tn.match( g,                   x),   
+                   lambda g, out, x, y: tn.match(-g * tn.floor(x / y), y)
+)
+
+
 def vjpA_power(g, out, x, y):
 
     g1 = g * y * (x ** tn.where(y, y-1, 1.))
