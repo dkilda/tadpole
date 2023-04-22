@@ -19,6 +19,7 @@ import tadpole.tensorwrap.tensor_jvps as tjvps
 
 import tests.tensorwrap.fakes as fake
 import tests.tensorwrap.data  as data
+import tests.array.data       as ardata
 
 
 from tests.common import (
@@ -45,10 +46,10 @@ from tadpole.index import (
 ###############################################################################
 
 
-# --- Binary elementwise grad ----------------------------------------------- #
+# --- Binary elementwise grads ---------------------------------------------- #
 
 @pytest.mark.parametrize("current_backend", available_backends, indirect=True)
-class TestVjpElemwiseBinary:
+class TestGradsElemwiseBinary:
 
    @pytest.fixture(autouse=True)
    def request_backend(self, current_backend):
@@ -71,15 +72,17 @@ class TestVjpElemwiseBinary:
       "mul", 
       "div", 
       "pow",
+      "addgrads",
    ])
    def test_arithmetics(self, indnames, shape, op):
 
        fun = {
-              "add": lambda x, y: x + y,
-              "sub": lambda x, y: x - y,
-              "mul": lambda x, y: x * y,
-              "div": lambda x, y: x / y,
-              "pow": lambda x, y: x ** y,
+              "add":      lambda x, y: x + y,
+              "sub":      lambda x, y: x - y,
+              "mul":      lambda x, y: x * y,
+              "div":      lambda x, y: x / y,
+              "pow":      lambda x, y: x ** y,
+              "addgrads": lambda x, y: tn.addgrads(x, y),
              }[op]
 
        x = data.tensor_dat(data.randn)(
@@ -94,6 +97,66 @@ class TestVjpElemwiseBinary:
 
        assert_grad(fun, 0)(xtensor, ytensor)
        assert_grad(fun, 1)(xtensor, ytensor)
+
+
+   @pytest.mark.parametrize("sampledat", [
+      ardata.randuniform_real_dat_001,
+   ])
+   @pytest.mark.parametrize("op", [
+      "mod", 
+   ])
+   def test_arithmetics_int(self, sampledat, op):
+
+       fun = {
+              "mod": lambda x, y: x % y,
+             }[op]
+
+       x = data.tensor_sample_dat(sampledat)(
+              self.backend, boundaries=(1,11), seed=1
+           )
+       y = data.tensor_sample_dat(sampledat)(
+              self.backend, boundaries=(1,11), seed=2
+           )
+
+       xtensor = x.tensor
+       ytensor = tn.TensorGen(y.array, x.inds)
+
+       assert_grad(fun, 0)(xtensor, ytensor)
+       assert_grad(fun, 1)(xtensor, ytensor)
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Ternary elementwise grads                                              ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Ternary elementwise grads --------------------------------------------- #
+
+@pytest.mark.parametrize("current_backend", available_backends, indirect=True)
+class TestGradsElemwiseTernary:
+
+   @pytest.fixture(autouse=True)
+   def request_backend(self, current_backend):
+
+       self._backend = current_backend
+
+
+   @property
+   def backend(self):
+
+       return self._backend
+
+
+
+   @pytest.mark.parametrize("indnames, shape, nvals", [
+      ["ijk", (2,3,4), 5],
+   ])
+   def test_where(self, indnames, shape, nvals):
+
 
 
 

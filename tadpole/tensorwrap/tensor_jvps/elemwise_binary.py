@@ -44,6 +44,11 @@ ad.makejvp(tn.div, lambda g, out, x, y: tn.match( g / y,        out),
 )
 
 
+ad.makejvp(tn.mod, lambda g, out, x, y: tn.match(g,                    out),   
+                   lambda g, out, x, y: tn.match(-g * tn.floor(x / y), out)
+)
+
+
 def jvpA_power(g, out, x, y):
 
     g1 = g * y * (x ** tn.where(y, y-1, 1.))

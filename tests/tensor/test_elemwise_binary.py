@@ -368,6 +368,7 @@ class TestTensorElemwiseBinary:
 
    @pytest.mark.parametrize("sampledat", [
       ardata.randuniform_int_dat_001,
+      ardata.randuniform_real_dat_001,
    ])
    def test_mod(self, sampledat):
 

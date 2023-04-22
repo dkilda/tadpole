@@ -391,6 +391,7 @@ class TestArray:
 
    @pytest.mark.parametrize("sampledat", [
       data.randuniform_int_dat_001,
+      data.randuniform_real_dat_001,
    ])
    def test_mod(self, sampledat):
 
