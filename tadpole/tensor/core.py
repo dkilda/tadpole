@@ -57,7 +57,7 @@ class NullGrad(Tensor, Grad, Pluggable):
 
    def addto(self, other):
 
-       if isinstance(other, self.__class__):
+       if not other:
           return self
 
        return other.addto(self)

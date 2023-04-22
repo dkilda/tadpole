@@ -151,11 +151,41 @@ class TestGradsElemwiseTernary:
        return self._backend
 
 
-
    @pytest.mark.parametrize("indnames, shape, nvals", [
       ["ijk", (2,3,4), 5],
    ])
    def test_where(self, indnames, shape, nvals):
+
+       w = data.tensor_dat(data.randn_pos)(
+              self.backend, 
+              indnames, 
+              shape, 
+              seed=1, 
+              dtype="bool", 
+              nvals=nvals, 
+              defaultval=False
+           )
+       x = data.array_dat(data.randn)(
+              self.backend, w.shape, seed=2
+           )
+       y = data.array_dat(data.randn)(
+              self.backend, w.shape, seed=3
+           )
+
+       wtensor = w.tensor
+       xtensor = tn.TensorGen(x.array, w.inds)
+       ytensor = tn.TensorGen(y.array, w.inds)
+
+       def fun(w,x,y):
+           return tn.where(w,x,y)
+
+       assert_grad(fun, 0, submode="null")(wtensor, xtensor, ytensor)
+       assert_grad(fun, 1                )(wtensor, xtensor, ytensor)
+       assert_grad(fun, 2                )(wtensor, xtensor, ytensor)
+
+
+
+
 
 
 
