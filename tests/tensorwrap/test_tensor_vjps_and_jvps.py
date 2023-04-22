@@ -41,6 +41,97 @@ from tadpole.index import (
 
 ###############################################################################
 ###                                                                         ###
+###  Unary elementwise grads                                                ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Unary elementwise grads ----------------------------------------------- #
+
+@pytest.mark.parametrize("current_backend", available_backends, indirect=True)
+class TestGradsElemwiseUnary:
+
+   @pytest.fixture(autouse=True)
+   def request_backend(self, current_backend):
+
+       self._backend = current_backend
+
+
+   @property
+   def backend(self):
+
+       return self._backend
+
+
+   @pytest.mark.parametrize("indnames, shape", [
+      ["ijk", (2,3,4)],
+   ])
+   @pytest.mark.parametrize("op", [
+      "neg",
+      "conj",
+      "real",
+      "imag",
+      "absolute",
+      "sqrt",
+      "log",
+      "exp",
+      "sin", 
+      "cos",
+      "tan",
+      "arcsin",
+      "arccos",
+      "arctan",
+      "sinh", 
+      "cosh",
+      "tanh",
+      "arcsinh",
+      "arccosh",
+      "arctanh",
+   ])
+   def test_math(self, indnames, shape, op):
+
+       opts = {}
+       fun = {
+              "neg":      lambda x: -x,
+              "conj":     lambda x: tn.conj(x),
+              "real":     lambda x: tn.real(x),
+              "imag":     lambda x: tn.imag(x),
+              "absolute": lambda x: tn.absolute(x),
+              "sqrt":     lambda x: tn.sqrt(x),
+              "log":      lambda x: tn.log(x),
+              "exp":      lambda x: tn.exp(x),  
+              "sin":      lambda x: tn.sin(x),
+              "cos":      lambda x: tn.cos(x),
+              "tan":      lambda x: tn.tan(x),
+              "arcsin":   lambda x: tn.arcsin(x),
+              "arccos":   lambda x: tn.arccos(x),
+              "arctan":   lambda x: tn.arctan(x),
+              "sinh":     lambda x: tn.sinh(x), 
+              "cosh":     lambda x: tn.cosh(x),
+              "tanh":     lambda x: tn.tanh(x),
+              "arcsinh":  lambda x: tn.arcsinh(x),
+              "arccosh":  lambda x: tn.arccosh(x),
+              "arctanh":  lambda x: tn.arctanh(x),
+             }[op]
+
+       x = data.tensor_dat(data.randn)(
+              self.backend, indnames, shape, seed=1
+           )
+       xtensor = x.tensor
+ 
+       if op == "arccosh":
+          xtensor = xtensor + 2.5
+
+       if op in ("conj", "real", "imag", "absolute"):
+          opts = {"submode": "real"}
+
+       assert_grad(fun, **opts)(xtensor)
+
+
+
+
+###############################################################################
+###                                                                         ###
 ###  Binary elementwise grads                                               ###
 ###                                                                         ###
 ###############################################################################
@@ -74,7 +165,7 @@ class TestGradsElemwiseBinary:
       "pow",
       "addgrads",
    ])
-   def test_arithmetics(self, indnames, shape, op):
+   def test_math(self, indnames, shape, op):
 
        fun = {
               "add":      lambda x, y: x + y,
@@ -105,7 +196,7 @@ class TestGradsElemwiseBinary:
    @pytest.mark.parametrize("op", [
       "mod", 
    ])
-   def test_arithmetics_int(self, sampledat, op):
+   def test_math_int(self, sampledat, op):
 
        fun = {
               "mod": lambda x, y: x % y,

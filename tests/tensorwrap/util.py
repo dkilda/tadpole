@@ -59,20 +59,17 @@ def assert_vjp(fun, x):
     dx = tn.space(x).randn()
     dy = tn.space(y).randn()
 
-    if tn.iscomplex(y):
-       dy = tn.conj(dy)
-
     vj = op.grad(dy)
     jv = numerical_grad(fun, x)(dx)
 
     i = IndexGen("i", dx.size)
-    j = IndexGen("j", dy.size)    
+    j = IndexGen("j", dy.size)  
 
     vjv_out = tn.flatten(vj, i) @ tn.flatten(dx, i)
-    vjv_ans = tn.flatten(dy, j) @ tn.flatten(jv, j)
+    vjv_ans = tn.flatten(dy, j) @ tn.flatten(jv, j) 
 
     assert tn.space(vj) == tn.space(x)
-    assert tn.allclose(vjv_out, vjv_ans) 
+    assert tn.allclose(vjv_out, vjv_ans)
 
 
 
@@ -94,6 +91,31 @@ def assert_jvp(fun, x):
 
     assert tn.space(jv_out) == tn.space(jv_ans)
     assert tn.allclose(vjv_out, vjv_ans) 
+
+
+
+
+# --- Assert real VJP ------------------------------------------------------- # 
+
+def assert_vjp_real(fun, x):
+
+    op = agrad.DifferentialOpReverse(fun, x)
+    y  = op.evaluate()
+
+    dx = tn.space(x).randn()
+    dy = tn.space(y).randn()
+
+    vj = op.grad(dy)
+    jv = numerical_grad(fun, x)(dx)
+
+    i = IndexGen("i", dx.size)
+    j = IndexGen("j", dy.size)  
+
+    vjv_out = tn.real(tn.flatten(vj, i) @ tn.flatten(dx, i))
+    vjv_ans = tn.real(tn.flatten(dy, j) @ tn.flatten(jv, j)) 
+
+    assert tn.space(vj) == tn.space(x)
+    assert tn.allclose(vjv_out, vjv_ans)
 
 
 
@@ -154,6 +176,8 @@ def assert_grad(fun, x, modes=("vjp","jvp"), submode=None, order=2):
         {
          ("vjp", None):   assert_vjp, 
          ("jvp", None):   assert_jvp,
+         ("vjp", "real"): assert_vjp_real, 
+         ("jvp", "real"): assert_jvp,
          ("vjp", "null"): assert_vjp_null, 
          ("jvp", "null"): assert_jvp_null,
         }[mode, submode](fun, x)  

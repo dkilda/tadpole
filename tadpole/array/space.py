@@ -73,12 +73,18 @@ class ArraySpace(types.Space):
 
    def fillwith(self, data):
 
-       data = unary.asarray(data, dtype=self.dtype, backend=self._backend)
+       def iscomplex(dtype):
+           return dtype in self._backend.complex_dtypes()
+
+       data = unary.asarray(data, backend=self._backend)
 
        if data.shape != self.shape:
           data = unary.broadcast_to(data, self.shape)
 
-       return data
+       if unary.iscomplex(data) and not iscomplex(self.dtype):
+          return data
+
+       return unary.astype(data, dtype=self.dtype)
 
 
    # --- Reshape space --- #
