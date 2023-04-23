@@ -68,21 +68,6 @@ class AdjointOpGen(AdjointOp):
           log.val(self._args,   other._args)
           log.val(self._kwargs, other._kwargs)
 
-          try:
-             print("OPEQ: ", self._out._gate._op._args,           other._out._gate._op._args, 
-                             self._out._source._gate._op._args == other._out._source._gate._op._args, 
-                             self._out._gate._op._args         == other._out._gate._op._args,
-                             bool(log))
-
-             """
-             print("OPEQ: ", self._out._source._gate._op._args,   other._out._source._gate._op._args, 
-                             self._out._source._gate._op._args == other._out._source._gate._op._args, 
-                             self._out._gate._op._args         == other._out._gate._op._args,
-                             bool(log))
-             """
-          except AttributeError:
-             pass 
-
        return bool(log)
 
 

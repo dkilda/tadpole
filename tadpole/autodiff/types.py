@@ -165,12 +165,6 @@ class DifferentiableFun(abc.ABC):
 
 class Args(Container, abc.ABC):
 
-   """
-   @abc.abstractmethod
-   def nodify(self):
-       pass
-   """
-
    @abc.abstractmethod
    def concat(self):
        pass
