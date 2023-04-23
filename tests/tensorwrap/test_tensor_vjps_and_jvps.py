@@ -36,6 +36,10 @@ from tadpole.index import (
    Indices,
 )
 
+from tadpole.tensorwrap.tensor_vjps.elemwise_unary import (
+   sparsegrad,
+)
+
 
 
 
@@ -176,6 +180,51 @@ class TestGradsElemwiseUnary:
 
        assert_grad(fun)(x.tensor, ind)
 
+
+   @pytest.mark.skip
+   @pytest.mark.parametrize("indnames, shape, pos", [
+      ["ijk", (2,3,4), ((1,),(0,),(1,))],
+   ])
+   def test_getitem(self, indnames, shape, pos):
+
+       def fun(x, pos):
+           return x[pos]
+
+       x = data.tensor_dat(data.randn)(
+              self.backend, indnames, shape
+           )
+
+       assert_grad(fun, order=1)(x.tensor, pos)
+
+
+
+   '''
+   @pytest.mark.parametrize("graddat", [
+      data.sparsegrad_dat_001,
+   ])
+   @pytest.mark.parametrize("dtype", [
+      "complex128",
+      "float64"
+   ])
+   def test_sparsegrad(self, graddat, dtype):
+
+       def fun(x, pos, vals):
+           return sparsegrad(x, pos, vals)
+
+       w = graddat(
+              self.backend, dtype, seed=1
+           )      
+
+
+       """
+       x = data.array_dat(data.randn)(
+              self.backend, w.shape, dtype=dtype, seed=2
+           )
+       xtensor = tn.TensorGen(x.array, w.inds)
+       """
+
+       assert_grad(fun)(w.tensor, w.pos, w.vals)
+   '''
 
 
 

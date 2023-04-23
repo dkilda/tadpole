@@ -57,6 +57,10 @@ ad.makevjp(tn.cumsum, vjp_cumsum)
 @ad.differentiable
 def sparsegrad(x, pos, vals):
 
+    sparsex = tn.space(x).sparsegrad(pos, vals)
+
+    print("SPARSEGRAD: ", pos, vals, sparsex._pos, sparsex._vals, sparsex.todense()._data._data)
+
     return tn.space(x).sparsegrad(pos, vals)
 
 

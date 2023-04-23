@@ -32,7 +32,10 @@ class NumpyBackend(backend.Backend):
 
        dtype = self.get_dtype(opts.pop("dtype", None))
 
-       return array.astype(dtype, **opts)
+       try:
+          return array.astype(dtype, **opts)
+       except AttributeError:
+          return self.asarray(array).astype(dtype)
 
 
    def dtype(self, array):
@@ -100,11 +103,14 @@ class NumpyBackend(backend.Backend):
 
        if seed is not None:
           np.random.seed(seed)
+   
+       def array(dtype):
+           return self.astype(fun(**opts), dtype=dtype)
 
        if dtype in self.complex_dtypes():
-          return fun(**opts).astype(dtype) + 1j*fun(**opts).astype(dtype)
+          return array(dtype) + 1j*array(dtype) 
         
-       return fun(**opts).astype(dtype)
+       return array(dtype) 
 
 
    def rand(self, shape, **opts):
