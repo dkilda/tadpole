@@ -472,6 +472,12 @@ class NodeScape:
        def _node_by_type(*typefuns):
 
            if  not typefuns:
+
+               if layer > misc.minlayer():
+                  raise NonDifferentiableTypeError(
+                     f"Cannot differentiate wrt value of type {type(source)}."
+                  )
+
                return NodeGen(source, layer, gate)
 
            try:
@@ -506,6 +512,19 @@ class NodeScape:
    def point(self, source):
 
        return self._create(source, misc.minlayer(), GateNull()) 
+
+
+
+
+# --- Non-differentiable type error ----------------------------------------- #
+
+class NonDifferentiableTypeError(Exception):
+
+   def __init__(self, value):
+       self.value = value
+
+   def __str__(self):
+       return repr(self.value)
 
 
 

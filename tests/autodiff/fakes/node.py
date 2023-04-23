@@ -5,7 +5,7 @@ from tests.common import arepeat, arange, amap
 
 import tests.autodiff.fakes   as fake
 import tadpole.autodiff.types as at
-
+import tadpole.autodiff.node  as an
 
 
 
@@ -153,6 +153,9 @@ class Node(at.Node):
    def grads(self, grads):
 
        return self._fun["grads", grads](grads)
+
+
+an.register(Node, an.NodeGen)
 
 
 

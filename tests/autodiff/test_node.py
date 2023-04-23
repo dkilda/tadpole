@@ -648,7 +648,7 @@ class TestNodeScape:
 
        source = randn((IndexGen("i",2), IndexGen("j",3), IndexGen("k",4)))
        layer  = 0
-       gate   = fake.Gate()      
+       gate   = fake.Gate()
 
        out = nodescape.node(source, layer, gate)
        ans = NodeTensor(NodeTensor(source, -1, an.GateNull()), layer, gate) 
@@ -668,6 +668,9 @@ class TestNodeScape:
            }[which](valency)
 
        nodescape = an.NodeScape()
+       nodescape.register(fake.Node,  an.NodeGen)
+       nodescape.register(fake.Value, an.NodeGen)
+
        assert nodescape.node(w.source, w.layer, w.gate) == w.node
 
        

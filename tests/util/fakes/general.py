@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import collections
-
+import tadpole.autodiff.node as an
 
 
 
@@ -184,6 +184,10 @@ class Value:
    def todense(self):
 
        return self
+
+
+an.register(Value, an.NodeGen)
+
 
 
 
