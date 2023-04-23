@@ -380,8 +380,9 @@ def pack_dat(valency=1, layer=0):
 
 EnvelopeData = collections.namedtuple("EnvelopeData", [
                   "envelope", "args", 
-                  "packs", "nodes", 
-                  "outnodes", "outvalues", "fun", "funwrap"
+                  "packs",    "nodes", 
+                  "outnodes", "outvalues", 
+                  "fun",      "funwrap"
                ])
 
 
@@ -402,7 +403,6 @@ def envelope_dat(stackdat):
            packs.append(_packs)
 
         return tuple(reversed(packs))
-
 
     packs = make_packs()
 
@@ -508,7 +508,7 @@ def node_stack_dat_001(gatetype="REVERSE"):
     funwrap = fake.Fun(None)
 
     outnodeA = an.point(outvalue)
-    outnodeB = an.node(outnodeA, 0, gate(outparentsB, an.AdjointOpGen(funwrap, adxsB, outnodeA, ag.ArgsGen(*nodesA))))
+    outnodeB = an.node(outnodeA, 0, gate(outparentsB, an.AdjointOpGen(funwrap, adxsB, outnodeA, ag.ArgsGen(*nodesA)))) 
     outnodeC = an.node(outnodeB, 1, gate(outparentsC, an.AdjointOpGen(funwrap, adxsC, outnodeB, ag.ArgsGen(*nodesB))))
     outnodeD = an.node(outnodeC, 2, gate(outparentsD, an.AdjointOpGen(funwrap, adxsD, outnodeC, ag.ArgsGen(*nodesC))))
 

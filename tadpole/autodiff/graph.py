@@ -218,6 +218,101 @@ class ArgsGen(Args):
 
    def __len__(self):
 
+       return len(self._denodified())
+
+
+   def __contains__(self, x):
+
+       return x in self._denodified()
+
+
+   def __iter__(self):
+
+       return iter(self._denodified())
+
+
+   def __getitem__(self, idx):
+
+       return self._denodified()[idx]
+
+
+   @util.cacheable
+   def _nodified(self):
+
+       return nodify(*self._args)
+
+
+   @util.cacheable
+   def _denodified(self):
+
+       return denodify(*self._nodified())
+
+
+   def concat(self):
+
+       return ConcatArgs(train_args(*self._nodified())) 
+
+ 
+   def pack(self, **kwargs):
+
+       return PackArgs(self.concat(), **kwargs)
+
+
+   def deshelled(self):
+
+       args = self.concat().deshell()
+
+       if args.concat().innermost():
+          return args.concat().deshell()
+
+       return args
+
+
+
+
+    
+
+
+
+
+
+
+"""
+
+class ArgsGen(Args):  
+
+   def __init__(self, *args):
+
+       self._args = args
+
+
+   def __repr__(self):
+
+       rep = util.ReprChain()
+       rep.typ(self)
+       rep.val("args", self._args)
+
+       return str(rep)
+
+
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+       log.typ(self, other) 
+
+       if bool(log):
+          log.val(self._args, other._args)
+
+       return bool(log)
+
+
+   def __hash__(self):
+
+       return hash(self._args)
+
+
+   def __len__(self):
+
        return len(self._args)
 
 
@@ -234,6 +329,13 @@ class ArgsGen(Args):
    def __getitem__(self, idx):
 
        return self._args[idx]
+
+
+
+   def denodify(self):
+
+       for node in self.nodify():
+
 
 
    def nodify(self):
@@ -273,11 +375,224 @@ class ArgsGen(Args):
        return args
 
 
+"""
 
 
-# --- Concatenation of arguments -------------------------------------------- #
 
-class ConcatArgs(Sequential, Cohesive):
+
+
+
+
+"""
+
+class Nodified(util.Container):
+
+   def __init__(self, *args):
+
+       self._args = args
+
+
+   def __repr__(self):
+
+       rep = util.ReprChain()
+       rep.typ(self)
+       rep.val("args", self._list)
+
+       return str(rep)
+
+
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+       log.typ(self, other) 
+
+       if bool(log):
+          log.val(self._list, other._list)
+
+       return bool(log)
+
+
+   def __hash__(self):
+
+       return hash(self._list)
+
+
+   def __len__(self):
+
+       return len(self._list)
+
+
+   def __contains__(self, x):
+
+       return x in iter(self)
+
+
+   def __getitem__(self, idx):
+
+       return self._list()[idx]
+
+
+   def __iter__(self):
+
+       return self._iter()
+
+
+   def _iter(self):
+
+       for arg in self._args:
+
+           if isinstance(arg, an.Node):
+              yield arg
+              continue
+
+           yield an.point(arg)
+
+
+   @util.cacheable
+   def _list(self):
+
+       return list(self._iter())
+
+
+
+
+class Denodified(Sequential, util.Container):
+
+   def __init__(self, *args, train=None, **kwargs):
+
+       if train is None:
+          train = args[0]
+
+       if not isinstance(train, Sequential):
+          train = TrainArgs(*args, **kwargs) 
+
+       self._train = train
+
+
+   def __repr__(self):
+
+       rep = util.ReprChain()
+       rep.typ(self)
+       rep.val("train", self._train)
+
+       return str(rep)
+
+
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+       log.typ(self, other) 
+
+       if bool(log):
+          log.val(self._train, other._train)
+
+       return bool(log)
+
+
+   def __hash__(self):
+
+       return hash(self._train)
+
+
+   def __len__(self):
+
+       return len(self._args())
+
+
+   def __contains__(self, x):
+
+       return x in iter(self)
+
+
+   def __getitem__(self, idx):
+
+       return self._args()[idx]
+
+
+   def __iter__(self):
+
+       return iter(self._args())
+
+
+   def attach(self, node, source, layer):
+
+       return self.__class__(self._train.attach(node, source, layer))
+
+
+   @util.cacheable
+   def _args(self):
+
+       args    = list(self._train.nodes())
+       sources = list(self._train.sources())
+
+       for i, layer in enumerate(self._train.layers()):
+           if layer == misc.minlayer():
+              args[i] = sources[i]
+   
+       return args
+"""
+
+
+
+
+
+
+
+
+    
+
+# --- Helper: convert any plain values to bottom-layer Nodes ---------------- #
+
+def nodify(*args):
+
+    def _nodify(*args):
+
+       for arg in args:
+
+           if isinstance(arg, an.Node):
+              yield arg
+              continue
+
+           yield an.point(arg)
+
+    return tuple(_nodify(*args))
+
+
+
+
+# --- Helper: convert the bottom-layer Nodes to plain values ---------------- #
+
+def denodify(*nodes):
+
+    train   = train_args(*nodes)
+    args    = list(train.nodes())
+    sources = list(train.sources())
+
+    for i, layer in enumerate(train.layers()):
+        if layer == misc.minlayer():
+           args[i] = sources[i]
+   
+    return tuple(args)
+
+
+
+
+# --- Create a train of arguments ------------------------------------------- #
+
+def train_args(*nodes):
+
+    train = TrainArgs()
+    for node in nodes:
+        train = node.concat(train)
+
+    return train
+
+
+
+
+# --- Train of arguments ---------------------------------------------------- #
+ 
+class TrainArgs(Sequential):
 
    def __init__(self, nodes=None, sources=None, layers=None): 
 
@@ -328,6 +643,134 @@ class ConcatArgs(Sequential, Cohesive):
                              self._layers.push(layer)
                             )
 
+   def nodes(self):
+
+       return iter(self._nodes)
+
+
+   def sources(self):
+
+       return iter(self._sources)
+
+
+   def layers(self):
+
+       return iter(self._layers)
+
+
+
+
+# --- Concatenation of arguments -------------------------------------------- #
+
+class ConcatArgs(Sequential, Cohesive):
+
+   def __init__(self, *args, train=None, **kwargs):
+
+       if train is None and len(args) > 0:
+          train = args[0]
+
+       if not isinstance(train, Sequential):
+          train = TrainArgs(*args, **kwargs) 
+
+       self._train = train
+
+
+   def __repr__(self):
+
+       rep = util.ReprChain()
+       rep.typ(self)
+       rep.val("train", self._train)
+
+       return str(rep)
+
+
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+       log.typ(self, other) 
+
+       if bool(log):
+          log.val(self._train, other._train)
+
+       return bool(log)
+
+
+   def __hash__(self):
+
+       return hash(self._train)
+
+
+   def attach(self, node, source, layer):
+
+       return self.__class__(self._train.attach(node, source, layer))
+
+
+   @property
+   def _nodes(self):
+       return iter(self._train.nodes())
+
+   @property
+   def _sources(self):
+       return iter(self._train.sources())
+
+   @property
+   def _layers(self):
+       return iter(self._train.layers())
+
+
+
+   """
+   def __init__(self, nodes=None, sources=None, layers=None): 
+
+       if nodes   is None: nodes   = util.Sequence()
+       if sources is None: sources = util.Sequence()
+       if layers  is None: layers  = util.Sequence()
+
+       self._nodes   = nodes
+       self._sources = sources
+       self._layers  = layers    
+
+
+   def __repr__(self):
+
+       rep = util.ReprChain()
+
+       rep.typ(self)
+       rep.val("nodes",   self._nodes)
+       rep.val("sources", self._sources)
+       rep.val("layers",  self._layers)
+
+       return str(rep)
+
+
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+       log.typ(self, other) 
+
+       if bool(log):
+          log.val(self._nodes,   other._nodes)
+          log.val(self._sources, other._sources)
+          log.val(self._layers,  other._layers)
+
+       return bool(log)
+
+
+   def __hash__(self):
+
+       return id(self)
+
+      
+   def attach(self, node, source, layer):
+
+       return self.__class__(
+                             self._nodes.push(node), 
+                             self._sources.push(source), 
+                             self._layers.push(layer)
+                            )
+   """
+
+
    @util.cacheable
    def innermost(self):
 
@@ -373,6 +816,9 @@ class ConcatArgs(Sequential, Cohesive):
            args[adx] = sources[adx] 
 
        return ArgsGen(*args)
+
+
+ 
 
 
 

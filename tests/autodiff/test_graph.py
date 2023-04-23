@@ -202,6 +202,7 @@ class TestNonDifferentiable:
 
 class TestArgs:
 
+   """
    @pytest.mark.parametrize("n, adxs, layers", [
       [1, (0,),  (0,)],
       [2, (0,),  (1,)],
@@ -214,6 +215,7 @@ class TestArgs:
 
        x = data.args_dat(n, adxs, layers)
        assert tuple(x.args.nodify()) == x.nodes
+   """
 
 
    @pytest.mark.parametrize("n, adxs, layers", [

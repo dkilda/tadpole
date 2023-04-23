@@ -128,6 +128,55 @@ class TestGradsElemwiseUnary:
        assert_grad(fun, **opts)(xtensor)
 
 
+   @pytest.mark.parametrize("indnames, shape, minval, maxval", [
+      ["ijk", (2,3,4), 0, 1], 
+   ])
+   def test_clip(self, indnames, shape, minval, maxval):
+
+       def fun(x, minval, maxval):
+           return tn.clip(x, minval, maxval)
+
+       x = data.tensor_dat(data.randn)(
+              self.backend, indnames, shape, seed=1
+           )
+
+       assert_grad(fun)(x.tensor, minval, maxval)
+
+
+   @pytest.mark.parametrize("indnames, shape, inds", [
+      ["ijk", (2,3,4), None], 
+      ["ijk", (2,3,4), "i"],
+      ["ijk", (2,3,4), "ki"],
+      ["ijk", (2,3,4), "kij"],
+   ])
+   def test_flip(self, indnames, shape, inds):
+
+       def fun(x, inds):
+           return tn.flip(x, inds)
+
+       x = data.tensor_dat(data.randn)(
+              self.backend, indnames, shape, seed=1
+           )
+
+       assert_grad(fun)(x.tensor, inds)
+
+
+   @pytest.mark.parametrize("indnames, shape, ind", [
+      ["ijk", (2,3,4), None],
+      ["ijk", (2,3,4), "j"],
+   ])
+   def test_cumsum(self, indnames, shape, ind):
+
+       def fun(x, ind):
+           return tn.cumsum(x, ind)
+
+       x = data.tensor_dat(data.randn)(
+              self.backend, indnames, shape, seed=1
+           )
+
+       assert_grad(fun)(x.tensor, ind)
+
+
 
 
 ###############################################################################
