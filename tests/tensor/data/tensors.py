@@ -207,11 +207,15 @@ def sparsegrad_dat_001(backend, dtype="complex128", seed=1):
     indnames = "ijk"
     shape    = (2,3,4)
 
+    """
     pos = (
            ((1,0,1),), 
            ((0,2,0),),
            ((2,1,3),),
           )
+    """
+
+    pos  = [(1,0,2), (0,2,1), (1,0,3)]
     vals = backend.randn((len(pos),), dtype=dtype, seed=seed)  
 
     dense        = backend.zeros(shape, dtype=dtype)

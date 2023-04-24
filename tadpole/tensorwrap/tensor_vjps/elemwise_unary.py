@@ -55,22 +55,23 @@ ad.makevjp(tn.cumsum, vjp_cumsum)
 # --- Element access -------------------------------------------------------- #
 
 @ad.differentiable
-def sparsegrad(x, pos, vals):
+def sparsegrad(x, pos, source):
 
-    sparsex = tn.space(x).sparsegrad(pos, vals)
+    print("SPARSEGRAD: ", x, pos, source)
 
-    print("SPARSEGRAD: ", pos, vals, sparsex._pos, sparsex._vals, sparsex.todense()._data._data)
+    # sparsex = tn.space(source).sparsegrad(pos, x)
+    # print("SPARSEGRAD: ", pos, vals, sparsex._pos, sparsex._vals, sparsex.todense()._data._data)
 
-    return tn.space(x).sparsegrad(pos, vals)
+    return tn.space(source).sparsegrad([pos], [x.item()])
 
 
 ad.makevjp(tn.getitem,    
-              lambda g, out, x, pos: sparsegrad(x, [pos], [g.item()])
+              lambda g, out, x, pos: sparsegrad(g, pos, x)
 )
 
  
 ad.makevjp(sparsegrad, 
-              lambda g, out, x, pos: g[pos]
+              lambda g, out, x, pos, source: g[pos] # tn.match(g[pos[0]], x)
 ) 
 
 

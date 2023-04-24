@@ -181,39 +181,64 @@ class TestGradsElemwiseUnary:
        assert_grad(fun)(x.tensor, ind)
 
 
-   @pytest.mark.skip
-   @pytest.mark.parametrize("indnames, shape, pos", [
-      ["ijk", (2,3,4), ((1,),(0,),(1,))],
+   #@pytest.mark.skip
+   @pytest.mark.parametrize("indnames, shape", [
+      ["ijk", (2,3,4)],
    ])
-   def test_getitem(self, indnames, shape, pos):
+   def test_getitem(self, indnames, shape):
 
        def fun(x, pos):
            return x[pos]
 
        x = data.tensor_dat(data.randn)(
-              self.backend, indnames, shape
+              self.backend, indnames, shape, seed=1
            )
+       pos = (1,0,2)
 
-       assert_grad(fun, order=1)(x.tensor, pos)
+       """
+       pos = (
+              ((1,0,1),), 
+              ((0,2,0),),
+              ((2,1,3),),
+             )
+       """
+
+       """
+       pos = (
+              ((1,),), 
+              ((0,),),
+              ((2,),),
+             )
+       """
+
+ 
+
+       # vals = x.backend.randn((len(pos),), dtype=x.dtype, seed=2)
+
+       assert_grad(fun, modes="vjp")(x.tensor, pos)
 
 
 
-   '''
+
    @pytest.mark.parametrize("graddat", [
       data.sparsegrad_dat_001,
    ])
    @pytest.mark.parametrize("dtype", [
       "complex128",
-      "float64"
    ])
    def test_sparsegrad(self, graddat, dtype):
 
-       def fun(x, pos, vals):
-           return sparsegrad(x, pos, vals)
+       def fun(x, pos, source):
+           return sparsegrad(x, pos, source)
 
        w = graddat(
               self.backend, dtype, seed=1
-           )      
+           )   
+
+       x   = tn.astensor(w.vals[0])
+       pos = w.pos[0]
+
+       print("TEST: ", pos)   
 
 
        """
@@ -223,9 +248,9 @@ class TestGradsElemwiseUnary:
        xtensor = tn.TensorGen(x.array, w.inds)
        """
 
-       assert_grad(fun)(w.tensor, w.pos, w.vals)
+       assert_grad(fun)(x, pos, w.tensor)
    '''
-
+   '''
 
 
 ###############################################################################

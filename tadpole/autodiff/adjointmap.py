@@ -83,9 +83,10 @@ def concat_adjfuns(make_adjfun):
            adxs = (adx for adx in range(len(adjfuns)))
 
         adjfun_by_adx = {adx: make_adjfun(adjfuns[adx], fun, adx) 
-                              for adx in adxs}        
+                              for adx in adxs}   
 
         def adjfun(g, adx, out, *args, **kwargs):
+            print("CONCAT: ", adjfun_by_adx, " | ", adjfuns, adx)  
             return adjfun_by_adx[adx](g, out, *args, **kwargs)
 
         return adjfun 
@@ -134,6 +135,8 @@ class NetVjpFun:
 
 
    def __call__(self, adxs, out, *args, **kwargs):
+
+       print("NETVJP: ", adxs, args)
 
        return lambda g: (
           self._vjpfun(g, adx, out, *args, **kwargs) 

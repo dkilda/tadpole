@@ -97,7 +97,7 @@ class TestTensorElemwiseUnary:
    # --- Value methods --- #
 
    @pytest.mark.parametrize("indnames, shape, pos", [
-      ["ijk", (2,3,4), (((1,0,1),), ((0,2,0),), ((2,1,3),))], 
+      ["ijk", (2,3,4), [(1,0,2), (0,2,1), (1,0,3)]], 
    ])
    def test_put(self, indnames, shape, pos):
 
@@ -116,7 +116,7 @@ class TestTensorElemwiseUnary:
 
 
    @pytest.mark.parametrize("indnames, shape, pos", [
-      ["ijk", (2,3,4), (((1,0,1),), ((0,2,0),), ((2,1,3),))], 
+      ["ijk", (2,3,4), [(1,0,2), (0,2,1), (1,0,3)]], 
    ])
    def test_put_accumulate(self, indnames, shape, pos):
 

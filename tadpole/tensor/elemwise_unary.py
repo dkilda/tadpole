@@ -145,6 +145,8 @@ class TensorElemwiseUnary:
 
    def __getitem__(self, pos):
 
+       print("pos: ", pos)
+
        return core.TensorGen(self._data[pos], Indices())
 
 

@@ -56,8 +56,18 @@ def assert_vjp(fun, x):
     op = agrad.DifferentialOpReverse(fun, x)
     y  = op.evaluate()
 
+    try:
+       print("ASSERT VJP: ", x, y, y.shape)
+    except AttributeError:
+       pass
+
     dx = tn.space(x).randn()
     dy = tn.space(y).randn()
+
+    try:
+       print("ASSERT VJP: ", x.shape, y.shape, dy.shape, dy._data._data)
+    except AttributeError:
+       pass
 
     vj = op.grad(dy)
     jv = numerical_grad(fun, x)(dx)
@@ -65,12 +75,19 @@ def assert_vjp(fun, x):
     i = IndexGen("i", dx.size)
     j = IndexGen("j", dy.size)  
 
+    try:
+       print("ASSERT VJP-idx: ", vj.shape, dx.shape, " | ", jv.shape, dy.shape)
+    except AttributeError:
+       pass
+
     vjv_out = tn.flatten(vj, i) @ tn.flatten(dx, i)
     vjv_ans = tn.flatten(dy, j) @ tn.flatten(jv, j) 
 
     try:
-       print("ASSERT VJP-0: ", x._data._data,  y._data._data)
-       print("ASSERT VJP-1: ", vj._data._data, dy._data._data, type(vj))
+       #print("ASSERT VJP-0: ", x._data._data,  y._data._data)
+       #print("ASSERT VJP-1: ", vj._data._data, dy._data._data, type(vj))
+
+       print("ASSERT VJP-1: ", vj._data._data, jv._data._data)
        print("ASSERT VJP-2: ", vjv_out._data._data, vjv_ans._data._data)
     except AttributeError:
        pass
@@ -91,10 +108,11 @@ def assert_jvp(fun, x):
     jv_out = op.grad(dx)
     jv_ans = numerical_grad(fun, x)(dx)
 
-    i = IndexGen("i", dx.size)
+    dy = tn.space(jv_ans).randn()
+    i  = IndexGen("i", dy.size)
     
-    vjv_out = tn.flatten(dx, i) @ tn.flatten(jv_out, i)
-    vjv_ans = tn.flatten(dx, i) @ tn.flatten(jv_ans, i)
+    vjv_out = tn.flatten(dy, i) @ tn.flatten(jv_out, i)
+    vjv_ans = tn.flatten(dy, i) @ tn.flatten(jv_ans, i)
 
     assert tn.space(jv_out) == tn.space(jv_ans)
     assert tn.allclose(vjv_out, vjv_ans) 
@@ -180,6 +198,8 @@ def assert_grad(fun, x, modes=("vjp","jvp"), submode=None, order=2):
      
     for mode in modes:
 
+        print("\nHERE-1")
+
         {
          ("vjp", None):   assert_vjp, 
          ("jvp", None):   assert_jvp,
@@ -188,6 +208,8 @@ def assert_grad(fun, x, modes=("vjp","jvp"), submode=None, order=2):
          ("vjp", "null"): assert_vjp_null, 
          ("jvp", "null"): assert_jvp_null,
         }[mode, submode](fun, x)  
+
+        print("\nHERE-2")
 
         if order > 1:
 

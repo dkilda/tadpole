@@ -317,9 +317,26 @@ class TorchBackend(backend.Backend):
        return torch.count_nonzero(array, axis, **opts)
 
 
-   def put(self, array, idxs, vals, accumulate=False):
+   def _put_advanced(self, array, idxs, vals, accumulate=False):
 
        return array.index_put(idxs, vals, accumulate=accumulate)
+
+
+   def put(self, array, idxs, vals, accumulate=False):
+
+       out = self.copy(array)
+
+       def _put(fun):
+          for idx, val in zip(idxs, vals):
+              fun(idx, val)
+          return out
+
+       if accumulate:
+          def fun(i, v): out[i] += v
+          return _put(fun)
+
+       def fun(i, v): out[i] = v
+       return _put(fun)
 
 
    def where(self, condition, x, y):
