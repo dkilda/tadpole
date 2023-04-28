@@ -181,7 +181,6 @@ class TestGradsElemwiseUnary:
        assert_grad(fun)(x.tensor, ind)
 
 
-   #@pytest.mark.skip
    @pytest.mark.parametrize("indnames, shape", [
       ["ijk", (2,3,4)],
    ])
@@ -211,13 +210,7 @@ class TestGradsElemwiseUnary:
              )
        """
 
- 
-
-       # vals = x.backend.randn((len(pos),), dtype=x.dtype, seed=2)
-
-       assert_grad(fun, modes="vjp")(x.tensor, pos)
-
-
+       assert_grad(fun)(x.tensor, pos)
 
 
    @pytest.mark.parametrize("graddat", [
@@ -238,19 +231,9 @@ class TestGradsElemwiseUnary:
        x   = tn.astensor(w.vals[0])
        pos = w.pos[0]
 
-       print("TEST: ", pos)   
+       assert_grad(fun)(x, pos, tn.space(w.tensor))
 
 
-       """
-       x = data.array_dat(data.randn)(
-              self.backend, w.shape, dtype=dtype, seed=2
-           )
-       xtensor = tn.TensorGen(x.array, w.inds)
-       """
-
-       assert_grad(fun)(x, pos, w.tensor)
-   '''
-   '''
 
 
 ###############################################################################

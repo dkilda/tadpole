@@ -92,7 +92,7 @@ class Graph:
    def build(self, fun, x):
 
        start = an.node(x, type(self)._layer, self._root)  
-       end   = returns_node(fun)(start)  
+       end   = returns_node(fun)(start) 
 
        return start, end
 
@@ -484,10 +484,8 @@ class ConcatArgs(Sequential, Cohesive):
        return an.ParentsGen(*nodes)
 
 
-   #@util.cacheable
+   @util.cacheable 
    def deshell(self):
-
-       print("DESHELL: ", tuple(self._layers), self.layer(), self.adxs())
 
        if self.innermost():
           return ArgsGen(*self._sources)
@@ -590,11 +588,6 @@ class PackArgs(Pack):
 
        if self.innermost():
           return an.point(out)
-
-       try:
-          print("FOLD: ", funwrap._fun.__name__, self._adxs, self._args)
-       except AttributeError:
-          pass
 
        op = an.AdjointOpGen(
           funwrap, self._adxs, out, self._args, self._kwargs

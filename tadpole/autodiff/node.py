@@ -78,8 +78,6 @@ class AdjointOpGen(AdjointOp):
 
    def _apply(self, fun):
 
-       print("ADJOP: ", self._adxs, self._args)
-
        return fun(self._adxs, self._out, *self._args, **self._kwargs)
 
 
