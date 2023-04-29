@@ -231,16 +231,16 @@ def getitem(x, pos):
 
 
 @ad.differentiable
-def sparsegrad(x, pos, vals):
+def sparsegrad(x, pos, size):
 	
     if isinstance(pos, int):
-       pos  = (pos,  )
-       vals = (vals, )
+       pos = (pos,  )
+       x   = (x,    )
 
     if isinstance(pos, slice):
        pos = tuple(util.range_from_slice(pos))
 
-    return SparseGrad(len(x), pos, vals)
+    return SparseGrad(size, pos, x)
 
  
 
@@ -248,11 +248,12 @@ def sparsegrad(x, pos, vals):
 # --- Element access VJPs --------------------------------------------------- #
 
 ad.makevjp(getitem,    
-              lambda g, out, x, pos: sparsegrad(x, pos, g)
+              lambda g, out, x, pos: sparsegrad(g, pos, len(x))
 )
+
  
 ad.makevjp(sparsegrad, 
-              lambda g, out, x, pos: g[pos]
+              lambda g, out, x, pos, size: g[pos]
 )
 
 

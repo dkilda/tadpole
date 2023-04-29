@@ -29,7 +29,7 @@ def jvp_reduce(g, out, x, inds=None):
     out  = tn.expand_like(out, x, inds)
     mask = tn.isequal(x, out)
      
-    return tn.sum(g * mask, inds) / tn.sum(mask, inds) 
+    return tn.sumover(g * mask, inds) / tn.sumover(mask, inds) 
 
 
 ad.makejvp(tn.amax, jvp_reduce)
