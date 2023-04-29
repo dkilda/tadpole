@@ -415,7 +415,7 @@ class TestGradsElemwiseTernary:
 ###############################################################################
 
 
-# --- Unary elementwise grads ----------------------------------------------- #
+# --- Tensor reduction grads  ----------------------------------------------- #
 
 @pytest.mark.parametrize("current_backend", available_backends, indirect=True)
 class TestGradsReduction:
@@ -438,10 +438,18 @@ class TestGradsReduction:
       ["ijk", (2,3,4), "ki"],
       ["ijk", (2,3,4), "kij"],
    ])
-   def test_amax(self, xinds, xshape, inds):
+   @pytest.mark.parametrize("op", [
+      "amax", 
+      "amin",
+      "sumover",
+   ])
+   def test_reduce(self, xinds, xshape, inds, op):
 
-       def fun(x, inds):
-           return tn.amax(x, inds=inds)
+       fun = {
+              "amax":    lambda x, inds: tn.amax(x, inds=inds),
+              "amin":    lambda x, inds: tn.amin(x, inds=inds),
+              "sumover": lambda x, inds: tn.sumover(x, inds=inds),
+             }[op]
 
        x = data.tensor_dat(data.randn)(
               self.backend, xinds, xshape
@@ -451,7 +459,6 @@ class TestGradsReduction:
 
        
 
-   # def test_sumover(self):
 
 
 
