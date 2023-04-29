@@ -134,7 +134,29 @@ class TestGradsElemwiseUnary:
 
        assert_grad(fun, **opts)(xtensor)
 
-   
+
+   @pytest.mark.filterwarnings('ignore::RuntimeWarning')
+   @pytest.mark.parametrize("dtype1", [
+      "int64", 
+      "float64", 
+      "complex128",
+   ])
+   @pytest.mark.parametrize("dtype2", [
+      "int64", 
+      "float64", 
+      "complex128",
+   ])
+   def test_astype(self, dtype1, dtype2):
+
+       def fun(x, dtype):
+           return tn.astype(x, dtype)
+
+       x = data.tensor_dat(data.randn)(
+              self.backend, "ijk", (2,3,4), dtype=dtype1
+           )
+       assert_grad(fun, submode="type")(x.tensor, dtype2) 
+
+
    @pytest.mark.parametrize("indnames, shape, minval, maxval", [
       ["ijk", (2,3,4), 0, 1], 
    ])

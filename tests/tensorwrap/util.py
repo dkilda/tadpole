@@ -164,6 +164,38 @@ def assert_jvp_null(fun, x):
 
 
 
+# --- Assert type VJP ------------------------------------------------------- # 
+
+def assert_vjp_type(fun, x):
+
+    op = agrad.DifferentialOpReverse(fun, x)
+    y  = op.evaluate()
+
+    dx = tn.space(x).randn()
+    dy = tn.space(y).randn()
+
+    vj = op.grad(dy)
+    assert tn.space(vj) == tn.space(x)
+
+
+
+
+# --- Assert type JVP ------------------------------------------------------- #
+
+def assert_jvp_type(fun, x):
+
+    op = agrad.DifferentialOpForward(fun, x)
+    y  = op.evaluate()
+
+    dx = tn.space(x).randn()
+    dy = tn.space(y).randn()
+
+    jv = op.grad(dx)
+    assert tn.space(jv) == tn.space(y)
+
+
+
+
 # --- Assert gradients of a given mode and order ---------------------------- #
 
 @nary.nary_op
@@ -181,6 +213,8 @@ def assert_grad(fun, x, modes=("vjp","jvp"), submode=None, order=2):
          ("jvp", "real"): assert_jvp,
          ("vjp", "null"): assert_vjp_null, 
          ("jvp", "null"): assert_jvp_null,
+         ("vjp", "type"): assert_vjp_type, 
+         ("jvp", "type"): assert_jvp_type,
         }[mode, submode](fun, x)  
 
         if order > 1:

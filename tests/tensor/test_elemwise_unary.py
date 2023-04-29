@@ -94,6 +94,29 @@ class TestTensorElemwiseUnary:
        return self._backend
 
 
+   # --- Data type methods --- #
+   
+   @pytest.mark.filterwarnings('ignore::RuntimeWarning')
+   @pytest.mark.parametrize("dtype1", [
+      "int64", 
+      "float64", 
+      "complex128",
+   ])
+   @pytest.mark.parametrize("dtype2", [
+      "int64", 
+      "float64", 
+      "complex128",
+   ])
+   def test_astype(self, dtype1, dtype2):
+
+       w = data.tensor_dat(data.randn)(
+              self.backend, "ijk", (2,3,4), dtype=dtype1
+           )
+       out = tn.astype(w.tensor, dtype=dtype2)
+
+       assert out.dtype == dtype2
+       
+
    # --- Value methods --- #
 
    @pytest.mark.parametrize("indnames, shape, pos", [
