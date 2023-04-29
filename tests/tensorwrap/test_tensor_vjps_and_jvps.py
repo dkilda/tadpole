@@ -457,43 +457,174 @@ class TestGradsReduction:
 
        assert_grad(fun)(x.tensor, x.inds.map(*inds))
 
-       
 
 
 
+###############################################################################
+###                                                                         ###
+###  Tensor reindexing grads                                                ###
+###                                                                         ###
+###############################################################################
 
 
+# --- Tensor reindexing grads  ---------------------------------------------- #
+
+@pytest.mark.parametrize("current_backend", available_backends, indirect=True)
+class TestGradsReindexing:
+
+   @pytest.fixture(autouse=True)
+   def request_backend(self, current_backend):
+
+       self._backend = current_backend
 
 
+   @property
+   def backend(self):
+
+       return self._backend
 
 
+   def test_reindex(self):
 
-"""
-   @pytest.mark.parametrize("shape, inds, diffinds", [
-      [(2,3,4), "ijk", "k"],  
-      [(2,3,4), "ijk", None],     
+       def fun(x, indmap):
+           return tn.reindex(x, indmap) 
+
+       i = IndexGen("i",2)
+       j = IndexGen("j",3)
+       k = IndexGen("k",4)
+       p = IndexGen("p",5)
+
+       a = IndexGen("a",4)
+       b = IndexGen("b",2)
+       c = IndexGen("c",5)  
+
+       shape  = (2,3,4)
+       inds   = (i,j,k)
+       indmap = {k: a, i: b, p: c}
+
+       w = data.array_dat(data.randn)(
+              self.backend, shape
+           )
+       x = tn.TensorGen(w.array, inds)
+
+       assert_grad(fun)(x, indmap)
+
+
+   def test_reindex_001(self):
+
+       def fun(x, indmap):
+           return tn.reindex(x, indmap) 
+
+       i = IndexGen("i",2)
+       j = IndexGen("j",3)
+       k = IndexGen("k",4)
+       p = IndexGen("p",5)
+
+       a = IndexGen("a",4)
+       b = IndexGen("b",2)
+       c = IndexGen("c",5)  
+
+       shape  = (2,3,4)
+       inds   = (i,j,k) 
+       indmap = {p: c}
+
+       w = data.array_dat(data.randn)(
+              self.backend, shape
+           )
+       x = tn.TensorGen(w.array, inds)
+
+       assert_grad(fun)(x, indmap)
+
+
+   def test_reindex_002(self):
+
+       def fun(x, indmap):
+           return tn.reindex(x, indmap) 
+
+       i = IndexGen("i",2)
+       j = IndexGen("j",3)
+       k = IndexGen("k",4)
+       p = IndexGen("p",5)
+       q = IndexGen("q",5)
+
+       a = IndexGen("a",4)
+       b = IndexGen("b",2)
+       c = IndexGen("c",5) 
+       d = IndexGen("d",5)   
+
+       shape  = (5,2,5)
+       inds   = (p,i,p)
+       indmap = {p: (c,d), i: b}
+
+       w = data.array_dat(data.randn)(
+              self.backend, shape
+           )
+       x = tn.TensorGen(w.array, inds)
+
+       assert_grad(fun)(x, indmap)
+
+
+   @pytest.mark.parametrize("inds, shape, outinds, outaxes", [
+      ["ijkl", (2,3,4,5), "kjil", (2,1,0,3)],
+      ["ijkl", (2,3,4,5), "jlik", (1,3,0,2)],
+      ["ijkl", (2,3,4,5), "ijkl", (0,1,2,3)],
    ])
-   def test_unreduce_like(self, shape, inds, diffinds): # TODO move to tensorwrap tests (test vjp/jvp_reduce)
+   def test_transpose(self, inds, shape, outinds, outaxes):
 
-       w = data.tensor_dat(data.randn)(
+       def fun(x, *outinds):
+           return tn.transpose(x, *outinds) 
+
+       x = data.tensor_dat(data.randn)(
               self.backend, inds, shape
            )
 
-       target = w.tensor
-       x      = tn.amax(target, diffinds)
+       assert_grad(fun)(x.tensor, *outinds)        
 
-       if   diffinds is None:
-            fun = tn.unreduce_like(x, target)
-       else:
-            fun = tn.unreduce_like(x, target, w.inds.map(*diffinds))
 
-       out    = fun(x)
-       outmax = tn.amax(out, diffinds)
 
-       assert out.space() == target.space()
-       assert tn.allclose(outmax, x)
+
+
+
+
+
+
+
+
+
+"""
+   @pytest.mark.parametrize("xinds, xshape, inds", [
+      ["ijk", (2,3,4), ""],
+      ["ijk", (2,3,4), "i"],
+      ["ijk", (2,3,4), "ki"],
+      ["ijk", (2,3,4), "kij"],
+   ])
+   @pytest.mark.parametrize("op", [
+      "amax", 
+      "amin",
+      "sumover",
+   ])
+   def test_reduce(self, xinds, xshape, inds, op):
+
+       fun = {
+              "amax":    lambda x, inds: tn.amax(x, inds=inds),
+              "amin":    lambda x, inds: tn.amin(x, inds=inds),
+              "sumover": lambda x, inds: tn.sumover(x, inds=inds),
+             }[op]
+
+       x = data.tensor_dat(data.randn)(
+              self.backend, xinds, xshape
+           )
+
+       assert_grad(fun)(x.tensor, x.inds.map(*inds))
 """
        
+
+
+
+
+
+
+
 
 
 

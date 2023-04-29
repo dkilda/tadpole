@@ -105,9 +105,25 @@ def inverted_dict(dct):
     for k, v in dct.items():
         inverted_dct[v] = inverted_dct.get(v, tuple()) + (k,)
 
-    return dct
+    return inverted_dct
 
 
+
+
+# --- Unpacked dictionary --------------------------------------------------- #
+
+def unpacked_dict(dct):
+
+    def container(x):
+
+        if isinstance(x, (tuple, list, util.Container)):
+           return x
+
+        return (x,)
+
+    return {k: val for key, val in dct.items() for k in container(key)}
+
+         
 
 
 ###############################################################################

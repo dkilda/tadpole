@@ -25,7 +25,7 @@ from tadpole.index import (
 
 def vjp_reindex(g, out, x, indmap):
 
-    return tn.reindex(g, util.inverted_dict(indmap)) 
+    return tn.reindex(g, util.unpacked_dict(util.inverted_dict(indmap))) 
 
 
 

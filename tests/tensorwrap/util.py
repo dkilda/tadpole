@@ -59,14 +59,21 @@ def assert_vjp(fun, x):
     dx = tn.space(x).randn()
     dy = tn.space(y).randn()
 
+    #print("\n\n\nGRAD START")
     vj = op.grad(dy)
+    #print("GRAD END\n\n\n")
     jv = numerical_grad(fun, x)(dx)
 
     i = IndexGen("i", dx.size)
     j = IndexGen("j", dy.size)  
 
     vjv_out = tn.flatten(vj, i) @ tn.flatten(dx, i)
-    vjv_ans = tn.flatten(dy, j) @ tn.flatten(jv, j) 
+    vjv_ans = tn.flatten(dy, j) @ tn.flatten(jv, j)
+
+    #try:
+    #   print("ASSERT-VJP: ", vj._inds, x._inds) 
+    #except AttributeError:
+    #   pass
 
     assert tn.space(vj) == tn.space(x)
     assert tn.allclose(vjv_out, vjv_ans)

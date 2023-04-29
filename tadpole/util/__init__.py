@@ -22,6 +22,7 @@ from tadpole.util.itertools import (
    argsort,
    relsort,
    inverted_dict,
+   unpacked_dict,
    Loop,
    Sequence,
 )
