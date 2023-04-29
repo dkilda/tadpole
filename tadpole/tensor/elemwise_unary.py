@@ -372,7 +372,7 @@ def iscomplex(x):
 
 # --- Data type methods ----------------------------------------------------- #
 
-@ad.nondifferentiable
+@ad.differentiable
 @typecast_unary
 def astype(x, dtype):
 

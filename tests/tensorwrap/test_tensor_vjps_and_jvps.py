@@ -126,12 +126,15 @@ class TestGradsElemwiseUnary:
        if op == "arccosh":
           xtensor = xtensor + 2.5
 
-       if op in ("conj", "real", "imag", "absolute"):
+       if op in ("conj", "real", "imag"): 
           opts = {"submode": "real"}
+
+       if op in ("absolute",):
+          opts = {"order": 3, "submode": "real"}
 
        assert_grad(fun, **opts)(xtensor)
 
-
+   
    @pytest.mark.parametrize("indnames, shape, minval, maxval", [
       ["ijk", (2,3,4), 0, 1], 
    ])

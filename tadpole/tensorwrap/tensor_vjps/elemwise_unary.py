@@ -21,6 +21,13 @@ from tadpole.index import (
 ###############################################################################
 
 
+# --- Data type methods ----------------------------------------------------- #
+
+ad.makevjp(tn.astype, lambda g, out, x, dtype: tn.astype(g, x.dtype))
+
+
+
+
 # --- Value methods --------------------------------------------------------- #
 
 def vjp_clip(g, out, x, minval, maxval):
@@ -66,7 +73,7 @@ ad.makevjp(tn.getitem,
 
  
 ad.makevjp(sparsegrad, 
-              lambda g, out, x, pos, _: g[pos] 
+              lambda g, out, x, pos, space: g[pos] 
 ) 
 
 

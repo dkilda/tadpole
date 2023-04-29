@@ -412,6 +412,9 @@ class TensorGen(Tensor, Grad, Pluggable):
        if not isinstance(inds, Indices):
           inds = Indices(*inds)
 
+       if not isinstance(data, ar.Array):
+          data = ar.asarray(data)
+
        if data.shape != inds.shape:
           raise ValueError((
              f"{type(self).__name__}: "

@@ -176,7 +176,7 @@ def match(x, target, **opts):
 def astype_like(x, target):
 
     if unary.iscomplex(x) and not unary.iscomplex(target):
-       return unary.astype(unary.real(x), target.dtype)
+       x = unary.astype(unary.real(x), target.dtype) 
 
     if not unary.iscomplex(x) and unary.iscomplex(target):
        return unary.astype(x, target.dtype) 

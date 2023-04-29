@@ -27,6 +27,13 @@ from tadpole.tensorwrap.tensor_vjps.elemwise_unary import (
 ###############################################################################
 
 
+# --- Data type methods ----------------------------------------------------- #
+
+ad.makejvp(tn.astype, lambda g, out, x, dtype: tn.astype(g, out.dtype))
+
+
+
+
 # --- Value methods --------------------------------------------------------- #
 
 def jvp_clip(g, out, x, minval, maxval):

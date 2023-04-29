@@ -200,7 +200,7 @@ def assert_grad(fun, x, modes=("vjp","jvp"), submode=None, order=2):
                return op.grad(g)
 
            assert_grad(
-              gradfun, modes=modes, submode=submode, order=order-1
+              gradfun, modes=mode, submode=submode, order=order-1
            )(x)
 
 

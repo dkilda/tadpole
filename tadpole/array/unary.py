@@ -198,7 +198,7 @@ class Array(types.Array):
 
    def astype(self, **opts):
 
-       data = self._data.astype(**opts)
+       data = self._backend.astype(self._data, **opts)
 
        return self.new(data) 
 
