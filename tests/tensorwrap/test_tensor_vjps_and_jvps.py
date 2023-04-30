@@ -564,12 +564,12 @@ class TestGradsReindexing:
        assert_grad(fun)(x, indmap)
 
 
-   @pytest.mark.parametrize("inds, shape, outinds, outaxes", [
-      ["ijkl", (2,3,4,5), "kjil", (2,1,0,3)],
-      ["ijkl", (2,3,4,5), "jlik", (1,3,0,2)],
-      ["ijkl", (2,3,4,5), "ijkl", (0,1,2,3)],
+   @pytest.mark.parametrize("inds, shape, outinds", [
+      ["ijkl", (2,3,4,5), "kjil"],
+      ["ijkl", (2,3,4,5), "jlik"],
+      ["ijkl", (2,3,4,5), "ijkl"],
    ])
-   def test_transpose(self, inds, shape, outinds, outaxes):
+   def test_transpose(self, inds, shape, outinds):
 
        def fun(x, *outinds):
            return tn.transpose(x, *outinds) 
@@ -581,47 +581,200 @@ class TestGradsReindexing:
        assert_grad(fun)(x.tensor, *outinds)        
 
 
-
-
-
-
-
-
-
-
-
-
-"""
-   @pytest.mark.parametrize("xinds, xshape, inds", [
-      ["ijk", (2,3,4), ""],
-      ["ijk", (2,3,4), "i"],
-      ["ijk", (2,3,4), "ki"],
-      ["ijk", (2,3,4), "kij"],
+   @pytest.mark.parametrize("inds, shape, outinds", [
+      ["ijkl", (2,3,4,5), "kjil"],
+      ["ijkl", (2,3,4,5), "jlik"],
+      ["ijkl", (2,3,4,5), "ijkl"],
    ])
-   @pytest.mark.parametrize("op", [
-      "amax", 
-      "amin",
-      "sumover",
-   ])
-   def test_reduce(self, xinds, xshape, inds, op):
+   def test_htranspose(self, inds, shape, outinds):
 
-       fun = {
-              "amax":    lambda x, inds: tn.amax(x, inds=inds),
-              "amin":    lambda x, inds: tn.amin(x, inds=inds),
-              "sumover": lambda x, inds: tn.sumover(x, inds=inds),
-             }[op]
+       def fun(x, *outinds):
+           return tn.htranspose(x, *outinds) 
 
        x = data.tensor_dat(data.randn)(
-              self.backend, xinds, xshape
+              self.backend, inds, shape
            )
 
-       assert_grad(fun)(x.tensor, x.inds.map(*inds))
-"""
-       
+       assert_grad(fun, submode="real")(x.tensor, *outinds) 
 
 
+   def test_fuse(self):
+
+       def fun(x, indmap):
+           return tn.fuse(x, indmap) 
+
+       x = data.tensor_dat(data.randn)(
+              self.backend, "ijkl", (2,3,4,5)
+           )
+
+       a = IndexGen("a",6)
+       b = IndexGen("b",20)
+
+       indmap = {
+                 ("i","j"): a, 
+                 ("k","l"): b,
+                }
+
+       assert_grad(fun)(x.tensor, indmap) 
 
 
+   def test_fuse_001(self):
+
+       def fun(x, indmap):
+           return tn.fuse(x, indmap) 
+
+       x = data.tensor_dat(data.randn)(
+              self.backend, "ijklmn", (2,3,4,5,6,7)
+           )
+
+       a  = IndexGen("a",21)
+       b  = IndexGen("b",40)
+       m, = x.inds.map("m")
+
+       indmap = {
+                 ("j","n"): a, 
+                 ("i","k","l"): b,
+                }
+
+       assert_grad(fun)(x.tensor, indmap) 
+
+
+   def test_fuse_002(self):
+
+       def fun(x, indmap):
+           return tn.fuse(x, indmap) 
+
+       x = data.tensor_dat(data.randn)(
+              self.backend, "ijkl", (2,3,4,5)
+           )
+
+       a = IndexGen("a",120)
+
+       indmap = {
+                 ("k","i","j","l"): a,
+                }
+
+       assert_grad(fun)(x.tensor, indmap) 
+
+
+   def test_split(self):
+
+       def fun(x, indmap):
+           return tn.split(x, indmap) 
+
+       x = data.tensor_dat(data.randn)(
+              self.backend, "ijkl", (4,3,24,5)
+           )
+
+       a = IndexGen("a",2)
+       b = IndexGen("b",2)
+       c = IndexGen("c",4)
+       d = IndexGen("d",2)
+       e = IndexGen("e",3)
+
+       indmap = {
+                 "i": (a, b),
+                 "k": (c, d, e), 
+                }
+
+       assert_grad(fun)(x.tensor, indmap) 
+
+
+   def test_split_001(self):
+
+       def fun(x, indmap):
+           return tn.split(x, indmap) 
+
+       x = data.tensor_dat(data.randn)(
+              self.backend, "a", (120,)
+           )
+
+       i = IndexGen("i",2)
+       j = IndexGen("j",3)
+       k = IndexGen("k",4)
+       l = IndexGen("l",5)
+
+       indmap = {
+                 "a": (k,i,j,l),
+                }
+
+       assert_grad(fun)(x.tensor, indmap) 
+
+
+   @pytest.mark.parametrize("inds, shape, squeezed", [
+      ["iajkbcl", (2,1,3,4,1,1,5), None],
+      ["iajkbcl", (2,1,3,4,1,1,5), "ac"],
+   ])
+   def test_squeeze(self, inds, shape, squeezed):
+
+       def fun(x, inds):
+           return tn.squeeze(x, inds) 
+
+       x = data.tensor_dat(data.randn)(
+              self.backend, inds, shape
+           )
+
+       assert_grad(fun)(x.tensor, squeezed) 
+
+
+   @pytest.mark.parametrize("inds, shape, newinds", [
+      ["ijkl", (2,3,4,5), "ab"],
+      ["ijkl", (2,3,4,5), ""],
+   ])
+   def test_unsqueeze(self, inds, shape, newinds):
+
+       def fun(x, inds):
+           return tn.unsqueeze(x, inds) 
+
+       w = data.indices_dat(
+              newinds           + inds, 
+              (1,)*len(newinds) + shape
+           ) 
+       v = data.array_dat(data.randn)(
+              self.backend, shape
+           ) 
+       x = tn.TensorGen(v.array, w.inds.map(*inds))
+
+       assert_grad(fun)(x, w.inds.map(*newinds))   
+
+
+   @pytest.mark.parametrize("inds, shape, newinds, newsizes", [
+      ["ijkl", (2,3,4,5), "ab", (6,7)],
+      ["ijkl", (2,3,4,5), "", tuple()],
+   ])
+   def test_expand(self, inds, shape, newinds, newsizes):
+
+       def fun(x, inds):
+           return tn.expand(x, inds) 
+
+       w = data.indices_dat(
+              newinds  + inds, 
+              newsizes + shape
+           ) 
+       v = data.array_dat(data.randn)(
+              self.backend, shape
+           ) 
+       x = tn.TensorGen(v.array, w.inds.map(*inds))
+
+       assert_grad(fun)(x, w.inds.map(*newinds)) 
+
+
+   @pytest.mark.parametrize("inds, shape, ind, size", [
+      ["ijkl",  (2,3,4,5),  "a",  120],
+      ["i",     (3,),       "a",  3],
+      ["i",     (1,),       "a",  1],
+   ])
+   def test_flatten(self, inds, shape, ind, size):
+
+       def fun(x, ind):
+           return tn.flatten(x, ind) 
+
+       x = data.tensor_dat(data.randn)(
+              self.backend, inds, shape
+           )
+       ind = IndexGen(ind, size)
+
+       assert_grad(fun)(x.tensor, ind) 
 
 
 

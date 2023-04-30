@@ -241,9 +241,9 @@ class TestTensorReindex:
               self.backend, inds, shape
            ) 
 
-       a = IndexGen("a",21)
-       b = IndexGen("b",40)
-       m = w.inds.map("m")[0]
+       a  = IndexGen("a",21)
+       b  = IndexGen("b",40)
+       m, = w.inds.map("m")
 
        indmap = {
                  ("j","n"): a, 

@@ -43,8 +43,8 @@ def vjp_fuse(g, out, x, fusemap):
 
     for inp, out in fusemap.items():
 
-        inp = inputs.map(*inp)
-        out = outputs.map(out)
+        inp  = inputs.map(*inp)
+        out, = outputs.map(out)
 
         splitmap[out] = inp 
 
@@ -89,6 +89,17 @@ def vjp_expand(g, out, x, inds):
 
 
 
+def vjp_flatten(g, out, x, ind):
+
+    if ind is None:
+       ind = "flat" 
+
+    fusemap = {tuple(tn.union_inds(x)): ind}
+
+    return vjp_fuse(g, out, x, fusemap)
+
+
+
 
 # --- Record reindexing and reshaping VJPs ---------------------------------- #
     
@@ -99,7 +110,7 @@ ad.makevjp(tn.split,      vjp_split)
 ad.makevjp(tn.squeeze,    vjp_squeeze)
 ad.makevjp(tn.unsqueeze,  vjp_unsqueeze)
 ad.makevjp(tn.expand,     vjp_expand)
-
+ad.makevjp(tn.flatten,    vjp_flatten)
 
 
 

@@ -70,10 +70,19 @@ def assert_vjp(fun, x):
     vjv_out = tn.flatten(vj, i) @ tn.flatten(dx, i)
     vjv_ans = tn.flatten(dy, j) @ tn.flatten(jv, j)
 
-    #try:
-    #   print("ASSERT-VJP: ", vj._inds, x._inds) 
-    #except AttributeError:
-    #   pass
+    """
+    try:
+       print("ASSERT-VJP: ", vj._inds, x._inds) 
+    except AttributeError:
+       pass
+    """
+
+    """
+    try:
+       print("ASSERT-VJP: ", vjv_out._data._data, vjv_ans._data._data) 
+    except AttributeError:
+       pass
+    """
 
     assert tn.space(vj) == tn.space(x)
     assert tn.allclose(vjv_out, vjv_ans)

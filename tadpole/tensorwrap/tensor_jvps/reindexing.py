@@ -35,3 +35,30 @@ ad.makejvp(tn.expand,     "linear")
 
 
 
+def jvp_flatten(g, out, x, ind):
+
+    ind, = tn.union_inds(out)
+
+    return tn.flatten(g, ind)
+
+
+ad.makejvp(tn.flatten, "linear")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
