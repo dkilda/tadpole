@@ -117,6 +117,27 @@ class TestIndexProduct:
        assert tuple(prod(input_inds)) == output_inds
 
 
+   @pytest.mark.parametrize("shape, inds, inpinds, outinds", [
+      [(4,4),       "ij",    ("ij",     ),  ""], 
+      [(3,3,3),     "ijk",   ("ij", "ik"),  ""], 
+      [(3,4,4),     "ijk",   ("jk",     ),  "i"], 
+      [(3,4,5,6),   "ijkl",  ("ik",     ),  "jl"], 
+      [(3,4,5,6),   "ijkl",  ("ki",     ),  "jl"], 
+      [(3,4,5,6,7), "ijklm", ("ik", "il"),  "jm"],
+   ])
+   def test_trace(self, shape, inds, inpinds, outinds):
+
+       w = data.indices_dat(inds, shape)
+
+       input_inds  = [w.inds.map(*inds)] 
+       input_inds += [w.inds.map(*xinds) for xinds in inpinds]
+       output_inds = w.inds.map(*outinds)
+
+       prod = tnc.TraceIndexProduct()
+
+       assert tuple(prod(input_inds)) == output_inds
+
+
 
 
 ###############################################################################
@@ -234,6 +255,9 @@ class TestTensorContract:
    # --- Trace --- #
 
    @pytest.mark.parametrize("shape, inds, traceinds, outinds, eyedims, equation", [
+      [(4,4),       "ij",    "ij",  "",   [(4,4),      ], "ij,ij->"        ], 
+      [(3,3,3),     "ijk",   "ijk", "",   [(3,3), (3,3)], "ijk,ij,ik->"    ], 
+      [(3,4,4),     "ijk",   "jk",  "i",  [(4,4),      ], "ijk,jk->i"      ],
       [(3,4,5,6),   "ijkl",  "ik",  "jl", [(3,5),      ], "ijkl,ik->jl"    ], 
       [(3,4,5,6),   "ijkl",  "ki",  "jl", [(5,3),      ], "ijkl,ki->jl"    ], 
       [(3,4,5,6,7), "ijklm", "ikl", "jm", [(3,5), (3,6)], "ijklm,ik,il->jm"],
@@ -252,8 +276,6 @@ class TestTensorContract:
 
        assert tn.allclose(out, ans)
        assert out.space() == ans.space()
-
-
 
 
 

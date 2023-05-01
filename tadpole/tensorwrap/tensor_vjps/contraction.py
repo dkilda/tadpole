@@ -5,6 +5,8 @@ import tadpole.util     as util
 import tadpole.autodiff as ad
 import tadpole.tensor   as tn
 
+import tadpole.tensor.contraction as tnc
+
 from tadpole.index import (
    Index,
    IndexGen, 
@@ -26,8 +28,20 @@ from tadpole.index import (
 def vjp_contract(g, adx, out, *xs, **opts):
 
     this   = xs[adx]
-    others = xs[:adx] + xs[adx+1:]    
+    others = xs[:adx] + xs[adx+1:]   
 
+    inds    = Indices(*tn.complement_inds(this, *others, g))
+    product = Indices(*tn.union_inds(this)) ^ inds
+
+    #space = tn.space(this).reshape(inds)
+    #ones  = space.ones()
+    
+    result = tn.contract(g, *others, product=product) 
+
+    return tn.match(tn.expand(result, inds), this)
+
+ 
+"""
     inds    = Indices(*tn.complement_inds(this, *others, g, unique=False)) # TODO find dupes in inds = Indices!
     product = Indices(*tn.union_inds(this)) ^ inds
 
@@ -59,10 +73,39 @@ def vjp_contract(g, adx, out, *xs, **opts):
     print("VJPCON-3: ", tn.match(result, this)._inds, tn.reindex(tn.match(result, this), util.unpacked_dict(util.inverted_dict(indmap)))._inds)
 
     return tn.reindex(tn.match(result, this), util.unpacked_dict(util.inverted_dict(indmap)))
+"""
 
+
+
+"""
+# --- Trace ----------------------------------------------------------------- #
+
+def vjp_trace(g, adx, out, x, inds):
+
+    inds  = tn.Indices(*tn.complement_inds(x, g))
+    space = tn.space(this).reshape(inds)
+    ones  = space.ones()
+
+
+    tnc.trace_eyes(x, inds)
+    
+    result = tn.contract(g, *eyes, product=tn.union_inds(this)) 
+
+
+    eyes    = [tn.space(x).eye(lind, rind) for rind in rinds]
+    product = Indices(*tni.complement_inds(x, *eyes))
+
+     = tn.contract(x, *tnc.trace_eyes(x, inds), product=tnc.TraceIndexProduct(inds))
+
+    return tn.match(result, this)
+"""
+
+
+
+# --- Record VJPs ----------------------------------------------------------- #
 
 ad.makevjp_combo(tn.contract, vjp_contract)
-
+#ad.makevjp_combo(tn.trace,    vjp_trace)
 
 
 

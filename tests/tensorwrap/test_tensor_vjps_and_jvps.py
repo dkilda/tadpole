@@ -804,8 +804,6 @@ class TestGradsContraction:
 
 
    @pytest.mark.parametrize("shapes, inds", [
-      #[[(3,4,4),                   ], ["ijj",              ]],  
-      #[[(4,4),                     ], ["jj",               ]],
       [[(3,4,6),   (6,3,4)           ], ["ijk",  "kij",       ]],
       [[(3,4,6),   tuple(), (6,2,5)  ], ["ijk",  "",    "klm" ]],  
       [[(3,4,6),   (6,2,5)           ], ["ijk",  "klm",       ]],  
@@ -824,18 +822,8 @@ class TestGradsContraction:
        for i in range(len(w.tensors)):
            assert_grad(fun, i)(*w.tensors) 
 
-       """
-       if len(shapes) == 1:
-          x = tn.TensorGen(2.71 * np.arange(16).reshape((4,4)), (w.inds[0], w.inds[0]))
-          assert_grad(fun, 0, order=1, modes="vjp")(x)
-       else:
-          assert_grad(fun, 0, order=1, modes="vjp")(*w.tensors)
-       """
-
 
    @pytest.mark.parametrize("shapes, inds, outinds", [
-      #[[(3,4,4),                   ], ["ijj",              ], "i"   ],  
-      #[[(4,4,4),                   ], ["jjj",              ], ""    ],
       [[(3,4,6),   (6,3,4)           ], ["ijk",  "kij",       ], ""    ], 
       [[(3,4,6),   (6,2,5)           ], ["ijk",  "klm",       ], "ijlm"],  
       [[(3,4,6),   (6,2,5), (5,7,2,4)], ["ijk",  "klm", "mqlj"], "imq" ],
@@ -854,9 +842,47 @@ class TestGradsContraction:
        for i in range(len(w.tensors)):
            assert_grad(fun, i)(*w.tensors, product=outinds) 
 
-       # assert_grad(fun, order=1, modes="jvp")(*w.tensors, product=outinds) 
-"""
-"""
+
+   @pytest.mark.parametrize("shape, inds, traceinds", [
+      [(4,4),       "ij",    "ij" ], 
+      [(3,3,3),     "ijk",   "ijk"], 
+      [(3,4,4),     "ijk",   "jk" ], 
+      [(3,4,5,6),   "ijkl",  "ik" ], 
+      [(3,4,5,6),   "ijkl",  "ki" ], 
+      [(3,4,5,6,7), "ijklm", "ikl"],
+   ])
+   def test_trace(self, shape, inds, traceinds):
+
+       def fun(x, inds):
+           return tn.trace(x, inds)
+
+       x = data.tensor_dat(data.randn)(
+              self.backend, inds, shape
+           )
+
+       assert_grad(fun)(x.tensor, traceinds)  
+
+
+   @pytest.mark.parametrize("shapes, inds, outshape, outinds", [ 
+      [[(2,5,4), (3,6,7)], ["ijk", "lmn"], (6,30,28), "abc"],  
+   ])   
+   def test_kron(self, shapes, inds, outshape, outinds):
+
+       def fun(x, y, indmap):
+           return tn.kron(x, y, indmap)
+
+       v = data.indices_dat(outinds, outshape)
+       w = data.ntensor_dat(data.randn)(self.backend, inds, shapes)
+
+       indmap = dict(zip(zip(*inds), v.inds))
+
+       assert_grad(fun)(*w.tensors, indmap) 
+
+
+
+
+
+
 
 
 

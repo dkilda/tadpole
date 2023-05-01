@@ -25,7 +25,7 @@ from tadpole.index import (
 # --- Contraction ----------------------------------------------------------- #
 
 ad.makejvp_combo(tn.contract, "linear")
-
+ad.makejvp_combo(tn.trace,    "linear")
 
 
 

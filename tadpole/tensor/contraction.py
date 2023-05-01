@@ -140,6 +140,22 @@ class PairwiseIndexProduct(IndexProduct):
 
 
 
+# --- Trace index product --------------------------------------------------- #
+
+class TraceIndexProduct(IndexProduct):
+
+  def __call__(self, inds):
+
+      output_inds = Indices(*inds[0])
+
+      for eye_inds in inds[1:]:
+          output_inds = output_inds ^ Indices(*eye_inds)  
+
+      return iter(output_inds)
+
+
+
+
 ###############################################################################
 ###                                                                         ###
 ###  Tensor contraction engine                                              ###
@@ -286,14 +302,10 @@ class TensorContract:
 
    def _output_inds(self):
 
-       # print("OUTPUT_INDS: ", self._inds, self._product(self._inds), tuple(self._product(self._inds)))
-
        return tuple(self._product(self._inds))
 
 
    def _output_tensor(self, data):
-
-       # print("OUTPUT_TENSOR: ", self._output_inds(), Indices(*self._output_inds()))
 
        return core.TensorGen(data, Indices(*self._output_inds()))
 
@@ -357,27 +369,27 @@ def kron(x, y, kronmap):
 
 
 # --- Trace ----------------------------------------------------------------- #
-
-@ad.differentiable
-def trace(x, inds):
+"""
+def trace_eyes(x, inds):
 
     lind, rinds = inds[0], inds[1:]
 
-    eyes    = [core.space(x).eye(lind, rind) for rind in rinds]
-    product = Indices(*tni.complement_inds(x, *eyes))
-
-    op = tensor_contract(x, *eyes, product=product)
-
-    return op.contract() 
+    return (core.space(x).eye(lind, rind) for rind in rinds)
+"""
 
 
 
+def trace(x, inds):
 
+    #lind, rinds = inds[0], inds[1:]
 
+    #eyes    = [core.space(x).eye(lind, rind) for rind in rinds]
+    #product = Indices(*tni.complement_inds(x, *eyes))
 
+    lind, rinds = inds[0], inds[1:]
+    eyes        = (core.space(x).eye(lind, rind) for rind in rinds)
 
-
-
+    return contract(x, *eyes, product=TraceIndexProduct())
 
 
 

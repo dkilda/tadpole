@@ -80,7 +80,10 @@ def unit_from_space(arrayspace, inds, pos, **opts):
 
 
 @ad.nondifferentiable
-def eye_from_space(arrayspace, inds, lind, rind, **opts):
+def eye_from_space(arrayspace, inds, lind=None, rind=None, **opts):
+
+    if not lind and not rind:
+       lind, rind = inds
 
     lind, rind = inds.map(lind, rind)
 
@@ -285,9 +288,6 @@ class TensorSpace(Space):
 
 
    def eye(self, lind=None, rind=None):
-
-       if not lind and not rind:
-          lind, rind = self._inds
 
        return self._create(
           eye_from_space, lind, rind
