@@ -7,7 +7,7 @@ from . import tensor_jvps
 
 from .node import (
    NodeTensor,
-   NodeScalar,
+   #NodeScalar,
    NodeContainer,
 )
 

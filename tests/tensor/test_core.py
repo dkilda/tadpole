@@ -93,6 +93,23 @@ class TestNullGrad:
    @pytest.mark.parametrize("graddat", [
       data.nullgrad_dat_001,
    ])
+   def test_tonull(self, graddat):
+
+       w   = graddat(self.backend)
+       out = w.grad.tonull()
+
+       ans = tn.TensorSpace(
+                ar.ArraySpace(w.backend, w.shape, w.dtype), 
+                w.inds
+             )
+       ans = tn.NullGrad(ans) 
+
+       assert out == ans
+
+
+   @pytest.mark.parametrize("graddat", [
+      data.nullgrad_dat_001,
+   ])
    def test_withdata(self, graddat):
 
        w = graddat(self.backend)
@@ -212,6 +229,23 @@ class TestSparseGrad:
        out = w.grad.todense()
 
        assert out == w.tensor
+
+
+   @pytest.mark.parametrize("graddat", [
+      data.sparsegrad_dat_001,
+   ])
+   def test_tonull(self, graddat):
+
+       w   = graddat(self.backend)
+       out = w.grad.tonull()
+
+       ans = tn.TensorSpace(
+                ar.ArraySpace(w.backend, w.shape, w.dtype), 
+                w.inds
+             )
+       ans = tn.NullGrad(ans)
+
+       assert out == ans
 
 
    @pytest.mark.parametrize("graddat", [
@@ -365,6 +399,25 @@ class TestTensorGen:
        out = w.tensor.todense()
 
        assert out == w.tensor
+
+
+   @pytest.mark.parametrize("inds, shape, dtype", [
+      ["ijk", (2,3,4), "complex128"],
+   ])
+   def test_tonull(self, inds, shape, dtype):
+
+       w = data.tensor_dat(data.randn)(
+              self.backend, inds, shape, dtype=dtype
+           )
+       out = w.tensor.tonull()
+
+       ans = tn.TensorSpace(
+                ar.ArraySpace(w.backend, w.shape, w.dtype), 
+                w.inds
+             )
+       ans = tn.NullGrad(ans)
+
+       assert out == ans
 
 
    @pytest.mark.parametrize("inds, shape, dtype", [

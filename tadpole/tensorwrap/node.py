@@ -176,7 +176,7 @@ an.register(tn.NullGrad,   NodeTensor)
 
 
 
-
+"""
 ###############################################################################
 ###                                                                         ###
 ###  Node for Scalar objects                                                ###
@@ -346,7 +346,7 @@ def register_dtypes():
 
 
 register_dtypes()
-
+"""
 
 
 
