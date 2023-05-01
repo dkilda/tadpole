@@ -137,38 +137,6 @@ class IndexGen(Index):
 ###############################################################################
 
 
-# --- Axis map -------------------------------------------------------------- #
-
-class AxisMap:
-
-   def __init__(self, source):
-
-       self._source = source
-
-  
-   @util.cacheable
-   def _axismap(self):
-
-       ind_by_axis = dict(zip(range(len(self._source)), self._source))
-       axes_by_ind = util.inverted_dict(ind_by_axis)    
-
-       def _iter(x):
-
-           if isinstance(x, Index):
-              return itertools.repeat(x)
-
-           return iter(x)
-
-       return {ind: _iter(axes) for ind, axes in axes_by_ind.items()}
-
-
-   def __getitem__(self, ind):
-
-       return next(self._axismap()[ind])
-
-
-
-
 # --- Indices --------------------------------------------------------------- #
 
 class Indices(util.Container):
@@ -291,9 +259,7 @@ class Indices(util.Container):
 
    def axes(self, *inds):
 
-       axismap = AxisMap(self._inds)
-
-       return tuple(axismap[ind] for ind in self.map(*inds))
+       return tuple(self._inds.index(ind) for ind in self.map(*inds))
 
 
    # --- Out-of-place modifications --- #

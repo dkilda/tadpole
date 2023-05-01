@@ -536,34 +536,6 @@ class TestGradsReindexing:
        assert_grad(fun)(x, indmap)
 
 
-   def test_reindex_002(self):
-
-       def fun(x, indmap):
-           return tn.reindex(x, indmap) 
-
-       i = IndexGen("i",2)
-       j = IndexGen("j",3)
-       k = IndexGen("k",4)
-       p = IndexGen("p",5)
-       q = IndexGen("q",5)
-
-       a = IndexGen("a",4)
-       b = IndexGen("b",2)
-       c = IndexGen("c",5) 
-       d = IndexGen("d",5)   
-
-       shape  = (5,2,5)
-       inds   = (p,i,p)
-       indmap = {p: (c,d), i: b}
-
-       w = data.array_dat(data.randn)(
-              self.backend, shape
-           )
-       x = tn.TensorGen(w.array, inds)
-
-       assert_grad(fun)(x, indmap)
-
-
    @pytest.mark.parametrize("inds, shape, outinds", [
       ["ijkl", (2,3,4,5), "kjil"],
       ["ijkl", (2,3,4,5), "jlik"],
@@ -877,32 +849,6 @@ class TestGradsContraction:
        indmap = dict(zip(zip(*inds), v.inds))
 
        assert_grad(fun)(*w.tensors, indmap) 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

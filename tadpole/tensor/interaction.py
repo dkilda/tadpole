@@ -109,34 +109,25 @@ class TensorInteraction:
 
    # --- Mutual index methods --- #
 
-   def union_inds(self, unique=True):
+   def union_inds(self):
 
        out = reduce(operator_.or_, self._inds)
 
-       if unique:
-          return iter(util.unique(out)) 
-
-       return iter(out)
+       return iter(util.unique(out)) 
 
 
-   def overlap_inds(self, unique=True):
+   def overlap_inds(self):
 
        out = reduce(operator_.and_, self._inds)   
 
-       if unique:
-          return iter(util.unique(out)) 
-
-       return iter(out)
+       return iter(util.unique(out)) 
 
 
-   def complement_inds(self, unique=True):
+   def complement_inds(self):
 
        out = reduce(operator_.xor, self._inds)
 
-       if unique:
-          return iter(util.unique(out)) 
-
-       return iter(out)
+       return iter(util.unique(out)) 
 
 
 
@@ -198,7 +189,7 @@ def astype_like(x, target):
 def expand_like(x, target, inds=None):
 
     if inds is None:
-       inds = tuple(complement_inds(target, x, unique=False))
+       inds = tuple(complement_inds(target, x))
 
     out = reidx.expand(x, inds)
     out = reidx.transpose(out, *overlap_inds(target, out))
@@ -213,16 +204,11 @@ def reshape_like(x, target, keepinds=False):
     if  not keepinds:
         target = reidx.squeeze(target) 
 
-    for ind in complement_inds(x, target, unique=False): 
+    for ind in complement_inds(x, target): 
         x = redu.sumover(x, (ind,))
 
-    for ind in complement_inds(target, x, unique=False):    
+    for ind in complement_inds(target, x):    
         x = reidx.expand(x, (ind,))
-
-    try:
-       print("RESHAPELIKE: ", x._inds, target._inds, tuple(complement_inds(x, target, unique=False)), tuple(complement_inds(target, x, unique=False)))
-    except AttributeError:
-       pass
 
     return transpose_like(x, target)
 
@@ -234,7 +220,7 @@ def transpose_like(x, target):
     diff = tuple(complement_inds(x, target))
           
     if len(diff) == 0:
-       return reidx.transpose(x, *union_inds(target, unique=False))
+       return reidx.transpose(x, *union_inds(target))
 
     if len(diff) > 1:
        raise ValueError(

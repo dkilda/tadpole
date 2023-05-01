@@ -116,34 +116,6 @@ class TestTensorReindex:
        assert tn.reindex(x, {p: c}) == x
 
 
-   def test_reindex_002(self):
-
-       i = IndexGen("i",2)
-       j = IndexGen("j",3)
-       k = IndexGen("k",4)
-       p = IndexGen("p",5)
-
-       a = IndexGen("a",4)
-       b = IndexGen("b",2)
-       c = IndexGen("c",5) 
-       d = IndexGen("d",5)   
-
-       shape = (5,2,5)
-       inds1 = (p,i,p)
-       inds2 = (c,b,d)   
-
-       w = data.array_dat(data.randn)(
-              self.backend, shape
-           )
-
-       x1 = tn.TensorGen(w.array, inds1)
-       x2 = tn.TensorGen(w.array, inds2)
-
-       indmap = {p: (c,d), i: b}
-
-       assert tn.reindex(x1, indmap) == x2
-       
-
    def test_reindex_fail(self):
 
        i = IndexGen("i",2)

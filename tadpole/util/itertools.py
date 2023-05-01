@@ -121,7 +121,7 @@ def unpacked_dict(dct):
 
         return (x,)
 
-    return {k: val for key, val in dct.items() for k in container(key)}
+    return {key: val for keys, val in dct.items() for key in container(keys)}
 
          
 
