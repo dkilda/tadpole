@@ -69,7 +69,7 @@ class TestContainerGen:
    def test_zeros(self, size):
 
        out = tnc.zeros(size)
-       ans = tuple(tn.zeros(Indices()) for _ in range(size))
+       ans = tuple(tn.NullGrad() for _ in range(size))
        ans = ContainerGen(ans)
 
        assert out == ans
@@ -109,33 +109,6 @@ class TestContainerGen:
        x = ContainerGen(tuple(w.tensors))
 
        assert x.tonull() == tnc.zeros(len(shapes))
-
-
-   @pytest.mark.parametrize("shapes, inds", [
-      [[(3,4,6),                   ], ["ijk",              ]], 
-      [[(3,4,6), (6,2,5)           ], ["ijk", "klm",       ]], 
-      [[(3,4,6), tuple(), (6,2,5)  ], ["ijk", "",    "klm" ]],  
-      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"]],
-   ]) 
-   def test_addgrads(self, shapes, inds):
-
-       w = data.ntensor_dat(data.randn)(
-              self.backend, 
-              inds   + inds, 
-              shapes + shapes
-           )
-
-       xtensors = w.tensors[: len(shapes)]
-       ytensors = w.tensors[len(shapes) :]
-
-       x = ContainerGen(xtensors)
-       y = ContainerGen(ytensors)
-
-       out = tnc.addgrads(x,  y)
-       ans = [tn.addgrads(xi, yi) for xi, yi in zip(xtensors, ytensors)]
-
-       for outi, ansi in zip(out, ans):
-           assert tn.allclose(outi, ansi)
 
 
    # --- Element access --- #
@@ -248,6 +221,146 @@ class TestContainerGen:
        assert tuple(x) == tuple(w.tensors)
 
 
+
+
+###############################################################################
+###                                                                         ###
+###  Gradient accumulation                                                  ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Gradient accumulation ------------------------------------------------- #
+
+@pytest.mark.parametrize("current_backend", available_backends, indirect=True)
+class TestGradAccum:
+
+   @pytest.fixture(autouse=True)
+   def request_backend(self, current_backend):
+
+       self._backend = current_backend
+
+
+   @property
+   def backend(self):
+
+       return self._backend
+
+
+   @pytest.mark.parametrize("shapes, inds", [
+      [[(3,4,6),                   ], ["ijk",              ]], 
+      [[(3,4,6), (6,2,5)           ], ["ijk", "klm",       ]], 
+      [[(3,4,6), tuple(), (6,2,5)  ], ["ijk", "",    "klm" ]],  
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"]],
+   ]) 
+   def test_addgrads(self, shapes, inds):
+
+       w = data.ntensor_dat(data.randn)(
+              self.backend, 
+              inds   + inds, 
+              shapes + shapes
+           )
+
+       xtensors = w.tensors[: len(shapes)]
+       ytensors = w.tensors[len(shapes) :]
+
+       x = ContainerGen(xtensors)
+       y = ContainerGen(ytensors)
+
+       out = tnc.addgrads(x,  y)
+       ans = [tn.addgrads(xi, yi) for xi, yi in zip(xtensors, ytensors)]
+
+       for outi, ansi in zip(out, ans):
+           assert tn.allclose(outi, ansi)
+
+
+   @pytest.mark.parametrize("shapes, inds, pos", [ 
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], [1,  ]],
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], [2, 0]],
+   ]) 
+   def test_addgrads_sparse_dense(self, shapes, inds, pos):
+
+       w = data.ntensor_dat(data.randn)(
+              self.backend, 
+              inds   + inds, 
+              shapes + shapes
+           )
+
+       xtensors = [w.tensors[p] for p in pos]
+       ytensors = w.tensors[len(shapes) :]
+
+       x = SparseGrad(len(shapes), pos, xtensors)
+       y = ContainerGen(ytensors)
+
+       out = tnc.addgrads(x, y)
+       ans = list(ytensors)
+
+       for i, p in enumerate(pos):
+           ans[p] = tn.addgrads(xtensors[i], ans[p])
+
+       for outi, ansi in zip(out, ans):
+           assert tn.allclose(outi, ansi)
+
+
+   @pytest.mark.parametrize("shapes, inds, pos", [ 
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], [1,  ]],
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], [2, 0]],
+   ]) 
+   def test_addgrads_dense_sparse(self, shapes, inds, pos):
+
+       w = data.ntensor_dat(data.randn)(
+              self.backend, 
+              inds   + inds, 
+              shapes + shapes
+           )
+
+       xtensors = [w.tensors[p] for p in pos]
+       ytensors = w.tensors[len(shapes) :]
+
+       x = SparseGrad(len(shapes), pos, xtensors)
+       y = ContainerGen(ytensors)
+
+       out = tnc.addgrads(y, x)
+       ans = list(ytensors)
+
+       for i, p in enumerate(pos):
+           ans[p] = tn.addgrads(ans[p], xtensors[i])
+
+       for outi, ansi in zip(out, ans):
+           assert tn.allclose(outi, ansi)
+
+
+   @pytest.mark.parametrize("shapes, inds, xpos, ypos", [ 
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], [1,  ], [1,  ]],
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], [1,  ], [0,  ]],
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], [2, 0], [1,  ]],
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], [2, 0], [0,  ]],
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], [2, 0], [1, 0]],
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], [0,  ], [2, 0]],
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], [1,  ], [2, 0]],
+   ]) 
+   def test_addgrads_sparse_sparse(self, shapes, inds, xpos, ypos):
+
+       w = data.ntensor_dat(data.randn)(
+              self.backend, 
+              inds   + inds, 
+              shapes + shapes
+           )
+
+       xtensors = [w.tensors[p] for p in xpos]
+       ytensors = [w.tensors[p] for p in ypos]
+
+       x = SparseGrad(len(shapes), xpos, xtensors)
+       y = SparseGrad(len(shapes), ypos, ytensors)
+
+       out = tnc.addgrads(x, y)
+       ans = list(x.todense())
+
+       for i, p in enumerate(ypos):
+           ans[p] = tn.addgrads(ans[p], ytensors[i])
+
+       for outi, ansi in zip(out, ans):
+           assert tn.allclose(outi, ansi)
 
 
 

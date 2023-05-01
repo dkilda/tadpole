@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import tadpole.util     as util
+import tadpole.array    as ar
 import tadpole.autodiff as ad
 import tadpole.tensor   as tn
 import tadpole.index    as tid
@@ -28,6 +29,11 @@ class NullGrad(util.Container, tn.Grad):
 
 
    # --- Grad methods --- #
+
+   def tonull(self):
+
+       return self
+
 
    def todense(self):
 
@@ -104,10 +110,14 @@ class SparseGrad(util.Container, tn.Grad):
 
    # --- Grad methods --- #
 
+   def tonull(self):
+
+       return zeros(len(self))
+
+
    def todense(self):
 
-       dense  = zeros(self._size)
-       source = put(dense._source, self._pos, self._vals) 
+       source = put(zeros(self._size), self._pos, self._vals) 
 
        return ContainerGen(source)
 
@@ -286,7 +296,7 @@ def put(data, pos, vals, accumulate=False):
        
     if   accumulate:
          for p, v in posvals:
-             out[p].addto(v)
+             out[p] = out[p].addto(v)
     else:
          for p, v in posvals:
              out[p] = v
@@ -300,9 +310,7 @@ def put(data, pos, vals, accumulate=False):
 
 def zeros(size):
 
-    items = tuple(tn.zeros(tid.Indices()) for i in range(size))
-
-    return ContainerGen(items)
+    return ContainerGen(tuple(tn.NullGrad() for _ in range(size)))
 
 
 
