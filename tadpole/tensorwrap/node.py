@@ -369,7 +369,7 @@ class NodeContainer(an.NodeGen, util.Container, tn.Grad):
        if not other and not isinstance(other, tc.NullGrad):
           other = tc.NullGrad(len(self))
 
-       return tn.addgrads(self, other)
+       return tc.addgrads(self, other)
 
  
    def todense(self):

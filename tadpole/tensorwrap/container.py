@@ -209,6 +209,16 @@ def tonull(x):
 
 
 
+# --- Gradient accumulation ------------------------------------------------- #
+
+@ad.differentiable
+def addgrads(x, y):
+
+    return y.addto(x)
+
+
+
+
 # --- Iteration ------------------------------------------------------------- #
 
 def iterate(x):
@@ -290,7 +300,7 @@ def put(data, pos, vals, accumulate=False):
 
 def zeros(size):
 
-    items = [tn.zeros(tid.Indices()) for i in range(size)]
+    items = tuple(tn.zeros(tid.Indices()) for i in range(size))
 
     return ContainerGen(items)
 
@@ -328,9 +338,9 @@ class ContainerGen(util.Container, tn.Grad):
        if isinstance(other, SparseGrad):
           return other.addto(self)
 
-       source = type(other._source)(*self._source, *other._source)
-
-       return self.__class__(source)
+       source = (y.addto(x) for y, x in zip(other._source, self._source))
+           
+       return self.__class__(type(other._source)(source))
 
  
    # --- Comparison and hashing --- #
