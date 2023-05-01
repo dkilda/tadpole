@@ -92,10 +92,10 @@ class TestIndexProduct:
        input_inds  = [w.inds.map(*xinds) for xinds in inds]
        output_inds = w.inds.map(*outinds)
 
-       prod = tnc.FixedIndexProduct(outinds)
+       prod = tnc.IndexProductFixed(outinds)
        assert tuple(prod(input_inds)) == output_inds
 
-       prod1 = tnc.FixedIndexProduct(output_inds)
+       prod1 = tnc.IndexProductFixed(output_inds)
        assert tuple(prod1(input_inds)) == output_inds
 
 
@@ -113,7 +113,7 @@ class TestIndexProduct:
        input_inds  = [w.inds.map(*xinds) for xinds in inds]
        output_inds = w.inds.map(*outinds)
 
-       prod = tnc.PairwiseIndexProduct()
+       prod = tnc.IndexProductPairwise()
        assert tuple(prod(input_inds)) == output_inds
 
 
@@ -133,7 +133,7 @@ class TestIndexProduct:
        input_inds += [w.inds.map(*xinds) for xinds in inpinds]
        output_inds = w.inds.map(*outinds)
 
-       prod = tnc.TraceIndexProduct()
+       prod = tnc.IndexProductTrace()
 
        assert tuple(prod(input_inds)) == output_inds
 

@@ -102,7 +102,7 @@ def make_equation(input_inds, output_inds):
 
 # --- Fixed index product --------------------------------------------------- #
 
-class FixedIndexProduct(IndexProduct):
+class IndexProductFixed(IndexProduct):
 
   def __init__(self, inds):
 
@@ -120,7 +120,7 @@ class FixedIndexProduct(IndexProduct):
 
 # --- Pairwise index product ------------------------------------------------ #
 
-class PairwiseIndexProduct(IndexProduct): 
+class IndexProductPairwise(IndexProduct): 
 
    def __call__(self, inds):
 
@@ -142,7 +142,7 @@ class PairwiseIndexProduct(IndexProduct):
 
 # --- Trace index product --------------------------------------------------- #
 
-class TraceIndexProduct(IndexProduct):
+class IndexProductTrace(IndexProduct):
 
   def __call__(self, inds):
 
@@ -168,7 +168,7 @@ class TraceIndexProduct(IndexProduct):
 def tensor_contract(*xs, product=None):
 
     if product is not None and not isinstance(product, IndexProduct): 
-       product = FixedIndexProduct(product)
+       product = IndexProductFixed(product)
 
     engine = EngineContract(product)
 
@@ -187,7 +187,7 @@ class EngineContract(Engine):
    def __init__(self, product=None, train=None):
 
        if product is None:
-          product = PairwiseIndexProduct()
+          product = IndexProductPairwise()
 
        if train is None:
           train = TrainTensorData()
@@ -266,7 +266,7 @@ class EngineDot(Engine):
        return TensorContract(
                  tuple(self._train.data()), 
                  tuple(self._train.inds()), 
-                 PairwiseIndexProduct()
+                 IndexProductPairwise()
               )
 
 
@@ -369,39 +369,13 @@ def kron(x, y, kronmap):
 
 
 # --- Trace ----------------------------------------------------------------- #
-"""
-def trace_eyes(x, inds):
-
-    lind, rinds = inds[0], inds[1:]
-
-    return (core.space(x).eye(lind, rind) for rind in rinds)
-"""
-
-
 
 def trace(x, inds):
-
-    #lind, rinds = inds[0], inds[1:]
-
-    #eyes    = [core.space(x).eye(lind, rind) for rind in rinds]
-    #product = Indices(*tni.complement_inds(x, *eyes))
 
     lind, rinds = inds[0], inds[1:]
     eyes        = (core.space(x).eye(lind, rind) for rind in rinds)
 
-    return contract(x, *eyes, product=TraceIndexProduct())
-
-
-
-
-
-
-
-
-
-
-
-
+    return contract(x, *eyes, product=IndexProductTrace())
 
 
 
