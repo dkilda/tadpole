@@ -80,6 +80,16 @@ def unit_from_space(arrayspace, inds, pos, **opts):
 
 
 @ad.nondifferentiable
+def eye_from_space(arrayspace, inds, lind, rind, **opts):
+
+    lind, rind = inds.map(lind, rind)
+
+    data = arrayspace.eye(len(lind), len(rind), **opts)
+    return core.astensor(data, (lind, rind))
+
+
+
+@ad.nondifferentiable
 def rand_from_space(arrayspace, inds, **opts):
 
     data = arrayspace.rand(**opts)
@@ -154,6 +164,7 @@ nullgrad   = auto_arrayspace(nullgrad_from_space)
 zeros = auto_arrayspace(zeros_from_space)
 ones  = auto_arrayspace(ones_from_space)
 unit  = auto_arrayspace(unit_from_space)
+eye   = auto_arrayspace(eye_from_space)
 
 rand        = auto_arrayspace(rand_from_space)
 randn       = auto_arrayspace(randn_from_space)
@@ -271,6 +282,16 @@ class TensorSpace(Space):
        return self._create(
           unit_from_space, pos, **opts
        ) 
+
+
+   def eye(self, lind=None, rind=None):
+
+       if not lind and not rind:
+          lind, rind = self._inds
+
+       return self._create(
+          eye_from_space, lind, rind
+       )
 
 
    def rand(self, **opts):

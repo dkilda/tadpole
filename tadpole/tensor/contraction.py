@@ -11,8 +11,9 @@ import tadpole.autodiff as ad
 import tadpole.array    as ar
 import tadpole.index    as tid
 
-import tadpole.tensor.core       as core
-import tadpole.tensor.reindexing as reidx
+import tadpole.tensor.core        as core
+import tadpole.tensor.interaction as tni
+import tadpole.tensor.reindexing  as reidx
 
 
 from tadpole.tensor.types import (
@@ -285,10 +286,14 @@ class TensorContract:
 
    def _output_inds(self):
 
+       # print("OUTPUT_INDS: ", self._inds, self._product(self._inds), tuple(self._product(self._inds)))
+
        return tuple(self._product(self._inds))
 
 
    def _output_tensor(self, data):
+
+       # print("OUTPUT_TENSOR: ", self._output_inds(), Indices(*self._output_inds()))
 
        return core.TensorGen(data, Indices(*self._output_inds()))
 
@@ -347,6 +352,41 @@ def dot(x, y):
 def kron(x, y, kronmap):
 
     return reidx.fuse(contract(x, y), kronmap)
+
+
+
+
+# --- Trace ----------------------------------------------------------------- #
+
+@ad.differentiable
+def trace(x, inds):
+
+    lind, rinds = inds[0], inds[1:]
+
+    eyes    = [core.space(x).eye(lind, rind) for rind in rinds]
+    product = Indices(*tni.complement_inds(x, *eyes))
+
+    op = tensor_contract(x, *eyes, product=product)
+
+    return op.contract() 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -200,7 +200,6 @@ class TestTensorInteraction:
        assert tuple(tn.union_inds(out)) == w.inds.map(*outinds)
 
 
-
    @pytest.mark.parametrize("shapes, inds, outinds, outaxes", [
       [[(2,3,4,5),   (4,3,2,5)],   ["ijkl",  "kjil"],  "kjil",  (2,1,0,3)], 
       [[(2,3,4,5),   (4,3,7,5)],   ["ijkl",  "kjml"],  "kjil",  (2,1,0,3)], 

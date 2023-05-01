@@ -37,6 +37,7 @@ from .space import (
    zeros,
    ones,
    unit,
+   eye,
    rand, 
    randn,
    randuniform,
@@ -51,6 +52,7 @@ from .space import (
    zeros_from_space,
    ones_from_space,
    unit_from_space,
+   eye_from_space,
    rand_from_space, 
    randn_from_space,
    randuniform_from_space,
@@ -236,6 +238,7 @@ from .contraction import (
    contract,
    dot,
    kron,
+   trace,
 )
 
 

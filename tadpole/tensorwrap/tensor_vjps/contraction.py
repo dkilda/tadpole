@@ -28,13 +28,37 @@ def vjp_contract(g, adx, out, *xs, **opts):
     this   = xs[adx]
     others = xs[:adx] + xs[adx+1:]    
 
-    inds  = tn.Indices(*tn.complement_inds(this, *others, g))
-    space = tn.space(this).reshape(inds)
-    ones  = space.ones()
-    
-    result = tn.contract(g, ones, *others, product=tn.union_inds(this)) 
+    inds    = Indices(*tn.complement_inds(this, *others, g, unique=False)) # TODO find dupes in inds = Indices!
+    product = Indices(*tn.union_inds(this)) ^ inds
 
-    return tn.match(result, this)
+    #space = tn.space(this).reshape(inds)
+    #ones  = space.ones() # FIXME consider using expand(result, inds) instead of contracting with ones!
+
+    indmap = {}
+    for ind, freq in util.frequencies(inds).items(): 
+        if freq > 1:
+           indmap[ind] = tuple(ind.retagged((f"{str(ind)}", f"{i}")) for i in range(freq))
+
+    this = tn.reindex(this, indmap)
+
+
+    #print("VJPCON-1: ", inds, util.frequencies(inds))
+
+    # indmap = {ind: tuple(ind.retagged(f"{i}") for i in range(freq)) for ind, freq in util.frequencies(inds).items() if freq > 1}
+    # result = tn.contract(g, ones, *others, product=tuple(tn.union_inds(this))) 
+
+    result = tn.contract(g, *others, product=product) 
+
+    #print("VJPCON-2: ", result._inds, tuple(tn.union_inds(this)), this._inds, tn.match(result, this)._inds)
+    #print("VJPCON-2: ", inds, tn.expand(result, inds)._inds, this._inds)
+
+    #return tn.expand(tn.match(result, this), inds) # tn.expand_like(result, this)
+
+
+    print("VJPCON-2: ", indmap, util.unpacked_dict(util.inverted_dict(indmap)))
+    print("VJPCON-3: ", tn.match(result, this)._inds, tn.reindex(tn.match(result, this), util.unpacked_dict(util.inverted_dict(indmap)))._inds)
+
+    return tn.reindex(tn.match(result, this), util.unpacked_dict(util.inverted_dict(indmap)))
 
 
 ad.makevjp_combo(tn.contract, vjp_contract)

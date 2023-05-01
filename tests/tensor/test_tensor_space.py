@@ -184,6 +184,34 @@ class TestTensorSpace:
            assert x.unit(pos) == tensor  
 
 
+   @pytest.mark.parametrize("shape, inds, lind, rind, ldim, rdim", [
+      [(2,3),   "ij",  None, None, 2, 3],
+      [(2,3,4), "ijk", "i", "k",   2, 4],
+   ])
+   def test_eye(self, shape, inds, lind, rind, ldim, rdim):
+
+       w = data.tensor_dat(data.randn)(
+              self.backend, inds, shape
+           )
+
+       x = tn.TensorSpace(
+              ar.ArraySpace(w.backend, w.shape, w.dtype), 
+              w.inds
+           ) 
+
+       out = x.eye(lind, rind)
+
+       if   lind and rind:
+            lind, rind = w.inds.map(lind, rind)
+       else:
+            lind, rind = w.inds
+           
+       ans = ar.eye(ldim, rdim, dtype=w.dtype, backend=w.backend)
+       ans = tn.TensorGen(ans, (lind, rind))
+
+       assert out == ans
+
+
    @pytest.mark.parametrize("sampledat", [
       ardata.rand_real_dat_001,
       ardata.rand_complex_dat_001,

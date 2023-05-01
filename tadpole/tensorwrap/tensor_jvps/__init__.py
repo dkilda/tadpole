@@ -6,7 +6,7 @@ from . import elemwise_binary
 from . import elemwise_ternary
 from . import reindexing
 from . import reduction
-
+from . import contraction
 
 
 

@@ -154,7 +154,7 @@ class TestTensorContract:
       [[(3,4,6), (6,2,5)           ], ["ijk", "klm",       ], "ijlm", "ijk,klm->ijlm"   ],  
       [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], "iq",   "ijk,klm,mqlj->iq"], 
    ])   
-   def test_contract(self, inds, shapes, outinds, equation):
+   def test_contract(self, shapes, inds, outinds, equation):
 
        w = data.ntensor_dat(data.randn)(
               self.backend, inds, shapes
@@ -175,7 +175,7 @@ class TestTensorContract:
       [[(3,4,6), (6,2,5)           ], ["ijk", "klm",       ], "ijlm", "ijk,klm->ijlm"    ],  
       [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], "imq",  "ijk,klm,mqlj->imq"],
    ])   
-   def test_contract_fixed(self, inds, shapes, outinds, equation):
+   def test_contract_fixed(self, shapes, inds, outinds, equation):
 
        w = data.ntensor_dat(data.randn)(
               self.backend, inds, shapes
@@ -196,7 +196,7 @@ class TestTensorContract:
       [[(2,3,4), (5,4,6)], ["mij", "njk"], "mink"],  
       [[(2,3,4), (4,)   ], ["mij", "j"  ], "mi"  ], 
    ])   
-   def test_dot(self, inds, shapes, outinds):
+   def test_dot(self, shapes, inds, outinds):
 
        w = data.ntensor_dat(data.randn)(
               self.backend, inds, shapes
@@ -215,7 +215,7 @@ class TestTensorContract:
    @pytest.mark.parametrize("shapes, inds, outshape, outinds", [ 
       [[(2,5,4), (3,6,7)], ["ijk", "lmn"], (6,30,28), "abc"],  
    ])   
-   def test_kron(self, inds, shapes, outshape, outinds):
+   def test_kron(self, shapes, inds, outshape, outinds):
 
        v = data.indices_dat(outinds, outshape)
        w = data.ntensor_dat(data.randn)(self.backend, inds, shapes)
@@ -229,6 +229,32 @@ class TestTensorContract:
 
        assert tn.allclose(out, ans)
        assert out.space() == ans.space()
+
+
+   # --- Trace --- #
+
+   @pytest.mark.parametrize("shape, inds, traceinds, outinds, eyedims, equation", [
+      [(3,4,5,6),   "ijkl",  "ik",  "jl", [(3,5),      ], "ijkl,ik->jl"    ], 
+      [(3,4,5,6),   "ijkl",  "ki",  "jl", [(5,3),      ], "ijkl,ki->jl"    ], 
+      [(3,4,5,6,7), "ijklm", "ikl", "jm", [(3,5), (3,6)], "ijklm,ik,il->jm"],
+   ])   
+   def test_trace(self, shape, inds, traceinds, outinds, eyedims, equation):
+
+       x = data.tensor_dat(data.randn)(
+              self.backend, inds, shape
+           )
+
+       out = tn.trace(x.tensor, traceinds)
+
+       eyes = (ar.eye(*dims) for dims in eyedims)
+       ans  = ar.einsum(equation, x.array, *eyes)
+       ans  = tn.TensorGen(ans, x.inds.map(*outinds))
+
+       assert tn.allclose(out, ans)
+       assert out.space() == ans.space()
+
+
+
 
 
 

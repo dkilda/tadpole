@@ -779,5 +779,105 @@ class TestGradsReindexing:
 
 
 
+###############################################################################
+###                                                                         ###
+###  Tensor contraction grads                                               ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Tensor contraction grads  --------------------------------------------- #
+
+@pytest.mark.parametrize("current_backend", available_backends, indirect=True)
+class TestGradsContraction:
+
+   @pytest.fixture(autouse=True)
+   def request_backend(self, current_backend):
+
+       self._backend = current_backend
+
+
+   @property
+   def backend(self):
+
+       return self._backend
+
+
+   @pytest.mark.parametrize("shapes, inds", [
+      #[[(3,4,4),                   ], ["ijj",              ]],  
+      #[[(4,4),                     ], ["jj",               ]],
+      [[(3,4,6),   (6,3,4)           ], ["ijk",  "kij",       ]],
+      [[(3,4,6),   tuple(), (6,2,5)  ], ["ijk",  "",    "klm" ]],  
+      [[(3,4,6),   (6,2,5)           ], ["ijk",  "klm",       ]],  
+      [[(3,4,6),   (6,2,5), (5,7,2,4)], ["ijk",  "klm", "mqlj"]], 
+      [[(3,4,5,6), (5,3)             ], ["ijkl", "ki",        ]],
+   ])    
+   def test_contract(self, shapes, inds):
+
+       def fun(*xs):
+           return tn.contract(*xs)
+
+       w = data.ntensor_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+       for i in range(len(w.tensors)):
+           assert_grad(fun, i)(*w.tensors) 
+
+       """
+       if len(shapes) == 1:
+          x = tn.TensorGen(2.71 * np.arange(16).reshape((4,4)), (w.inds[0], w.inds[0]))
+          assert_grad(fun, 0, order=1, modes="vjp")(x)
+       else:
+          assert_grad(fun, 0, order=1, modes="vjp")(*w.tensors)
+       """
+
+
+   @pytest.mark.parametrize("shapes, inds, outinds", [
+      #[[(3,4,4),                   ], ["ijj",              ], "i"   ],  
+      #[[(4,4,4),                   ], ["jjj",              ], ""    ],
+      [[(3,4,6),   (6,3,4)           ], ["ijk",  "kij",       ], ""    ], 
+      [[(3,4,6),   (6,2,5)           ], ["ijk",  "klm",       ], "ijlm"],  
+      [[(3,4,6),   (6,2,5), (5,7,2,4)], ["ijk",  "klm", "mqlj"], "imq" ],
+      [[(3,4,5,6), (5,3)             ], ["ijkl", "ki",        ], "jl"  ],
+      [[(3,4,5,6), (5,3)             ], ["ijkl", "ki",        ], "jkl" ],
+   ])    
+   def test_contract_fixed(self, shapes, inds, outinds):
+
+       def fun(*xs, product=None):
+           return tn.contract(*xs, product=product)
+
+       w = data.ntensor_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+       for i in range(len(w.tensors)):
+           assert_grad(fun, i)(*w.tensors, product=outinds) 
+
+       # assert_grad(fun, order=1, modes="jvp")(*w.tensors, product=outinds) 
+"""
+"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

@@ -136,6 +136,13 @@ class ArraySpace(types.Space):
        )
 
 
+   def eye(self, N, M=None, **opts):
+
+       return self._void.eye(
+          N, M=M, dtype=self._dtype, **opts
+       )
+
+
    def rand(self, **opts):
 
        return self._void.rand(
