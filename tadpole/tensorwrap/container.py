@@ -244,6 +244,8 @@ def iterate(x):
 @ad.differentiable
 def getitem(x, pos):
 
+    print("GETITEM: ", x.item(pos), pos)
+
     try:
        return x.item(pos)
     except (AttributeError, TypeError):
@@ -259,6 +261,8 @@ def sparsegrad(x, pos, size):
 
     if isinstance(pos, slice):
        pos = tuple(util.range_from_slice(pos))
+
+    print("SPARSEGRAD: ", x, pos, size)
 
     return SparseGrad(size, pos, x)
 

@@ -236,13 +236,13 @@ class ArgsGen(Args):
        return self._denodified()[idx]
 
 
-   @util.cacheable
+   #@util.cacheable
    def _nodified(self):
 
        return nodify(*self._args)
 
 
-   @util.cacheable
+   #@util.cacheable
    def _denodified(self):
 
        return denodify(*self._nodified())
@@ -452,19 +452,19 @@ class ConcatArgs(Sequential, Cohesive):
        return iter(self._train.layers())
 
 
-   @util.cacheable
+   #@util.cacheable
    def innermost(self):
 
        return self.layer() == misc.minlayer() 
 
 
-   @util.cacheable
+   #@util.cacheable
    def layer(self):
 
        return max(self._layers)
 
 
-   @util.cacheable
+   #@util.cacheable
    def adxs(self):
 
        if self.innermost():
@@ -475,7 +475,7 @@ class ConcatArgs(Sequential, Cohesive):
        )
 
 
-   @util.cacheable
+   #@util.cacheable
    def parents(self):
 
        nodes = list(self._nodes)
@@ -484,7 +484,7 @@ class ConcatArgs(Sequential, Cohesive):
        return an.ParentsGen(*nodes)
 
 
-   @util.cacheable 
+   #@util.cacheable 
    def deshell(self):
 
        if self.innermost():

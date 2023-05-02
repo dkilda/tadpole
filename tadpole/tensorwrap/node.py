@@ -410,8 +410,7 @@ class NodeContainer(an.NodeGen, util.Container, tn.Grad):
 
 an.register(tuple,           NodeContainer)
 an.register(list,            NodeContainer)
-an.register(util.Container,  NodeContainer)
-
+an.register(tc.ContainerGen, NodeContainer)
 
 
 

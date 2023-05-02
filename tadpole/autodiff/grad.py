@@ -98,7 +98,7 @@ class DifferentialOp:
        return bool(log)
 
 
-   @util.cacheable
+   #@util.cacheable
    def graphop(self):
 
        return self._prop.graphop(self._fun, self._x)
@@ -256,7 +256,7 @@ class GraphOp:
        return bool(log)
 
 
-   @util.cacheable
+   #@util.cacheable
    def _build(self):
 
        with self.graph() as graph:
@@ -280,7 +280,7 @@ class GraphOp:
        return self._build()[1]
 
 
-   @util.cacheable
+   #@util.cacheable
    def evaluate(self):
 
        args = ag.ArgsGen(self.end())
@@ -437,7 +437,7 @@ class TopoSort:
        return str(rep)
 
 
-   @util.cacheable
+   #@util.cacheable
    def traverse(self):
 
        self._traversal.apply(self._count.collect)

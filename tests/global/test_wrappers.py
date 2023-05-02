@@ -105,17 +105,18 @@ class TestCheckpoint:
 
    @pytest.mark.skip
    @pytest.mark.parametrize("indnames, shape", [
-      ["i", (100000,)],
+      ["i", (1000000,)],
    ])
    def test_checkpoint_memory(self, indnames, shape):
 
        try:
            import memory_profiler as mem
+           import guppy
        except ImportError:
            return
 
        x = data.tensor_dat(data.randn)(
-              self.backend, indnames, shape, seed=1
+              self.backend, indnames, shape, dtype="float64", seed=1
            )
 
        def fun(x):
@@ -132,11 +133,16 @@ class TestCheckpoint:
 
        gradfun = ad.gradient(fun1, 1)
 
-       max_usage         = max(mem.memory_usage((gradfun, (fun,  x.tensor))))
        max_usage_checkpt = max(mem.memory_usage((gradfun, (cfun, x.tensor))))
+       max_usage         = max(mem.memory_usage((gradfun, (fun,  x.tensor))))
+
+       h = guppy.hpy()
+       print(h.heap())
+       print("\nMEMORY USAGE ")
+       print("Checkpointed version: ", max_usage_checkpt) 
+       print("Original version:     ", max_usage)
 
        assert max_usage_checkpt < (max_usage / 2.)
-       
 
 
 
