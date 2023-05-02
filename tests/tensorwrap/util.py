@@ -56,42 +56,17 @@ def assert_vjp(fun, x):
     op = agrad.DifferentialOpReverse(fun, x)
     y  = op.evaluate()
 
-    dx = tn.space(x).ones() #randn()
-    dy = tn.space(y).ones() #randn()
+    dx = tn.space(x).randn()
+    dy = tn.space(y).randn()
 
-    #print("\n\n\nGRAD START")
     vj = op.grad(dy)
-    #print("GRAD END\n\n\n")
     jv = numerical_grad(fun, x)(dx)
 
     i = IndexGen("i", dx.size)
     j = IndexGen("j", dy.size)  
 
-    try:
-       print("ASSERT-VJP-1: ", vj._inds, x._inds, dx._inds) 
-    except AttributeError:
-       pass
-
-    try:
-       print("ASSERT-VJP-2: ", jv._inds, y._inds, dy._inds) 
-    except AttributeError:
-       pass
-
     vjv_out = tn.flatten(vj, i) @ tn.flatten(dx, i)
     vjv_ans = tn.flatten(dy, j) @ tn.flatten(jv, j)
-
-
-    try:
-       print("ASSERT-VJP-3.0: ", vj._data._data, dx._data._data, " | ", jv._data._data, dy._data._data) 
-    except AttributeError:
-       pass
-
-    try:
-       print("ASSERT-VJP-3.1: ", vjv_out._data._data, vjv_ans._data._data) 
-    except AttributeError:
-       pass
-    """
-    """
 
     assert tn.space(vj) == tn.space(x)
     assert tn.allclose(vjv_out, vjv_ans)
@@ -245,7 +220,7 @@ def assert_grad(fun, x, modes=("vjp","jvp"), submode=None, order=2):
         if order > 1:
 
            g = {
-                "vjp": tn.space(fun(x)).ones(), #.randn(),
+                "vjp": tn.space(fun(x)).randn(),
                 "jvp": tn.space(x).randn(),
                }[mode]
                   

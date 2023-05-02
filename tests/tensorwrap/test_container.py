@@ -39,6 +39,7 @@ from tadpole.tensorwrap.container import (
 
 
 
+
 ###############################################################################
 ###                                                                         ###
 ###  General container                                                      ###
@@ -462,6 +463,94 @@ class TestGradAccum:
 
        for outi, ansi in zip(out, ans):
            assert tn.allclose(outi, ansi)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Container grads                                                        ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Container grads ------------------------------------------------------- #
+
+@pytest.mark.parametrize("current_backend", available_backends, indirect=True)
+class TestGradsContainer:
+
+   @pytest.fixture(autouse=True)
+   def request_backend(self, current_backend):
+
+       self._backend = current_backend
+
+
+   @property
+   def backend(self):
+
+       return self._backend
+
+   """
+   @pytest.mark.parametrize("shapes, inds", [
+      [[(3,4,6),                   ], ["ijk",               ]], 
+      [[(3,4,6), (6,2,5)           ], ["ijk",  "klm",       ]], 
+      [[(3,4,6), tuple(), (6,2,5)  ], ["ijk",  "",    "klm" ]],  
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk",  "klm", "mqlj"]],
+   ]) 
+   def test_getitem(self, shapes, inds):
+
+       def fun(x, pos):
+           return x[pos]
+
+       w = data.ntensor_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+       x = ContainerGen(w.tensors)
+
+       assert_grad(fun, modes="vjp", order=1)(x, 0)
+
+
+
+   @pytest.mark.parametrize("shapes, inds", [
+      [[(3,4,6),                   ], ["ijk",               ]], 
+      [[(3,4,6), (6,2,5)           ], ["ijk",  "klm",       ]], 
+      [[(3,4,6), tuple(), (6,2,5)  ], ["ijk",  "",    "klm" ]],  
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk",  "klm", "mqlj"]],
+   ]) 
+   def test_sparsegrad(self, shapes, inds):
+
+       def fun(x, pos, size):
+           return tnc.sparsegrad(x, pos, size)
+
+       w = data.ntensor_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+       source = ContainerGen(w.tensors)
+       x      = ContainerGen((source[0],))
+
+       assert_grad(fun, modes="vjp", order=1)(x, 0, len(source))
+
+   """
+
+
+
+
+
+
+
+
 
 
 

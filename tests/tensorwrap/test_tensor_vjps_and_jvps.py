@@ -206,10 +206,10 @@ class TestGradsElemwiseUnary:
        assert_grad(fun)(x.tensor, ind)
 
 
-   @pytest.mark.parametrize("indnames, shape", [
-      ["ijk", (2,3,4)],
+   @pytest.mark.parametrize("indnames, shape, positions", [
+      ["ijk", (2,3,4), [(1,0,2), (0,2,1), (1,0,3)]],
    ])
-   def test_getitem(self, indnames, shape):
+   def test_getitem(self, indnames, shape, positions):
 
        def fun(x, pos):
            return x[pos]
@@ -217,9 +217,10 @@ class TestGradsElemwiseUnary:
        x = data.tensor_dat(data.randn)(
               self.backend, indnames, shape, seed=1
            )
-       pos = (1,0,2)
 
        """
+       pos = (1,0,2)
+
        pos = (
               ((1,0,1),), 
               ((0,2,0),),
@@ -235,7 +236,8 @@ class TestGradsElemwiseUnary:
              )
        """
 
-       assert_grad(fun)(x.tensor, pos)
+       for pos in positions:
+           assert_grad(fun)(x.tensor, pos)
 
 
    @pytest.mark.parametrize("graddat", [
@@ -253,10 +255,12 @@ class TestGradsElemwiseUnary:
               self.backend, dtype, seed=1
            )   
 
-       x   = tn.astensor(w.vals[0])
-       pos = w.pos[0]
+       for i in range(len(w.pos)):
 
-       assert_grad(fun)(x, pos, tn.space(w.tensor))
+           x   = tn.astensor(w.vals[i])
+           pos = w.pos[i]
+
+           assert_grad(fun)(x, pos, tn.space(w.tensor))
 
 
 
