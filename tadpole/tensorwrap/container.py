@@ -30,6 +30,9 @@ class ContainerSpace(Container, tn.Space):
 
    def __init__(self, spaces):
 
+       if not isinstance(spaces, tuple):
+          spaces = tuple(spaces)
+
        self._spaces = spaces
  
 
@@ -247,7 +250,7 @@ class NullGrad(TensorContainer, tn.Grad):
 
    def todense(self):
 
-       return self.space.zeros()
+       return self._space.zeros()
 
 
    def tonull(self):
@@ -350,7 +353,7 @@ class SparseGrad(TensorContainer, tn.Grad):
 
        data = put(other._data, self._pos, self._vals, accumulate=True) 
            
-       return other.withdata(data)
+       return self.__class__(data)
 
 
    def todense(self):
@@ -444,6 +447,9 @@ class ContainerGen(TensorContainer, tn.Grad):
 
    def __init__(self, data):
 
+       if not isinstance(data, tuple):
+          data = tuple(data)
+
        self._data = data
 
 
@@ -459,7 +465,7 @@ class ContainerGen(TensorContainer, tn.Grad):
 
        data = tuple(y.addto(x) for y, x in zip(other._data, self._data))
            
-       return other.withdata(data)  
+       return self.__class__(data)  
 
 
    def todense(self):

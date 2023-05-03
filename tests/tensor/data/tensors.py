@@ -289,14 +289,15 @@ def ntensor_dat(datafun):
 
     def wrap(backend, indnames, shapes, **opts):
 
-        v = nindices_dat(indnames, shapes)
+        seed = opts.get("seed", 0)
+        v    = nindices_dat(indnames, shapes)
 
         ws = []
         ts = []
 
         for i in range(len(shapes)):
 
-            w = data.array_dat(datafun)(backend, shapes[i], seed=i+1)
+            w = data.array_dat(datafun)(backend, shapes[i], seed=seed+i+1)
             ws.append(w)
 
             t = tn.TensorGen(w.array, v.inds.map(*indnames[i]))

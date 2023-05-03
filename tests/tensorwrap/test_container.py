@@ -11,10 +11,10 @@ import tadpole.autodiff as ad
 import tadpole.tensor   as tn
 import tadpole.index    as tid
 
+import tadpole.tensorwrap.container as tc
+
 import tests.tensorwrap.fakes as fake
 import tests.tensorwrap.data  as data
-
-import tadpole.tensorwrap.container as tnc
 
 
 from tests.common import (
@@ -35,6 +35,7 @@ from tadpole.tensorwrap.container import (
    NullGrad,
    SparseGrad,
    ContainerGen,
+   ContainerSpace,
 )
 
 
@@ -69,7 +70,7 @@ class TestSparseGrad:
    @pytest.mark.parametrize("size", [0,1,2,3])
    def test_sparsegrad(self, size):
 
-       out = tnc.zeros(size)
+       out = tc.zeros(size)
        ans = tuple(tn.NullGrad() for _ in range(size))
        ans = ContainerGen(ans)
 
@@ -108,7 +109,7 @@ class TestSparseGrad:
 
        x = ContainerGen(tuple(w.tensors))
 
-       assert x.tonull() == tnc.zeros(len(shapes))
+       assert x.tonull() == tc.zeros(len(shapes))
 
 
    # --- Element access --- #
@@ -254,7 +255,7 @@ class TestContainerGen:
    @pytest.mark.parametrize("size", [0,1,2,3])
    def test_zeros(self, size):
 
-       out = tnc.zeros(size)
+       out = tc.zeros(size)
        ans = tuple(tn.NullGrad() for _ in range(size))
        ans = ContainerGen(ans)
 
@@ -294,7 +295,7 @@ class TestContainerGen:
 
        x = ContainerGen(tuple(w.tensors))
 
-       assert x.tonull() == tnc.zeros(len(shapes))
+       assert x.tonull() == tc.zeros(len(shapes))
 
 
    # --- Element access --- #
@@ -453,7 +454,7 @@ class TestGradAccum:
        x = ContainerGen(xtensors)
        y = ContainerGen(ytensors)
 
-       out = tnc.addgrads(x,  y)
+       out = tc.addgrads(x,  y)
        ans = [tn.addgrads(xi, yi) for xi, yi in zip(xtensors, ytensors)]
 
        for outi, ansi in zip(out, ans):
@@ -478,7 +479,7 @@ class TestGradAccum:
        x = SparseGrad(len(shapes), pos, xtensors)
        y = ContainerGen(ytensors)
 
-       out = tnc.addgrads(x, y)
+       out = tc.addgrads(x, y)
        ans = list(ytensors)
 
        for i, p in enumerate(pos):
@@ -506,7 +507,7 @@ class TestGradAccum:
        x = SparseGrad(len(shapes), pos, xtensors)
        y = ContainerGen(ytensors)
 
-       out = tnc.addgrads(y, x)
+       out = tc.addgrads(y, x)
        ans = list(ytensors)
 
        for i, p in enumerate(pos):
@@ -539,7 +540,7 @@ class TestGradAccum:
        x = SparseGrad(len(shapes), xpos, xtensors)
        y = SparseGrad(len(shapes), ypos, ytensors)
 
-       out = tnc.addgrads(x, y)
+       out = tc.addgrads(x, y)
        ans = list(x.todense())
 
        for i, p in enumerate(ypos):
@@ -562,7 +563,7 @@ class TestGradAccum:
        x = NullGrad(len(shapes))
        y = ContainerGen(w.tensors)
 
-       out = tnc.addgrads(x, y)
+       out = tc.addgrads(x, y)
        ans = list(w.tensors)
 
        for outi, ansi in zip(out, ans):
@@ -582,7 +583,7 @@ class TestGradAccum:
        x = NullGrad(len(shapes))
        y = ContainerGen(w.tensors)
 
-       out = tnc.addgrads(y, x)
+       out = tc.addgrads(y, x)
        ans = list(w.tensors)
 
        for outi, ansi in zip(out, ans):
@@ -602,7 +603,7 @@ class TestGradAccum:
        x = NullGrad(len(shapes))
        y = NullGrad(len(shapes))
 
-       out = tnc.addgrads(x, y)
+       out = tc.addgrads(x, y)
        assert out == x
 
 
@@ -621,7 +622,7 @@ class TestGradAccum:
        x = NullGrad(len(shapes))
        y = SparseGrad(len(shapes), pos, ytensors)
 
-       out = tnc.addgrads(x, y)
+       out = tc.addgrads(x, y)
        ans = y.todense()
 
        for outi, ansi in zip(out, ans):
@@ -643,7 +644,7 @@ class TestGradAccum:
        x = NullGrad(len(shapes))
        y = SparseGrad(len(shapes), pos, ytensors)
 
-       out = tnc.addgrads(y, x)
+       out = tc.addgrads(y, x)
        ans = y.todense()
 
        for outi, ansi in zip(out, ans):
@@ -719,7 +720,7 @@ class TestGradsContainer:
    def test_sparsegrad(self, shapes, inds):
 
        def fun(x, pos, size):
-           return tnc.sparsegrad(x, pos, size)
+           return tc.sparsegrad(x, pos, size)
 
        w = data.ntensor_dat(data.randn)(
               self.backend, inds, shapes
@@ -735,17 +736,557 @@ class TestGradsContainer:
 
 
 
+###############################################################################
+###                                                                         ###
+###  Special container types for gradients                                  ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Null gradient --------------------------------------------------------- #
+
+@pytest.mark.parametrize("current_backend", available_backends, indirect=True)
+class TestNullGrad:
+
+   @pytest.fixture(autouse=True)
+   def request_backend(self, current_backend):
+
+       self._backend = current_backend
+
+
+   @property
+   def backend(self):
+
+       return self._backend
+
+
+   # --- Grad methods --- #
+
+   @pytest.mark.parametrize("shapes, inds", [ 
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"]],
+   ]) 
+   def test_todense(self, shapes, inds):
+
+       w = data.null_container_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+       assert w.container.todense() == w.dense
+
+
+   @pytest.mark.parametrize("shapes, inds", [ 
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"]],
+   ]) 
+   def test_tonull(self, shapes, inds):
+
+       w = data.null_container_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+       assert w.container.tonull() == w.container
+
+
+   # --- Container methods --- #
+
+   @pytest.mark.parametrize("shapes, inds", [ 
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"]],
+   ]) 
+   def test_copy(self, shapes, inds):
+
+       w = data.null_container_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+       out = w.container.copy()
+      
+       assert out == w.container
+       assert out is not w.container
+
+
+   @pytest.mark.parametrize("shapes, inds", [ 
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"]],
+   ]) 
+   def test_withdata(self, shapes, inds):
+
+       w = data.null_container_dat(data.randn)(
+              self.backend, inds, shapes, seed=10
+           )
+       v = data.null_container_dat(data.randn)(
+              self.backend, inds, shapes, seed=20
+           )
+
+       out = w.container.withdata(v.arrays)
+       ans = ContainerGen([
+                tn.TensorGen(v.arrays[i], w.inds.map(*inds[i])) 
+                for i in range(len(shapes))
+             ])
+
+       assert out == ans
+
+
+   @pytest.mark.parametrize("shapes, inds", [ 
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"]],
+   ]) 
+   def test_space(self, shapes, inds):
+
+       w = data.null_container_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+       assert w.container.space() == w.space
+
+
+   @pytest.mark.parametrize("shapes, inds", [ 
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"]],
+   ]) 
+   def test_item(self, shapes, inds):
+
+       w = data.null_container_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+       for i in range(len(w.tensors)):
+           assert w.container.item(i) == w.tensorspaces[i].zeros()
+
+
+   @pytest.mark.parametrize("shapes, inds", [ 
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"]],
+   ]) 
+   def test_len(self, shapes, inds):
+
+       w = data.null_container_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+       assert len(w.container) == len(w.tensors)
+
+
+   @pytest.mark.parametrize("shapes, inds", [ 
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"]],
+   ]) 
+   def test_contains(self, shapes, inds):
+
+       w = data.null_container_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+       for i in range(len(w.tensors)):
+           assert w.tensors[i] not in w.container 
+
+
+   @pytest.mark.parametrize("shapes, inds", [ 
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"]],
+   ]) 
+   def test_getitem(self, shapes, inds):
+
+       w = data.null_container_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+       for i in range(len(w.tensors)):
+           assert w.container[i] == w.tensorspaces[i].zeros() 
+
+
+   @pytest.mark.parametrize("shapes, inds", [ 
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"]],
+   ]) 
+   def test_iter(self, shapes, inds):
+
+       w = data.null_container_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+       assert tuple(w.container) == tuple(w.dense)
 
 
 
 
+# --- Sparse gradient ------------------------------------------------------- #
+
+@pytest.mark.parametrize("current_backend", available_backends, indirect=True)
+class TestSparseGrad:
+
+   @pytest.fixture(autouse=True)
+   def request_backend(self, current_backend):
+
+       self._backend = current_backend
+
+
+   @property
+   def backend(self):
+
+       return self._backend
+
+
+   # --- Grad methods --- #
+
+   @pytest.mark.parametrize("shapes, inds, pos", [ 
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], [1,  ]],
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], [2, 0]],
+   ]) 
+   def test_todense(self, shapes, inds, pos):
+
+       w = data.sparse_container_dat(data.randn)(
+              self.backend, inds, shapes, pos
+           )
+
+       assert w.container.todense() == w.dense
+
+
+   @pytest.mark.parametrize("shapes, inds, pos", [ 
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], [1,  ]],
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], [2, 0]],
+   ]) 
+   def test_tonull(self, shapes, inds, pos):
+
+       w = data.sparse_container_dat(data.randn)(
+              self.backend, inds, shapes, pos
+           )
+
+       assert w.container.tonull() == NullGrad(w.space)
+
+
+   # --- Container methods --- #
+
+   @pytest.mark.parametrize("shapes, inds, pos", [ 
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], [1,  ]],
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], [2, 0]],
+   ]) 
+   def test_copy(self, shapes, inds, pos):
+
+       w = data.sparse_container_dat(data.randn)(
+              self.backend, inds, shapes, pos
+           )
+
+       out = w.container.copy()
+      
+       assert out == w.container
+       assert out is not w.container
+
+
+   @pytest.mark.parametrize("shapes, inds, pos", [ 
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], [1,  ]],
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], [2, 0]],
+   ]) 
+   def test_withdata(self, shapes, inds, pos):
+
+       w = data.sparse_container_dat(data.randn)(
+              self.backend, inds, shapes, pos, seed=10
+           )
+       v = data.sparse_container_dat(data.randn)(
+              self.backend, inds, shapes, pos, seed=20
+           )
+
+       out = w.container.withdata(v.arrays)
+       ans = ContainerGen([
+                tn.TensorGen(v.arrays[i], w.inds.map(*inds[i])) 
+                for i in range(len(shapes))
+             ])
+
+       assert out == ans
+
+
+   @pytest.mark.parametrize("shapes, inds, pos", [ 
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], [1,  ]],
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], [2, 0]],
+   ]) 
+   def test_space(self, shapes, inds, pos):
+
+       w = data.sparse_container_dat(data.randn)(
+              self.backend, inds, shapes, pos
+           )
+
+       assert w.container.space() == w.space
+
+
+   @pytest.mark.parametrize("shapes, inds, pos", [ 
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], [1,  ]],
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], [2, 0]],
+   ]) 
+   def test_item(self, shapes, inds, pos):
+
+       w = data.sparse_container_dat(data.randn)(
+              self.backend, inds, shapes, pos
+           )
+
+       for i in range(len(w.tensors)):
+           if   i in pos:
+                assert w.container.item(i) is w.tensors[i]
+           else:
+                assert w.container.item(i) == w.tensorspaces[i].zeros()
+
+
+   @pytest.mark.parametrize("shapes, inds, pos", [ 
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], [1,  ]],
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], [2, 0]],
+   ]) 
+   def test_len(self, shapes, inds, pos):
+
+       w = data.sparse_container_dat(data.randn)(
+              self.backend, inds, shapes, pos
+           )
+
+       assert len(w.container) == len(w.tensors)
+
+
+   @pytest.mark.parametrize("shapes, inds, pos", [ 
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], [1,  ]],
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], [2, 0]],
+   ]) 
+   def test_contains(self, shapes, inds, pos):
+
+       w = data.sparse_container_dat(data.randn)(
+              self.backend, inds, shapes, pos
+           )
+
+       for i in range(len(w.tensors)):
+           if   i in pos:
+                assert w.tensors[i] in w.container 
+           else:
+                assert w.tensors[i] not in w.container 
+
+
+   @pytest.mark.parametrize("shapes, inds, pos", [ 
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], [1,  ]],
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], [2, 0]],
+   ]) 
+   def test_getitem(self, shapes, inds, pos):
+
+       w = data.sparse_container_dat(data.randn)(
+              self.backend, inds, shapes, pos
+           )
+
+       for i in range(len(w.tensors)):
+           if   i in pos:
+                assert w.container[i] is w.tensors[i]
+           else:
+                assert w.container[i] == w.tensorspaces[i].zeros() 
+
+
+   @pytest.mark.parametrize("shapes, inds, pos", [ 
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], [1,  ]],
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk", "klm", "mqlj"], [2, 0]],
+   ]) 
+   def test_iter(self, shapes, inds, pos):
+
+       w = data.sparse_container_dat(data.randn)(
+              self.backend, inds, shapes, pos
+           )
+
+       assert tuple(w.container) == tuple(w.dense)
 
 
 
 
+###############################################################################
+###                                                                         ###
+###  General container                                                      ###
+###                                                                         ###
+###############################################################################
 
 
+# --- General container ----------------------------------------------------- #
 
+@pytest.mark.parametrize("current_backend", available_backends, indirect=True)
+class TestContainerGen:
+
+   @pytest.fixture(autouse=True)
+   def request_backend(self, current_backend):
+
+       self._backend = current_backend
+
+
+   @property
+   def backend(self):
+
+       return self._backend
+
+
+   # --- Grad methods --- #
+
+   @pytest.mark.parametrize("shapes, inds", [
+      [[(3,4,6),                   ], ["ijk",               ]], 
+      [[(3,4,6), (6,2,5)           ], ["ijk",  "klm",       ]], 
+      [[(3,4,6), tuple(), (6,2,5)  ], ["ijk",  "",    "klm" ]],  
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk",  "klm", "mqlj"]],
+   ]) 
+   def test_todense(self, shapes, inds):
+
+       w = data.container_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+       assert w.container.todense() == w.container
+
+
+   @pytest.mark.parametrize("shapes, inds", [
+      [[(3,4,6),                   ], ["ijk",               ]], 
+      [[(3,4,6), (6,2,5)           ], ["ijk",  "klm",       ]], 
+      [[(3,4,6), tuple(), (6,2,5)  ], ["ijk",  "",    "klm" ]],  
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk",  "klm", "mqlj"]],
+   ]) 
+   def test_tonull(self, shapes, inds):
+
+       w = data.container_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+       assert w.container.tonull() == NullGrad(w.space)
+
+
+   # --- Container methods --- #
+
+   @pytest.mark.parametrize("shapes, inds", [
+      [[(3,4,6),                   ], ["ijk",               ]], 
+      [[(3,4,6), (6,2,5)           ], ["ijk",  "klm",       ]], 
+      [[(3,4,6), tuple(), (6,2,5)  ], ["ijk",  "",    "klm" ]],  
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk",  "klm", "mqlj"]],
+   ]) 
+   def test_copy(self, shapes, inds):
+
+       w = data.container_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+ 
+       out = w.container.copy()
+      
+       assert out == w.container
+       assert out is not w.container
+
+
+   @pytest.mark.parametrize("shapes, inds", [
+      [[(3,4,6),                   ], ["ijk",               ]], 
+      [[(3,4,6), (6,2,5)           ], ["ijk",  "klm",       ]], 
+      [[(3,4,6), tuple(), (6,2,5)  ], ["ijk",  "",    "klm" ]],  
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk",  "klm", "mqlj"]],
+   ]) 
+   def test_withdata(self, shapes, inds):
+
+       w = data.container_dat(data.randn)(
+              self.backend, inds, shapes, seed=10
+           )
+       v = data.container_dat(data.randn)(
+              self.backend, inds, shapes, seed=20
+           )
+
+       out = w.container.withdata(v.arrays)
+       ans = ContainerGen([
+                tn.TensorGen(v.arrays[i], w.inds.map(*inds[i])) 
+                for i in range(len(shapes))
+             ])
+
+       assert out == ans
+
+
+   @pytest.mark.parametrize("shapes, inds", [
+      [[(3,4,6),                   ], ["ijk",               ]], 
+      [[(3,4,6), (6,2,5)           ], ["ijk",  "klm",       ]], 
+      [[(3,4,6), tuple(), (6,2,5)  ], ["ijk",  "",    "klm" ]],  
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk",  "klm", "mqlj"]],
+   ]) 
+   def test_space(self, shapes, inds):
+
+       w = data.container_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+       assert w.container.space() == w.space
+
+
+   @pytest.mark.parametrize("shapes, inds", [
+      [[(3,4,6),                   ], ["ijk",               ]], 
+      [[(3,4,6), (6,2,5)           ], ["ijk",  "klm",       ]], 
+      [[(3,4,6), tuple(), (6,2,5)  ], ["ijk",  "",    "klm" ]],  
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk",  "klm", "mqlj"]],
+   ]) 
+   def test_item(self, shapes, inds):
+
+       w = data.container_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+       for i in range(len(w.tensors)):
+           assert w.container.item(i) is w.tensors[i]
+
+
+   @pytest.mark.parametrize("shapes, inds", [
+      [[(3,4,6),                   ], ["ijk",               ]], 
+      [[(3,4,6), (6,2,5)           ], ["ijk",  "klm",       ]], 
+      [[(3,4,6), tuple(), (6,2,5)  ], ["ijk",  "",    "klm" ]],  
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk",  "klm", "mqlj"]],
+   ]) 
+   def test_len(self, shapes, inds):
+
+       w = data.container_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+       assert len(w.container) == len(w.tensors)
+
+
+   @pytest.mark.parametrize("shapes, inds", [
+      [[(3,4,6),                   ], ["ijk",               ]], 
+      [[(3,4,6), (6,2,5)           ], ["ijk",  "klm",       ]], 
+      [[(3,4,6), tuple(), (6,2,5)  ], ["ijk",  "",    "klm" ]],  
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk",  "klm", "mqlj"]],
+   ]) 
+   def test_contains(self, shapes, inds):
+
+       w = data.container_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+       for i in range(len(w.tensors)):
+           assert w.tensors[i] in w.container 
+
+
+   @pytest.mark.parametrize("shapes, inds", [
+      [[(3,4,6),                   ], ["ijk",               ]], 
+      [[(3,4,6), (6,2,5)           ], ["ijk",  "klm",       ]], 
+      [[(3,4,6), tuple(), (6,2,5)  ], ["ijk",  "",    "klm" ]],  
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk",  "klm", "mqlj"]],
+   ]) 
+   def test_getitem(self, shapes, inds):
+
+       w = data.container_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+       for i in range(len(w.tensors)):
+           assert w.container[i] is w.tensors[i]
+
+
+   @pytest.mark.parametrize("shapes, inds", [
+      [[(3,4,6),                   ], ["ijk",               ]], 
+      [[(3,4,6), (6,2,5)           ], ["ijk",  "klm",       ]], 
+      [[(3,4,6), tuple(), (6,2,5)  ], ["ijk",  "",    "klm" ]],  
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk",  "klm", "mqlj"]],
+   ]) 
+   def test_getitem_001(self, shapes, inds):
+
+       w = data.ntensor_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+       x = ContainerGen(w.tensors[:-1])
+
+       for i in range(len(w.tensors) - 1):
+           assert x[i] is w.tensors[i]
+           assert not (x[i] == w.tensors[i+1])
+
+
+   @pytest.mark.parametrize("shapes, inds", [
+      [[(3,4,6),                   ], ["ijk",               ]], 
+      [[(3,4,6), (6,2,5)           ], ["ijk",  "klm",       ]], 
+      [[(3,4,6), tuple(), (6,2,5)  ], ["ijk",  "",    "klm" ]],  
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk",  "klm", "mqlj"]],
+   ]) 
+   def test_iter(self, shapes, inds):
+
+       w = data.container_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+       assert tuple(w.container) == tuple(w.tensors)
 
 
 
