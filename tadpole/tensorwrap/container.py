@@ -352,8 +352,7 @@ class SparseGrad(TensorContainer, tn.Grad):
        )
 
        data = put(other._data, self._pos, self._vals, accumulate=True) 
-           
-       return self.__class__(data)
+       return type(other)(data)
 
 
    def todense(self):
