@@ -647,7 +647,7 @@ def put(data, pos, vals, accumulate=False):
 
 
 
-
+"""
 # --- Apply unary function -------------------------------------------------- #
 
 def apply_unary(fun, x):
@@ -662,7 +662,7 @@ def apply_unary(fun, x):
 def apply_binary(fun, x, y):
 
     return ContainerGen(tuple(map(fun, zip(x, y))))
-
+"""
 
 
 
@@ -691,7 +691,7 @@ def sparsegrad(x, pos, space):
 
 
 ad.makevjp(getitem,    
-              lambda g, out, x, pos: sparsegrad(g, pos, len(x))
+              lambda g, out, x, pos: sparsegrad(g, pos, x.space())
 )
 
  

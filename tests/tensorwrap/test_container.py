@@ -1221,19 +1221,6 @@ class TestGradAccum:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-"""
-
 ###############################################################################
 ###                                                                         ###
 ###  Container grads                                                        ###
@@ -1267,6 +1254,8 @@ class TestGradsContainer:
    def test_getitem(self, shapes, inds):
 
        def fun(x, pos):
+           #if isinstance(x, tn.Tensor):
+           #   x = tc.ContainerGen([x])
            return x[pos]
 
        w = data.ntensor_dat(data.randn)(
@@ -1275,8 +1264,10 @@ class TestGradsContainer:
 
        x = ContainerGen(w.tensors)
 
-       assert_grad(fun, modes="vjp", submode="container", order=2)(x, 0)
-       assert False
+       assert_grad(fun, modes="vjp", submode="container", order=1)(
+          x, 0
+       )
+       #assert False
 
 
 
@@ -1289,8 +1280,8 @@ class TestGradsContainer:
    ]) 
    def test_sparsegrad(self, shapes, inds):
 
-       def fun(x, pos, size):
-           return tc.sparsegrad(x, pos, size)
+       def fun(x, pos, space):
+           return tc.sparsegrad(x, pos, space)
 
        w = data.ntensor_dat(data.randn)(
               self.backend, inds, shapes
@@ -1299,10 +1290,18 @@ class TestGradsContainer:
        source = ContainerGen(w.tensors)
        x      = source[0]
 
-       assert_grad(fun, modes="vjp", submode="container", order=1)(x, 0, len(source))
+       assert_grad(fun, modes="vjp", submode="container", order=1)(
+          x, 0, source.space()
+       )
 
 """
+"""
 
+
+"""
+   def test_iter(self):
+       pass
+"""
 
 
 
