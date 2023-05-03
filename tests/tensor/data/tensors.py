@@ -289,7 +289,7 @@ def ntensor_dat(datafun):
 
     def wrap(backend, indnames, shapes, **opts):
 
-        seed = opts.get("seed", 0)
+        seed = opts.get("seed",   0)
         v    = nindices_dat(indnames, shapes)
 
         ws = []

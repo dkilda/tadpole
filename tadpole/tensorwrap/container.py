@@ -22,6 +22,18 @@ from tadpole.tensorwrap.types import (
 ###############################################################################
 
 
+# --- Helpers: container function options ----------------------------------- #
+
+def container_opts(opts, i):
+
+    if len(opts) == 0:
+       return {}
+
+    return util.listofdicts(opts)[i]
+
+
+
+
 # --- ContainerSpace -------------------------------------------------------- #
 
 class ContainerSpace(Container, tn.Space):
@@ -40,14 +52,8 @@ class ContainerSpace(Container, tn.Space):
 
    def _map(self, fun):
 
-       def funwrap(x, i):
-           try:
-              return fun(x, i)
-           except TypeError:
-              return fun(x)
-
        return tuple(
-          funwrap(space, i) for i, space in enumerate(self._spaces)
+          fun(space, i) for i, space in enumerate(self._spaces)
        )
 
 
@@ -114,21 +120,21 @@ class ContainerSpace(Container, tn.Space):
    def zeros(self):
 
        return self._apply(
-          lambda x: x.zeros()
+          lambda x, i: x.zeros()
        )
 
 
    def ones(self):
 
        return self._apply(
-          lambda x: x.ones()
+          lambda x, i: x.ones()
        )
 
 
    def unit(self, pos, **opts):
 
        return self._apply(
-          lambda x: x.unit(pos[i], **util.listofdicts(opts)[i])
+          lambda x, i: x.unit(pos[i], **container_opts(opts, i))
        )
 
 
@@ -138,42 +144,42 @@ class ContainerSpace(Container, tn.Space):
        if rind is None: rind = [None]*len(self)
 
        return self._apply(
-          lambda x: x.eye(lind[i], rind[i])
+          lambda x, i: x.eye(lind[i], rind[i])
        )
 
 
    def rand(self, **opts):
 
        return self._apply(
-          lambda x: x.rand(**util.listofdicts(opts)[i])
+          lambda x, i: x.rand(**container_opts(opts, i))
        )
 
 
    def randn(self, **opts):
 
        return self._apply(
-          lambda x: x.randn(**util.listofdicts(opts)[i])
+          lambda x, i: x.randn(**container_opts(opts, i))
        )
 
 
    def randuniform(self, boundaries, **opts):
 
        return self._apply(
-          lambda x: x.randuniform(boundaries[i], **util.listofdicts(opts)[i])
+          lambda x, i: x.randuniform(boundaries[i], **container_opts(opts, i))
        )
 
 
    def units(self, **opts):
 
        return self._apply(
-          lambda x: x.units(**util.listofdicts(opts)[i])
+          lambda x, i: x.units(**container_opts(opts, i))
        )
 
 
    def basis(self, **opts):
 
        return self._apply(
-          lambda x: x.basis(**util.listofdicts(opts)[i])
+          lambda x, i: x.basis(**container_opts(opts, i))
        )
 
 
@@ -181,19 +187,19 @@ class ContainerSpace(Container, tn.Space):
 
    @property
    def dtype(self):
-       return self._map(lambda x: x.dtype)
+       return self._map(lambda x, i: x.dtype)
 
    @property
    def size(self):
-       return self._map(lambda x: x.size)
+       return self._map(lambda x, i: x.size)
 
    @property 
    def ndim(self):
-       return self._map(lambda x: x.ndim)
+       return self._map(lambda x, i: x.ndim)
 
    @property
    def shape(self):
-       return self._map(lambda x: x.shape)
+       return self._map(lambda x, i: x.shape)
 
 
    # --- Container methods --- #

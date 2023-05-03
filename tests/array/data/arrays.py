@@ -91,7 +91,7 @@ SampleData = collections.namedtuple("SampleData", [
 
 
 
-def zeros_dat_001(backend, dtype="complex128"):
+def zeros_dat_001(backend, dtype="complex128", **opts):
 
     backend = backends.get(backend)
     shape   = (2,3)
