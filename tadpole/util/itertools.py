@@ -123,9 +123,18 @@ def unpacked_dict(dct):
 
     return {key: val for keys, val in dct.items() for key in container(keys)}
 
+
+
+
+# --- Convert to list-of-dicts ---------------------------------------------- #
+
+def listofdicts(dct):
+
+    return [dict(zip(dct, v)) for v in zip(*dct.values())] 
+
+
+
          
-
-
 ###############################################################################
 ###                                                                         ###
 ###  Customized loop iterator.                                              ###

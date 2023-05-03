@@ -12,6 +12,212 @@ import tadpole.index    as tid
 
 ###############################################################################
 ###                                                                         ###
+###  Container space                                                        ###
+###                                                                         ###
+###############################################################################
+
+
+# --- ContainerSpace -------------------------------------------------------- #
+
+class ContainerSpace(util.Container, tn.Space):
+
+   # --- Construction --- #
+
+   def __init__(self, spaces):
+
+       self._spaces = spaces
+ 
+
+   # --- Private helpers --- #
+
+   def _map(self, fun):
+
+       def funwrap(x, i):
+           try:
+              return fun(x, i)
+           except TypeError:
+              return fun(x)
+
+       return tuple(
+          funwrap(space, i) for i, space in enumerate(self._spaces)
+       )
+
+
+   def _transform(self, fun):
+
+       return self.__class__(self._map(fun)) 
+
+
+   def _apply(self, fun):
+
+       return ContainerGen(self._map(fun)) 
+
+
+   # --- Comparison and hashing --- #
+
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+       log.typ(self, other)
+
+       if bool(log):
+          log.val(self._spaces, other._spaces)
+
+       return bool(log)
+
+
+   def __hash__(self):
+
+       return hash(self._spaces)
+
+
+   # --- Fill space with data --- #
+
+   def fillwith(self, data):
+
+       return self._apply(
+          lambda x, i: x.fillwith(data[i])
+       ) 
+
+
+   # --- Reshape space --- #
+
+   def reshape(self, inds):
+
+       return self._transform(
+          lambda x, i: x.fillwith(inds[i])
+       ) 
+
+
+   # --- Gradient factories --- #
+
+   def sparsegrad(self, pos, vals):
+
+       return self._apply(
+          lambda x, i: x.sparsegrad(pos[i], vals[i])
+       )
+
+
+   def nullgrad(self):
+
+       return self._apply(
+          lambda x: x.nullgrad()
+       )
+
+
+   # --- Tensor factories --- #
+
+   def zeros(self):
+
+       return self._apply(
+          lambda x: x.zeros()
+       )
+
+
+   def ones(self):
+
+       return self._apply(
+          lambda x: x.ones()
+       )
+
+
+   def unit(self, pos, **opts):
+
+       return self._apply(
+          lambda x: x.unit(pos[i], **util.listofdicts(opts)[i])
+       )
+
+
+   def eye(self, lind=None, rind=None):
+
+       if lind is None: lind = [None]*len(self)
+       if rind is None: rind = [None]*len(self)
+
+       return self._apply(
+          lambda x: x.eye(lind[i], rind[i])
+       )
+
+
+   def rand(self, **opts):
+
+       return self._apply(
+          lambda x: x.rand(**util.listofdicts(opts)[i])
+       )
+
+
+   def randn(self, **opts):
+
+       return self._apply(
+          lambda x: x.randn(**util.listofdicts(opts)[i])
+       )
+
+
+   def randuniform(self, boundaries, **opts):
+
+       return self._apply(
+          lambda x: x.randuniform(boundaries[i], **util.listofdicts(opts)[i])
+       )
+
+
+   def units(self, **opts):
+
+       return self._apply(
+          lambda x: x.units(**util.listofdicts(opts)[i])
+       )
+
+
+   def basis(self, **opts):
+
+       return self._apply(
+          lambda x: x.basis(**util.listofdicts(opts)[i])
+       )
+
+
+   # --- Space properties --- #
+
+   @property
+   def dtype(self):
+       return self._map(lambda x: x.dtype)
+
+   @property
+   def size(self):
+       return self._map(lambda x: x.size)
+
+   @property 
+   def ndim(self):
+       return self._map(lambda x: x.ndim)
+
+   @property
+   def shape(self):
+       return self._map(lambda x: x.shape)
+
+
+   # --- Container methods --- #
+
+   def __len__(self):
+
+       return len(self._spaces)
+
+
+   def __contains__(self, x):
+
+       return x in self._spaces
+
+
+   def __iter__(self):
+
+       return iter(self._spaces)
+
+
+   def __getitem__(self, pos):
+
+       return self._spaces[pos]
+
+
+
+
+###############################################################################
+###                                                                         ###
 ###  Special container types for gradients                                  ###
 ###                                                                         ###
 ###############################################################################

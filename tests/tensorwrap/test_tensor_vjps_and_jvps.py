@@ -248,8 +248,8 @@ class TestGradsElemwiseUnary:
    ])
    def test_sparsegrad(self, graddat, dtype):
 
-       def fun(x, pos, source):
-           return sparsegrad(x, pos, source)
+       def fun(x, pos, space):
+           return sparsegrad(x, pos, space)
 
        w = graddat(
               self.backend, dtype, seed=1
