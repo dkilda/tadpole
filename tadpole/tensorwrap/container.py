@@ -7,6 +7,11 @@ import tadpole.autodiff as ad
 import tadpole.tensor   as tn
 import tadpole.index    as tid
 
+from tadpole.tensorwrap.types import (
+   Container,
+   TensorContainer,
+)
+
 
 
 
@@ -19,7 +24,7 @@ import tadpole.index    as tid
 
 # --- ContainerSpace -------------------------------------------------------- #
 
-class ContainerSpace(util.Container, tn.Space):
+class ContainerSpace(Container, tn.Space):
 
    # --- Construction --- #
 
@@ -85,7 +90,7 @@ class ContainerSpace(util.Container, tn.Space):
    def reshape(self, inds):
 
        return self._transform(
-          lambda x, i: x.fillwith(inds[i])
+          lambda x, i: x.reshape(inds[i])
        ) 
 
 
@@ -93,19 +98,15 @@ class ContainerSpace(util.Container, tn.Space):
 
    def sparsegrad(self, pos, vals):
 
-       return self._apply(
-          lambda x, i: x.sparsegrad(pos[i], vals[i])
-       )
-
+       return SparseGrad(self, pos, vals)
+       
 
    def nullgrad(self):
 
-       return self._apply(
-          lambda x: x.nullgrad()
-       )
+       return NullGrad(self)
 
 
-   # --- Tensor factories --- #
+   # --- Container factories --- #
 
    def zeros(self):
 
@@ -225,33 +226,33 @@ class ContainerSpace(util.Container, tn.Space):
 
 # --- Null gradient --------------------------------------------------------- #
 
-class NullGrad(util.Container, tn.Grad):
+class NullGrad(TensorContainer, tn.Grad):
 
    # --- Construction --- #
 
-   def __init__(self, size):
+   def __init__(self, space):
 
-       self._size = size
+       self._space = space
 
 
    # --- Grad methods --- #
 
-   def tonull(self):
+   def addto(self, other):
 
-       return self
+       if not other:
+          return self
+
+       return other.addto(self)
 
 
    def todense(self):
 
-       return zeros(self._size)
+       return self.space.zeros()
 
 
-   def addto(self, other):
+   def tonull(self):
 
-       if isinstance(other, self.__class__):
-          return self
-
-       return other.addto(self)
+       return self
 
 
    # --- Comparison and hashing --- #
@@ -261,15 +262,12 @@ class NullGrad(util.Container, tn.Grad):
        log = util.LogicalChain()
        log.typ(self, other)
 
-       if bool(log):
-          log.val(self._size, other._size)
-
        return bool(log)
 
 
    def __hash__(self):
 
-       return hash(self._size)
+       return hash(self._space)
 
 
    def __bool__(self):
@@ -279,9 +277,29 @@ class NullGrad(util.Container, tn.Grad):
 
    # --- Container methods --- #
 
+   def copy(self, **opts):
+
+       return self.__class__(self._space) 
+
+
+   def withdata(self, data):
+
+       return self.space().fillwith(data)
+
+
+   def space(self):
+
+       return self._space 
+
+
+   def item(self, pos):
+
+       return self.todense().item(pos)
+
+
    def __len__(self):
 
-       return self._size
+       return len(self._space)
 
 
    def __contains__(self, x):
@@ -303,48 +321,46 @@ class NullGrad(util.Container, tn.Grad):
 
 # --- Sparse gradient ------------------------------------------------------- #
 
-class SparseGrad(util.Container, tn.Grad):
+class SparseGrad(TensorContainer, tn.Grad):
 
    # --- Construction --- #
 
-   def __init__(self, size, pos, vals):
+   def __init__(self, space, pos, vals):
 
-       self._size = size
-       self._pos  = pos
-       self._vals = vals
+       self._space = space
+       self._pos   = pos
+       self._vals  = vals
 
 
    # --- Grad methods --- #
 
-   def tonull(self):
-
-       return zeros(len(self))
-
-
-   def todense(self):
-
-       source = put(zeros(self._size), self._pos, self._vals) 
-
-       return ContainerGen(source)
-
-
    def addto(self, other):
 
        if not other:
-          other = zeros(self._size)
+          other = self.space().zeros()
 
        if isinstance(other, self.__class__):
           other = other.todense()
 
        assert len(self) == len(other), (
           f"{type(self).__name__}.addto: "
-          f"gradient accumulation cannot be performed for "
-          f"containers with different sizes {len(self)} != {len(other)}."
+          f"gradient accumulation cannot be performed for containers "
+          f"with non-matching spaces {self.space()} != {other.space()}"
        )
 
-       source = put(other._source, self._pos, self._vals, accumulate=True) 
+       data = put(other._data, self._pos, self._vals, accumulate=True) 
            
-       return type(other)(source)  
+       return other.withdata(data)
+
+
+   def todense(self):
+
+       return put(self.space().zeros(), self._pos, self._vals) 
+
+
+   def tonull(self):
+
+       return NullGrad(self.space())
 
 
    # --- Comparison and hashing --- #
@@ -355,23 +371,45 @@ class SparseGrad(util.Container, tn.Grad):
        log.typ(self, other)
 
        if bool(log):
-          log.val(self._size, other._size)
-          log.val(self._pos,  other._pos)
-          log.val(self._vals, other._vals)
+          log.val(self._space, other._space)
+          log.val(self._pos,   other._pos)
+
+       if bool(log):
+          log.val(self._vals,  other._vals)
 
        return bool(log)
 
 
    def __hash__(self):
 
-       return hash((self._size, self._pos, self._vals))
+       return hash((self._space, self._pos, self._vals))
 
 
    # --- Container methods --- #
 
+   def copy(self, **opts):
+
+       return self.__class__(self._space, self._pos, self._vals) 
+
+
+   def withdata(self, data):
+
+       return self.space().fillwith(data)
+
+
+   def space(self):
+
+       return self._space 
+
+
+   def item(self, pos):
+
+       return self.todense().item(pos)
+
+
    def __len__(self):
 
-       return self._size
+       return len(self._space)
 
 
    def __contains__(self, x):
@@ -398,18 +436,117 @@ class SparseGrad(util.Container, tn.Grad):
 ###############################################################################
 
 
-# --- Basic functionality --------------------------------------------------- #
+# --- General container ----------------------------------------------------- #
 
-@ad.nondifferentiable
-def size(x):
+class ContainerGen(TensorContainer, tn.Grad):
 
-    return len(x)
+   # --- Construction --- #
+
+   def __init__(self, data):
+
+       self._data = data
 
 
-@ad.nondifferentiable
-def contains(x, item):
+   # --- Grad methods --- #
 
-    return item in x
+   def addto(self, other):
+
+       if not other:
+          return self
+
+       if isinstance(other, SparseGrad):
+          return other.addto(self)
+
+       data = tuple(y.addto(x) for y, x in zip(other._data, self._data))
+           
+       return other.withdata(data)  
+
+
+   def todense(self):
+
+       return self
+
+
+   def tonull(self):
+
+       return NullGrad(self.space())
+
+
+   # --- Comparison and hashing --- #
+
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+       log.typ(self, other)
+
+       if bool(log):
+          log.val(self._data, other._data)
+
+       return bool(log)
+
+
+   def __hash__(self):
+
+       return hash(self._data)
+
+
+   # --- Container methods --- #
+
+   def copy(self, **opts):
+
+       return self.__class__(tuple(x.copy(**opts) for x in self._data))
+
+
+   def withdata(self, data):
+
+       return self.space().fillwith(data)
+
+
+   def space(self):
+
+       return ContainerSpace(tuple(x.space() for x in self._data))
+
+
+   def item(self, pos):
+
+       return self._data[pos]
+
+
+   def __len__(self):
+
+       return len(self._data)
+
+
+   def __contains__(self, x):
+
+       return x in self._data
+
+
+   def __iter__(self):
+
+       return iterate(self)
+
+
+   def __getitem__(self, pos):
+
+       return getitem(self, pos)
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Standalone functions corresponding to Container methods                ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Gradient functions ---------------------------------------------------- #
+
+@ad.differentiable
+def addgrads(x, y):
+
+    return y.addto(x)
 
 
 @ad.nondifferentiable
@@ -425,17 +562,44 @@ def tonull(x):
 
 
 
-# --- Gradient accumulation ------------------------------------------------- #
 
-@ad.differentiable
-def addgrads(x, y):
+# --- Container functions --------------------------------------------------- #
 
-    return y.addto(x)
+@ad.nondifferentiable
+def copy(x, **opts):
+
+    return x.copy(**opts)
 
 
+@ad.nondifferentiable
+def withdata(x, data):
+
+    return x.withdata(data) 
 
 
-# --- Iteration ------------------------------------------------------------- #
+@ad.nondifferentiable
+def space(x):
+
+    return x.space()
+
+
+@ad.nondifferentiable
+def item(x, pos):
+
+    return x.item(pos)
+
+
+@ad.nondifferentiable
+def size(x):
+
+    return len(x)
+
+
+@ad.nondifferentiable
+def contains(x, item):
+
+    return item in x
+
 
 def iterate(x):
 
@@ -443,56 +607,13 @@ def iterate(x):
         yield x[pos]
 
 
-
-
-# --- Element access -------------------------------------------------------- #
-
 @ad.differentiable
 def getitem(x, pos):
-
-    print("GETITEM: ", x.item(pos), pos)
 
     try:
        return x.item(pos)
     except (AttributeError, TypeError):
        return x[pos]
-
-
-@ad.differentiable
-def sparsegrad(x, pos, size):
-	
-    if isinstance(pos, int):
-       pos = (pos,  )
-       x   = (x,    )
-
-    if isinstance(pos, slice):
-       pos = tuple(util.range_from_slice(pos))
-
-    print("SPARSEGRAD: ", x, pos, size)
-
-    return SparseGrad(size, pos, x)
-
- 
-
-
-# --- Element access VJPs --------------------------------------------------- #
-
-ad.makevjp(getitem,    
-              lambda g, out, x, pos: sparsegrad(g, pos, len(x))
-)
-
- 
-ad.makevjp(sparsegrad, 
-              lambda g, out, x, pos, size: g[pos]
-)
-
-
-
-
-# --- Element access JVPs --------------------------------------------------- #
-
-ad.makejvp(getitem,    "linear")
-ad.makejvp(sparsegrad, "linear")
 
 
 
@@ -516,96 +637,64 @@ def put(data, pos, vals, accumulate=False):
 
 
 
-# --- Container of zero tensors --------------------------------------------- #
+# --- Apply unary function -------------------------------------------------- #
 
-def zeros(size):
+def apply_unary(fun, x):
 
-    return ContainerGen(tuple(tn.NullGrad() for _ in range(size)))
-
-
+    return ContainerGen(tuple(map(fun, x)))
 
 
-# --- General container ----------------------------------------------------- #
-
-class ContainerGen(util.Container, tn.Grad):
-
-   # --- Construction --- #
-
-   def __init__(self, source):
-
-       self._source = source
 
 
-   # --- Grad methods --- #
+# --- Apply binary function ------------------------------------------------- #
 
-   def tonull(self):
+def apply_binary(fun, x, y):
 
-       return zeros(len(self))
-
-
-   def todense(self):
-
-       return self
+    return ContainerGen(tuple(map(fun, zip(x, y))))
 
 
-   def addto(self, other):
 
-       if not other:
-          return self
 
-       if isinstance(other, SparseGrad):
-          return other.addto(self)
-
-       source = (y.addto(x) for y, x in zip(other._source, self._source))
-           
-       return self.__class__(type(other._source)(source))
+###############################################################################
+###                                                                         ###
+###  Container VJPs and JVPs                                                ###
+###                                                                         ###
+###############################################################################
 
  
-   # --- Comparison and hashing --- #
+# --- Element access VJPs --------------------------------------------------- #
 
-   def __eq__(self, other):
+@ad.differentiable
+def sparsegrad(x, pos, space):
+	
+    if isinstance(pos, int):
+       pos = [pos]
+       x   = [x]
 
-       log = util.LogicalChain()
-       log.typ(self, other)
+    if isinstance(pos, slice):
+       pos = tuple(util.range_from_slice(pos))
 
-       if bool(log):
-          log.val(self._source, other._source)
-
-       return bool(log)
-
-
-   def __hash__(self):
-
-       return hash(self._source)
+    return space.sparsegrad(pos, x) 
 
 
-   # --- Element access --- #
-
-   def item(self, pos):
-
-       return self._source[pos]
 
 
-   # --- Container methods --- #
+ad.makevjp(getitem,    
+              lambda g, out, x, pos: sparsegrad(g, pos, len(x))
+)
 
-   def __len__(self):
-
-       return len(self._source)
-
-
-   def __contains__(self, x):
-
-       return x in self._source
+ 
+ad.makevjp(sparsegrad, 
+              lambda g, out, x, pos, size: g[pos]
+)
 
 
-   def __iter__(self):
-
-       return iterate(self)
 
 
-   def __getitem__(self, pos):
+# --- Element access JVPs --------------------------------------------------- #
 
-       return getitem(self, pos)
+ad.makejvp(getitem,    "linear")
+ad.makejvp(sparsegrad, "linear")
 
 
 

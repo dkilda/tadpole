@@ -41,10 +41,7 @@ class NullGrad(Tensor, Grad, Pluggable):
 
    # --- Construction --- #
 
-   def __init__(self, space=None):
- 
-       if space is None:
-          space = sp.TensorSpace(ar.arrayspace(tuple()), Indices())
+   def __init__(self, space):
 
        self._space = space
 
