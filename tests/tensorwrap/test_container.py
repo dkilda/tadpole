@@ -43,6 +43,128 @@ from tadpole.tensorwrap.container import (
 
 ###############################################################################
 ###                                                                         ###
+###  Container space                                                        ###
+###                                                                         ###
+###############################################################################
+
+
+# --- ContainerSpace -------------------------------------------------------- #
+
+@pytest.mark.parametrize("current_backend", available_backends, indirect=True)
+class TestContainerSpace:
+
+   @pytest.fixture(autouse=True)
+   def request_backend(self, current_backend):
+
+       self._backend = current_backend
+
+
+   @property
+   def backend(self):
+
+       return self._backend
+
+
+
+
+   """
+   @pytest.mark.parametrize("shapes, inds", [
+      [[(3,4,6),                   ], ["ijk",               ]], 
+      [[(3,4,6), (6,2,5)           ], ["ijk",  "klm",       ]], 
+      [[(3,4,6), tuple(), (6,2,5)  ], ["ijk",  "",    "klm" ]],  
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk",  "klm", "mqlj"]],
+   ]) 
+   def test_withdata(self, shapes, inds):
+
+       w = data.container_dat(data.randn)(
+              self.backend, inds, shapes, seed=10
+           )
+       v = data.container_dat(data.randn)(
+              self.backend, inds, shapes, seed=20
+           )
+
+       out = w.container.withdata(v.arrays)
+       ans = ContainerGen([
+                tn.TensorGen(v.arrays[i], w.inds.map(*inds[i])) 
+                for i in range(len(shapes))
+             ])
+
+       assert out == ans
+   """
+
+
+   # --- Fill space with data --- #
+
+   @pytest.mark.parametrize("shapes, inds", [
+      [[(3,4,6),                   ], ["ijk",               ]], 
+      [[(3,4,6), (6,2,5)           ], ["ijk",  "klm",       ]], 
+      [[(3,4,6), tuple(), (6,2,5)  ], ["ijk",  "",    "klm" ]],  
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk",  "klm", "mqlj"]],
+   ]) 
+   def test_fillwith(self, shapes, inds):
+
+       w = data.container_dat(data.randn)(
+              self.backend, inds, shapes, seed=10
+           )
+       v = data.container_dat(data.randn)(
+              self.backend, inds, shapes, seed=20
+           )
+
+       out = w.space.fillwith(v.arrays)
+       ans = ContainerGen([
+                tn.TensorGen(v.arrays[i], w.inds.map(*inds[i])) 
+                for i in range(len(shapes))
+             ])
+
+       assert out == ans
+
+
+   # --- Reshape space --- #
+
+   @pytest.mark.parametrize("shapes1, inds1, shapes2, inds2", [
+      [[(3,4,6),                 ], ["ijk",            ], [(5,2,3),                 ], ["abc"             ]],
+      [[(3,4,6), (6,2,5)         ], ["ijk",       "klm"], [(5,2,3),          (4,2,7)], ["abc",       "dbe"]], 
+      [[(3,4,6), tuple(), (6,2,5)], ["ijk", "",   "klm"], [(5,2,3), (3,2),   (4,2,7)], ["abc", "cb", "dbe"]], 
+      [[(3,4,6), (3,2),   (6,2,5)], ["ijk", "il", "klm"], [(5,2,3), tuple(), (4,2,7)], ["abc", "",   "dbe"]], 
+   ]) 
+   def test_reshape(self, shapes1, inds1, shapes2, inds2):
+
+       w = data.container_dat(data.randn)(
+              self.backend, inds1, shapes1, seed=10
+           )
+       v = data.container_dat(data.randn)(
+              self.backend, inds2, shapes2, seed=20
+           )
+
+       inds = [Indices(*v.inds.map(*i2)) for i2 in inds2]
+       out  = w.space.reshape(inds)
+       ans  = v.space
+
+       assert out == ans
+
+
+   # --- Gradient factories --- #
+
+
+
+   # --- Container factories --- #
+
+
+
+   # --- Space properties --- #
+
+
+
+   # --- Container methods --- #
+
+
+
+
+
+
+
+###############################################################################
+###                                                                         ###
 ###  Special container types for gradients                                  ###
 ###                                                                         ###
 ###############################################################################

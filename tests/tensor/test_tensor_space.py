@@ -71,7 +71,7 @@ class TestTensorSpace:
    @pytest.mark.parametrize("inds, shape, dtype", [
       ["ijk", (2,3,4), "complex128"],
    ])
-   def test_withdata(self, inds, shape, dtype):
+   def test_fillwith(self, inds, shape, dtype):
 
        w = data.tensorspace_dat(self.backend, inds, shape, dtype)
 
