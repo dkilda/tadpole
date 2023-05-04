@@ -275,6 +275,13 @@ class NodeContainer(an.NodeGen, TensorContainer, tn.Grad):
 an.register(tuple,           NodeContainer)
 an.register(list,            NodeContainer)
 an.register(tc.ContainerGen, NodeContainer)
+an.register(tc.SparseGrad,   NodeContainer)
+an.register(tc.NullGrad,     NodeContainer)
+
+
+
+
+
 
 
 

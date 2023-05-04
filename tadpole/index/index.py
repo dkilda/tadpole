@@ -216,7 +216,7 @@ class Indices(util.Container):
 
    @property
    def size(self):
-       return np.prod(self.shape)
+       return int(np.prod(self.shape))
 
    @property
    def ndim(self):

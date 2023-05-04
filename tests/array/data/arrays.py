@@ -283,7 +283,7 @@ def randn_pos(shape, nvals=1, defaultval=0, dtype="complex128", seed=1):
 
     np.random.seed(seed)
 
-    size      = np.prod(shape)
+    size      = int(np.prod(shape))
     positions = np.random.choice(np.arange(size), nvals, replace=False)
 
     if   defaultval == 0:

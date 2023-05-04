@@ -1245,54 +1245,73 @@ class TestGradsContainer:
        return self._backend
 
 
-   @pytest.mark.parametrize("shapes, inds", [
-      [[(3,4,6),                   ], ["ijk",               ]], 
-      [[(3,4,6), (6,2,5)           ], ["ijk",  "klm",       ]], 
-      [[(3,4,6), tuple(), (6,2,5)  ], ["ijk",  "",    "klm" ]],  
-      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk",  "klm", "mqlj"]],
+   @pytest.mark.parametrize("shapes, inds, positions", [
+      [[(3,4,6),                   ], ["ijk",               ], [0    ]], 
+      [[(3,4,6), (6,2,5)           ], ["ijk",  "klm",       ], [0,1  ]], 
+      [[(3,4,6), tuple(), (6,2,5)  ], ["ijk",  "",    "klm" ], [0,1,2]],  
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk",  "klm", "mqlj"], [0,1,2]],
    ]) 
-   def test_getitem(self, shapes, inds):
+   def test_getitem(self, shapes, inds, positions):
 
        def fun(x, pos):
-           #if isinstance(x, tn.Tensor):
-           #   x = tc.ContainerGen([x])
            return x[pos]
 
+       w = data.container_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+       """
        w = data.ntensor_dat(data.randn)(
               self.backend, inds, shapes
            )
 
        x = ContainerGen(w.tensors)
+       """
 
-       assert_grad(fun, modes="vjp", submode="container", order=1)(
-          x, 0
-       )
-       #assert False
-
+       for pos in positions:
+           assert_grad(fun, submode="container")(w.container, pos)
 
 
-
-   @pytest.mark.parametrize("shapes, inds", [
-      [[(3,4,6),                   ], ["ijk",               ]], 
-      [[(3,4,6), (6,2,5)           ], ["ijk",  "klm",       ]], 
-      [[(3,4,6), tuple(), (6,2,5)  ], ["ijk",  "",    "klm" ]],  
-      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk",  "klm", "mqlj"]],
+   @pytest.mark.parametrize("shapes, inds, positions", [
+      [[(3,4,6),                   ], ["ijk",               ], [0    ]], 
+      [[(3,4,6), (6,2,5)           ], ["ijk",  "klm",       ], [0,1  ]], 
+      [[(3,4,6), tuple(), (6,2,5)  ], ["ijk",  "",    "klm" ], [0,1,2]],  
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk",  "klm", "mqlj"], [0,1,2]],
    ]) 
-   def test_sparsegrad(self, shapes, inds):
+   def test_sparsegrad(self, shapes, inds, positions):
 
        def fun(x, pos, space):
            return tc.sparsegrad(x, pos, space)
 
+       w = data.container_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+
+       """
        w = data.ntensor_dat(data.randn)(
               self.backend, inds, shapes
            )
 
        source = ContainerGen(w.tensors)
        x      = source[0]
+       """
 
-       assert_grad(fun, modes="vjp", submode="container", order=1)(
-          x, 0, source.space()
-       )
+
+       #positions = [0]
+
+       for pos in positions:
+           assert_grad(fun, submode="container")(
+              w.tensors[pos], pos, w.space
+           )
+
+
+
+
+
+
+
+
 
 """
 """

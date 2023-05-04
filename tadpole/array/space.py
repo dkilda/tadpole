@@ -102,7 +102,7 @@ class ArraySpace(types.Space):
 
    @property
    def size(self):
-       return np.prod(self._shape) 
+       return int(np.prod(self._shape)) 
 
    @property 
    def ndim(self):

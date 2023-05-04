@@ -301,7 +301,7 @@ class NullGrad(TensorContainer, tn.Grad):
        return self._space 
 
 
-   def item(self, pos):
+   def item(self, pos=None):
 
        return self.todense().item(pos)
 
@@ -410,7 +410,7 @@ class SparseGrad(TensorContainer, tn.Grad):
        return self._space 
 
 
-   def item(self, pos):
+   def item(self, pos=None):
 
        return self.todense().item(pos)
 
@@ -518,7 +518,10 @@ class ContainerGen(TensorContainer, tn.Grad):
        return ContainerSpace(tuple(x.space() for x in self._data))
 
 
-   def item(self, pos):
+   def item(self, pos=None):
+
+       if pos is None:
+          pos = 0
 
        return self._data[pos]
 
@@ -595,7 +598,7 @@ def space(x):
 
 
 @ad.nondifferentiable
-def item(x, pos):
+def item(x, pos=None):
 
     return x.item(pos)
 
@@ -677,13 +680,18 @@ def apply_binary(fun, x, y):
 
 @ad.differentiable
 def sparsegrad(x, pos, space):
-	
+
+    if isinstance(x, TensorContainer):
+       x = x.item()	
+
     if isinstance(pos, int):
        pos = [pos]
        x   = [x]
 
     if isinstance(pos, slice):
        pos = tuple(util.range_from_slice(pos))
+
+    print("SPARSEGRAD: ", x, pos)
 
     return space.sparsegrad(pos, x) 
 
