@@ -1245,13 +1245,21 @@ class TestGradsContainer:
        return self._backend
 
 
-   @pytest.mark.parametrize("shapes, inds, positions", [
-      [[(3,4,6),                   ], ["ijk",               ], [0    ]], 
-      [[(3,4,6), (6,2,5)           ], ["ijk",  "klm",       ], [0,1  ]], 
-      [[(3,4,6), tuple(), (6,2,5)  ], ["ijk",  "",    "klm" ], [0,1,2]],  
-      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk",  "klm", "mqlj"], [0,1,2]],
+   @pytest.mark.parametrize("shapes, inds", [
+      [[(3,4,6),                   ], ["ijk",               ]],   
+      [[(3,4,6), (6,2,5)           ], ["ijk",  "klm",       ]], 
+      [[(3,4,6), tuple(), (6,2,5)  ], ["ijk",  "",    "klm" ]],  
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk",  "klm", "mqlj"]],
    ]) 
-   def test_getitem(self, shapes, inds, positions):
+   def test_getitem(self, shapes, inds):
+
+       positions = {
+          1: [0,       slice(0,1),                       ],
+          2: [0, 1,    slice(0,1), slice(0,2), slice(1,2)],
+          3: [0, 1, 2, slice(0,1), slice(0,2), slice(1,2), 
+                       slice(1,3), slice(2,3), slice(0,3)],
+       }[len(shapes)]
+
 
        def fun(x, pos):
            return x[pos]
@@ -1264,13 +1272,20 @@ class TestGradsContainer:
            assert_grad(fun, submode="container")(w.container, pos)
 
 
-   @pytest.mark.parametrize("shapes, inds, positions", [
-      [[(3,4,6),                   ], ["ijk",               ], [0    ]], 
-      [[(3,4,6), (6,2,5)           ], ["ijk",  "klm",       ], [0,1  ]], 
-      [[(3,4,6), tuple(), (6,2,5)  ], ["ijk",  "",    "klm" ], [0,1,2]],  
-      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk",  "klm", "mqlj"], [0,1,2]],
+   @pytest.mark.parametrize("shapes, inds", [
+      [[(3,4,6),                   ], ["ijk",               ]],   
+      [[(3,4,6), (6,2,5)           ], ["ijk",  "klm",       ]], 
+      [[(3,4,6), tuple(), (6,2,5)  ], ["ijk",  "",    "klm" ]],  
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk",  "klm", "mqlj"]],
    ]) 
-   def test_sparsegrad(self, shapes, inds, positions):
+   def test_sparsegrad(self, shapes, inds):
+
+       positions = {
+          1: [0,       slice(0,1),                       ],
+          2: [0, 1,    slice(0,1), slice(0,2), slice(1,2)],
+          3: [0, 1, 2, slice(0,1), slice(0,2), slice(1,2), 
+                       slice(1,3), slice(2,3), slice(0,3)],
+       }[len(shapes)]
 
        def fun(x, pos, space):
            return tc.sparsegrad(x, pos, space)
@@ -1280,9 +1295,13 @@ class TestGradsContainer:
            )
 
        for pos in positions:
-           assert_grad(fun, submode="container")(
-              w.tensors[pos], pos, w.space
-           )
+
+           x = w.tensors[pos]
+
+           if isinstance(pos, slice):
+              x = ContainerGen(x)
+
+           assert_grad(fun, submode="container")(x, pos, w.space)
 
 
 

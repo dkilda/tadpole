@@ -202,8 +202,13 @@ def assert_vjp_container(fun, x):
     op = agrad.DifferentialOpReverse(fun, x)
     y  = op.evaluate()
 
+    print("ASSERT-VJP-1: ", x, y)
+
     dx = tn.space(x).randn() 
     dy = tn.space(y).randn() 
+
+
+    print("ASSERT-VJP-2: ", dx, dy)
 
     vj = op.grad(dy)
     jv = numerical_grad_container(fun, x)(dx)  

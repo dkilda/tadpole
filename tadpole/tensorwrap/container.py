@@ -623,11 +623,21 @@ def iterate(x):
 
 @ad.differentiable
 def getitem(x, pos):
-
+ 
+    """
     try:
-       return x.item(pos)
+       out = x.item(pos)
     except (AttributeError, TypeError):
-       return x[pos]
+       out = x[pos]
+    """
+
+
+    out = x.item(pos)
+
+    if isinstance(pos, slice):
+       out = ContainerGen(out) 
+
+    return out
 
 
 
@@ -681,10 +691,11 @@ def apply_binary(fun, x, y):
 @ad.differentiable
 def sparsegrad(x, pos, space):
 
-    if isinstance(x, TensorContainer):
-       x = x.item()	
-
     if isinstance(pos, int):
+
+       if isinstance(x, TensorContainer):
+          x = x.item()
+
        pos = [pos]
        x   = [x]
 
