@@ -444,7 +444,7 @@ class SparseGrad(TensorContainer, tn.Grad):
 ###############################################################################
 
 
-# --- General container ----------------------------------------------------- #
+# --- General tensor container ---------------------------------------------- #
 
 class ContainerGen(TensorContainer, tn.Grad):
 
@@ -624,14 +624,6 @@ def iterate(x):
 @ad.differentiable
 def getitem(x, pos):
  
-    """
-    try:
-       out = x.item(pos)
-    except (AttributeError, TypeError):
-       out = x[pos]
-    """
-
-
     out = x.item(pos)
 
     if isinstance(pos, slice):
@@ -660,24 +652,6 @@ def put(data, pos, vals, accumulate=False):
 
 
 
-"""
-# --- Apply unary function -------------------------------------------------- #
-
-def apply_unary(fun, x):
-
-    return ContainerGen(tuple(map(fun, x)))
-
-
-
-
-# --- Apply binary function ------------------------------------------------- #
-
-def apply_binary(fun, x, y):
-
-    return ContainerGen(tuple(map(fun, zip(x, y))))
-"""
-
-
 
 ###############################################################################
 ###                                                                         ###
@@ -701,8 +675,6 @@ def sparsegrad(x, pos, space):
 
     if isinstance(pos, slice):
        pos = tuple(util.range_from_slice(pos))
-
-    print("SPARSEGRAD: ", x, pos)
 
     return space.sparsegrad(pos, x) 
 

@@ -776,12 +776,12 @@ class TestSparseGrad:
 
 ###############################################################################
 ###                                                                         ###
-###  General container                                                      ###
+###  General tensor container                                               ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- General container ----------------------------------------------------- #
+# --- General tensor container ---------------------------------------------- #
 
 @pytest.mark.parametrize("current_backend", available_backends, indirect=True)
 class TestContainerGen:
