@@ -194,18 +194,6 @@ an.register(tn.NullGrad,   NodeTensor)
 
 class NodeContainer(an.NodeGen, TensorContainer, tn.Grad):
 
-   """
-   # --- Construction --- #
-
-   def __init__(self, source, layer, gate):
-
-       if not isinstance(source, TensorContainer):
-          source = tc.ContainerGen(source) 
-
-       super().__init__(source, layer, gate)
-   """
-
-
    # --- Gradient operations --- #
 
    def addto(self, other):
@@ -272,9 +260,7 @@ class NodeContainer(an.NodeGen, TensorContainer, tn.Grad):
 
 # --- Register NodeContainer with the types it can wrap --------------------- #
 
-an.register(tuple,           NodeContainer)
-an.register(list,            NodeContainer)
-an.register(tc.ContainerGen, NodeContainer)
+an.register(tc.ContainerGen, NodeContainer) # TODO Functions returning a tuple of Tensors must return a TensorContainer instead!
 an.register(tc.SparseGrad,   NodeContainer)
 an.register(tc.NullGrad,     NodeContainer)
 

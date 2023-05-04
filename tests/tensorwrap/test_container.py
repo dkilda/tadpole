@@ -1260,14 +1260,6 @@ class TestGradsContainer:
               self.backend, inds, shapes
            )
 
-       """
-       w = data.ntensor_dat(data.randn)(
-              self.backend, inds, shapes
-           )
-
-       x = ContainerGen(w.tensors)
-       """
-
        for pos in positions:
            assert_grad(fun, submode="container")(w.container, pos)
 
@@ -1287,40 +1279,10 @@ class TestGradsContainer:
               self.backend, inds, shapes
            )
 
-
-       """
-       w = data.ntensor_dat(data.randn)(
-              self.backend, inds, shapes
-           )
-
-       source = ContainerGen(w.tensors)
-       x      = source[0]
-       """
-
-
-       #positions = [0]
-
        for pos in positions:
            assert_grad(fun, submode="container")(
               w.tensors[pos], pos, w.space
            )
-
-
-
-
-
-
-
-
-
-"""
-"""
-
-
-"""
-   def test_iter(self):
-       pass
-"""
 
 
 

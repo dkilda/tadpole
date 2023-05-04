@@ -197,81 +197,19 @@ def assert_jvp_type(fun, x):
 
 # --- Assert container VJP -------------------------------------------------- # 
 
-"""
-def execute(fun, x):
-
-    if isinstance(x, tn.Tensor):
-       return fun(x)
-
-    return tc.ContainerGen([fun(xi) for xi in x])
-
-
-
-def _istensor(x):
-
-    return isinstance(x, tn.Tensor)
-
-
-
-def _dot(x, y):
-
-    if isinstance(x, tn.NullGrad) or isinstance(y, tn.NullGrad):
-       return 0
-
-
-    print("_DOT: ", x, y, x.shape, y.shape)
-
-    i = IndexGen("i", y.size)
-
-    return tn.flatten(x, i) @ tn.flatten(y, i)
-
-
-
-def dot(x, y):
-
-    if _istensor(x) and _istensor(y): 
-
-       return _dot(x, y) 
-
-
-    if not _istensor(x) and not _istensor(y):
-
-       return sum(_dot(xe, ye) for xe, ye in zip(x, y)) 
-
-
-    raise ValueError(
-       f"dot: invalid combination of input types: {type(x)}, {type(y)}"
-    )
-"""
-
-
-
-
-
-
 def assert_vjp_container(fun, x):
 
     op = agrad.DifferentialOpReverse(fun, x)
     y  = op.evaluate()
 
-    print("\n\nASSERT-VJP-1: ", x, y)
-
     dx = tn.space(x).randn() 
     dy = tn.space(y).randn() 
 
-    print("ASSERT-VJP-2: ", dx, dy)
-
     vj = op.grad(dy)
-    jv = numerical_grad_container(fun, x)(dx)  # fun(dx) 
+    jv = numerical_grad_container(fun, x)(dx)  
 
-    print("ASSERT-VJP-3-1: ", vj)
-    print("ASSERT-VJP-3-2: ", jv)
-
-    vjv_out = dot(vj, dx)
-    vjv_ans = dot(dy, jv)
-
-    print("ASSERT-VJP-3-1: ", vjv_out._data._data)
-    print("ASSERT-VJP-3-2: ", vjv_ans._data._data)
+    vjv_out = dot_container(vj, dx)
+    vjv_ans = dot_container(dy, jv)
 
     assert tn.space(vj) == tn.space(x)
     assert tn.allclose(vjv_out, vjv_ans)
@@ -286,23 +224,13 @@ def assert_jvp_container(fun, x):
     op = agrad.DifferentialOpForward(fun, x)
     dx = tn.space(x).randn()
 
-    print("\n\nASSERT-JVP-1: ", x, fun(x))
-
     jv_out = op.grad(dx)
-    jv_ans = numerical_grad_container(fun, x)(dx) # fun(dx) # numerical_grad_container(fun, x)(dx)
+    jv_ans = numerical_grad_container(fun, x)(dx) 
 
     dy = tn.space(jv_ans).randn()
 
-    print("ASSERT-JVP-2: ", dx, dy)
-
-    print("ASSERT-JVP-3-1: ", jv_out)
-    print("ASSERT-JVP-3-2: ", jv_ans)
-
-    vjv_out = dot(dy, jv_out)
-    vjv_ans = dot(dy, jv_ans)
-
-    print("ASSERT-JVP-3-1: ", vjv_out._data._data)
-    print("ASSERT-JVP-3-2: ", vjv_ans._data._data)
+    vjv_out = dot_container(dy, jv_out)
+    vjv_ans = dot_container(dy, jv_ans)
 
     assert tn.space(jv_out) == tn.space(jv_ans)
     assert tn.allclose(vjv_out, vjv_ans) 
@@ -310,75 +238,44 @@ def assert_jvp_container(fun, x):
 
 
 
+# --- Helpers: container dot ------------------------------------------------ #
 
-# --- Helpers for container VJP/JVP ----------------------------------------- #
+def dot_container(xs, ys):
 
-def dot(x, y):
+    def _dot(x, y):
+        i = IndexGen("i", x.size)
+        return tn.flatten(x, i) @ tn.flatten(y, i)
 
-    def _dot(u, v):
-        i = IndexGen("i", u.size)
-        return tn.flatten(u, i) @ tn.flatten(v, i)
+    if isinstance(xs, tn.Tensor): xs = tc.ContainerGen([xs])
+    if isinstance(ys, tn.Tensor): ys = tc.ContainerGen([ys])
 
-    if isinstance(x, tn.Tensor):
-       return _dot(x, y)
-
-    print("DOT: ", x, y)
-
-    return sum(_dot(xe, ye) for xe, ye in zip(x, y))  
+    return sum(_dot(x, y) for x, y in zip(xs, ys))  
 
 
+
+
+# --- Helpers: container numerical grad ------------------------------------- #
 
 def numerical_grad_container(fun, x, eps=1e-6):
 
-    if isinstance(x, tn.Tensor):
-       x = tc.ContainerGen([x])
+    def grad(gs):
 
-    def grad(g):
+        xs = x
 
-        #if isinstance(g, tn.Tensor):
-        #   print("NUMGRAD: ", x, g, fun(x + g * eps/2), fun(x - g * eps/2))
-        #   return (fun(x + g * eps/2) - fun(x - g * eps/2)) / eps 
-
-
-
-
-        if isinstance(g, tn.Tensor):
-           g = tc.ContainerGen([g])
+        if isinstance(xs, tn.Tensor): xs = tc.ContainerGen([xs])
+        if isinstance(gs, tn.Tensor): gs = tc.ContainerGen([gs])
    
-        x1 = []  
-        x2 = [] 
+        out1 = fun(tc.ContainerGen([x + g * eps/2 for x, g in zip(xs, gs)])) 
+        out2 = fun(tc.ContainerGen([x - g * eps/2 for x, g in zip(xs, gs)]))
 
-        for xe, ge in zip(x, g): 
+        if isinstance(out1, tn.Tensor):
+           return (out1 - out2) / eps
 
-            xe1 = xe + ge * eps/2
-            xe2 = xe - ge * eps/2
-
-            x1.append(xe1)
-            x2.append(xe2)
-
-        x1 = tc.ContainerGen(x1)
-        x2 = tc.ContainerGen(x2)
-
-        out1 = fun(x1) 
-        out2 = fun(x2)
-
-        #print("INP: ", x1[0]._data._data,             x2[0]._data._data)
-        #print("OUT: ", out1[0].todense()._data._data, out2[0].todense()._data._data)
-
-        if   isinstance(out1, tn.Tensor):
-             out = (out1 - out2) / eps
-        else:
-             out = []
-             for o1, o2 in zip(out1, out2):
-                 #print("o1, o2: ", (o1._data._data - o2._data._data) / eps)
-                 out.append((o1 - o2) / eps)
-             out = tc.ContainerGen(out)
-             
-        return out
+        return tc.ContainerGen(
+                  [(o1 - o2) / eps for o1, o2 in zip(out1, out2)]
+               )
 
     return grad 
-
-
 
 
 
