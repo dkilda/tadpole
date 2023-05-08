@@ -1272,8 +1272,6 @@ class TestGradsContainer:
            assert_grad(fun, submode="container")(w.container, pos)
 
 
-
-
    @pytest.mark.parametrize("shapes, inds", [
       [[(3,4,6),                   ], ["ijk",               ]],   
       [[(3,4,6), (6,2,5)           ], ["ijk",  "klm",       ]], 
