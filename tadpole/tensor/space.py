@@ -15,6 +15,7 @@ from tadpole.tensor.types import (
    Pluggable,
    Tensor, 
    Space,
+   Element,
 )
 
 
@@ -37,10 +38,16 @@ from tadpole.index import (
 # --- Gradient factories ---------------------------------------------------- #
 
 @ad.nondifferentiable
-def sparsegrad_from_space(arrayspace, inds, pos, vals):
+def sparsegrad_from_space(arrayspace, inds, elem, vals):
+
+    if isinstance(elem, Element):
+       elem = [elem.pos(inds)]
+
+    if len(elem) == 1:
+       vals = [vals.item()]
 
     space = TensorSpace(arrayspace, inds)
-    return core.SparseGrad(space, pos, vals)
+    return core.SparseGrad(space, elem, vals)
 
 
 

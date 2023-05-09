@@ -205,7 +205,7 @@ class TestGradsElemwiseUnary:
    @pytest.mark.parametrize("indnames, shape, positions", [
       ["ijk", (2,3,4), [(1,0,2), (0,2,1), (1,0,3)]],
    ])
-   def test_getitem(self, indnames, shape, positions):
+   def test_getitem_by_axes(self, indnames, shape, positions):
 
        def fun(x, elem):
            return x[elem]
@@ -233,7 +233,44 @@ class TestGradsElemwiseUnary:
        """
 
        for pos in positions:
+           assert_grad(fun)(x.tensor, pos)
+
+
+   @pytest.mark.parametrize("indnames, shape, positions", [
+      ["ijk", (2,3,4), [(1,0,2), (0,2,1), (1,0,3)]],
+   ])
+   def test_getitem_by_axes_001(self, indnames, shape, positions):
+
+       def fun(x, elem):
+           return x[elem]
+
+       x = data.tensor_dat(data.randn)(
+              self.backend, indnames, shape, seed=1
+           )
+
+       for pos in positions:
            assert_grad(fun)(x.tensor, tn.elem(*pos))
+
+
+   @pytest.mark.parametrize("indnames, shape, positions, eleminds, elemaxes", [
+      ["ijk", (2,3,4), [(1,0,2), (0,2,1), (1,0,3)], "ijk", (0,1,2)],
+      ["ijk", (2,3,4), [(1,0,2), (0,2,1), (1,0,3)], "kij", (2,0,1)],
+   ])
+   def test_getitem_by_inds(self, indnames, shape, positions, 
+                                            eleminds, elemaxes):
+
+       def fun(x, elem):
+           return x[elem]
+
+       x = data.tensor_dat(data.randn)(
+              self.backend, indnames, shape, seed=1
+           )
+
+       for pos in positions:
+
+           elem = tn.elem(**dict(zip(eleminds, (pos[ax] for ax in elemaxes))))
+
+           assert_grad(fun)(x.tensor, elem)
 
 
    @pytest.mark.parametrize("graddat", [
@@ -242,7 +279,7 @@ class TestGradsElemwiseUnary:
    @pytest.mark.parametrize("dtype", [
       "complex128",
    ])
-   def test_ungetitem(self, graddat, dtype):
+   def test_ungetitem_by_axes(self, graddat, dtype):
 
        def fun(x, elem, space):
            return tn.ungetitem(x, elem, space)
@@ -256,7 +293,55 @@ class TestGradsElemwiseUnary:
            x   = tn.astensor(w.vals[i])
            pos = w.pos[i]
 
-           assert_grad(fun)(x, tn.elem(*pos), tn.space(w.tensor))
+           assert_grad(fun)(x, pos, tn.space(w.tensor)) 
+
+
+   @pytest.mark.parametrize("graddat", [
+      data.sparsegrad_dat_001,
+   ])
+   @pytest.mark.parametrize("dtype", [
+      "complex128",
+   ])
+   def test_ungetitem_by_axes_001(self, graddat, dtype):
+
+       def fun(x, elem, space):
+           return tn.ungetitem(x, elem, space)
+
+       w = graddat(
+              self.backend, dtype, seed=1
+           )   
+
+       for i in range(len(w.pos)):
+
+           x   = tn.astensor(w.vals[i])
+           pos = w.pos[i]
+
+           assert_grad(fun)(x, tn.elem(*pos), tn.space(w.tensor)) 
+
+
+   @pytest.mark.parametrize("graddat", [
+      data.sparsegrad_dat_001,
+   ])
+   @pytest.mark.parametrize("dtype, eleminds, elemaxes", [
+      ["complex128", "ijk", (0,1,2)],
+      ["complex128", "kij", (2,0,1)],
+   ])
+   def test_ungetitem_by_inds(self, graddat, dtype, eleminds, elemaxes):
+
+       def fun(x, elem, space):
+           return tn.ungetitem(x, elem, space)
+
+       w = graddat(
+              self.backend, dtype, seed=1
+           )   
+
+       for i in range(len(w.pos)):
+
+           x    = tn.astensor(w.vals[i])
+           pos  = w.pos[i]
+           elem = tn.elem(**dict(zip(eleminds, (pos[ax] for ax in elemaxes))))
+
+           assert_grad(fun)(x, elem, tn.space(w.tensor))
 
 
 

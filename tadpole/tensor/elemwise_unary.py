@@ -8,8 +8,9 @@ import tadpole.autodiff as ad
 import tadpole.array    as ar
 import tadpole.index    as tid
 
-import tadpole.tensor.core    as core
-import tadpole.tensor.element as el
+import tadpole.tensor.core        as core
+import tadpole.tensor.element     as el
+import tadpole.tensor.interaction as tni
 
 
 from tadpole.tensor.types import (
@@ -143,7 +144,7 @@ class TensorElemwiseUnary:
        )
 
 
-   # --- Element access --- #
+   # --- Element access --- # pytest test_tensor_vjps_and_jvps.py -k "test_getitem_by_inds"
 
    def getitem(self, elem):
 
@@ -161,7 +162,7 @@ class TensorElemwiseUnary:
        if not isinstance(elem, Element):
           elem = el.elem(*elem)
 
-       return space.sparsegrad([elem.pos(self._inds)], [self._data.item()]) 
+       return space.sparsegrad(elem, self._data) 
 
 
    # --- Extracting info --- #
