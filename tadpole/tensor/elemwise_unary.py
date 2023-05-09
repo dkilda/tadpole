@@ -143,14 +143,17 @@ class TensorElemwiseUnary:
 
    # --- Element access --- #
 
-   def getitem(self, pos):
+   def getitem(self, elem):
 
-       return core.TensorGen(self._data[pos], Indices())
+       inds = elem.inds(self._inds)
+       pos  = elem.pos(self._inds)
+
+       return core.TensorGen(self._data[pos], inds)
 
 
-   def ungetitem(self, pos, space):
+   def ungetitem(self, elem, space):
 
-       return space.sparsegrad([pos], [self._data.item()]) 
+       return space.sparsegrad([elem.pos(self._inds)], [self._data.item()]) 
 
 
    # --- Extracting info --- #
@@ -353,19 +356,19 @@ def cumsum(x, ind=None, dtype=None, **opts):
 # --- Element access -------------------------------------------------------- #
 
 @ad.differentiable
-def getitem(x, pos):
+def getitem(x, elem):
 
     op = tensor_elemwise_unary(x)
 
-    return op.getitem(pos)
+    return op.getitem(elem)
 
 
 @ad.differentiable
-def ungetitem(x, pos, space):
+def ungetitem(x, elem, space):
 
     op = tensor_elemwise_unary(x)
 
-    return op.ungetitem(pos, space)
+    return op.ungetitem(elem, space)
 
 
 

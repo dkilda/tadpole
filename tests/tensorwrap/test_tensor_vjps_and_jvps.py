@@ -36,11 +36,6 @@ from tadpole.index import (
    Indices,
 )
 
-"""
-from tadpole.tensorwrap.tensor_vjps.elemwise_unary import (
-   sparsegrad,
-)
-"""
 
 
 
@@ -212,8 +207,8 @@ class TestGradsElemwiseUnary:
    ])
    def test_getitem(self, indnames, shape, positions):
 
-       def fun(x, pos):
-           return x[pos]
+       def fun(x, elem):
+           return x[elem]
 
        x = data.tensor_dat(data.randn)(
               self.backend, indnames, shape, seed=1
@@ -238,7 +233,7 @@ class TestGradsElemwiseUnary:
        """
 
        for pos in positions:
-           assert_grad(fun)(x.tensor, pos)
+           assert_grad(fun)(x.tensor, tn.elem(*pos))
 
 
    @pytest.mark.parametrize("graddat", [
@@ -249,8 +244,8 @@ class TestGradsElemwiseUnary:
    ])
    def test_ungetitem(self, graddat, dtype):
 
-       def fun(x, pos, space):
-           return tn.ungetitem(x, pos, space)
+       def fun(x, elem, space):
+           return tn.ungetitem(x, elem, space)
 
        w = graddat(
               self.backend, dtype, seed=1
@@ -261,7 +256,7 @@ class TestGradsElemwiseUnary:
            x   = tn.astensor(w.vals[i])
            pos = w.pos[i]
 
-           assert_grad(fun)(x, pos, tn.space(w.tensor))
+           assert_grad(fun)(x, tn.elem(*pos), tn.space(w.tensor))
 
 
 

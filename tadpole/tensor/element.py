@@ -56,7 +56,7 @@ class ElementByIndices(Element):
        self._pos_by_ind = pos_by_ind
 
 
-   def positions(self, inds):
+   def pos(self, inds):
 
        elem_inds = tuple(self._pos_by_ind.keys())
        elem_pos  = tuple(self._pos_by_ind.values())
@@ -88,7 +88,7 @@ class ElementByAxes(Element):
        self._positions = positions
 
 
-   def positions(self, inds):
+   def pos(self, inds):
 
        return self._positions
 

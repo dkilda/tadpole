@@ -236,7 +236,7 @@ class TestTensorElemwiseUnary:
            return tn.TensorGen(w.array[pos])
 
        for pos in itertools.product(*map(range, shape)):
-           assert w.tensor[pos] == elem(pos)
+           assert w.tensor[tn.elem(*pos)] == elem(pos)
 
 
    # --- Extracting info --- #

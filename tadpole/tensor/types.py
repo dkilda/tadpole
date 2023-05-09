@@ -250,7 +250,7 @@ class Space(abc.ABC):
 class Element(abc.ABC):
 
    @abc.abstractmethod
-   def positions(self, inds):
+   def pos(self, inds):
        pass
 
    @abc.abstractmethod
