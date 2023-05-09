@@ -117,14 +117,21 @@ class IndexGen(Index):
        return len(set(tags) & set(self._tags)) > 0
 
 
-   def resized(self, size, **opts):
+   def resized(self, start, end):
 
-       return self.__class__(self._tags, size, **opts)
+       uuid = self._uuid
+
+       if "_@start" in uuid:
+          uuid = uuid[: uuid.index("_@start")]
+
+       uuid = f"{self._uuid}_@start_{start}_@end_{end}"
+
+       return self.__class__(self._tags, end - start, uuid=uuid)
 
 
-   def retagged(self, tags, **opts):
+   def retagged(self, tags):
 
-       return self.__class__(tags, self._size, **opts)
+       return self.__class__(tags, self._size)
 
 
 

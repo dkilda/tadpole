@@ -154,23 +154,24 @@ class TestIndexGen:
        assert i.matches_any(*inp) == out
 
 
-   @pytest.mark.parametrize("size, size1", [
-      [5, 5],
-      [5, 7],
-      [1, 5],
-      [5, 1],
+   @pytest.mark.parametrize("size, start, end", [
+      [5, 0, 5],
+      [5, 1, 5],
+      [5, 2, 7],
+      [1, 0, 5],
+      [5, 0, 1],
    ])
    @pytest.mark.parametrize("tags", [
       "i", 
       ("i", "j"),
    ])
-   def test_resized(self, tags, size, size1):
+   def test_resized(self, tags, size, start, end):
 
        i  = IndexGen(tags, size)
-       i1 = i.resized(size1)
+       i1 = i.resized(start, end)
 
        assert i1 != i
-       assert len(i1) == size1
+       assert len(i1) == end - start
        assert i1.matches_all(*tags)
 
        assert len(i) == size

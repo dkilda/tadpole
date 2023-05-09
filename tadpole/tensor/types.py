@@ -250,11 +250,11 @@ class Space(abc.ABC):
 class Element(abc.ABC):
 
    @abc.abstractmethod
-   def positions(self, tensor_inds):
+   def positions(self, inds):
        pass
 
    @abc.abstractmethod
-   def inds(self, tensor_inds):
+   def inds(self, inds):
        pass
 
 

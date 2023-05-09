@@ -30,32 +30,51 @@ from tadpole.index import (
 ###############################################################################
 
 
+# --- Helpers for index manipulation ---------------------------------------- #
+
+def resized(ind, pos):
+
+    if isinstance(pos, slice):
+       return ind.resized(pos.indices(pos.stop)[0], pos.stop)
+
+    return ind.resized(pos, pos)
+
+
+def nonzero(inds):
+
+    return Indices(*(ind for ind in inds if len(ind) > 0)) 
+
+
+
+
 # --- Tensor element by indices --------------------------------------------- #
 
 class ElementByIndices(Element):
 
-   def __init__(self, inds, positions):
+   def __init__(self, pos_by_ind):
 
-       self._inds      = inds
-       self._positions = positions
+       self._pos_by_ind = pos_by_ind
 
 
-   def positions(self, tensor_inds):
+   def positions(self, inds):
 
-       axes = tensor_inds.axes(*tensor_inds.map(*self._inds))
+       elem_inds = tuple(self._pos_by_ind.keys())
+       elem_pos  = tuple(self._pos_by_ind.values())
 
-       return tuple(util.relsort(self._positions, axes))
+       return tuple(util.relsort(elem_pos, inds.axes(*inds.map(*elem_inds))))
        
 
-   def inds(self, tensor_inds):
+   def inds(self, inds):
 
-       inds = list(tensor_inds)
+       elem_inds = inds.map(*self._pos_by_ind.keys())
+
+       inds = list(inds)
 
        for i, ind in enumerate(inds):
-           if ind in self._inds:
-              inds[i] = ind.resize(len(self._positions[i])) 
+           if ind in elem_inds:
+              inds[i] = resized(ind, self._pos_by_ind[ind])
 
-       return Indices(*inds)
+       return nonzero(inds) 
 
 
 
@@ -69,38 +88,28 @@ class ElementByAxes(Element):
        self._positions = positions
 
 
-   def positions(self, tensor_inds):
+   def positions(self, inds):
 
        return self._positions
 
 
-   def inds(self, tensor_inds):
+   def inds(self, inds):
 
-       inds = list(tensor_inds)  
+       inds = list(inds)  
 
        for i, ind in enumerate(inds):
-           if i < len(self._positions):
-              inds[i] = ind.resized(len(self._positions[i])) 
 
-       return Indices(*inds)
+           if i == len(self._positions):
+              break
+
+           inds[i] = resized(ind, self._positions[i]) 
+
+       return nonzero(inds) 
 
 
 
 
 # --- Tensor element factory ------------------------------------------------ #
-
-def _elem_by_inds(pos_by_ind):
-
-    return ElementByIndices(
-       tuple(pos_by_ind.keys()), 
-       tuple(pos_by_ind.values())
-    )
-
-
-def _elem_by_axes(pos):
-
-    return ElementByAxes(pos)
-
 
 def elem(*args, **kwargs):
 
@@ -113,12 +122,12 @@ def elem(*args, **kwargs):
            )
 
     if len(args) == 0:
-       return _elem_by_inds(kwargs)
+       return ElementByIndices(kwargs)
 
     if isinstance(args[0], dict):
-       return _elem_by_inds(args[0])
+       return ElementByIndices(args[0])
 
-    return _elem_by_axes(*args)
+    return ElementByAxes(args)
 
 
 

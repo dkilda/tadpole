@@ -61,11 +61,11 @@ class Index(abc.ABC):
        pass
 
    @abc.abstractmethod
-   def resized(self, size, **opts):
+   def resized(self, start, end):
        pass
 
    @abc.abstractmethod
-   def retagged(self, tags, **opts):
+   def retagged(self, tags):
        pass
 
 
