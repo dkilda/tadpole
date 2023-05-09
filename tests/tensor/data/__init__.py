@@ -16,7 +16,7 @@ from .tensors import (
    nindices_dat,
    tensor_basis_dat,
    tensor_sample_dat,
-   sparsegrad_dat,
+   #sparsegrad_dat,
    sparsegrad_dat_001,
    nullgrad_dat,
    nullgrad_dat_001,

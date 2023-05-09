@@ -121,7 +121,7 @@ class TestTensorSpace:
    def test_sparsegrad(self, graddat):
 
        w = graddat(self.backend)        
-       assert w.space.sparsegrad(w.pos, w.vals) == w.grad
+       assert w.space.sparsegrad(w.pos, w.vals) == w.grad 
 
 
    @pytest.mark.parametrize("graddat", [

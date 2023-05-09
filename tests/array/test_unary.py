@@ -599,28 +599,28 @@ class TestArray:
        assert out == ans
 
 
-   @pytest.mark.parametrize("shape, idxs, smartidxs", [
-      [(2,3,4), [(1,0,2), (0,2,1), (1,0,3)], (((1,0,1),), ((0,2,0),), ((2,1,3),))], 
+   @pytest.mark.parametrize("shape, idxs", [
+      [(2,3,4), (((1,0,1),), ((0,2,0),), ((2,1,3),))], 
    ])
-   def test_put(self, shape, idxs, smartidxs):
+   def test_put(self, shape, idxs):
 
        np.random.seed(1)
        vals = np.random.randn(len(idxs))
 
        w = data.array_dat(data.randn)(self.backend, shape)
 
-       out               = ar.put(w.array, idxs, vals)
-       w.data[smartidxs] = vals
+       out          = ar.put(w.array, idxs, vals)
+       w.data[idxs] = vals
 
        ans = unary.asarray(w.data, **options(backend=self.backend))
 
        assert out == ans
 
 
-   @pytest.mark.parametrize("shape, idxs, smartidxs", [
-      [(2,3,4), [(1,0,2), (0,2,1), (1,0,3)], (((1,0,1),), ((0,2,0),), ((2,1,3),))], 
+   @pytest.mark.parametrize("shape, idxs", [
+      [(2,3,4), (((1,0,1),), ((0,2,0),), ((2,1,3),))], 
    ])
-   def test_put_accumulate(self, shape, idxs, smartidxs):
+   def test_put_accumulate(self, shape, idxs):
 
        np.random.seed(1)
        vals = np.random.randn(len(idxs))
@@ -629,7 +629,7 @@ class TestArray:
 
        out = ar.put(w.array, idxs, vals, accumulate=True)
 
-       np.add.at(w.data, smartidxs, vals) 
+       np.add.at(w.data, idxs, vals) 
        ans = unary.asarray(w.data, **options(backend=self.backend))
 
        assert out == ans

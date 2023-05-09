@@ -322,7 +322,7 @@ class TorchBackend(backend.Backend):
        return array.index_put(idxs, vals, accumulate=accumulate)
 
 
-   def put(self, array, idxs, vals, accumulate=False):
+   def _put_basic(self, array, idxs, vals, accumulate=False):
 
        out = self.copy(array)
 
@@ -337,6 +337,13 @@ class TorchBackend(backend.Backend):
 
        def fun(i, v): out[i] = v
        return _put(fun)
+
+
+   def put(self, array, idxs, vals, accumulate=False):
+
+       return array.index_put(
+          tuple(map(self.asarray, idxs)), vals, accumulate=accumulate
+       )
 
 
    def where(self, condition, x, y):

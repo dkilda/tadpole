@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import numpy as np
+
 import tadpole.util     as util
 import tadpole.autodiff as ad
 import tadpole.array    as ar
@@ -40,13 +42,32 @@ from tadpole.index import (
 @ad.nondifferentiable
 def sparsegrad_from_space(arrayspace, inds, elem, vals):
 
-    if isinstance(elem, Element):
-       elem = [elem.pos(inds)]
-
+    """
     if len(elem) == 1:
        vals = [vals.item()]
+    """
+
+    def toslice(x):
+        if isinstance(x, slice):
+           return x
+        print("TOSLICE: ", x)
+        return slice(x, x+1)
+
+    if isinstance(elem, Element):
+       elem = elem.pos(inds)
+
+    print("SPGRAD: ", elem)
+
+    elem = tuple(map(toslice, elem))
+
+    print("SPGRAD-1: ", elem)
+
+    elem = tuple(ar.asarray(el, backend="numpy") for el in np.mgrid[elem]) # FIXME how to get a different backend?
+
+    print("SPGRAD-2: ", [el for el in elem])
 
     space = TensorSpace(arrayspace, inds)
+  
     return core.SparseGrad(space, elem, vals)
 
 

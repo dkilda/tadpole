@@ -305,8 +305,10 @@ class SparseGrad(Tensor, Grad, Pluggable):
           log.val(self._pos,   other._pos)
 
        if bool(log):
-          for i in range(len(self._pos)):
-              log.val(self._vals[i], other._vals[i])  
+          log.val(self._vals, other._vals) 
+
+       print("EQ-1: ", [el._data for el in self._pos]) 
+       print("EQ-2: ", [el._data for el in other._pos]) 
 
        return bool(log)
 

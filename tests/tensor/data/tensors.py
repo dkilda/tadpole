@@ -162,15 +162,16 @@ def nullgrad_dat_001(backend):
 # --- Sparse Gradient data -------------------------------------------------- #
 
 SparseGradData = collections.namedtuple("SparseGradData", [
-                    "grad", 
+                    "grad",   "space",
                     "tensor", "array", "data",
-                    "space",  "pos",   "vals", 
+                    "vals",   "xvals",   
+                    "pos",    "xpos",  "catxpos",
                     "inds",   "shape", "dtype", "backend",  "opts",
                  ])
 
 
 
-
+"""
 def sparsegrad_dat(backend, indnames, shape, dtype, pos, vals, seed=1):
 
     def densefun(shape, dtype):
@@ -192,12 +193,13 @@ def sparsegrad_dat(backend, indnames, shape, dtype, pos, vals, seed=1):
     grad  = tn.SparseGrad(space, pos, vals)
 
     return SparseGradData(
-                          grad,         
+                          grad,     space,   
                           x.tensor, x.array,  x.data,
-                          space,    pos,      vals,
-                          x.inds,   x.shape,  dtype,  x.backend,  {}
+                          vals,     xvals,
+                          pos,      xpos,     xposlist,
+                          x.inds,   x.shape,  dtype,    x.backend,  {}
                          )
-
+"""
 
 
 
@@ -207,37 +209,83 @@ def sparsegrad_dat_001(backend, dtype="complex128", seed=1):
     indnames = "ijk"
     shape    = (2,3,4)
 
-    """
-    pos = (
-           ((1,0,1),), 
-           ((0,2,0),),
-           ((2,1,3),),
-          )
-    """
-
     pos  = [(1,0,2), (0,2,1), (1,0,3)]
     vals = backend.randn((len(pos),), dtype=dtype, seed=seed)  
 
-    dense        = backend.zeros(shape, dtype=dtype)
-    dense[1,0,2] = vals[0]
-    dense[0,2,1] = vals[1]
-    dense[1,0,3] = vals[2]
+    dense = backend.zeros(shape, dtype=dtype)
+    for i in range(len(pos)):
+        dense[pos[i]] = vals[i]
 
     def densefun(shape, dtype):
         return dense
 
+    """
+    """
+
+
+    xpos = (
+            (
+             ar.asarray([[[1]]], backend=backend), 
+             ar.asarray([[[0]]], backend=backend),
+             ar.asarray([[[2]]], backend=backend),
+            ),
+            (
+             ar.asarray([[[0]]], backend=backend), 
+             ar.asarray([[[2]]], backend=backend),
+             ar.asarray([[[1]]], backend=backend),
+            ),
+            (
+             ar.asarray([[[1]]], backend=backend), 
+             ar.asarray([[[0]]], backend=backend),
+             ar.asarray([[[3]]], backend=backend),
+            )
+    )
+
+
+    """
+    xpos = (
+            (
+             np.asarray([[[1]]]), 
+             np.asarray([[[0]]]),
+             np.asarray([[[2]]]),
+            ),
+            (
+             np.asarray([[[0]]]), 
+             np.asarray([[[2]]]),
+             np.asarray([[[1]]]),
+            ),
+            (
+             np.asarray([[[1]]]), 
+             np.asarray([[[0]]]),
+             np.asarray([[[3]]]),
+            )
+    )
+    """
+
+
+    catxpos = (
+            ar.asarray([[[1,0,1]]], backend=backend), 
+            ar.asarray([[[0,2,0]]], backend=backend),
+            ar.asarray([[[2,1,3]]], backend=backend),
+    )
+    """
+    """
+
+    xvals = ar.asarray(vals)
+
     x = tensor_dat(densefun)(
            backend.name(), indnames, shape, dtype=dtype
-        )
+    )
     w = data.arrayspace_dat(backend.name(), shape, dtype)
 
     space = tn.TensorSpace(w.space, x.inds)
-    grad  = tn.SparseGrad(space, pos, vals)
+    grad  = tn.SparseGrad(space, catxpos, xvals)
 
     return SparseGradData(
-                          grad,         
-                          x.tensor, x.array,  x.data,
-                          space,    pos,      vals,
+                          grad,     space,         
+                          x.tensor, x.array,  x.data, 
+                          vals,     xvals,           
+                          pos,      xpos,     catxpos,        
                           x.inds,   x.shape,  dtype,  x.backend,  {}
                          )
 

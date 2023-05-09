@@ -120,12 +120,17 @@ class TestTensorElemwiseUnary:
    # --- Value methods --- #
 
    @pytest.mark.parametrize("indnames, shape, pos", [
-      ["ijk", (2,3,4), [(1,0,2), (0,2,1), (1,0,3)]], 
+      ["ijk", (2,3,4), (
+                        np.asarray([[[1,0,1]]]), 
+                        np.asarray([[[0,2,0]]]), 
+                        np.asarray([[[2,1,3]]]),
+                       )], 
    ])
    def test_put(self, indnames, shape, pos):
 
        backend = backends.get(self.backend)
        vals    = backend.randn((len(pos),), seed=1)
+       vals    = ar.asarray(vals, backend=self.backend)
 
        w = data.tensor_dat(data.randn)(
               self.backend, indnames, shape
@@ -139,7 +144,11 @@ class TestTensorElemwiseUnary:
 
 
    @pytest.mark.parametrize("indnames, shape, pos", [
-      ["ijk", (2,3,4), [(1,0,2), (0,2,1), (1,0,3)]], 
+      ["ijk", (2,3,4), (
+                        np.asarray([[[1,0,1]]]), 
+                        np.asarray([[[0,2,0]]]), 
+                        np.asarray([[[2,1,3]]]),
+                       )], 
    ])
    def test_put_accumulate(self, indnames, shape, pos):
 
@@ -284,10 +293,8 @@ class TestTensorElemwiseUnary:
        for i in range(len(w.pos)):
 
            x   = tn.astensor(w.vals[i])
-           pos = w.pos[i]
-
-           out = tn.ungetitem(x, pos, w.space)
-           ans = tn.SparseGrad(w.space, [pos], [w.vals[i]])
+           out = tn.ungetitem(x, w.pos[i], w.space)
+           ans = tn.SparseGrad(w.space, w.xpos[i], w.xvals[i])
 
            assert out == ans 
 
@@ -302,10 +309,8 @@ class TestTensorElemwiseUnary:
        for i in range(len(w.pos)):
 
            x   = tn.astensor(w.vals[i])
-           pos = w.pos[i]
-
-           out = tn.ungetitem(x, tn.elem(*pos), w.space)
-           ans = tn.SparseGrad(w.space, [pos], [w.vals[i]])
+           out = tn.ungetitem(x, tn.elem(*w.pos[i]), w.space)
+           ans = tn.SparseGrad(w.space, w.xpos[i], w.xvals[i])
 
            assert out == ans 
 
@@ -325,7 +330,7 @@ class TestTensorElemwiseUnary:
            elem = tn.elem(**dict(zip(eleminds, (pos[ax] for ax in elemaxes))))
 
            out = tn.ungetitem(x, elem, w.space)
-           ans = tn.SparseGrad(w.space, [pos], [w.vals[i]])
+           ans = tn.SparseGrad(w.space, w.xpos[i], w.xvals[i])
 
            assert out == ans 
 

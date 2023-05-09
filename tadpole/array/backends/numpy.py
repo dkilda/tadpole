@@ -273,7 +273,7 @@ class NumpyBackend(backend.Backend):
        return out
       
  
-   def put(self, array, idxs, vals, accumulate=False):
+   def _put_basic(self, array, idxs, vals, accumulate=False):
 
        out = self.copy(array)
 
@@ -289,6 +289,21 @@ class NumpyBackend(backend.Backend):
        def fun(i, v): out[i] = v
        return _put(fun)
 
+
+   def put(self, array, idxs, vals, accumulate=False):
+
+       out  = array.copy()
+       idxs = tuple(self.asarray(idx) for idx in idxs)
+
+       if accumulate:
+          np.add.at(out, idxs, vals)
+          return out
+
+       print("PUT: ", idxs, vals)
+
+       out[idxs] = vals 
+       return out
+      
 
    def where(self, condition, x, y):
        
