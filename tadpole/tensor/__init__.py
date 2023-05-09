@@ -9,6 +9,7 @@ from .types import (
    Grad,
    Tensor,
    Space,
+   Element,
 )
 
 
@@ -19,6 +20,15 @@ from .types import (
    CutoffMode,
    ErrorMode,
    Trunc,
+)
+
+
+
+
+# --- Element --------------------------------------------------------------- #
+
+from .element import (
+   elem,
 )
 
 

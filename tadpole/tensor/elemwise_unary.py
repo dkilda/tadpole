@@ -8,7 +8,8 @@ import tadpole.autodiff as ad
 import tadpole.array    as ar
 import tadpole.index    as tid
 
-import tadpole.tensor.core as core
+import tadpole.tensor.core  as core
+import tadpole.tensor.space as sp
 
 
 from tadpole.tensor.types import (
@@ -143,9 +144,14 @@ class TensorElemwiseUnary:
 
    # --- Element access --- #
 
-   def __getitem__(self, pos):
+   def getitem(self, pos):
 
        return core.TensorGen(self._data[pos], Indices())
+
+
+   def ungetitem(self, pos, space):
+
+       return sp.sparsegrad([pos], [self._data.item()]) 
 
 
    # --- Extracting info --- #
@@ -352,7 +358,15 @@ def getitem(x, pos):
 
     op = tensor_elemwise_unary(x)
 
-    return op[pos]
+    return op.getitem(pos)
+
+
+@ad.differentiable
+def ungetitem(x, pos, space):
+
+    op = tensor_elemwise_unary(x)
+
+    return op.ungetitem(pos, space)
 
 
 
