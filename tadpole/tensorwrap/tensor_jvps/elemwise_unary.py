@@ -12,11 +12,6 @@ from tadpole.index import (
    Indices,
 )
 
-"""
-from tadpole.tensorwrap.tensor_vjps.elemwise_unary import (
-   sparsegrad,
-)
-"""
 
 
 
