@@ -144,7 +144,7 @@ class TensorElemwiseUnary:
        )
 
 
-   # --- Element access --- # pytest test_tensor_vjps_and_jvps.py -k "test_getitem_by_inds"
+   # --- Element access --- # 
 
    def getitem(self, elem):
 
