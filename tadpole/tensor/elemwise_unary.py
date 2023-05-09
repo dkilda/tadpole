@@ -8,12 +8,14 @@ import tadpole.autodiff as ad
 import tadpole.array    as ar
 import tadpole.index    as tid
 
-import tadpole.tensor.core  as core
+import tadpole.tensor.core    as core
+import tadpole.tensor.element as el
 
 
 from tadpole.tensor.types import (
    Pluggable,
    Engine,
+   Element,
 )
 
 
@@ -145,6 +147,9 @@ class TensorElemwiseUnary:
 
    def getitem(self, elem):
 
+       if not isinstance(elem, Element):
+          elem = el.elem(*elem)
+
        inds = elem.inds(self._inds)
        pos  = elem.pos(self._inds)
 
@@ -152,6 +157,9 @@ class TensorElemwiseUnary:
 
 
    def ungetitem(self, elem, space):
+
+       if not isinstance(elem, Element):
+          elem = el.elem(*elem)
 
        return space.sparsegrad([elem.pos(self._inds)], [self._data.item()]) 
 

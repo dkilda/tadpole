@@ -40,7 +40,7 @@ def resized(ind, pos):
     return ind.resized(pos, pos)
 
 
-def nonzero(inds):
+def nonzero_sized(inds):
 
     return Indices(*(ind for ind in inds if len(ind) > 0)) 
 
@@ -51,30 +51,29 @@ def nonzero(inds):
 
 class ElementByIndices(Element):
 
-   def __init__(self, pos_by_ind):
+   def __init__(self, inds, positions):
 
-       self._pos_by_ind = pos_by_ind
+       self._inds      = inds
+       self._positions = positions
 
 
    def pos(self, inds):
 
-       elem_inds = tuple(self._pos_by_ind.keys())
-       elem_pos  = tuple(self._pos_by_ind.values())
+       axes = util.argsort(inds.axes(*inds.map(*self._inds)))
 
-       return tuple(util.relsort(elem_pos, inds.axes(*inds.map(*elem_inds))))
+       return tuple(self._positions[axis] for axis in axes)
        
 
    def inds(self, inds):
 
-       elem_inds = inds.map(*self._pos_by_ind.keys())
-
-       inds = list(inds)
+       pos_by_ind = dict(zip(inds.map(*self._inds), self._positions))
+       inds       = list(inds)
 
        for i, ind in enumerate(inds):
-           if ind in elem_inds:
-              inds[i] = resized(ind, self._pos_by_ind[ind])
+           if ind in pos_by_ind:
+              inds[i] = resized(ind, pos_by_ind[ind])
 
-       return nonzero(inds) 
+       return nonzero_sized(inds) 
 
 
 
@@ -104,7 +103,7 @@ class ElementByAxes(Element):
 
            inds[i] = resized(ind, self._positions[i]) 
 
-       return nonzero(inds) 
+       return nonzero_sized(inds) 
 
 
 
@@ -122,10 +121,10 @@ def elem(*args, **kwargs):
            )
 
     if len(args) == 0:
-       return ElementByIndices(kwargs)
+       return ElementByIndices(*zip(*kwargs.items()))
 
     if isinstance(args[0], dict):
-       return ElementByIndices(args[0])
+       return ElementByIndices(*zip(*args[0].items()))
 
     return ElementByAxes(args)
 

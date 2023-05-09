@@ -226,17 +226,36 @@ class TestTensorElemwiseUnary:
    @pytest.mark.parametrize("indnames, shape", [
       ["ijk", (2,3,4)],
    ])
-   def test_getitem(self, indnames, shape):
+   def test_getitem_by_axes(self, indnames, shape):
 
        w = data.tensor_dat(data.randn)(
               self.backend, indnames, shape
            )
 
-       def elem(pos):
+       def item(pos):
            return tn.TensorGen(w.array[pos])
 
        for pos in itertools.product(*map(range, shape)):
-           assert w.tensor[tn.elem(*pos)] == elem(pos)
+           assert w.tensor[pos] == item(pos)
+
+
+   @pytest.mark.parametrize("indnames, shape, eleminds, elemaxes", [
+      ["ijk", (2,3,4), "ijk", (0,1,2)],
+      ["ijk", (2,3,4), "kij", (2,0,1)],
+   ])
+   def test_getitem_by_inds(self, indnames, shape, eleminds, elemaxes):
+
+       w = data.tensor_dat(data.randn)(
+              self.backend, indnames, shape
+           )
+
+       def item(pos): 
+           return tn.TensorGen(w.array[pos])
+
+       for pos in itertools.product(*map(range, shape)):
+
+           elem = tn.elem(**dict(zip(eleminds, (pos[ax] for ax in elemaxes))))
+           assert w.tensor[elem] == item(pos)
 
 
    # --- Extracting info --- #
