@@ -12,11 +12,11 @@ from tadpole.index import (
    Indices,
 )
 
-
+"""
 from tadpole.tensorwrap.tensor_vjps.elemwise_unary import (
    sparsegrad,
 )
-
+"""
 
 
 
@@ -53,8 +53,8 @@ ad.makejvp(tn.cumsum, "linear")
 
 # --- Element access -------------------------------------------------------- #
 
-ad.makejvp(tn.getitem, "linear")    
-ad.makejvp(sparsegrad, "linear")
+ad.makejvp(tn.getitem,   "linear")    
+ad.makejvp(tn.ungetitem, "linear")
 
 
 

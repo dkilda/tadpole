@@ -61,18 +61,20 @@ ad.makevjp(tn.cumsum, vjp_cumsum)
 
 # --- Element access -------------------------------------------------------- #
 
+"""
 @ad.differentiable
 def sparsegrad(x, pos, space):
 
     return space.sparsegrad([pos], [x.item()]) 
+"""
 
 
 ad.makevjp(tn.getitem,    
-              lambda g, out, x, pos: sparsegrad(g, pos, tn.space(x)) 
+              lambda g, out, x, pos: tn.ungetitem(g, pos, tn.space(x)) 
 )
 
  
-ad.makevjp(sparsegrad, 
+ad.makevjp(tn.ungetitem, 
               lambda g, out, x, pos, space: g[pos] 
 ) 
 

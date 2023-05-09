@@ -166,6 +166,7 @@ from .elemwise_unary import (
    iscomplex,
    astype,
    getitem,
+   ungetitem,
 )
 
 

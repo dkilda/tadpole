@@ -9,7 +9,6 @@ import tadpole.array    as ar
 import tadpole.index    as tid
 
 import tadpole.tensor.core  as core
-import tadpole.tensor.space as sp
 
 
 from tadpole.tensor.types import (
@@ -151,7 +150,7 @@ class TensorElemwiseUnary:
 
    def ungetitem(self, pos, space):
 
-       return sp.sparsegrad([pos], [self._data.item()]) 
+       return space.sparsegrad([pos], [self._data.item()]) 
 
 
    # --- Extracting info --- #

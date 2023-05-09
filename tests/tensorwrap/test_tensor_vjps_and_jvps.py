@@ -36,10 +36,11 @@ from tadpole.index import (
    Indices,
 )
 
+"""
 from tadpole.tensorwrap.tensor_vjps.elemwise_unary import (
    sparsegrad,
 )
-
+"""
 
 
 
@@ -246,10 +247,10 @@ class TestGradsElemwiseUnary:
    @pytest.mark.parametrize("dtype", [
       "complex128",
    ])
-   def test_sparsegrad(self, graddat, dtype):
+   def test_ungetitem(self, graddat, dtype):
 
        def fun(x, pos, space):
-           return sparsegrad(x, pos, space)
+           return tn.ungetitem(x, pos, space)
 
        w = graddat(
               self.backend, dtype, seed=1
