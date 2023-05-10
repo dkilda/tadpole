@@ -367,7 +367,7 @@ class Array(types.Array):
           vals = vals._data
 
        idxs = tuple(idx._data if isinstance(idx, self.__class__) else idx 
-                for idx in idxs)
+                 for idx in idxs)
            
        data = self._backend.put(
                  self._data, idxs, vals, accumulate=accumulate

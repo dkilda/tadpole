@@ -8,6 +8,7 @@ import tadpole.autodiff as ad
 import tadpole.array    as ar
 import tadpole.index    as tid
 
+import tadpole.tensor.element         as telem
 import tadpole.tensor.core            as core
 import tadpole.tensor.elemwise_unary  as unary
 import tadpole.tensor.elemwise_binary as binary
@@ -42,47 +43,12 @@ from tadpole.index import (
 @ad.nondifferentiable
 def sparsegrad_from_space(arrayspace, inds, elem, vals):
 
-    """
-    if len(elem) == 1:
-       vals = [vals.item()]
-    """
-
-    def toslice(x):
-        if isinstance(x, slice):
-           return x
-        print("TOSLICE: ", x)
-        return slice(x, x+1)
-
-    if isinstance(elem, Element):
-       elem = elem.pos(inds)
-
-    vals = ar.asarray(vals)
-
-    """
-    for i, el in enumerate(elem):
-        if not isinstance(el, slice):
-           vals = ar.unsqueeze(vals, i)
-    """
-
-    axes = tuple(i for i, el in enumerate(elem) if not isinstance(el, slice))
-
-    if len(axes) < vals.ndim:
-       vals = ar.unsqueeze(vals, axes)
-
-
-    print("SPGRAD: ", elem, vals._data)
-
-    elem = tuple(map(toslice, elem))
-
-    print("SPGRAD-1: ", elem)
-
-    elem = tuple(ar.asarray(el, backend="numpy") for el in np.mgrid[elem]) # FIXME how to get a different backend?
-
-    print("SPGRAD-2: ", [el._data for el in elem])
+    if not isinstance(elem, Element):
+       elem = telem.elem(*elem)    
 
     space = TensorSpace(arrayspace, inds)
   
-    return core.SparseGrad(space, elem, vals)
+    return core.SparseGrad(space, elem.grid(inds), elem.align(vals, inds))
 
 
 

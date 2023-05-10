@@ -422,7 +422,7 @@ def sparsegrad_dat_005(backend, dtype="complex128", seed=1):
     valinds = (
                x.inds[0].resized(0,2),  
                x.inds[2].resized(2,4),
-              ) # x.inds[1].resized(1,2),
+              ) 
 
     return SparseGradData(
                           grad,     space,          

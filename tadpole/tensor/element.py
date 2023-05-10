@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import numpy as np
+
 import tadpole.util     as util
 import tadpole.autodiff as ad
 import tadpole.array    as ar
 import tadpole.index    as tid
-
-import tadpole.tensor.space as sp
 
 
 from tadpole.tensor.types import (
@@ -45,6 +45,29 @@ def nonzero_sized(inds):
     return Indices(*(ind for ind in inds if len(ind) > 0)) 
 
 
+def grid(pos):
+
+    def toslice(x):
+        if isinstance(x, slice):
+           return x
+        return slice(x, x+1)
+
+    pos = tuple(map(toslice, pos))
+
+    return tuple(map(ar.asarray, np.mgrid[pos])) 
+
+
+def align(vals, pos):
+
+    axes = tuple(i for i, x in enumerate(pos) if not isinstance(x, slice))
+    vals = ar.asarray(vals)
+
+    if len(axes) < vals.ndim:
+       vals = ar.unsqueeze(vals, axes)
+
+    return vals
+
+
 
 
 # --- Tensor element by indices --------------------------------------------- #
@@ -62,8 +85,18 @@ class ElementByIndices(Element):
        axes = util.argsort(inds.axes(*inds.map(*self._inds)))
 
        return tuple(self._positions[axis] for axis in axes)
-       
 
+
+   def grid(self, inds):
+
+       return grid(self.pos(inds))
+
+
+   def align(self, vals, inds):
+
+       return align(vals, self.pos(inds))
+
+       
    def inds(self, inds):
 
        pos_by_ind = dict(zip(inds.map(*self._inds), self._positions))
@@ -90,6 +123,16 @@ class ElementByAxes(Element):
    def pos(self, inds):
 
        return self._positions
+
+
+   def grid(self, inds):
+
+       return grid(self.pos(inds))
+
+
+   def align(self, vals, inds):
+
+       return align(vals, self.pos(inds))
 
 
    def inds(self, inds):

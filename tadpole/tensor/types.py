@@ -254,6 +254,14 @@ class Element(abc.ABC):
        pass
 
    @abc.abstractmethod
+   def grid(self, inds):
+       pass
+
+   @abc.abstractmethod
+   def align(self, vals, inds):
+       pass
+
+   @abc.abstractmethod
    def inds(self, inds):
        pass
 

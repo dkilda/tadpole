@@ -44,7 +44,7 @@ class Array(types.Array):
 
    def new(self, data):
 
-       return unary.asarray(data, backend=self._backend) # unary.Array(self._backend, self._backend.asarray(data))
+       return unary.asarray(data, backend=self._backend) 
 
 
    def nary(self):
