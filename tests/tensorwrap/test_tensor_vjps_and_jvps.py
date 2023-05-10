@@ -206,6 +206,8 @@ class TestGradsElemwiseUnary:
       ["ijk", (2,3,4), (1,0,2)],
       ["ijk", (2,3,4), (0,2,1)],
       ["ijk", (2,3,4), (1,0,3)],
+      ["ijk", (2,3,4), (slice(0,1), slice(1,3), slice(2,4))],
+      ["ijk", (2,3,4), (slice(0,2), 1,          slice(2,4))],
    ])
    @pytest.mark.parametrize("wrap", [
       True, 
@@ -225,12 +227,16 @@ class TestGradsElemwiseUnary:
 
 
    @pytest.mark.parametrize("indnames, shape, pos, eleminds, elemaxes", [
-      ["ijk", (2,3,4), (1,0,2), "ijk", (0,1,2)],
-      ["ijk", (2,3,4), (0,2,1), "ijk", (0,1,2)],
-      ["ijk", (2,3,4), (1,0,3), "ijk", (0,1,2)],
-      ["ijk", (2,3,4), (1,0,2), "kij", (2,0,1)],
-      ["ijk", (2,3,4), (0,2,1), "kij", (2,0,1)],
-      ["ijk", (2,3,4), (1,0,3), "kij", (2,0,1)],
+      ["ijk", (2,3,4), (1,0,2),                              "ijk", (0,1,2)],
+      ["ijk", (2,3,4), (0,2,1),                              "ijk", (0,1,2)],
+      ["ijk", (2,3,4), (1,0,3),                              "ijk", (0,1,2)],
+      ["ijk", (2,3,4), (slice(0,1), slice(1,3), slice(2,4)), "ijk", (0,1,2)],
+      ["ijk", (2,3,4), (slice(0,2), 1,          slice(2,4)), "ijk", (0,1,2)],
+      ["ijk", (2,3,4), (1,0,2),                              "kij", (2,0,1)],
+      ["ijk", (2,3,4), (0,2,1),                              "kij", (2,0,1)],
+      ["ijk", (2,3,4), (1,0,3),                              "kij", (2,0,1)],
+      ["ijk", (2,3,4), (slice(0,1), slice(1,3), slice(2,4)), "kij", (2,0,1)],
+      ["ijk", (2,3,4), (slice(0,2), 1,          slice(2,4)), "kij", (2,0,1)],
    ])
    def test_getitem_by_inds(self, indnames, shape, pos, eleminds, elemaxes):
 
