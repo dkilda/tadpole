@@ -89,6 +89,18 @@ class Array(types.Array):
        return self.new(data)
 
 
+   def put(self, accumulate=False):
+
+       idxs = tuple(map(self._backend.asarray, self._datas[1:-1]))
+       vals = self._backend.asarray(self._datas[-1])
+
+       data = self._backend.put(
+                 self._datas[0], idxs, vals, accumulate=accumulate
+              )
+
+       return self.new(data) 
+
+
    # --- Linear algebra: products --- #
 
    def einsum(self, equation, optimize=True):
@@ -112,6 +124,18 @@ class Array(types.Array):
 def where(condition, x, y): 
 
     return (condition | x | y).where()
+
+
+
+def put(x, idxs, vals, accumulate=False):
+
+    idxs = tuple(map(unary.asarray, idxs))
+    vals = unary.asarray(vals)
+
+    array = x | reduce(operator.or_, idxs) | vals
+    array = array.nary()
+
+    return array.put(accumulate=accumulate)
 
 
 

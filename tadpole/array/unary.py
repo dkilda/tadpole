@@ -363,17 +363,7 @@ class Array(types.Array):
 
    def put(self, idxs, vals, accumulate=False):
 
-       if isinstance(vals, self.__class__): # FIXME
-          vals = vals._data
-
-       idxs = tuple(idx._data if isinstance(idx, self.__class__) else idx 
-                 for idx in idxs)
-           
-       data = self._backend.put(
-                 self._data, idxs, vals, accumulate=accumulate
-              )
-
-       return self.new(data) 
+       return nary.put(self, idxs, vals, accumulate=accumulate)
 
 
    def argsort(self, axis=None, **opts):

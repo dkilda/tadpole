@@ -292,14 +292,11 @@ class NumpyBackend(backend.Backend):
 
    def put(self, array, idxs, vals, accumulate=False):
 
-       out  = array.copy()
-       idxs = tuple(self.asarray(idx) for idx in idxs)
+       out = array.copy()
 
        if accumulate:
           np.add.at(out, idxs, vals)
           return out
-
-       print("PUT: ", idxs, vals)
 
        out[idxs] = vals 
        return out
