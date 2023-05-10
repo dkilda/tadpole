@@ -122,7 +122,12 @@ class TestTensorElemwiseBinary:
 
 
    @pytest.mark.parametrize("graddat", [
+      data.sparsegrad_dat,
       data.sparsegrad_dat_001,
+      data.sparsegrad_dat_002,
+      data.sparsegrad_dat_003,
+      data.sparsegrad_dat_004,
+      data.sparsegrad_dat_005,
    ])
    @pytest.mark.parametrize("dtype", [
       "complex128",
@@ -147,7 +152,12 @@ class TestTensorElemwiseBinary:
 
 
    @pytest.mark.parametrize("graddat", [
+      data.sparsegrad_dat,
       data.sparsegrad_dat_001,
+      data.sparsegrad_dat_002,
+      data.sparsegrad_dat_003,
+      data.sparsegrad_dat_004,
+      data.sparsegrad_dat_005,
    ])
    @pytest.mark.parametrize("dtype", [
       "complex128",
@@ -172,7 +182,12 @@ class TestTensorElemwiseBinary:
 
 
    @pytest.mark.parametrize("graddat", [
+      data.sparsegrad_dat,
       data.sparsegrad_dat_001,
+      data.sparsegrad_dat_002,
+      data.sparsegrad_dat_003,
+      data.sparsegrad_dat_004,
+      data.sparsegrad_dat_005,
    ])
    @pytest.mark.parametrize("dtype", [
       "complex128",
@@ -243,7 +258,12 @@ class TestTensorElemwiseBinary:
 
 
    @pytest.mark.parametrize("graddat", [
+      data.sparsegrad_dat,
       data.sparsegrad_dat_001,
+      data.sparsegrad_dat_002,
+      data.sparsegrad_dat_003,
+      data.sparsegrad_dat_004,
+      data.sparsegrad_dat_005,
    ])
    @pytest.mark.parametrize("dtype", [
       "complex128",
@@ -260,7 +280,12 @@ class TestTensorElemwiseBinary:
 
 
    @pytest.mark.parametrize("graddat", [
+      data.sparsegrad_dat,
       data.sparsegrad_dat_001,
+      data.sparsegrad_dat_002,
+      data.sparsegrad_dat_003,
+      data.sparsegrad_dat_004,
+      data.sparsegrad_dat_005,
    ])
    @pytest.mark.parametrize("dtype", [
       "complex128",

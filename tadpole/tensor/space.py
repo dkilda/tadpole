@@ -56,7 +56,21 @@ def sparsegrad_from_space(arrayspace, inds, elem, vals):
     if isinstance(elem, Element):
        elem = elem.pos(inds)
 
-    print("SPGRAD: ", elem)
+    vals = ar.asarray(vals)
+
+    """
+    for i, el in enumerate(elem):
+        if not isinstance(el, slice):
+           vals = ar.unsqueeze(vals, i)
+    """
+
+    axes = tuple(i for i, el in enumerate(elem) if not isinstance(el, slice))
+
+    if len(axes) < vals.ndim:
+       vals = ar.unsqueeze(vals, axes)
+
+
+    print("SPGRAD: ", elem, vals._data)
 
     elem = tuple(map(toslice, elem))
 
@@ -64,7 +78,7 @@ def sparsegrad_from_space(arrayspace, inds, elem, vals):
 
     elem = tuple(ar.asarray(el, backend="numpy") for el in np.mgrid[elem]) # FIXME how to get a different backend?
 
-    print("SPGRAD-2: ", [el for el in elem])
+    print("SPGRAD-2: ", [el._data for el in elem])
 
     space = TensorSpace(arrayspace, inds)
   

@@ -129,8 +129,7 @@ class TestTensorElemwiseUnary:
    def test_put(self, indnames, shape, pos):
 
        backend = backends.get(self.backend)
-       vals    = backend.randn((len(pos),), seed=1)
-       vals    = ar.asarray(vals, backend=self.backend)
+       vals    = ar.randn((len(pos),), seed=1, backend=self.backend)
 
        w = data.tensor_dat(data.randn)(
               self.backend, indnames, shape
@@ -153,7 +152,7 @@ class TestTensorElemwiseUnary:
    def test_put_accumulate(self, indnames, shape, pos):
 
        backend = backends.get(self.backend)
-       vals    = backend.randn((len(pos),), seed=1)
+       vals    = ar.randn((len(pos),), seed=1, backend=self.backend)
 
        w = data.tensor_dat(data.randn)(
               self.backend, indnames, shape
@@ -235,23 +234,11 @@ class TestTensorElemwiseUnary:
    @pytest.mark.parametrize("indnames, shape", [
       ["ijk", (2,3,4)],
    ])
-   def test_getitem_by_axes(self, indnames, shape):
-
-       w = data.tensor_dat(data.randn)(
-              self.backend, indnames, shape
-           )
-
-       def item(pos):
-           return tn.TensorGen(w.array[pos])
-
-       for pos in itertools.product(*map(range, shape)):
-           assert w.tensor[pos] == item(pos)
-
-
-   @pytest.mark.parametrize("indnames, shape", [
-      ["ijk", (2,3,4)],
+   @pytest.mark.parametrize("wrap", [
+      True, 
+      False,
    ])
-   def test_getitem_by_axes_001(self, indnames, shape):
+   def test_getitem_by_axes(self, indnames, shape, wrap):
 
        w = data.tensor_dat(data.randn)(
               self.backend, indnames, shape
@@ -261,7 +248,9 @@ class TestTensorElemwiseUnary:
            return tn.TensorGen(w.array[pos])
 
        for pos in itertools.product(*map(range, shape)):
-           assert w.tensor[tn.elem(*pos)] == item(pos)
+
+           elem = tn.elem(*pos) if wrap else pos
+           assert w.tensor[elem] == item(pos)
 
 
    @pytest.mark.parametrize("indnames, shape, eleminds, elemaxes", [
@@ -285,54 +274,54 @@ class TestTensorElemwiseUnary:
 
    @pytest.mark.parametrize("graddat", [
       data.sparsegrad_dat_001,
+      data.sparsegrad_dat_002,
+      data.sparsegrad_dat_003,
+      data.sparsegrad_dat_004,
+      data.sparsegrad_dat_005,
    ])
-   def test_ungetitem_by_axes(self, graddat):
-
-       w = graddat(self.backend)        
-
-       for i in range(len(w.pos)):
-
-           x   = tn.astensor(w.vals[i])
-           out = tn.ungetitem(x, w.pos[i], w.space)
-           ans = tn.SparseGrad(w.space, w.xpos[i], w.xvals[i])
-
-           assert out == ans 
-
-
-   @pytest.mark.parametrize("graddat", [
-      data.sparsegrad_dat_001,
+   @pytest.mark.parametrize("wrap", [
+      True, 
+      False,
    ])
-   def test_ungetitem_by_axes_001(self, graddat):
+   def test_ungetitem_by_axes(self, graddat, wrap):
 
-       w = graddat(self.backend)        
+       w   = graddat(self.backend)  
+       pos = tn.elem(*w.pos) if wrap else w.pos
 
-       for i in range(len(w.pos)):
+       x   = tn.astensor(w.vals, w.valinds) 
+       out = tn.ungetitem(x, pos, w.space)
+       ans = tn.SparseGrad(w.space, w.xpos, w.xvals)
 
-           x   = tn.astensor(w.vals[i])
-           out = tn.ungetitem(x, tn.elem(*w.pos[i]), w.space)
-           ans = tn.SparseGrad(w.space, w.xpos[i], w.xvals[i])
+       print("TEST: ", out.space()._inds, ans.space()._inds)
 
-           assert out == ans 
+       print("TEST-1: ", w.vals, w.xvals._data)
+
+       assert out == ans 
 
 
    @pytest.mark.parametrize("graddat, eleminds, elemaxes", [
       [data.sparsegrad_dat_001, "ijk", (0,1,2)],
+      [data.sparsegrad_dat_002, "ijk", (0,1,2)],
+      [data.sparsegrad_dat_003, "ijk", (0,1,2)],
+      [data.sparsegrad_dat_004, "ijk", (0,1,2)],
+      [data.sparsegrad_dat_005, "ijk", (0,1,2)],
       [data.sparsegrad_dat_001, "kij", (2,0,1)],
+      [data.sparsegrad_dat_002, "kij", (2,0,1)],
+      [data.sparsegrad_dat_003, "kij", (2,0,1)],
+      [data.sparsegrad_dat_004, "kij", (2,0,1)],
+      [data.sparsegrad_dat_005, "kij", (2,0,1)],
    ])
    def test_ungetitem_by_inds(self, graddat, eleminds, elemaxes):
 
        w = graddat(self.backend)        
 
-       for i in range(len(w.pos)):
+       x    = tn.astensor(w.vals, w.valinds)
+       elem = tn.elem(**dict(zip(eleminds, (w.pos[ax] for ax in elemaxes))))
 
-           x    = tn.astensor(w.vals[i])
-           pos  = w.pos[i]
-           elem = tn.elem(**dict(zip(eleminds, (pos[ax] for ax in elemaxes))))
+       out = tn.ungetitem(x, elem, w.space)
+       ans = tn.SparseGrad(w.space, w.xpos, w.xvals)
 
-           out = tn.ungetitem(x, elem, w.space)
-           ans = tn.SparseGrad(w.space, w.xpos[i], w.xvals[i])
-
-           assert out == ans 
+       assert out == ans 
 
 
    # --- Extracting info --- #

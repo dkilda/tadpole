@@ -164,53 +164,30 @@ def nullgrad_dat_001(backend):
 SparseGradData = collections.namedtuple("SparseGradData", [
                     "grad",   "space",
                     "tensor", "array", "data",
-                    "vals",   "xvals",   
-                    "pos",    "xpos",  "catxpos",
+                    "vals",   "xvals", "valinds",  
+                    "pos",    "xpos",  
                     "inds",   "shape", "dtype", "backend",  "opts",
                  ])
 
 
 
-"""
-def sparsegrad_dat(backend, indnames, shape, dtype, pos, vals, seed=1):
 
-    def densefun(shape, dtype):
-
-        backend = backends.get(backend) 
-        data    = backend.zeros(shape, dtype=dtype)
-
-        for p, v in zip(pos, vals):
-            data[p] = v
-
-        return data
-
-    x = tensor_dat(densefun)(
-           backend, indnames, shape, dtype=dtype, seed=seed
-        )
-    w = data.arrayspace_dat(backend, shape, dtype)
-
-    space = tn.TensorSpace(w.space, x.inds)
-    grad  = tn.SparseGrad(space, pos, vals)
-
-    return SparseGradData(
-                          grad,     space,   
-                          x.tensor, x.array,  x.data,
-                          vals,     xvals,
-                          pos,      xpos,     xposlist,
-                          x.inds,   x.shape,  dtype,    x.backend,  {}
-                         )
-"""
-
-
-
-def sparsegrad_dat_001(backend, dtype="complex128", seed=1):
+def sparsegrad_dat(backend, dtype="complex128", seed=1):
 
     backend  = backends.get(backend) 
     indnames = "ijk"
     shape    = (2,3,4)
+    valinds  = (IndexGen("Q",3),)
 
     pos  = [(1,0,2), (0,2,1), (1,0,3)]
-    vals = backend.randn((len(pos),), dtype=dtype, seed=seed)  
+    xpos = (
+            ar.asarray([[[1,0,1]]], backend=backend), 
+            ar.asarray([[[0,2,0]]], backend=backend),
+            ar.asarray([[[2,1,3]]], backend=backend),
+           )
+
+    vals  = backend.randn((len(pos),), dtype=dtype, seed=seed)  
+    xvals = ar.asarray(vals)
 
     dense = backend.zeros(shape, dtype=dtype)
     for i in range(len(pos)):
@@ -219,59 +196,47 @@ def sparsegrad_dat_001(backend, dtype="complex128", seed=1):
     def densefun(shape, dtype):
         return dense
 
-    """
-    """
+    x = tensor_dat(densefun)(
+           backend.name(), indnames, shape, dtype=dtype
+    )
+    w = data.arrayspace_dat(backend.name(), shape, dtype)
+
+    space = tn.TensorSpace(w.space, x.inds)
+    grad  = tn.SparseGrad(space, xpos, xvals)
+
+    return SparseGradData(
+                          grad,     space,         
+                          x.tensor, x.array,  x.data, 
+                          vals,     xvals,    valinds,        
+                          pos,      xpos,            
+                          x.inds,   x.shape,  dtype,  x.backend,  {}
+                         )
 
 
+
+
+def sparsegrad_dat_001(backend, dtype="complex128", seed=1):
+
+    backend  = backends.get(backend) 
+    indnames = "ijk"
+    shape    = (2,3,4)
+    valinds  = tuple()
+
+    pos  = (1,0,2)
     xpos = (
-            (
-             ar.asarray([[[1]]], backend=backend), 
-             ar.asarray([[[0]]], backend=backend),
-             ar.asarray([[[2]]], backend=backend),
-            ),
-            (
-             ar.asarray([[[0]]], backend=backend), 
-             ar.asarray([[[2]]], backend=backend),
-             ar.asarray([[[1]]], backend=backend),
-            ),
-            (
-             ar.asarray([[[1]]], backend=backend), 
-             ar.asarray([[[0]]], backend=backend),
-             ar.asarray([[[3]]], backend=backend),
-            )
-    )
+            ar.asarray([[[1]]], backend=backend), 
+            ar.asarray([[[0]]], backend=backend),
+            ar.asarray([[[2]]], backend=backend),
+           )
 
-
-    """
-    xpos = (
-            (
-             np.asarray([[[1]]]), 
-             np.asarray([[[0]]]),
-             np.asarray([[[2]]]),
-            ),
-            (
-             np.asarray([[[0]]]), 
-             np.asarray([[[2]]]),
-             np.asarray([[[1]]]),
-            ),
-            (
-             np.asarray([[[1]]]), 
-             np.asarray([[[0]]]),
-             np.asarray([[[3]]]),
-            )
-    )
-    """
-
-
-    catxpos = (
-            ar.asarray([[[1,0,1]]], backend=backend), 
-            ar.asarray([[[0,2,0]]], backend=backend),
-            ar.asarray([[[2,1,3]]], backend=backend),
-    )
-    """
-    """
-
+    vals  = backend.randn((1,), dtype=dtype, seed=seed)[0]  
     xvals = ar.asarray(vals)
+
+    dense      = backend.zeros(shape, dtype=dtype)
+    dense[pos] = vals
+
+    def densefun(shape, dtype):
+        return dense
 
     x = tensor_dat(densefun)(
            backend.name(), indnames, shape, dtype=dtype
@@ -279,13 +244,191 @@ def sparsegrad_dat_001(backend, dtype="complex128", seed=1):
     w = data.arrayspace_dat(backend.name(), shape, dtype)
 
     space = tn.TensorSpace(w.space, x.inds)
-    grad  = tn.SparseGrad(space, catxpos, xvals)
+    grad  = tn.SparseGrad(space, xpos, xvals)
 
     return SparseGradData(
                           grad,     space,         
                           x.tensor, x.array,  x.data, 
-                          vals,     xvals,           
-                          pos,      xpos,     catxpos,        
+                          vals,     xvals,    valinds,           
+                          pos,      xpos,        
+                          x.inds,   x.shape,  dtype,  x.backend,  {},
+                         )
+
+
+
+
+def sparsegrad_dat_002(backend, dtype="complex128", seed=1):
+
+    backend  = backends.get(backend) 
+    indnames = "ijk"
+    shape    = (2,3,4)
+    valinds  = tuple()
+
+    vals  = backend.randn((1,), dtype=dtype, seed=seed)[0]
+    xvals = ar.asarray(vals)
+
+    pos  = (0,2,1)
+    xpos = (
+            ar.asarray([[[0]]], backend=backend), 
+            ar.asarray([[[2]]], backend=backend),
+            ar.asarray([[[1]]], backend=backend),
+           )
+
+    dense      = backend.zeros(shape, dtype=dtype)
+    dense[pos] = vals
+
+    def densefun(shape, dtype):
+        return dense
+
+    x = tensor_dat(densefun)(
+           backend.name(), indnames, shape, dtype=dtype
+    )
+    w = data.arrayspace_dat(backend.name(), shape, dtype)
+
+    space = tn.TensorSpace(w.space, x.inds)
+    grad  = tn.SparseGrad(space, xpos, xvals)
+
+    return SparseGradData(
+                          grad,     space,         
+                          x.tensor, x.array,  x.data, 
+                          vals,     xvals,    valinds,            
+                          pos,      xpos,        
+                          x.inds,   x.shape,  dtype,  x.backend,  {}
+                         )
+
+
+
+
+def sparsegrad_dat_003(backend, dtype="complex128", seed=1):
+
+    backend  = backends.get(backend) 
+    indnames = "ijk"
+    shape    = (2,3,4)
+    valinds  = tuple()
+
+    vals  = backend.randn((1,), dtype=dtype, seed=seed)[0]
+    xvals = ar.asarray(vals)  
+
+    pos  = (1,0,3)
+    xpos = (
+            ar.asarray([[[1]]], backend=backend), 
+            ar.asarray([[[0]]], backend=backend),
+            ar.asarray([[[3]]], backend=backend),
+           )
+
+    dense      = backend.zeros(shape, dtype=dtype)
+    dense[pos] = vals
+
+    def densefun(shape, dtype):
+        return dense
+
+    x = tensor_dat(densefun)(
+           backend.name(), indnames, shape, dtype=dtype
+    )
+    w = data.arrayspace_dat(backend.name(), shape, dtype)
+
+    space = tn.TensorSpace(w.space, x.inds)
+    grad  = tn.SparseGrad(space, xpos, xvals)
+
+    return SparseGradData(
+                          grad,     space,         
+                          x.tensor, x.array,  x.data, 
+                          vals,     xvals,    valinds,           
+                          pos,      xpos,        
+                          x.inds,   x.shape,  dtype,  x.backend,  {}
+                         )
+
+
+
+
+def sparsegrad_dat_004(backend, dtype="complex128", seed=1):
+
+    backend  = backends.get(backend) 
+    indnames = "ijk"
+    shape    = (2,3,4)
+
+    vals  = backend.randn((1,2,2), dtype=dtype, seed=seed)  
+    xvals = ar.asarray(vals)
+
+    pos  = (slice(0,1), slice(1,3), slice(2,4))
+    xpos = (
+            ar.asarray([[[0,0], [0,0]]], backend=backend), 
+            ar.asarray([[[1,1], [2,2]]], backend=backend),
+            ar.asarray([[[2,3], [2,3]]], backend=backend),
+           )
+
+    dense      = backend.zeros(shape, dtype=dtype)
+    dense[pos] = vals
+
+    def densefun(shape, dtype):
+        return dense
+
+    x = tensor_dat(densefun)(
+           backend.name(), indnames, shape, dtype=dtype
+    )
+    w = data.arrayspace_dat(backend.name(), shape, dtype)
+
+    space = tn.TensorSpace(w.space, x.inds)
+    grad  = tn.SparseGrad(space, xpos, xvals)
+
+    valinds = (
+               x.inds[0].resized(0,1), 
+               x.inds[1].resized(1,3), 
+               x.inds[2].resized(2,4),
+              ) 
+
+    return SparseGradData(
+                          grad,     space,         
+                          x.tensor, x.array,  x.data, 
+                          vals,     xvals,    valinds,            
+                          pos,      xpos,             
+                          x.inds,   x.shape,  dtype,  x.backend,  {}
+                         )
+
+
+
+
+def sparsegrad_dat_005(backend, dtype="complex128", seed=1):
+
+    backend  = backends.get(backend) 
+    indnames = "ijk"
+    shape    = (2,3,4)
+
+    _vals = backend.randn((2,1,2), dtype=dtype, seed=seed) 
+    vals  = _vals[:,0,:]
+    xvals = ar.asarray(_vals)
+ 
+    pos  = (slice(0,2), 1, slice(2,4))
+    xpos = (
+            ar.asarray([[[0,0]], [[1,1]]], backend=backend), 
+            ar.asarray([[[1,1]], [[1,1]]], backend=backend),
+            ar.asarray([[[2,3]], [[2,3]]], backend=backend),
+           )
+
+    dense      = backend.zeros(shape, dtype=dtype)
+    dense[pos] = vals[:,:]
+
+    def densefun(shape, dtype):
+        return dense
+
+    x = tensor_dat(densefun)(
+           backend.name(), indnames, shape, dtype=dtype
+    )
+    w = data.arrayspace_dat(backend.name(), shape, dtype)
+
+    space = tn.TensorSpace(w.space, x.inds)
+    grad  = tn.SparseGrad(space, xpos, xvals)
+
+    valinds = (
+               x.inds[0].resized(0,2),  
+               x.inds[2].resized(2,4),
+              ) # x.inds[1].resized(1,2),
+
+    return SparseGradData(
+                          grad,     space,          
+                          x.tensor, x.array,  x.data,
+                          vals,     xvals,    valinds,           
+                          pos,      xpos,             
                           x.inds,   x.shape,  dtype,  x.backend,  {}
                          )
 

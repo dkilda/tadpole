@@ -67,6 +67,8 @@ def assert_vjp(fun, x):
     vjv_out = tn.flatten(vj, i) @ tn.flatten(dx, i)
     vjv_ans = tn.flatten(dy, j) @ tn.flatten(jv, j)
 
+    print("ASSERTVJP: ", tn.space(vj)._inds, tn.space(x)._inds)
+
     assert tn.space(vj) == tn.space(x)
     assert tn.allclose(vjv_out, vjv_ans)
 

@@ -106,9 +106,9 @@ class TestTensorSpace:
            )
 
        ans = tn.TensorSpace(
-              ar.ArraySpace(backends.get(self.backend), inds2.shape, dtype), 
-              inds2
-           )
+                ar.ArraySpace(backends.get(self.backend), inds2.shape, dtype), 
+                inds2
+             )
 
        assert x.reshape(inds2) == ans
 
@@ -117,6 +117,10 @@ class TestTensorSpace:
 
    @pytest.mark.parametrize("graddat", [
       data.sparsegrad_dat_001,
+      data.sparsegrad_dat_002,
+      data.sparsegrad_dat_003,
+      data.sparsegrad_dat_004,
+      data.sparsegrad_dat_005,
    ])
    def test_sparsegrad(self, graddat):
 
