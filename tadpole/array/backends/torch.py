@@ -317,28 +317,6 @@ class TorchBackend(backend.Backend):
        return torch.count_nonzero(array, axis, **opts)
 
 
-   def _put_advanced(self, array, idxs, vals, accumulate=False):
-
-       return array.index_put(idxs, vals, accumulate=accumulate)
-
-
-   def _put_basic(self, array, idxs, vals, accumulate=False):
-
-       out = self.copy(array)
-
-       def _put(fun):
-          for idx, val in zip(idxs, vals):
-              fun(idx, val)
-          return out
-
-       if accumulate:
-          def fun(i, v): out[i] += v
-          return _put(fun)
-
-       def fun(i, v): out[i] = v
-       return _put(fun)
-
-
    def put(self, array, idxs, vals, accumulate=False):
 
        return array.index_put(idxs, vals, accumulate=accumulate)
@@ -617,102 +595,6 @@ class TorchBackend(backend.Backend):
    def htranspose(self, x, axes):
 
        return self.transpose(self.conj(x), axes)
-       
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

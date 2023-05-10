@@ -307,14 +307,6 @@ class SparseGrad(Tensor, Grad, Pluggable):
        if bool(log):
           log.val(self._vals, other._vals) 
 
-       print("EQ-1: ", [el._data for el in self._pos]) 
-       print("EQ-2: ", [el._data for el in other._pos]) 
-       print("EQ-12: ", self._pos == other._pos)
-
-       print("EQ-3: ", self._vals._data) 
-       print("EQ-4: ", other._vals._data) 
-       print("EQ-34: ", self._vals == other._vals)
-
        return bool(log)
 
 

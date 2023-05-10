@@ -261,35 +261,6 @@ class NumpyBackend(backend.Backend):
        return np.count_nonzero(array, axis, **opts)
       
  
-   def _put_advanced(self, array, idxs, vals, accumulate=False):
-
-       out = array.copy()
-
-       if accumulate:
-          np.add.at(out, idxs, vals)
-          return out
-
-       out[idxs] = vals 
-       return out
-      
- 
-   def _put_basic(self, array, idxs, vals, accumulate=False):
-
-       out = self.copy(array)
-
-       def _put(fun):
-          for idx, val in zip(idxs, vals):
-              fun(idx, val)
-          return out
-
-       if accumulate:
-          def fun(i, v): out[i] += v
-          return _put(fun)
-
-       def fun(i, v): out[i] = v
-       return _put(fun)
-
-
    def put(self, array, idxs, vals, accumulate=False):
 
        out = array.copy()

@@ -39,7 +39,7 @@ from tadpole.index import (
 )
 
 
-# pytest util autodiff global array tensor
+
 
 ###############################################################################
 ###                                                                         ###
@@ -253,6 +253,28 @@ class TestTensorElemwiseUnary:
            assert w.tensor[elem] == item(pos)
 
 
+   @pytest.mark.parametrize("graddat", [
+      data.sparsegrad_dat_001,
+      data.sparsegrad_dat_002,
+      data.sparsegrad_dat_003,
+      data.sparsegrad_dat_004,
+      data.sparsegrad_dat_005,
+   ])
+   @pytest.mark.parametrize("wrap", [
+      True, 
+      False,
+   ])
+   def test_getitem_by_axes_001(self, graddat, wrap):
+
+       w   = graddat(self.backend)  
+       pos = tn.elem(*w.pos) if wrap else w.pos
+
+       out = w.tensor[pos]
+       ans = tn.astensor(w.vals, w.valinds) 
+
+       assert out == ans
+
+
    @pytest.mark.parametrize("indnames, shape, eleminds, elemaxes", [
       ["ijk", (2,3,4), "ijk", (0,1,2)],
       ["ijk", (2,3,4), "kij", (2,0,1)],
@@ -270,6 +292,29 @@ class TestTensorElemwiseUnary:
 
            elem = tn.elem(**dict(zip(eleminds, (pos[ax] for ax in elemaxes))))
            assert w.tensor[elem] == item(pos)
+
+
+   @pytest.mark.parametrize("graddat, eleminds, elemaxes", [
+      [data.sparsegrad_dat_001, "ijk", (0,1,2)],
+      [data.sparsegrad_dat_002, "ijk", (0,1,2)],
+      [data.sparsegrad_dat_003, "ijk", (0,1,2)],
+      [data.sparsegrad_dat_004, "ijk", (0,1,2)],
+      [data.sparsegrad_dat_005, "ijk", (0,1,2)],
+      [data.sparsegrad_dat_001, "kij", (2,0,1)],
+      [data.sparsegrad_dat_002, "kij", (2,0,1)],
+      [data.sparsegrad_dat_003, "kij", (2,0,1)],
+      [data.sparsegrad_dat_004, "kij", (2,0,1)],
+      [data.sparsegrad_dat_005, "kij", (2,0,1)],
+   ])
+   def test_getitem_by_inds_001(self, graddat, eleminds, elemaxes):
+
+       w    = graddat(self.backend)  
+       elem = tn.elem(**dict(zip(eleminds, (w.pos[ax] for ax in elemaxes))))
+
+       out = w.tensor[elem]
+       ans = tn.astensor(w.vals, w.valinds) 
+
+       assert out == ans
 
 
    @pytest.mark.parametrize("graddat", [
@@ -291,10 +336,6 @@ class TestTensorElemwiseUnary:
        x   = tn.astensor(w.vals, w.valinds) 
        out = tn.ungetitem(x, pos, w.space)
        ans = tn.SparseGrad(w.space, w.xpos, w.xvals)
-
-       print("TEST: ", out.space()._inds, ans.space()._inds)
-
-       print("TEST-1: ", w.vals, w.xvals._data)
 
        assert out == ans 
 

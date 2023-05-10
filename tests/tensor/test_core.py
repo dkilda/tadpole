@@ -209,7 +209,12 @@ class TestSparseGrad:
    # --- Basic functionality --- #
 
    @pytest.mark.parametrize("graddat", [
+      data.sparsegrad_dat,
       data.sparsegrad_dat_001,
+      data.sparsegrad_dat_002,
+      data.sparsegrad_dat_003,
+      data.sparsegrad_dat_004,
+      data.sparsegrad_dat_005,
    ])
    def test_copy(self, graddat):
 
@@ -221,7 +226,12 @@ class TestSparseGrad:
 
 
    @pytest.mark.parametrize("graddat", [
+      data.sparsegrad_dat,
       data.sparsegrad_dat_001,
+      data.sparsegrad_dat_002,
+      data.sparsegrad_dat_003,
+      data.sparsegrad_dat_004,
+      data.sparsegrad_dat_005,
    ])
    def test_todense(self, graddat):
 
@@ -232,7 +242,12 @@ class TestSparseGrad:
 
 
    @pytest.mark.parametrize("graddat", [
+      data.sparsegrad_dat,
       data.sparsegrad_dat_001,
+      data.sparsegrad_dat_002,
+      data.sparsegrad_dat_003,
+      data.sparsegrad_dat_004,
+      data.sparsegrad_dat_005,
    ])
    def test_tonull(self, graddat):
 
@@ -249,7 +264,12 @@ class TestSparseGrad:
 
 
    @pytest.mark.parametrize("graddat", [
+      data.sparsegrad_dat,
       data.sparsegrad_dat_001,
+      data.sparsegrad_dat_002,
+      data.sparsegrad_dat_003,
+      data.sparsegrad_dat_004,
+      data.sparsegrad_dat_005,
    ])
    def test_withdata(self, graddat):
 
@@ -267,7 +287,12 @@ class TestSparseGrad:
 
 
    @pytest.mark.parametrize("graddat", [
+      data.sparsegrad_dat,
       data.sparsegrad_dat_001,
+      data.sparsegrad_dat_002,
+      data.sparsegrad_dat_003,
+      data.sparsegrad_dat_004,
+      data.sparsegrad_dat_005,
    ])
    def test_space(self, graddat):
 
@@ -282,7 +307,12 @@ class TestSparseGrad:
 
 
    @pytest.mark.parametrize("graddat", [
+      data.sparsegrad_dat,
       data.sparsegrad_dat_001,
+      data.sparsegrad_dat_002,
+      data.sparsegrad_dat_003,
+      data.sparsegrad_dat_004,
+      data.sparsegrad_dat_005,
    ])
    def test_item(self, graddat):
 
@@ -295,7 +325,12 @@ class TestSparseGrad:
    # --- Tensor properties --- #
 
    @pytest.mark.parametrize("graddat", [
+      data.sparsegrad_dat,
       data.sparsegrad_dat_001,
+      data.sparsegrad_dat_002,
+      data.sparsegrad_dat_003,
+      data.sparsegrad_dat_004,
+      data.sparsegrad_dat_005,
    ])
    def test_dtype(self, graddat):
 
@@ -304,7 +339,12 @@ class TestSparseGrad:
 
 
    @pytest.mark.parametrize("graddat", [
+      data.sparsegrad_dat,
       data.sparsegrad_dat_001,
+      data.sparsegrad_dat_002,
+      data.sparsegrad_dat_003,
+      data.sparsegrad_dat_004,
+      data.sparsegrad_dat_005,
    ])
    def test_size(self, graddat):
 
@@ -313,7 +353,12 @@ class TestSparseGrad:
 
 
    @pytest.mark.parametrize("graddat", [
+      data.sparsegrad_dat,
       data.sparsegrad_dat_001,
+      data.sparsegrad_dat_002,
+      data.sparsegrad_dat_003,
+      data.sparsegrad_dat_004,
+      data.sparsegrad_dat_005,
    ])
    def test_ndim(self, graddat):
 
@@ -322,7 +367,12 @@ class TestSparseGrad:
 
 
    @pytest.mark.parametrize("graddat", [
+      data.sparsegrad_dat,
       data.sparsegrad_dat_001,
+      data.sparsegrad_dat_002,
+      data.sparsegrad_dat_003,
+      data.sparsegrad_dat_004,
+      data.sparsegrad_dat_005,
    ])
    def test_shape(self, graddat):
 
