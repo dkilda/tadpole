@@ -8,6 +8,7 @@ import tadpole.index    as tid
 
 import tadpole.tensor.space           as sp
 import tadpole.tensor.contraction     as contraction
+import tadpole.tensor.reindexing      as reidx
 import tadpole.tensor.elemwise_unary  as unary
 import tadpole.tensor.elemwise_binary as binary
 
@@ -129,12 +130,34 @@ class NullGrad(Tensor, Grad, Pluggable):
        return False
 
 
-   # --- Arithmetics and element access --- #
+   # --- Tensor manipulation --- # 
+
+   def __call__(self, *inds):
+
+       return self.todense()(*inds)
+
+
+   @property
+   def C(self):
+       return self.todense().C
+
+   @property
+   def T(self):
+       return self.todense().T
+
+   @property
+   def H(self):
+       return self.todense().H  
+
+
+   # --- Element access --- # 
 
    def __getitem__(self, pos):
 
        return self.todense()[pos]
 
+
+   # --- Arithmetics --- #
 
    def __neg__(self):
 
@@ -310,12 +333,34 @@ class SparseGrad(Tensor, Grad, Pluggable):
        return bool(log)
 
 
-   # --- Arithmetics and element access --- # 
+   # --- Tensor manipulation --- # 
+
+   def __call__(self, *inds):
+
+       return self.todense()(*inds)
+
+
+   @property
+   def C(self):
+       return self.todense().C
+
+   @property
+   def T(self):
+       return self.todense().T
+
+   @property
+   def H(self):
+       return self.todense().H  
+
+
+   # --- Element access --- # 
 
    def __getitem__(self, pos):
 
        return self.todense()[pos]
 
+
+   # --- Arithmetics --- # 
 
    def __neg__(self):
 
@@ -521,12 +566,43 @@ class TensorGen(Tensor, Grad, Pluggable):
        return bool(log)
 
 
-   # --- Arithmetics and element access --- # 
+   # --- Element access --- # 
 
    def __getitem__(self, pos):
 
        return unary.getitem(self, pos)
 
+
+   # --- Tensor manipulation --- # 
+
+   def __call__(self, *inds):
+
+       def index(ind, size):
+           if isinstance(ind, Index):
+              return ind
+           if ind == 1:
+              return IndexGen("@ONE", uuid="@ONE")
+           return IndexGen(ind, size, uuid=ind) 
+ 
+       indmap = {i1: index(i2, len(i1)) for i1, i2 in zip(self._inds, inds)}       
+
+       return tn.reindex(self, indmap)
+
+
+   @property
+   def C(self):
+       return unary.conj(self)
+
+   @property
+   def T(self):
+       return reidx.transpose(self)
+
+   @property
+   def H(self):
+       return reidx.htranspose(self)
+
+
+   # --- Arithmetics --- # 
 
    def __neg__(self):
 
