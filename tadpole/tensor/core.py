@@ -766,3 +766,37 @@ def shape(x):
 
 
 
+# --- Tensor manipulation --------------------------------------------------- #
+
+@ad.nondifferentiable
+def withinds(x, *inds):
+
+    return x(*inds)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

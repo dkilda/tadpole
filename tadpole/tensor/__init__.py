@@ -88,6 +88,7 @@ from .core import (
    todense,
    tonull,
    withdata,
+   withinds,
    space,
    item,
    dtype,

@@ -89,12 +89,34 @@ class NodeTensor(an.NodeGen, tn.Tensor, tn.Grad):
        return tn.shape(self) 
 
 
-   # --- Tensor methods: arithmetics and element access --- # 
+   # --- Tensor methods: tensor manipulation --- # 
+
+   def __call__(self, *inds):
+
+       return tn.withinds(self, *inds) 
+
+
+   @property
+   def C(self):
+       return tn.conj(self)
+
+   @property
+   def T(self):
+       return tn.transpose(self)
+
+   @property
+   def H(self):
+       return tn.htranspose(self)
+
+
+   # --- Tensor methods: element access --- # 
 
    def __getitem__(self, idx):
 
        return tn.getitem(self, idx) 
 
+
+   # --- Tensor methods: arithmetics --- # 
 
    def __neg__(self):
 
