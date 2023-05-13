@@ -96,11 +96,36 @@ class Tensor(abc.ABC):
        pass
 
 
-   # --- Arithmetics and element access --- # 
+   # --- Tensor manipulation --- # 
 
    @abc.abstractmethod
-   def __getitem__(self, pos):
+   def __call__(self, *inds):
        pass
+
+   @property
+   @abc.abstractmethod
+   def C(self):
+       pass
+
+   @property
+   @abc.abstractmethod
+   def T(self):
+       pass
+
+   @property
+   @abc.abstractmethod
+   def H(self):
+       pass
+
+
+   # --- Element access --- # 
+
+   @abc.abstractmethod
+   def __getitem__(self, elem):
+       pass
+
+
+   # --- Arithmetics and element access --- # 
 
    @abc.abstractmethod
    def __neg__(self):

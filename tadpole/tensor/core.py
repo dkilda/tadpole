@@ -152,9 +152,9 @@ class NullGrad(Tensor, Grad, Pluggable):
 
    # --- Element access --- # 
 
-   def __getitem__(self, pos):
+   def __getitem__(self, elem):
 
-       return self.todense()[pos]
+       return self.todense()[elem]
 
 
    # --- Arithmetics --- #
@@ -355,9 +355,9 @@ class SparseGrad(Tensor, Grad, Pluggable):
 
    # --- Element access --- # 
 
-   def __getitem__(self, pos):
+   def __getitem__(self, elem):
 
-       return self.todense()[pos]
+       return self.todense()[elem]
 
 
    # --- Arithmetics --- # 
@@ -566,13 +566,6 @@ class TensorGen(Tensor, Grad, Pluggable):
        return bool(log)
 
 
-   # --- Element access --- # 
-
-   def __getitem__(self, pos):
-
-       return unary.getitem(self, pos)
-
-
    # --- Tensor manipulation --- # 
 
    def __call__(self, *inds):
@@ -600,6 +593,13 @@ class TensorGen(Tensor, Grad, Pluggable):
    @property
    def H(self):
        return reidx.htranspose(self)
+
+
+   # --- Element access --- # 
+
+   def __getitem__(self, elem):
+
+       return unary.getitem(self, elem)
 
 
    # --- Arithmetics --- # 
