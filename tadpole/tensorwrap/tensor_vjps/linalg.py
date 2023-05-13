@@ -53,7 +53,7 @@ def vjp_svd(g, out, x):
        g1 = g1 + 1j * tn.imag(tn.diag(tn.space(uTdu).eye() * uTdu)) / s
 
 
-    g1 = u.C @ tn.diag(g1) @ v.T
+    g1 = u.C @ tn.diag(g1) @ v.T # FIXME u.C @ g1 @ v.T
 
 
     if x.ldim < x.rdim:

@@ -34,30 +34,19 @@ class Index(abc.ABC):
    def __hash__(self):
        pass
 
-
-   # --- Index space --- #
-
    @abc.abstractmethod
    def __len__(self):
-       pass
-
-   @abc.abstractmethod
-   def __iter__(self):
-       pass
-
-   @abc.abstractmethod
-   def __reversed__(self):
        pass
 
 
    # --- General methods --- #
 
    @abc.abstractmethod
-   def matches_all(self, *tags):
+   def all(self, *tags):
        pass
 
    @abc.abstractmethod
-   def matches_any(self, *tags):
+   def any(self, *tags):
        pass
 
    @abc.abstractmethod

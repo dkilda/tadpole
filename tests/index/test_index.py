@@ -17,6 +17,8 @@ import tests.index.data  as data
 from tadpole.index import (
    Index,
    IndexGen,  
+   IndexLit,
+   IndexOne,
    Indices,
 )
 
@@ -47,7 +49,7 @@ class TestIndexGen:
        assert cp.deepcopy(i) is i
 
 
-   # --- Equality and hashing --- #
+   # --- Equality, hashing, size --- #
 
    @pytest.mark.parametrize("tags, size", [
       ["i", 2],
@@ -71,8 +73,6 @@ class TestIndexGen:
        assert hash(i) != hash(j)
 
 
-   # --- Index space --- #
-
    @pytest.mark.parametrize("tags, size, output", [
       ["i", None, 1],
       ["i", 1,    1],
@@ -87,28 +87,6 @@ class TestIndexGen:
 
        assert len(i) == output
        
-
-   @pytest.mark.parametrize("tags, size, output", [
-      ["i", 5, (0,1,2,3,4)],
-   ])
-   def test_iter(self, tags, size, output):
-
-       i  = IndexGen(tags, size)
-       it = iter(i)
-
-       assert tuple(it) == output
-       
-
-   @pytest.mark.parametrize("tags, size, output", [
-      ["i", 5, (4,3,2,1,0)],
-   ])
-   def test_reversed(self, tags, size, output):
-
-       i   = IndexGen(tags, size)
-       rit = reversed(i)
-
-       assert tuple(rit) == output       
-
 
    # --- General methods --- #
 
@@ -126,11 +104,11 @@ class TestIndexGen:
       [("i", "j"), ["k", "j"], False],
    ])
    @pytest.mark.parametrize("size", [5])
-   def test_matches_all(self, tags, size, inp, out):
+   def test_all(self, tags, size, inp, out):
 
        i = IndexGen(tags, size)
 
-       assert i.matches_all(*inp) == out
+       assert i.all(*inp) == out
 
 
    @pytest.mark.parametrize("tags, inp, out", [
@@ -147,11 +125,11 @@ class TestIndexGen:
       [("i", "j"), ["k", "j"], True],
    ])
    @pytest.mark.parametrize("size", [5])
-   def test_matches_any(self, tags, size, inp, out):
+   def test_any(self, tags, size, inp, out):
 
        i = IndexGen(tags, size)
 
-       assert i.matches_any(*inp) == out
+       assert i.any(*inp) == out
 
 
    @pytest.mark.parametrize("size, start, end", [
@@ -172,10 +150,10 @@ class TestIndexGen:
 
        assert i1 != i
        assert len(i1) == end - start
-       assert i1.matches_all(*tags)
+       assert i1.all(*tags)
 
        assert len(i) == size
-       assert i.matches_all(*tags)
+       assert i.all(*tags)
 
 
    @pytest.mark.parametrize("size", [5])
@@ -195,10 +173,266 @@ class TestIndexGen:
 
        assert i1 != i
        assert len(i1) == size
-       assert i1.matches_all(*tags1)
+       assert i1.all(*tags1)
 
        assert len(i) == size
-       assert i.matches_all(*tags)
+       assert i.all(*tags)
+
+
+
+
+# --- Literal Index --------------------------------------------------------- #
+
+class TestIndexLit:
+
+   # --- Copying (forbidden to enforce uniqueness) --- #
+
+   @pytest.mark.parametrize("tags, size", [
+      ["i", 2],
+   ])
+   def test_copy(self, tags, size):
+
+       i = IndexLit(tags, size)
+
+       assert cp.copy(i)     is i
+       assert cp.deepcopy(i) is i
+
+
+   # --- Equality, hashing, size --- #
+
+   @pytest.mark.parametrize("tags1, tags2, size, res", [
+      ["i", "i", 2, True],
+      ["i", "j", 2, False],
+   ])
+   def test_eq(self, tags1, tags2, size, res):
+
+       i = IndexLit(tags1, size)
+       j = IndexLit(tags2, size)
+
+       if res:
+          assert i == j
+       else:
+          assert i != j
+
+
+   @pytest.mark.parametrize("tags1, tags2, size, res", [
+      ["i", "i", 2, True],
+      ["i", "j", 2, False],
+   ])
+   def test_hash(self, tags1, tags2, size, res):
+
+       i = IndexLit(tags1, size)
+       j = IndexLit(tags2, size)
+
+       if res:
+          assert hash(i) == hash(j)
+       else:
+          assert hash(i) != hash(j)
+
+
+   @pytest.mark.parametrize("tags, size, output", [
+      ["i", None, 1],
+      ["i", 1,    1],
+      ["i", 5,    5],
+   ])
+   def test_len(self, tags, size, output):
+
+       if  size is None:
+           i = IndexLit(tags) 
+       else:
+           i = IndexLit(tags, size)
+
+       assert len(i) == output
+       
+
+   # --- General methods --- #
+
+   @pytest.mark.parametrize("tags, inp, out", [
+      ["i",        ["i"],      True],
+      [("i", "j"), ["i"],      True],
+      [("i", "j"), ["j"],      True],
+      [("i", "j"), ["i", "j"], True],
+      [("i", "j"), ["j", "i"], True],
+      [("i", "j"), ["k"],      False],
+      [("i", "j"), ["k", "l"], False],
+      [("i", "j"), ["i", "k"], False],
+      [("i", "j"), ["j", "k"], False],
+      [("i", "j"), ["k", "i"], False],
+      [("i", "j"), ["k", "j"], False],
+   ])
+   @pytest.mark.parametrize("size", [5])
+   def test_all(self, tags, size, inp, out):
+
+       i = IndexLit(tags, size)
+
+       assert i.all(*inp) == out
+
+
+   @pytest.mark.parametrize("tags, inp, out", [
+      ["i",        ["i"],      True],
+      [("i", "j"), ["i"],      True],
+      [("i", "j"), ["j"],      True],
+      [("i", "j"), ["i", "j"], True],
+      [("i", "j"), ["j", "i"], True],
+      [("i", "j"), ["k"],      False],
+      [("i", "j"), ["k", "l"], False],
+      [("i", "j"), ["i", "k"], True],
+      [("i", "j"), ["j", "k"], True],
+      [("i", "j"), ["k", "i"], True],
+      [("i", "j"), ["k", "j"], True],
+   ])
+   @pytest.mark.parametrize("size", [5])
+   def test_any(self, tags, size, inp, out):
+
+       i = IndexLit(tags, size)
+
+       assert i.any(*inp) == out
+
+
+   @pytest.mark.parametrize("size, start, end", [
+      [5, 0, 5],
+      [5, 1, 5],
+      [5, 2, 7],
+      [1, 0, 5],
+      [5, 0, 1],
+   ])
+   @pytest.mark.parametrize("tags", [
+      "i", 
+      ("i", "j"),
+   ])
+   def test_resized(self, tags, size, start, end):
+
+       i  = IndexLit(tags, size)
+       i1 = i.resized(start, end)
+
+       assert i1 != i
+       assert len(i1) == end - start
+       assert i1.all(*tags)
+
+       assert len(i) == size
+       assert i.all(*tags)
+
+
+   @pytest.mark.parametrize("size", [5])
+   @pytest.mark.parametrize("tags, tags1", [
+      ["i",        "i"],
+      ["i",        "j"], 
+      ["i",        ("i", "j")], 
+      [("i", "j"), "k"],
+      [("i", "j"), ("i", "k")],
+      [("i", "j"), ("m", "k")],
+      [("i", "j"), ("i", "j")],
+   ])
+   def test_retagged(self, size, tags, tags1):
+
+       i  = IndexLit(tags, size)
+       i1 = i.retagged(tags1)
+
+       if tags == tags1:
+          assert i1 == i
+       else:
+          assert i1 != i
+
+       assert len(i1) == size
+       assert i1.all(*tags1)
+
+       assert len(i) == size
+       assert i.all(*tags)
+
+
+
+
+# --- Singleton Index ------------------------------------------------------- #
+
+class TestIndexOne:
+
+   # --- Copying (forbidden to enforce uniqueness) --- #
+
+   def test_copy(self):
+
+       i = IndexOne()
+
+       assert cp.copy(i)     is i
+       assert cp.deepcopy(i) is i
+
+
+   # --- Equality, hashing, size --- #
+
+   def test_eq(self):
+
+       i = IndexOne()
+       j = IndexOne()
+
+       assert i == j
+
+
+   def test_hash(self):
+
+       i = IndexOne()
+       j = IndexOne()
+
+       assert hash(i) == hash(j)
+
+
+   def test_len(self):
+
+       i = IndexOne() 
+
+       assert len(i) == 1
+       
+
+   # --- General methods --- #
+
+   @pytest.mark.parametrize("inp", [
+      ["i"],         
+      ["i", "j"],
+   ])
+   def test_all(self, inp):
+
+       i = IndexOne()
+
+       assert i.all(*inp) == False
+
+
+   @pytest.mark.parametrize("inp", [
+      ["i"],         
+      ["i", "j"],
+   ])
+   def test_any(self, inp):
+
+       i = IndexOne()
+
+       assert i.any(*inp) == False
+
+
+   @pytest.mark.parametrize("start, end", [
+      [0, 5],
+      [1, 5],
+      [2, 7],
+      [0, 5],
+      [0, 1],
+   ])
+   def test_resized(self, start, end):
+
+       i  = IndexOne()
+       i1 = i.resized(start, end)
+
+       assert i1 != i
+       assert len(i1) == end - start
+
+
+   @pytest.mark.parametrize("tags", [
+      "i",
+      ("i", "j"), 
+   ])
+   def test_retagged(self, tags):
+
+       i  = IndexOne()
+       i1 = i.retagged(tags)
+
+       assert i1 != i
+       assert len(i1) == 1
+       assert i1.all(*tags)
 
 
 

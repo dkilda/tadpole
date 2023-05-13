@@ -63,7 +63,7 @@ class IndexGen(Index):
        return str(rep)
 
 
-   # --- Equality and hashing --- #
+   # --- Equality, hashing, size --- #
 
    def __eq__(self, other):
 
@@ -88,31 +88,19 @@ class IndexGen(Index):
        return hash(self._uuid)  
 
 
-   # --- Index space --- #
-
    def __len__(self):
  
        return self._size
 
 
-   def __iter__(self):
-
-       return iter(range(self._size))
-
-
-   def __reversed__(self):
-
-       return reversed(range(self._size))
-
-
    # --- General methods --- #
 
-   def matches_all(self, *tags):
+   def all(self, *tags):
 
        return len(set(tags) - set(self._tags)) == 0
 
 
-   def matches_any(self, *tags):
+   def any(self, *tags):
 
        return len(set(tags) & set(self._tags)) > 0
 
@@ -132,6 +120,161 @@ class IndexGen(Index):
    def retagged(self, tags):
 
        return self.__class__(tags, self._size)
+
+
+
+
+# --- Literal Index --------------------------------------------------------- #
+
+class IndexLit(Index): 
+
+   # --- Construction --- #
+
+   def __init__(self, name, size=1):
+
+       self._name   = name
+       self._origin = IndexGen(name, size, uuid=name)
+
+
+   # --- Copying (forbidden to enforce uniqueness) --- #
+
+   def __copy__(self):
+
+       return self
+
+
+   def __deepcopy__(self, memdict={}):
+
+       return self
+
+
+   # --- String representation --- #
+
+   def __repr__(self):
+
+       rep = util.ReprChain()
+       rep.typ(self)
+
+       rep.val("name", self._name)
+       rep.val("size", len(self))
+       rep.val("uuid", self._name)
+
+       return str(rep)
+
+
+   # --- Equality, hashing, size --- #
+
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+       log.typ(self, other)
+
+       if bool(log):
+          log.val(self._origin, other._origin)
+
+       return bool(log) 
+
+
+   def __hash__(self):
+
+       return hash(self._origin)  
+
+
+   def __len__(self):
+ 
+       return len(self._origin)
+
+
+   # --- General methods --- #
+
+   def all(self, *tags):
+
+       return self._origin.all(*tags)
+
+
+   def any(self, *tags):
+
+       return self._origin.any(*tags)
+
+
+   def resized(self, start, end):
+
+       return self._origin.resized(start, end)
+
+
+   def retagged(self, tags):
+
+       return self.__class__(tags, len(self))
+
+
+
+
+# --- Singleton Index ------------------------------------------------------- #
+
+class IndexOne(Index):
+
+   # --- Copying (forbidden to enforce uniqueness) --- #
+
+   def __copy__(self):
+
+       return self
+
+
+   def __deepcopy__(self, memdict={}):
+
+       return self
+
+
+   # --- String representation --- #
+
+   def __repr__(self):
+
+       rep = util.ReprChain()
+       rep.typ(self)
+
+       return str(rep)
+
+
+   # --- Equality, hashing, size --- #
+
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+       log.typ(self, other)
+          
+       return bool(log) 
+
+
+   def __hash__(self):
+
+       return 1 
+
+
+   def __len__(self):
+ 
+       return 1
+
+
+   # --- General methods --- #
+
+   def all(self, *tags):
+
+       return False
+
+
+   def any(self, *tags):
+
+       return False
+
+
+   def resized(self, start, end):
+
+       return IndexLit(f"@ONE_@start_{start}_@end_{end}", end - start)
+
+
+   def retagged(self, tags):
+
+       return IndexGen(tags)
 
 
 
@@ -238,12 +381,12 @@ class Indices(util.Container):
 
    def all(self, *tags):
 
-       return tuple(filter(lambda x: x.matches_all(*tags), self._inds))  
+       return tuple(filter(lambda x: x.all(*tags), self._inds))  
 
 
    def any(self, *tags):
 
-       return tuple(filter(lambda x: x.matches_any(*tags), self._inds))
+       return tuple(filter(lambda x: x.any(*tags), self._inds))
 
 
    def _map(self, tags):

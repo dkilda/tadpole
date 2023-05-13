@@ -117,7 +117,7 @@ class TestLink:
        out  = link.ind(size)
 
        assert len(out) == size
-       assert out.matches_all(tag) 
+       assert out.all(tag) 
 
 
    @pytest.mark.parametrize("tag, size", [
