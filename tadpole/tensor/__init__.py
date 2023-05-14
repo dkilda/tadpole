@@ -228,11 +228,6 @@ from .elemwise_binary import (
 )
 
 
-from .elemwise_binary import (
-   combos,
-)
-
-
 
 
 # --- Elemwise Ternary ------------------------------------------------------ #

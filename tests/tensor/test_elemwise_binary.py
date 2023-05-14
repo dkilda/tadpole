@@ -790,38 +790,5 @@ class TestTensorElemwiseBinary:
        assert out == ans
 
 
-   # --- Combinations --- #
-
-   @pytest.mark.parametrize("fullshape, fullinds, inds, indA, indB", [
-      [(2,),      "i",    "i",   "i", "i"],
-      [(2,2),     "ij",   "i",   "i", "j"],
-      [(3,2,2),   "mij",  "mi",  "i", "j"],
-      [(3,4,2,2), "mnij", "min", "i", "j"],
-   ])
-   def test_combos(self, fullshape, fullinds, inds, indA, indB):
-
-       w = data.indices_dat(fullinds, fullshape)
-
-       indsAB = inds.replace(indA, "")
-
-       inds   = Indices(*w.inds.map(*inds))
-       indsAB = w.inds.map(*indsAB)
-       indA   = w.inds.map(indA)[0]
-       indB   = w.inds.map(indB)[0]
-     
-       x       = data.array_dat(data.randn)(self.backend, inds.shape)
-       xarray  = x.array
-       xtensor = tn.TensorGen(x.array, inds)
-
-       out = tn.combos(tn.sub, xtensor, indA, indB) 
-
-       ans = ar.moveaxis(xarray, inds.axes(indA)[0], -1)
-       ans = ar.unsqueeze(ans, ans.ndim) - ar.unsqueeze(ans, ans.ndim-1)
-       ans = tn.TensorGen(ans, (*indsAB, indA, indB))
-
-       assert out.space() == ans.space()
-       assert tn.allclose(out, ans)
-
-
 
 
