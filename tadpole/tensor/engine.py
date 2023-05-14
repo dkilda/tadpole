@@ -1,12 +1,21 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import itertools
 import tadpole.util as util
 
 
 from tadpole.tensor.types import (
    Engine,
 )
+
+
+from tadpole.index import (
+   Index,
+   IndexGen,  
+   Indices,
+)
+
 
 
 
@@ -156,6 +165,27 @@ class EngineUnary(Engine):
 ###############################################################################
 
 
+# --- Aligned output index from lined-up input indices ---------------------- # 
+
+def aligned_ind(inds):
+
+    inds               = [ind for ind in inds if ind is not None] 
+    non_singleton_inds = [ind for ind in inds if len(ind) > 1] 
+    
+    if len(non_singleton_inds) == 0:
+       return inds[0]
+
+    if len(set(non_singleton_inds)) == 1:
+       return non_singleton_inds[0]
+
+    raise ValueError(
+       f"aligned_ind: an elementwise operation cannot be "
+       f"performed for incompatible indices {inds}."
+    )
+
+
+
+
 # --- Elementwise engine ---------------------------------------------------- #
 
 class EngineElemwise(Engine): 
@@ -184,18 +214,13 @@ class EngineElemwise(Engine):
 
 
    def _inds(self):
+ 
+       inds = (reversed(each_inds) for each_inds in self._train.inds())
+       inds = reversed(list(itertools.zip_longest(*inds)))
 
-       inds = max(self._train.inds(), key=len)
+       return Indices(*map(aligned_ind, inds))
 
-       assert set(util.concat(self._train.inds())) == set(inds), (
-          f"\n{type(self).__name__}.operator: "
-          f"An elementwise operation cannot be performed for tensors "
-          f"with incompatible indices {tuple(self._train.inds())}."
-       )
-
-       return inds
-
-
+       
    def attach(self, data, inds):
 
        if self._train.size() == self._size:
