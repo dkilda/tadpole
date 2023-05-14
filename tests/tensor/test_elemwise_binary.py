@@ -299,8 +299,74 @@ class TestTensorElemwiseBinary:
        out = tn.addgrads(x, w.grad)
 
        assert tn.allclose(out, w.tensor)
-       
 
+
+   # --- Mismatched shapes --- #
+
+   @pytest.mark.parametrize("indnames, shape, inds1, inds2, inds12", [
+      ["ijk",      (2,3,4),           "ijk",  "",     "ijk"],
+      ["ijk",      (2,3,4),           "ijk",  "jk",   "ijk"],
+      ["ijk",      (2,3,4),           "jk",   "ijk",  "ijk"],
+      ["aijk",     (1,2,3,4),         "ijk",  "ajk",  "ijk"],
+      ["aijk",     (1,2,3,4),         "ajk",  "ijk",  "ijk"],
+      ["abijk",    (1,1,2,3,4),       "ijk",  "ajb",  "ijk"],
+      ["abijk",    (1,1,2,3,4),       "ia",   "bj",   "ij" ],
+      ["abijk",    (1,1,2,3,4),       "iak",  "bjk",  "ijk"],
+      ["abijk",    (1,1,2,3,4),       "ija",  "bk",   "ijk" ],
+      ["abcdijkl", (1,1,1,1,2,3,4,5), "iakb", "cjdl", "ijkl"],
+   ])
+   def test_add_mismatched(self, indnames, shape, inds1, inds2, inds12):
+
+       w     = data.indices_dat(indnames, shape)
+       inds1 = Indices(*w.inds.map(*inds1))
+       inds2 = Indices(*w.inds.map(*inds2))
+
+       x = data.array_dat(data.randn)(
+              self.backend, inds1.shape, seed=1
+           )
+       y = data.array_dat(data.randn)(
+              self.backend, inds2.shape, seed=2
+           )
+
+       t1 = tn.TensorGen(x.array, inds1)
+       t2 = tn.TensorGen(y.array, inds2)
+
+       out = t1 + t2
+       ans = ar.add(x.array, y.array)
+       ans = tn.TensorGen(ans, w.inds.map(*inds12))
+
+       assert tn.allclose(out, ans)
+
+
+   @pytest.mark.parametrize("indnames, shape, inds1, inds2", [
+      ["ijk",      (2,3,4),           "ijk",  "ik"],
+      ["abijk",    (1,1,2,3,4),       "ia",   "jb"],
+      ["abcdijkl", (1,1,1,1,2,3,4,5), "ijk",  "ijl"],
+   ])
+   def test_add_mismatched_001(self, indnames, shape, inds1, inds2):
+
+       w     = data.indices_dat(indnames, shape)
+       inds1 = Indices(*w.inds.map(*inds1))
+       inds2 = Indices(*w.inds.map(*inds2))
+
+       x = data.array_dat(data.randn)(
+              self.backend, inds1.shape, seed=1
+           )
+       y = data.array_dat(data.randn)(
+              self.backend, inds2.shape, seed=2
+           )
+
+       t1 = tn.TensorGen(x.array, inds1)
+       t2 = tn.TensorGen(y.array, inds2)
+
+       try:
+           out = t1 + t2
+       except ValueError:
+           assert True
+       else:
+           assert False
+
+       
    # --- Standard math --- #
 
    @pytest.mark.parametrize("indnames, shape", [
