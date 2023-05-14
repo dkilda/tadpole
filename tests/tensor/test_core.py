@@ -564,21 +564,109 @@ class TestTensorGen:
        assert w.tensor.shape == w.shape
 
 
+   # --- Tensor manipulation --- # 
+
+   @pytest.mark.parametrize("shape, indnames, indnames1, inds1", [
+      [(2,3,4), "ijk", "aib",  ( 
+                                IndexGen("a",2,"a"), 
+                                IndexGen("i",3,"i"), 
+                                IndexGen("b",4,"b"),
+                               )],
+   ])
+   def test_call(self, shape, indnames, indnames1, inds1):
+
+       w = data.tensor_dat(data.randn)(
+              self.backend, indnames, shape
+           ) 
+       ans = tn.TensorGen(w.array, inds1)
+
+       assert w.tensor(*indnames1) == ans
 
 
+   @pytest.mark.parametrize("shape, indnames, shape1, indnames1, inds1", [
+      [(2,3,4), "ijk", (2,1,3,4), "a1ib", (
+                                           IndexGen("a",2,"a"), 
+                                           IndexGen("1", 1, "1"), 
+                                           IndexGen("i",3,"i"), 
+                                           IndexGen("b",4,"b"),
+                                          )],
+   ])
+   def test_call_001(self, shape, indnames, shape1, indnames1, inds1):
+
+       x = data.tensor_dat(data.randn)(
+              self.backend, indnames, shape, seed=1
+           ) 
+       y = data.array_dat(data.randn)(
+              self.backend, shape1, seed=1
+           ) 
+       ans = tn.TensorGen(y.array, inds1)
+
+       assert x.tensor(*indnames1) == ans
 
 
+   @pytest.mark.parametrize("shape, inds, inds1", [
+      [(2,3,4), "ijk", (
+                        IndexGen("a",2,"a"), 
+                        IndexGen("i",3,"i"), 
+                        IndexGen("b",4,"b"),
+                       )],
+   ])
+   def test_call_002(self, shape, inds, inds1):
+
+       w = data.tensor_dat(data.randn)(
+              self.backend, inds, shape
+           ) 
+       ans = tn.TensorGen(w.array, inds1)
+
+       assert w.tensor(*inds1) == ans
 
 
+   @pytest.mark.parametrize("indnames, shape", [
+      ["ijk", (2,3,4)],
+   ])
+   def test_C(self, indnames, shape):
+
+       w = data.tensor_dat(data.randn)(
+              self.backend, indnames, shape
+           )
+
+       out = w.tensor.C
+       ans = ar.conj(w.array)
+       ans = tn.TensorGen(ans, w.inds)
+
+       assert tn.allclose(out, ans)
 
 
+   @pytest.mark.parametrize("inds, shape, outinds, outaxes", [
+      ["ijkl", (2,3,4,5), "lkji", (3,2,1,0)],
+   ])
+   def test_T(self, inds, shape, outinds, outaxes):
+
+       w = data.tensor_dat(data.randn)(
+              self.backend, inds, shape
+           ) 
+
+       out = w.tensor.T 
+       ans = ar.transpose(w.array, outaxes) 
+       ans = tn.TensorGen(ans, w.inds.map(*outinds))
+
+       assert out == ans
 
 
+   @pytest.mark.parametrize("inds, shape, outinds, outaxes", [
+      ["ijkl", (2,3,4,5), "lkji", (3,2,1,0)],
+   ])
+   def test_H(self, inds, shape, outinds, outaxes):
 
+       w = data.tensor_dat(data.randn)(
+              self.backend, inds, shape
+           ) 
 
+       out = w.tensor.H 
+       ans = ar.transpose(ar.conj(w.array), outaxes) 
+       ans = tn.TensorGen(ans, w.inds.map(*outinds))
 
-
-
+       assert out == ans        
 
 
 

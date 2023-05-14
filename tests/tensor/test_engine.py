@@ -204,6 +204,29 @@ class TestEngineElemwise:
        return self._backend
 
 
+   @pytest.mark.parametrize("indnames, shape, input_inds, output_ind, nones", [
+      ["ijkl", (1,2,3,4), "ii", "i", []],
+      ["ijkl", (1,2,3,4), "jj", "j", []],
+      ["ijkl", (1,2,3,4), "ij", "j", []],
+      ["ijkl", (1,2,3,4), "ji", "j", []],
+      ["ijkl", (1,2,3,4), "ii", "i", [0]],
+      ["ijkl", (1,2,3,4), "jj", "j", [0,2]],
+      ["ijkl", (1,2,3,4), "ij", "j", [0,1,1,2]],
+   ])
+   def test_aligned_ind(self, indnames, shape, input_inds, output_ind, nones):
+
+       w = data.indices_dat(indnames, shape)
+
+       input_inds = list(w.inds.map(*input_inds))
+       for pos in reversed(nones):
+           input_inds.insert(pos, None)
+
+       out  = tne.aligned_ind(input_inds)
+       ans, = w.inds.map(*output_ind) 
+
+       assert out == ans
+
+
    @pytest.mark.parametrize("indnames, shapes", [
       [["ijk", "mn"], [(2,3,4), (4,5)]],
    ])

@@ -570,16 +570,24 @@ class TensorGen(Tensor, Grad, Pluggable):
 
    def __call__(self, *inds):
 
+       def new(ind): 
+           return ind in (1, "1")
+           
        def index(ind, size):
            if isinstance(ind, Index):
               return ind
-           if ind == 1:
-              return IndexGen("@ONE", uuid="@ONE")
            return IndexGen(ind, size, uuid=ind) 
- 
-       indmap = {i1: index(i2, len(i1)) for i1, i2 in zip(self._inds, inds)}       
 
-       return tn.reindex(self, indmap)
+       newinds = [index("1", 1) for i in inds if     new(i)]
+       oldinds = [i             for i in inds if not new(i)] 
+
+       indmap = {i1: index(i2, len(i1)) for i1, i2 in zip(self._inds, oldinds)}   
+       out    = reidx.reindex(self, indmap)
+
+       if len(newinds) > 0:
+          out = reidx.transpose(reidx.unsqueeze(out, newinds), *inds)
+
+       return out
 
 
    @property
