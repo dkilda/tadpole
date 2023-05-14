@@ -37,6 +37,7 @@ from .element import (
 # --- Space ----------------------------------------------------------------- #
 
 from .space import (
+   tensorspace,
    TensorSpace,
 )
 
@@ -53,21 +54,6 @@ from .space import (
    randuniform,
    units,
    basis,  
-)
-
-
-from .space import (
-   sparsegrad_from_space,
-   nullgrad_from_space,
-   zeros_from_space,
-   ones_from_space,
-   unit_from_space,
-   eye_from_space,
-   rand_from_space, 
-   randn_from_space,
-   randuniform_from_space,
-   units_from_space,
-   basis_from_space,  
 )
 
 

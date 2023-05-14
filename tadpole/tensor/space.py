@@ -40,149 +40,78 @@ from tadpole.index import (
 
 # --- Gradient factories ---------------------------------------------------- #
 
-@ad.nondifferentiable
-def sparsegrad_from_space(arrayspace, inds, elem, vals):
+def sparsegrad(inds, elem, vals, dtype=None, backend=None):
 
-    if not isinstance(elem, Element):
-       elem = telem.elem(*elem)    
-
-    space = TensorSpace(arrayspace, inds)
-  
-    return core.SparseGrad(space, elem.grid(inds), elem.align(vals, inds))
+    space = tensorspace(inds=inds, dtype=dtype, backend=backend)
+    return space.sparsegrad(elem, vals)
 
 
+def nullgrad(inds, dtype=None, backend=None):
 
-@ad.nondifferentiable
-def nullgrad_from_space(arrayspace, inds):
-
-    space = TensorSpace(arrayspace, inds)
-    return core.NullGrad(space)
+    space = tensorspace(inds=inds, dtype=dtype, backend=backend)
+    return space.nullgrad()
 
 
 
 
 # --- Tensor factories ------------------------------------------------------ #
 
-@ad.nondifferentiable
-def zeros_from_space(arrayspace, inds, **opts):
+def zeros(inds, dtype=None, backend=None, **opts):
 
-    data = arrayspace.zeros(**opts)
-    return core.astensor(data, inds)
- 
+    space = tensorspace(inds=inds, dtype=dtype, backend=backend)
+    return space.zeros(**opts)
 
 
-@ad.nondifferentiable
-def ones_from_space(arrayspace, inds, **opts):
+def ones(inds, dtype=None, backend=None, **opts):
 
-    data = arrayspace.ones(**opts)
-    return core.astensor(data, inds)
-
+    space = tensorspace(inds=inds, dtype=dtype, backend=backend)
+    return space.ones(**opts)
 
 
-@ad.nondifferentiable
-def unit_from_space(arrayspace, inds, pos, **opts):
+def unit(inds, pos, dtype=None, backend=None, **opts):
 
-    data = arrayspace.unit(pos, **opts)
-    return core.astensor(data, inds)
-
+    space = tensorspace(inds=inds, dtype=dtype, backend=backend)
+    return space.unit(pos, **opts)
 
 
-@ad.nondifferentiable
-def eye_from_space(arrayspace, inds, lind=None, rind=None, **opts):
+def eye(inds, lind=None, rind=None, dtype=None, backend=None, **opts):
 
-    if not lind and not rind:
-       lind, rind = inds
-
-    lind, rind = inds.map(lind, rind)
-
-    data = arrayspace.eye(len(lind), len(rind), **opts)
-    return core.astensor(data, (lind, rind))
+    space = tensorspace(inds=inds, dtype=dtype, backend=backend)
+    return space.eye(lind=lind, rind=rind, **opts)
 
 
+def rand(inds, dtype=None, backend=None, **opts):
 
-@ad.nondifferentiable
-def rand_from_space(arrayspace, inds, **opts):
-
-    data = arrayspace.rand(**opts)
-    return core.astensor(data, inds)
+    space = tensorspace(inds=inds, dtype=dtype, backend=backend)
+    return space.rand(**opts)
 
 
+def randn(inds, dtype=None, backend=None, **opts):
 
-@ad.nondifferentiable
-def randn_from_space(arrayspace, inds, **opts):
-
-    data = arrayspace.randn(**opts)
-    return core.astensor(data, inds)
+    space = tensorspace(inds=inds, dtype=dtype, backend=backend)
+    return space.randn(**opts)
 
 
+def randuniform(inds, boundaries, dtype=None, backend=None, **opts):
 
-@ad.nondifferentiable
-def randuniform_from_space(arrayspace, inds, boundaries, **opts):
-
-    data = arrayspace.randuniform(boundaries, **opts)
-    return core.astensor(data, inds)
+    space = tensorspace(inds=inds, dtype=dtype, backend=backend)
+    return space.randuniform(boundaries, **opts)
 
 
 
 
 # --- Tensor generators ----------------------------------------------------- #
 
-@ad.nondifferentiable
-def units_from_space(arrayspace, inds, **opts):
+def units(inds, dtype=None, backend=None, **opts):
 
-    for data in arrayspace.units(**opts):
-        yield core.astensor(data, inds)
-
+    space = tensorspace(inds=inds, dtype=dtype, backend=backend)
+    return space.units(**opts)
 
 
-@ad.nondifferentiable
-def basis_from_space(arrayspace, inds, **opts):
+def basis(inds, dtype=None, backend=None, **opts):
 
-    for data in arrayspace.basis(**opts):
-        yield core.astensor(data, inds)
-
-
-
-
-# --- Automatic creation of ArraySpace for tensor factories ----------------- #
-
-def auto_arrayspace(fun):
-
-    def wrap(inds, **opts):
-
-        if not isinstance(inds, Indices):
-           inds = Indices(*inds)
-
-        arrayspace = ar.arrayspace(inds.shape, **opts)
-
-        return fun(arrayspace, inds, **opts)
-
-    return wrap
-
-
-
-
-# --- Gradient factories with automatic ArraySpace -------------------------- #
-
-sparsegrad = auto_arrayspace(sparsegrad_from_space)
-nullgrad   = auto_arrayspace(nullgrad_from_space)
-
-
-
-
-# --- Tensor factories with automatic ArraySpace ---------------------------- #
-
-zeros = auto_arrayspace(zeros_from_space)
-ones  = auto_arrayspace(ones_from_space)
-unit  = auto_arrayspace(unit_from_space)
-eye   = auto_arrayspace(eye_from_space)
-
-rand        = auto_arrayspace(rand_from_space)
-randn       = auto_arrayspace(randn_from_space)
-randuniform = auto_arrayspace(randuniform_from_space)
-
-units = auto_arrayspace(units_from_space)
-basis = auto_arrayspace(basis_from_space)
+    space = tensorspace(inds=inds, dtype=dtype, backend=backend)
+    return space.basis(**opts)
 
 
 
@@ -194,19 +123,30 @@ basis = auto_arrayspace(basis_from_space)
 ###############################################################################
 
 
+# --- TensorSpace factory --------------------------------------------------- #
+
+def tensorspace(inds, dtype=None, backend=None, **opts):
+
+    if inds is None:
+       inds = Indices()
+
+    if not isinstance(inds, Indices):
+       inds = Indices(*inds)
+
+    arrayspace = ar.arrayspace(inds.shape, dtype=dtype, backend=backend)
+
+    return TensorSpace(arrayspace, inds)
+
+
+
+
 # --- TensorSpace ----------------------------------------------------------- #
 
 class TensorSpace(Space):
 
    # --- Construction --- #
 
-   def __init__(self, arrayspace, inds=None):
-
-       if inds is None:
-          inds = Indices()
-
-       if not isinstance(inds, Indices):
-          inds = Indices(*inds)
+   def __init__(self, arrayspace, inds):
 
        if arrayspace.shape != inds.shape:
           raise ValueError((
@@ -217,13 +157,6 @@ class TensorSpace(Space):
 
        self._arrayspace = arrayspace
        self._inds       = inds
-
-
-   # --- Private helpers --- #
-
-   def _create(self, fun, *args, **opts):
-
-       return fun(self._arrayspace, self._inds, *args, **opts)
 
 
    # --- Comparisons --- #
@@ -258,83 +191,96 @@ class TensorSpace(Space):
 
    # --- Gradient factories --- #
 
-   def sparsegrad(self, pos, vals):
+   def sparsegrad(self, elem, vals):
 
-       return self._create(
-          sparsegrad_from_space, pos, vals
-       )
+       if not isinstance(elem, Element):
+          elem = telem.elem(*elem)    
+  
+       return core.SparseGrad(
+                 self, 
+                 elem.grid(self._inds), 
+                 elem.align(vals, self._inds)
+              )
 
 
    def nullgrad(self):
 
-       return self._create(
-          nullgrad_from_space
-       )
+       return core.NullGrad(
+                 self
+              )
 
 
    # --- Tensor factories --- #
 
-   def zeros(self):
+   def zeros(self, **opts):
 
-       return self._create(
-          zeros_from_space
-       ) 
+       return core.astensor(
+                 self._arrayspace.zeros(**opts), 
+                 self._inds
+              )
+ 
 
+   def ones(self, **opts):
 
-   def ones(self):
-
-       return self._create(
-          ones_from_space
-       ) 
+       return core.astensor(
+                 self._arrayspace.ones(**opts), 
+                 self._inds
+              )
 
 
    def unit(self, pos, **opts):
 
-       return self._create(
-          unit_from_space, pos, **opts
-       ) 
+       return core.astensor(
+                 self._arrayspace.unit(pos, **opts), 
+                 self._inds
+              )
 
 
    def eye(self, lind=None, rind=None):
 
-       return self._create(
-          eye_from_space, lind, rind
-       )
+       if not lind and not rind:
+          lind, rind = self._inds
+
+       lind, rind = self._inds.map(lind, rind)
+       data       = self._arrayspace.eye(len(lind), len(rind))
+
+       return core.astensor(data, (lind, rind))
 
 
    def rand(self, **opts):
 
-       return self._create(
-          rand_from_space, **opts
-       ) 
+       return core.astensor(
+                 self._arrayspace.rand(**opts), 
+                 self._inds
+              )
 
 
    def randn(self, **opts):
 
-       return self._create(
-          randn_from_space, **opts
-       ) 
+       return core.astensor(
+                 self._arrayspace.randn(**opts), 
+                 self._inds
+              )
 
 
    def randuniform(self, boundaries, **opts):
 
-       return self._create(
-          randuniform_from_space, boundaries, **opts
-       ) 
+       return core.astensor(
+                 self._arrayspace.randuniform(boundaries, **opts), 
+                 self._inds
+              )
 
 
    def units(self, **opts):
 
-       return self._create(
-          units_from_space, **opts
-       )
+       for data in self._arrayspace.units(**opts):
+           yield core.astensor(data, self._inds)
 
 
    def basis(self, **opts):
 
-       return self._create(
-          basis_from_space, **opts
-       )
+       for data in self._arrayspace.basis(**opts):
+           yield core.astensor(data, self._inds)
 
 
    # --- Space properties --- #
