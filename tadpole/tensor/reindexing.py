@@ -28,6 +28,7 @@ from tadpole.tensor.engine import (
 from tadpole.index import (
    Index,
    IndexGen, 
+   IndexLit,
    Indices,
 )
 

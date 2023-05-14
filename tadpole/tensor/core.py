@@ -23,6 +23,7 @@ from tadpole.tensor.types import (
 from tadpole.index import (
    Index,
    IndexGen, 
+   IndexLit,
    Indices,
 )
 
@@ -570,22 +571,19 @@ class TensorGen(Tensor, Grad, Pluggable):
 
    def __call__(self, *inds):
 
-       def new(ind): 
-           return ind in (1, "1")
-           
-       def index(ind, size):
-           if isinstance(ind, Index):
-              return ind
-           return IndexGen(ind, size, uuid=ind) 
+       inds = ["1" if ind in ("1", 1, None) else ind for ind in inds]
 
-       newinds = [index("1", 1) for i in inds if     new(i)]
-       oldinds = [i             for i in inds if not new(i)] 
+       renamed_inds = [ind for ind in inds if ind != "1"] 
+       new_inds     = [ind for ind in inds if ind == "1"]  
 
-       indmap = {i1: index(i2, len(i1)) for i1, i2 in zip(self._inds, oldinds)}   
-       out    = reidx.reindex(self, indmap)
+       indmap = {i1: i2 if isinstance(i2, Index) else IndexLit(i2, len(i1)) 
+                     for i1, i2 in zip(self._inds, renamed_inds)} 
+         
+       out = reidx.reindex(self, indmap)
 
-       if len(newinds) > 0:
-          out = reidx.transpose(reidx.unsqueeze(out, newinds), *inds)
+       if len(new_inds) > 0:
+          out = reidx.unsqueeze(out, [IndexLit(ind) for ind in new_inds])
+          out = reidx.transpose(out, *inds)
 
        return out
 

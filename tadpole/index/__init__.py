@@ -10,7 +10,6 @@ from .types import (
 from .index import (
    IndexGen,
    IndexLit,
-   IndexOne,
    Indices,
    shapeof,
    sizeof,

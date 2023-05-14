@@ -18,7 +18,6 @@ from tadpole.index import (
    Index,
    IndexGen,  
    IndexLit,
-   IndexOne,
    Indices,
 )
 
@@ -338,101 +337,6 @@ class TestIndexLit:
 
        assert len(i) == size
        assert i.all(*tags)
-
-
-
-
-# --- Singleton Index ------------------------------------------------------- #
-
-class TestIndexOne:
-
-   # --- Copying (forbidden to enforce uniqueness) --- #
-
-   def test_copy(self):
-
-       i = IndexOne()
-
-       assert cp.copy(i)     is i
-       assert cp.deepcopy(i) is i
-
-
-   # --- Equality, hashing, size --- #
-
-   def test_eq(self):
-
-       i = IndexOne()
-       j = IndexOne()
-
-       assert i == j
-
-
-   def test_hash(self):
-
-       i = IndexOne()
-       j = IndexOne()
-
-       assert hash(i) == hash(j)
-
-
-   def test_len(self):
-
-       i = IndexOne() 
-
-       assert len(i) == 1
-       
-
-   # --- General methods --- #
-
-   @pytest.mark.parametrize("inp", [
-      ["i"],         
-      ["i", "j"],
-   ])
-   def test_all(self, inp):
-
-       i = IndexOne()
-
-       assert i.all(*inp) == False
-
-
-   @pytest.mark.parametrize("inp", [
-      ["i"],         
-      ["i", "j"],
-   ])
-   def test_any(self, inp):
-
-       i = IndexOne()
-
-       assert i.any(*inp) == False
-
-
-   @pytest.mark.parametrize("start, end", [
-      [0, 5],
-      [1, 5],
-      [2, 7],
-      [0, 5],
-      [0, 1],
-   ])
-   def test_resized(self, start, end):
-
-       i  = IndexOne()
-       i1 = i.resized(start, end)
-
-       assert i1 != i
-       assert len(i1) == end - start
-
-
-   @pytest.mark.parametrize("tags", [
-      "i",
-      ("i", "j"), 
-   ])
-   def test_retagged(self, tags):
-
-       i  = IndexOne()
-       i1 = i.retagged(tags)
-
-       assert i1 != i
-       assert len(i1) == 1
-       assert i1.all(*tags)
 
 
 

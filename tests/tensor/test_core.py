@@ -35,6 +35,7 @@ from tadpole.tensor.types import (
 from tadpole.index import (
    Index,
    IndexGen,  
+   IndexLit,
    Indices,
 )
 
@@ -568,9 +569,9 @@ class TestTensorGen:
 
    @pytest.mark.parametrize("shape, indnames, indnames1, inds1", [
       [(2,3,4), "ijk", "aib",  ( 
-                                IndexGen("a",2,"a"), 
-                                IndexGen("i",3,"i"), 
-                                IndexGen("b",4,"b"),
+                                IndexLit("a",2), 
+                                IndexLit("i",3), 
+                                IndexLit("b",4),
                                )],
    ])
    def test_call(self, shape, indnames, indnames1, inds1):
@@ -585,10 +586,10 @@ class TestTensorGen:
 
    @pytest.mark.parametrize("shape, indnames, shape1, indnames1, inds1", [
       [(2,3,4), "ijk", (2,1,3,4), "a1ib", (
-                                           IndexGen("a",2,"a"), 
-                                           IndexGen("1", 1, "1"), 
-                                           IndexGen("i",3,"i"), 
-                                           IndexGen("b",4,"b"),
+                                           IndexLit("a",2), 
+                                           IndexLit("1",1), 
+                                           IndexLit("i",3), 
+                                           IndexLit("b",4),
                                           )],
    ])
    def test_call_001(self, shape, indnames, shape1, indnames1, inds1):
@@ -606,9 +607,9 @@ class TestTensorGen:
 
    @pytest.mark.parametrize("shape, inds, inds1", [
       [(2,3,4), "ijk", (
-                        IndexGen("a",2,"a"), 
-                        IndexGen("i",3,"i"), 
-                        IndexGen("b",4,"b"),
+                        IndexLit("a",2), 
+                        IndexLit("i",3), 
+                        IndexLit("b",4),
                        )],
    ])
    def test_call_002(self, shape, inds, inds1):
