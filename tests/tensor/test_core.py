@@ -600,6 +600,8 @@ class TestTensorGen:
        y = data.array_dat(data.randn)(
               self.backend, shape1, seed=1
            ) 
+
+
        ans = tn.TensorGen(y.array, inds1)
 
        assert x.tensor(*indnames1) == ans
