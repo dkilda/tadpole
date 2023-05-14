@@ -47,8 +47,9 @@ class ArraySpace(types.Space):
 
    # --- Private helpers --- #
 
+   #@property
+   #@util.cacheable
    @property
-   @util.cacheable
    def _void(self):
 
        return void.Array(self._backend)
