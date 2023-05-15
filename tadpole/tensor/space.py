@@ -125,7 +125,7 @@ def basis(inds, dtype=None, backend=None, **opts):
 
 # --- TensorSpace factory --------------------------------------------------- #
 
-def tensorspace(inds, dtype=None, backend=None, **opts):
+def tensorspace(inds=None, dtype=None, backend=None, **opts):
 
     if inds is None:
        inds = Indices()

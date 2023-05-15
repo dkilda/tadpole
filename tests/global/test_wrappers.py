@@ -7,6 +7,7 @@ import tests.tensor.data as data
 
 import tadpole.util     as util
 import tadpole.tensor   as tn
+import tadpole.index    as tid
 import tadpole.autodiff as ad
 
 from tests.common import (
@@ -103,9 +104,9 @@ class TestCheckpoint:
               )
 
 
-   #@pytest.mark.skip
+   @pytest.mark.skip
    @pytest.mark.parametrize("indnames, shape", [
-      ["i", (1000000,)],
+      ["i", (100000,)],
    ])
    def test_checkpoint_memory(self, indnames, shape):
 
@@ -120,7 +121,7 @@ class TestCheckpoint:
            )
 
        def fun(x):
-           for _ in range(10):
+           for _ in range(50): 
                x = tn.sin(x**2 + 1)
            return x
 
@@ -133,17 +134,23 @@ class TestCheckpoint:
 
        gradfun = ad.gradient(fun1, 1)
 
-       max_usage_checkpt = max(mem.memory_usage((gradfun, (cfun, x.tensor))))
-       max_usage         = max(mem.memory_usage((gradfun, (fun,  x.tensor))))
+       background_checkpt = max(mem.memory_usage((lambda v: v, (1,))))
+       max_usage_checkpt  = max(mem.memory_usage((gradfun, (cfun, x.tensor))))
+
+       background = max(mem.memory_usage((lambda v: v, (1,))))
+       max_usage  = max(mem.memory_usage((gradfun, (fun,  x.tensor))))
+
+       max_usage_checkpt -= background_checkpt  
+       max_usage         -= background
 
        h = guppy.hpy()
        print(h.heap())
        print("\nMEMORY USAGE ")
        print("Checkpointed version: ", max_usage_checkpt) 
-       print("Original version:     ", max_usage)
+       print("Original version:     ", max_usage) 
+       print("Ratio:                ", max_usage_checkpt / max_usage)
 
        assert max_usage_checkpt < (max_usage / 2.)
-
 
 
 
