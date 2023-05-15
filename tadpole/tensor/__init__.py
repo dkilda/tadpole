@@ -16,10 +16,6 @@ from .types import (
 from .types import (
    Engine,
    IndexProduct,
-   Alignment,
-   CutoffMode,
-   ErrorMode,
-   Trunc,
 )
 
 
@@ -232,39 +228,6 @@ from .contraction import (
    dot,
    kron,
    trace,
-)
-
-
-
-
-# --- Decomposition --------------------------------------------------------- #
-
-from .decomp import (
-   svd,
-   eig,
-   eigh,
-   qr,
-   lq,
-)
-
-
-from .truncation import (
-   TruncNull,
-   TruncRank,
-   TruncAbs,
-   TruncRel,
-   TruncSum1,
-   TruncSum2,
-   TruncRelSum1,
-   TruncRelSum2,
-)
-
-
-from .truncation import (
-   RankCutoff,
-   DirectCutoff,
-   SumCutoff,
-   Error,
 )
 
 

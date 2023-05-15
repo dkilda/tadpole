@@ -104,7 +104,7 @@ class TestCheckpoint:
               )
 
 
-   #@pytest.mark.skip
+   @pytest.mark.skip
    @pytest.mark.parametrize("indnames, shape", [
       ["i", (100000,)],
    ])

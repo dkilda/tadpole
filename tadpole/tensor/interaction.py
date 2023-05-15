@@ -231,8 +231,8 @@ def transpose_like(x, target):
 
     diff,       = diff
     output_inds = (
-                   ind if ind in union_inds(x) else diff 
-                      for ind in union_inds(target)
+                   ind if  ind in union_inds(x) else diff 
+                       for ind in union_inds(target)
                   )
 
     return reidx.transpose(x, *output_inds)
