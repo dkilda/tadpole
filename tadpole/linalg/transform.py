@@ -31,7 +31,7 @@ from tadpole.index import (
 
 # --- Linalg transform factory ---------------------------------------------- #
 
-def linalg_transform(x):
+def linalg_transform(xs):
 
     engine = EngineLinalgTransform()
     for x in xs:
@@ -98,13 +98,13 @@ class LinalgTransform:
 
    # --- Linear algebra transformations --- #
 
-   def lstack(self, *inds, **opts):
+   def lstack(self, inds, **opts):
 
        data = ar.stack(*self._data, axis=0, **opts)
        return tn.TensorGen(data, inds)
 
 
-   def rstack(self, *inds, **opts):
+   def rstack(self, inds, **opts):
 
        data = ar.stack(*self._data, axis=1, **opts)
        return tn.TensorGen(data, inds)
@@ -122,17 +122,17 @@ class LinalgTransform:
 # --- Linear algebra transformations ---------------------------------------- #
 
 @ad.differentiable
-def lstack(x, *inds, **opts):
+def lstack(xs, inds, **opts):
 
-    op = linalg_transform(x)
-    return op.lstack(*inds, **opts)  
+    op = linalg_transform(xs)
+    return op.lstack(inds, **opts)  
 
 
 @ad.differentiable
-def rstack(x, *inds, **opts):
+def rstack(xs, inds, **opts):
 
-    op = linalg_transform(x)
-    return op.rstack(*inds, **opts)  
+    op = linalg_transform(xs)
+    return op.rstack(inds, **opts)  
 
 
 
