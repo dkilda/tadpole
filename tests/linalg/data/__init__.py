@@ -60,6 +60,12 @@ from .decomp import (
 )
 
 
+from .properties import (
+   property_tensor_dat,
+   property_input_001,
+   property_input_002,
+)
+
 
 
 

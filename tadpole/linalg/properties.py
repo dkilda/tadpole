@@ -125,7 +125,7 @@ class LinalgProperties:
 
    def inv(self): 
 
-       return self._apply(ar.inv)
+       return self._create(ar.inv)
 
 
    def tril(self, **opts):
@@ -138,7 +138,7 @@ class LinalgProperties:
        return self._create(ar.triu, **opts)
 
 
-   def diag(self, *inds, **opts):
+   def diag(self, inds, **opts):
 
        return tn.TensorGen(ar.diag(self._data, **opts), inds)
 
@@ -197,10 +197,10 @@ def triu(x, **opts):
 
 
 @ad.differentiable
-def diag(x, *inds, **opts):
+def diag(x, inds, **opts):
 
     op = linalg_properties(x)
-    return op.diag(*inds, **opts) 
+    return op.diag(inds, **opts) 
 
 
 

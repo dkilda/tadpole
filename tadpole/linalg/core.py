@@ -41,14 +41,14 @@ def aligned(fun):
            linds = Indices(*inds.map(*linds))
            rinds = Indices(*inds.remove(*linds)) 
 
-           return fun(x, *args, linds, rinds, **kwargs) 
+           return fun(x, linds, rinds, *args, **kwargs) 
 
         if rinds is not None:
 
            rinds = Indices(*inds.map(*rinds))
            linds = Indices(*inds.remove(*rinds)) 
 
-           return fun(x, *args, linds, rinds, **kwargs) 
+           return fun(x, linds, rinds, *args, **kwargs) 
 
         raise ValueError(
            f"align: must provide at least one of linds and rinds, "
@@ -220,14 +220,36 @@ class LinalgUnaryOp:
    def unreshape(self, x, y):
 
        out = tn.split(x, {"l": self._linds, "r": self._rinds})
-       return tn.transpose_like(x, y)
+       return tn.transpose_like(out, y)
 
 
 
 
-# --- Linalg unary functor -------------------------------------------------- #
+# --- Linalg property functor ----------------------------------------------- #
 
-class LinalgUnary:
+class LinalgProperty:
+
+   def __init__(self, op, *args, **kwargs):
+
+       if not isinstance(op, LinalgUnaryOp):
+          op = LinalgUnaryOp(op, *args, **kwargs) 
+
+       self._op = op
+
+
+   def __call__(self, x, *args, **kwargs):
+ 
+       out = self._op.reshape(x)
+       out = self._op.apply(out, *args, **kwargs)
+
+       return out
+
+
+
+
+# --- Linalg matrix functor ------------------------------------------------- #
+
+class LinalgMatrix:
 
    def __init__(self, op, *args, **kwargs):
 
@@ -253,49 +275,49 @@ class LinalgUnary:
 @aligned
 def norm(x, linds, rinds, *args, **kwargs):
 
-    unary = LinalgUnary(lap.norm, linds, rinds)
+    unary = LinalgProperty(lap.norm, linds, rinds)
     return unary(x, *args, **kwargs)  
 
 
 @aligned
 def trace(x, linds, rinds, *args, **kwargs):
 
-    unary = LinalgUnary(lap.trace, linds, rinds)
+    unary = LinalgProperty(lap.trace, linds, rinds)
     return unary(x, *args, **kwargs)  
 
 
 @aligned
 def det(x, linds, rinds, *args, **kwargs):
 
-    unary = LinalgUnary(lap.det, linds, rinds)
+    unary = LinalgProperty(lap.det, linds, rinds)
     return unary(x, *args, **kwargs)  
 
 
 @aligned
 def inv(x, linds, rinds, *args, **kwargs):
 
-    unary = LinalgUnary(lap.inv, linds, rinds)
+    unary = LinalgMatrix(lap.inv, linds, rinds)
     return unary(x, *args, **kwargs) 
 
 
 @aligned
 def tril(x, linds, rinds, *args, **kwargs):
 
-    unary = LinalgUnary(lap.tril, linds, rinds)
+    unary = LinalgMatrix(lap.tril, linds, rinds)
     return unary(x, *args, **kwargs) 
 
 
 @aligned
 def triu(x, linds, rinds, *args, **kwargs):
 
-    unary = LinalgUnary(lap.triu, linds, rinds)
+    unary = LinalgMatrix(lap.triu, linds, rinds)
     return unary(x, *args, **kwargs) 
 
 
 @aligned
 def diag(x, linds, rinds, *args, **kwargs):
 
-    unary = LinalgUnary(lap.diag, linds, rinds)
+    unary = LinalgProperty(lap.diag, linds, rinds)
     return unary(x, *args, **kwargs) 
 
 

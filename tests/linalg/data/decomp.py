@@ -136,6 +136,7 @@ def decomp_input_000():
 
 
 
+
 def decomp_input_001():
 
     return DecompInputData(
@@ -211,7 +212,7 @@ def hidden_decomp_data(datafun):
         # --- Matrix decomp --- #
 
         xmatrix = x.array
-        xarray  = ar.reshape(xmatrix,   (*w.lshape, *w.rshape))  
+        xarray  = ar.reshape(xmatrix,  (*w.lshape, *w.rshape))  
         xarray  = ar.transpose(xarray, v.inds.axes(*(w.linds + w.rinds)))      
 
         larray, rarray = {
