@@ -107,8 +107,8 @@ class LinalgSolver:
        if all(x.ndim == 2 for x in inds):
           raise ValueError(
              f"LinalgSolver: input must have ndim = 2, but "
-             f"data.ndim = {tuple(x.ndim for x in data)}, "
-             f"inds.ndim = {tuple(x.ndim for x in inds)}."
+             f"data  ndims = {tuple(x.ndim for x in data)}, "
+             f"index ndims = {tuple(x.ndim for x in inds)}."
           )
 
        self._data = data
