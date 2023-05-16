@@ -371,14 +371,7 @@ class Array(types.Array):
        data = self._backend.argsort(self._data, axis, **opts)
 
        return self.new(data)   
-
-
-   def diag(self, **opts):
-
-       data = self._backend.diag(self._data, **opts)
-
-       return self.new(data)      
-
+  
 
    # --- Standard math --- #
 
@@ -552,7 +545,7 @@ class Array(types.Array):
        return self.new(U), self.new(S), self.new(VH) 
 
 
-   # --- Linear algebra: matrix exponential --- #
+   # --- Linear algebra: other methods --- #
 
    def expm(self):
 
@@ -561,14 +554,53 @@ class Array(types.Array):
        return self.new(data)
 
 
-   # --- Linear algebra: norm --- #
-
    def norm(self, axis=None, order=None, **opts):
 
        data = self._backend.norm(self._data, axis, order, **opts)
 
-       return self.new(data)       
+       return self.new(data) 
 
+
+   def trace(self, **opts):  
+
+       data = self._backend.trace(self._data, **opts)
+
+       return self.new(data)    
+
+
+   def det(self):  
+
+       data = self._backend.det(self._data)
+
+       return self.new(data)    
+
+
+   def inv(self):  
+
+       data = self._backend.inv(self._data)
+
+       return self.new(data)  
+
+
+   def tril(self, **opts):  
+
+       data = self._backend.tril(self._data, **opts)
+
+       return self.new(data)  
+
+
+   def triu(self, **opts):  
+
+       data = self._backend.triu(self._data, **opts)
+
+       return self.new(data)
+
+
+   def diag(self, **opts):
+
+       data = self._backend.diag(self._data, **opts)
+
+       return self.new(data)    
 
 
 
@@ -729,12 +761,7 @@ def argsort(x, axis=None, **opts):
     return x.argsort(axis, **opts)
 
 
-def diag(x, **opts):
-
-    return x.diag(**opts)
-
     
-
 
 # --- Standard math --------------------------------------------------------- #
 
@@ -901,20 +928,46 @@ def lq(x):
 
 
 
-# --- Linear algebra: matrix exponential ------------------------------------ #
+# --- Linear algebra: other methods ----------------------------------------- #
 
 def expm(x):
 
     return x.expm()
 
 
-
-
-# --- Linear algebra: norm -------------------------------------------------- #
-
 def norm(x, axis=None, order=None, **opts):
 
     return x.norm(axis, order, **opts)
+
+
+def trace(x, **opts):
+
+    return x.trace(**opts)
+
+
+def det(x):
+
+    return x.det()
+
+
+def inv(x):  
+
+    return x.inv()
+
+
+def tril(x, **opts):  
+
+    return x.tril(**opts)
+
+
+def triu(x, **opts):  
+
+    return x.triu(**opts)
+
+
+def diag(x, **opts):
+
+    return x.diag(**opts)
 
 
 

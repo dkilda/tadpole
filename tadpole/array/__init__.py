@@ -134,8 +134,18 @@ from .unary import (
    lq,
    eig,
    eigh,
+)
+
+
+from .unary import (
    expm,
    norm,
+   trace,
+   det,
+   inv,
+   tril,
+   triu,
+   diag,
 )
 
 
@@ -162,8 +172,19 @@ from .binary import (
    mod,
    floordiv,
    power,
+)
+
+
+from .binary import (
    dot,
    kron,
+)
+
+
+from .binary import (
+   stack,
+   solve,
+   trisolve,
 )
 
 

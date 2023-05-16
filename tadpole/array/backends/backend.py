@@ -346,7 +346,7 @@ class Backend(abc.ABC):
        pass
 
 
-   # --- Linear algebra: multiplication methods --- #
+   # --- Contraction/multiplication --- #
 
    @abc.abstractmethod
    def einsum(self, equation, *xs, optimize=True):
@@ -361,7 +361,7 @@ class Backend(abc.ABC):
        pass
 
 
-   # --- Linear algebra: decomposition methods --- #
+   # --- Linear algebra: decomposition --- #
 
    @abc.abstractmethod
    def svd(self, x):
@@ -380,22 +380,76 @@ class Backend(abc.ABC):
        pass
 
 
-   # --- Linear algebra: matrix exponential --- #
+   # --- Linear algebra: misc --- #
 
    @abc.abstractmethod
    def expm(self, x):
        pass
 
+   @abc.abstractmethod
+   def htranspose(self, x, axes):
+       pass
 
-   # --- Linear algebra: misc methods --- #
+
+   # --- Linear algebra: properties --- #
 
    @abc.abstractmethod
    def norm(self, x, axis=None, order=None, **opts):
        pass
 
    @abc.abstractmethod
-   def htranspose(self, x, axes):
+   def trace(self, x, **opts):  
        pass
+
+   @abc.abstractmethod
+   def det(self, x):  
+       pass
+
+   @abc.abstractmethod
+   def inv(self, x):  
+       pass
+
+   @abc.abstractmethod
+   def tril(self, x, **opts):  
+       pass
+
+   @abc.abstractmethod
+   def triu(self, x, **opts):  
+       pass
+
+   @abc.abstractmethod
+   def diag(self, x, **opts):
+       pass
+
+
+   # --- Linear algebra: solvers --- #
+
+   @abc.abstractmethod   
+   def solve(self, a, b):
+       pass
+
+   @abc.abstractmethod   
+   def trisolve(self, a, b, which=None):
+       pass
+
+
+   # --- Linear algebra: transformations --- #
+
+   @abc.abstractmethod   
+   def stack(self, x, y, axis=None, **opts):
+       pass   
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

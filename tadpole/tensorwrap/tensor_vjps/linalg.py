@@ -390,7 +390,7 @@ ad.makevjp_combo(tn.stack, vjp_stack)
 
 def vjpA_solve(g, out, a, b):
 
-    return - tn.solve(a.H, g) @ out.T
+    return -tn.solve(a.H, g) @ out.T
 
 
 def vjpB_solve(g, out, a, b):

@@ -40,9 +40,13 @@ from tadpole.index import (
 
 # --- Linalg solver factory ------------------------------------------------- #
 
-def linalg_solver(x):
+def linalg_solver(*xs):
 
-    engine = x.pluginto(EngineLinalgSolver())
+    engine = EngineLinalgSolver()
+
+    for x in xs:
+        engine = x.pluginto(engine)
+
     return engine.operator()
 
 

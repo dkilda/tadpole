@@ -253,7 +253,7 @@ class Array(types.Array):
        return self.new(data)
 
 
-   # --- Linear algebra: products --- #
+   # --- Contraction --- #
 
    def dot(self):
 
@@ -265,6 +265,29 @@ class Array(types.Array):
    def kron(self):
 
        data = self._backend.kron(*self._datas)
+
+       return self.new(data)
+
+
+   # --- Linear algebra --- #
+
+   def stack(self, axis=None, **opts):
+
+       data = self._backend.stack(*self._datas, axis=axis, **opts)
+
+       return self.new(data)  
+
+
+   def solve(self):
+
+       data = self._backend.solve(*self._datas)
+
+       return self.new(data)
+
+
+   def trisolve(self, which=None):
+
+       data = self._backend.trisolve(*self._datas, which=which)
 
        return self.new(data)
 
@@ -394,7 +417,7 @@ def power(x, y):
 
 
 
-# --- Linear algebra: products ---------------------------------------------- #
+# --- Contraction ----------------------------------------------------------- #
 
 @typecast
 def dot(x, y):
@@ -406,6 +429,25 @@ def dot(x, y):
 def kron(x, y):
 
     return (x | y).kron()
+
+
+
+
+# --- Linear algebra -------------------------------------------------------- #
+
+def stack(x, y, axis=None, **opts):
+
+    return (x | y).stack(axis=axis, **opts)
+
+
+def solve(a, b):
+
+    return (a | b).solve()
+
+
+def trisolve(a, b, which=None):
+
+    return (a | b).solve(which=which)
 
 
 

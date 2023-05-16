@@ -100,6 +100,12 @@ class LinalgProperties:
        return tn.TensorGen(data, Indices()) 
 
 
+   def _create(self, fun, *args, **kwargs):
+
+       data = fun(self._data, *args, **kwargs)
+       return tn.TensorGen(data, self._inds)
+
+
    # --- Linear algebra properties --- #
 
    def norm(self, order=None, **opts):
@@ -120,6 +126,16 @@ class LinalgProperties:
    def inv(self): 
 
        return self._apply(ar.inv)
+
+
+   def tril(self, **opts):
+
+       return self._create(ar.tril, **opts)
+
+
+   def triu(self, **opts):
+
+       return self._create(ar.triu, **opts)
 
 
 
@@ -159,6 +175,20 @@ def inv(x):
 
     op = linalg_properties(x)
     return op.inv() 
+
+
+@ad.differentiable
+def tril(x, **opts):
+
+    op = linalg_properties(x)
+    return op.tril(**opts) 
+
+
+@ad.differentiable
+def triu(x, **opts):
+
+    op = linalg_properties(x)
+    return op.triu(**opts) 
 
 
 

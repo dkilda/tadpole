@@ -335,11 +335,6 @@ class TorchBackend(backend.Backend):
        return torch.argsort(array, axis=axis, **opts)
 
 
-   def diag(self, array, **opts):
-
-       return torch.diag(array, **opts)
-
-
    # --- Logical operations --- #
 
    def allclose(self, x, y, **opts):
@@ -536,7 +531,7 @@ class TorchBackend(backend.Backend):
        return torch.pow(x, y)      
 
 
-   # --- Linear algebra: multiplication methods --- #
+   # --- Contraction/multiplication --- #
 
    def einsum(self, equation, *xs, optimize=True):
 
@@ -553,7 +548,7 @@ class TorchBackend(backend.Backend):
        return torch.kron(x, y)
        
 
-   # --- Linear algebra: decomposition methods --- #
+   # --- Linear algebra: decomposition --- #
 
    def svd(self, x):
 
@@ -575,14 +570,19 @@ class TorchBackend(backend.Backend):
        return util.eigh(self, lambda v: torch.linalg.eigh(v), x)
        
 
-   # --- Linear algebra: matrix exponential --- #
+   # --- Linear algebra: misc --- #
 
    def expm(self, x):
 
        return torch.linalg.matrix_exp(x)
+
+
+   def htranspose(self, x, axes):
+
+       return self.transpose(self.conj(x), axes)
        
 
-   # --- Linear algebra: misc methods --- #
+   # --- Linear algebra: properties --- #
 
    def norm(self, x, axis=None, order=None, **opts):
 
@@ -592,9 +592,64 @@ class TorchBackend(backend.Backend):
        return torch.norm(x, p=order, dim=axis, **opts)
 
 
-   def htranspose(self, x, axes):
+   def trace(self, x, **opts):  
 
-       return self.transpose(self.conj(x), axes)
+       return torch.trace(x, **opts)
+
+
+   def det(self, x):  
+       
+       return torch.linalg.det(x)
+
+
+   def inv(self, x):  
+
+       return torch.linalg.inv(x)
+
+
+   def tril(self, x, **opts):  
+
+       return torch.tril(x, **opts)
+
+
+   def triu(self, x, **opts):  
+
+       return torch.triu(x, **opts)
+
+
+   def diag(self, x, **opts):
+
+       return torch.diag(x, **opts)
+
+
+   # --- Linear algebra: solvers --- #
+
+   def solve(self, a, b):
+
+       return torch.linalg.solve(a, b)
+
+
+   def trisolve(self, a, b, which=None, **opts):
+
+       if which is None:
+          which = "upper"
+
+       upper = {
+                "lower": False, 
+                "upper": True,
+               }[which]
+
+       return torch.linalg.solve_triangular(a, b, upper=upper, **opts)
+
+
+   # --- Linear algebra: transformations --- #
+
+   def stack(self, x, y, axis=None, **opts):
+
+       if axis is None:
+          axis = 0
+
+       return torch.stack(x, y, dim=axis, **opts)
 
 
 

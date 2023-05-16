@@ -284,12 +284,7 @@ class NumpyBackend(backend.Backend):
           axis = -1
 
        return np.argsort(array, axis=axis, **opts)
-      
-
-   def diag(self, array, **opts):
-
-       return np.diag(array, **opts) 
-
+ 
 
    # --- Logical operations --- #
 
@@ -487,8 +482,7 @@ class NumpyBackend(backend.Backend):
        return np.power(x, y)
        
 
-   # --- Linear algebra: multiplication methods --- #
-
+   # --- Contraction/multiplication --- #
 
    def einsum(self, equation, *xs, optimize=True):
 
@@ -505,7 +499,7 @@ class NumpyBackend(backend.Backend):
        return np.kron(x, y)       
 
 
-   # --- Linear algebra: decomposition methods --- #
+   # --- Linear algebra: decomposition --- #
 
    def svd(self, x):
 
@@ -537,23 +531,83 @@ class NumpyBackend(backend.Backend):
        return util.eigh(self, lambda v: np.linalg.eigh(v), x)
 
 
-   # --- Linear algebra: matrix exponential --- #
+   # --- Linear algebra: misc --- #
 
    def expm(self, x):
 
-       return spla.expm(x)       
+       return spla.expm(x)  
 
 
-   # --- Linear algebra: misc methods --- #
+   def htranspose(self, x, axes):
+
+       return self.transpose(self.conj(x), axes)     
+
+
+   # --- Linear algebra: properties --- #
 
    def norm(self, x, axis=None, order=None, **opts):
 
        return np.linalg.norm(x, order, axis, **opts)
 
 
-   def htranspose(self, x, axes):
+   def trace(self, x, **opts):  
 
-       return self.transpose(self.conj(x), axes)
+       return np.trace(x, **opts)
+
+
+   def det(self, x):  
+       
+       return np.linalg.det(x)
+
+
+   def inv(self, x):  
+
+       return np.linalg.inv(x)
+
+
+   def tril(self, x, **opts):  
+
+       return np.tril(x, **opts)
+
+
+   def triu(self, x, **opts):  
+
+       return np.triu(x, **opts)
+
+
+   def diag(self, x, **opts):
+
+       return np.diag(x, **opts) 
+
+
+   # --- Linear algebra: solvers --- #
+
+   def solve(self, a, b):
+
+       return np.linalg.solve(a, b)
+
+
+   def trisolve(self, a, b, which=None, **opts):
+
+       if which is None:
+          which = "upper"
+
+       lower = {
+                "lower": True, 
+                "upper": False,
+               }[which]
+
+       return spla.solve_triangular(a, b, lower=lower, **opts)
+
+
+   # --- Linear algebra: transformations --- #
+
+   def stack(self, x, y, axis=None, **opts):
+
+       if axis is None:
+          axis = 0
+
+       return np.stack(x, y, axis=axis, **opts)
 
 
 
