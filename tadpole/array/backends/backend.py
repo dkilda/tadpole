@@ -436,7 +436,7 @@ class Backend(abc.ABC):
    # --- Linear algebra: transformations --- #
 
    @abc.abstractmethod   
-   def stack(self, x, y, axis=None, **opts):
+   def concat(self, xs, axis=None, **opts):
        pass   
 
 

@@ -98,17 +98,13 @@ class LinalgTransform:
 
    # --- Linear algebra transformations --- #
 
-   def lstack(self, inds, **opts):
+   def concat(self, inds, which=None, **opts):
 
-       data = ar.stack(*self._data, axis=0, **opts)
+       axis = {"left": 0, "right": 1}[which] 
+
+       data = ar.concat(*self._data, axis=axis, **opts)
        return tn.TensorGen(data, inds)
 
-
-   def rstack(self, inds, **opts):
-
-       data = ar.stack(*self._data, axis=1, **opts)
-       return tn.TensorGen(data, inds)
-       
 
 
 
@@ -122,17 +118,10 @@ class LinalgTransform:
 # --- Linear algebra transformations ---------------------------------------- #
 
 @ad.differentiable
-def lstack(xs, inds, **opts):
+def concat(xs, inds, which=None, **opts):
 
     op = linalg_transform(xs)
-    return op.lstack(inds, **opts)  
-
-
-@ad.differentiable
-def rstack(xs, inds, **opts):
-
-    op = linalg_transform(xs)
-    return op.rstack(inds, **opts)  
+    return op.concat(inds, which=which, **opts)  
 
 
 

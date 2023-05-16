@@ -48,5 +48,22 @@ from .core import (
 )
 
 
+from .core import (
+   norm,
+   trace,
+   det,
+   inv,
+   tril,
+   triu,
+   diag,
+)
+
+
+from .core import (
+   solve,
+   trisolve,
+)
+
+
 
 

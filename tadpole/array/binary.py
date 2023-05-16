@@ -271,13 +271,6 @@ class Array(types.Array):
 
    # --- Linear algebra --- #
 
-   def stack(self, axis=None, **opts):
-
-       data = self._backend.stack(*self._datas, axis=axis, **opts)
-
-       return self.new(data)  
-
-
    def solve(self):
 
        data = self._backend.solve(*self._datas)
@@ -434,11 +427,6 @@ def kron(x, y):
 
 
 # --- Linear algebra -------------------------------------------------------- #
-
-def stack(x, y, axis=None, **opts):
-
-    return (x | y).stack(axis=axis, **opts)
-
 
 def solve(a, b):
 

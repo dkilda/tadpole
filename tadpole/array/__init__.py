@@ -182,7 +182,6 @@ from .binary import (
 
 
 from .binary import (
-   stack,
    solve,
    trisolve,
 )
@@ -193,6 +192,7 @@ from .binary import (
 # --- Nary ------------------------------------------------------------------ #
 
 from .nary import (
+   concat,
    where,
    einsum,
 )

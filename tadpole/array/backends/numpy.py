@@ -602,12 +602,12 @@ class NumpyBackend(backend.Backend):
 
    # --- Linear algebra: transformations --- #
 
-   def stack(self, x, y, axis=None, **opts):
+   def concat(self, xs, axis=None, **opts):
 
        if axis is None:
           axis = 0
 
-       return np.stack(x, y, axis=axis, **opts)
+       return np.concatenate(xs, axis=axis, **opts)
 
 
 

@@ -644,12 +644,12 @@ class TorchBackend(backend.Backend):
 
    # --- Linear algebra: transformations --- #
 
-   def stack(self, x, y, axis=None, **opts):
+   def concat(self, xs, axis=None, **opts):
 
        if axis is None:
           axis = 0
 
-       return torch.stack(x, y, dim=axis, **opts)
+       return torch.cat(xs, dim=axis, **opts)
 
 
 

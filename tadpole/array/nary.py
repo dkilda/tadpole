@@ -80,6 +80,15 @@ class Array(types.Array):
        return False
 
 
+   # --- Shape methods --- #
+
+   def concat(self, axis=None, **opts):
+
+       data = self._backend.concat(*self._datas, axis=axis, **opts)
+
+       return self.new(data) 
+
+
    # --- Value methods --- #
 
    def where(self): 
@@ -101,14 +110,14 @@ class Array(types.Array):
        return self.new(data) 
 
 
-   # --- Linear algebra: products --- #
+   # --- Contraction --- #
 
    def einsum(self, equation, optimize=True):
 
        data = self._backend.einsum(equation, *self._datas, optimize=optimize)
 
        return self.new(data)
-
+ 
 
 
 
@@ -117,6 +126,18 @@ class Array(types.Array):
 ###  Standalone functions corresponding to Nary Array methods               ###
 ###                                                                         ###
 ###############################################################################
+
+
+# --- Shape methods --------------------------------------------------------- #
+
+def concat(xs, axis=None, **opts):
+
+    array = reduce(operator.or_, xs)
+    array = array.nary()
+
+    return array.concat(axis=axis, **opts)
+
+
 
 
 # --- Value methods --------------------------------------------------------- #
@@ -140,7 +161,7 @@ def put(x, idxs, vals, accumulate=False):
 
 
 
-# --- Linear algebra: products ---------------------------------------------- #
+# --- Contraction ----------------------------------------------------------- #
 
 def einsum(equation, *xs, optimize=True):
 
