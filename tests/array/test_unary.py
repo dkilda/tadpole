@@ -587,18 +587,6 @@ class TestArray:
        assert out == ans
 
 
-   @pytest.mark.parametrize("shape", [(4,), (5,5), (4,5)])
-   def test_diag(self, shape):
-
-       w = data.array_dat(data.randn)(self.backend, shape)
-
-       out = ar.diag(w.array)
-       ans = np.diag(w.data)
-       ans = unary.asarray(ans, **options(backend=self.backend))
-
-       assert out == ans
-
-
    @pytest.mark.parametrize("shape, idxs", [
       [(2,3,4), (((1,0,1),), ((0,2,0),), ((2,1,3),))], 
    ])
@@ -989,9 +977,9 @@ class TestArray:
        assert ar.allclose(Q, np.transpose(np.conj(Q1)))
 
 
-   # --- Linear algebra: matrix exponential --- #
+   # --- Linear algebra: other methods --- #
 
-   @pytest.mark.parametrize("shape", [(4,4)]) 
+   @pytest.mark.parametrize("shape", [(4,4), (5,5)]) 
    @pytest.mark.parametrize("dtype", ["complex128"])
    def test_expm(self, shape, dtype):
 
@@ -1003,8 +991,6 @@ class TestArray:
 
        assert ar.allclose(out, ans)
 
-
-   # --- Linear algebra: norm --- #
 
    @pytest.mark.parametrize("shape, axis, order", [
       [(2,3,4), None,  None],
@@ -1028,6 +1014,81 @@ class TestArray:
        ans = unary.asarray(ans,     **options(backend=self.backend))
 
        assert ar.allclose(out, ans)
+
+
+   @pytest.mark.parametrize("shape", [(4,4), (5,5)]) 
+   @pytest.mark.parametrize("dtype", ["complex128"])
+   def test_trace(self, shape, dtype):
+
+       w = data.array_dat(data.randn)(self.backend, shape, dtype=dtype)
+       
+       out = ar.trace(w.array)
+       ans = np.trace(w.data)
+       ans = unary.asarray(ans, **options(backend=self.backend))
+
+       assert ar.allclose(out, ans)
+
+
+   @pytest.mark.parametrize("shape", [(4,4), (5,5)]) 
+   @pytest.mark.parametrize("dtype", ["complex128"])
+   def test_det(self, shape, dtype):
+
+       w = data.array_dat(data.randn)(self.backend, shape, dtype=dtype)
+       
+       out = ar.det(w.array)
+       ans = np.linalg.det(w.data)
+       ans = unary.asarray(ans, **options(backend=self.backend))
+
+       assert ar.allclose(out, ans) 
+
+
+   @pytest.mark.parametrize("shape", [(4,4), (5,5)]) 
+   @pytest.mark.parametrize("dtype", ["complex128"])
+   def test_inv(self, shape, dtype):
+
+       w = data.array_dat(data.randn)(self.backend, shape, dtype=dtype)
+       
+       out = ar.inv(w.array)
+       ans = np.linalg.inv(w.data)
+       ans = unary.asarray(ans, **options(backend=self.backend))
+
+       assert ar.allclose(out, ans) 
+
+
+   @pytest.mark.parametrize("shape", [(4,), (5,5), (4,5)])
+   def test_tril(self, shape):
+
+       w = data.array_dat(data.randn)(self.backend, shape)
+
+       out = ar.tril(w.array)
+       ans = np.tril(w.data)
+       ans = unary.asarray(ans, **options(backend=self.backend))
+
+       assert out == ans
+
+
+   @pytest.mark.parametrize("shape", [(4,), (5,5), (4,5)])
+   def test_triu(self, shape):
+
+       w = data.array_dat(data.randn)(self.backend, shape)
+
+       out = ar.triu(w.array)
+       ans = np.triu(w.data)
+       ans = unary.asarray(ans, **options(backend=self.backend))
+
+       assert out == ans
+
+
+   @pytest.mark.parametrize("shape", [(4,), (5,5), (4,5)])
+   def test_diag(self, shape):
+
+       w = data.array_dat(data.randn)(self.backend, shape)
+
+       out = ar.diag(w.array)
+       ans = np.diag(w.data)
+       ans = unary.asarray(ans, **options(backend=self.backend))
+
+       assert out == ans
 
 
 

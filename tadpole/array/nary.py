@@ -84,7 +84,7 @@ class Array(types.Array):
 
    def concat(self, axis=None, **opts):
 
-       data = self._backend.concat(*self._datas, axis=axis, **opts)
+       data = self._backend.concat(tuple(self._datas), axis=axis, **opts)
 
        return self.new(data) 
 

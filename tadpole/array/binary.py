@@ -435,7 +435,7 @@ def solve(a, b):
 
 def trisolve(a, b, which=None):
 
-    return (a | b).solve(which=which)
+    return (a | b).trisolve(which=which)
 
 
 

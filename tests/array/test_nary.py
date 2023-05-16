@@ -94,6 +94,42 @@ class TestArray:
        assert w1.narray | w2.narray == ans
 
 
+   # --- Shape methods --- #
+
+   @pytest.mark.parametrize("shapes, axis", [
+      [[(4,4),   (4,4)],   None],
+      [[(4,4),   (4,4)],   0],
+      [[(4,4),   (4,4)],   1],
+      [[(5,5),   (4,5)],   None],
+      [[(5,5),   (4,5)],   0],
+      [[(4,4),   (4,5)],   1],
+      [[(3,5,4), (3,5,4)], None],
+      [[(3,5,4), (3,5,4)], 0],
+      [[(3,5,4), (3,5,4)], 1],
+      [[(3,5,4), (3,5,4)], 2],
+      [[(3,5,4), (3,5,6)], 2],
+   ])
+   @pytest.mark.parametrize("dtypes", [
+      ["complex128", "complex128"],
+   ])
+   def test_concat(self, shapes, dtypes, axis):
+
+       w = data.narray_dat(data.randn)(
+              self.backend, shapes, dtypes
+           )
+
+       if   axis is None:
+            out = ar.concat(w.arrays)
+            ans = np.concatenate(w.datas, axis=0)
+            ans = unary.asarray(ans, **options(backend=self.backend))
+       else:
+            out = ar.concat(w.arrays, axis=axis)
+            ans = np.concatenate(w.datas, axis=axis)
+            ans = unary.asarray(ans, **options(backend=self.backend))
+
+       return ar.allclose(out, ans)
+
+
    # --- Value methods --- #
 
    @pytest.mark.parametrize("shapes, nvals", [

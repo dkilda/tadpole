@@ -495,5 +495,63 @@ class TestArray:
        assert ar.allclose(out, ans)
 
 
+   # --- Linear algebra --- #
+
+   @pytest.mark.parametrize("shapes", [
+      [(4,4), (4,5)],
+   ])
+   @pytest.mark.parametrize("dtypes", [
+      ["complex128", "complex128"],
+   ])
+   def test_solve(self, shapes, dtypes):
+
+       w = data.narray_dat(data.randn)(self.backend, shapes, dtypes)
+
+       out = ar.solve(w.arrays[0], w.arrays[1])
+       ans = np.linalg.solve(w.datas[0],  w.datas[1])
+       ans = unary.asarray(ans, **options(backend=self.backend))
+
+       assert ar.allclose(out, ans)
+
+
+   @pytest.mark.parametrize("shapes", [
+      [(4,4), (4,5)],
+   ])
+   @pytest.mark.parametrize("dtypes", [
+      ["complex128", "complex128"],
+   ])
+   @pytest.mark.parametrize("which, lower", [
+      ["lower", True],
+      ["upper", False],
+   ])
+   def test_trisolve(self, shapes, dtypes, which, lower):
+
+       w = data.narray_dat(data.randn)(self.backend, shapes, dtypes)
+
+       out = ar.trisolve(w.arrays[0], w.arrays[1], which=which)
+       ans = scipy.linalg.solve_triangular(w.datas[0], w.datas[1], lower=lower)
+       ans = unary.asarray(ans, **options(backend=self.backend))
+
+       assert ar.allclose(out, ans)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
