@@ -347,14 +347,11 @@ def contract(*xs, product=None):
 
 
 
-# --- Dot ------------------------------------------------------------------- #
+# --- Dot product ----------------------------------------------------------- #
 
-@ad.differentiable
 def dot(x, y):
 
-    op = tensor_dot(x, y)
-
-    return op.dot()
+    return contract(x, y)
 
 
 

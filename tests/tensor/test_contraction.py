@@ -210,7 +210,7 @@ class TestTensorContract:
        assert out.space() == ans.space()
 
 
-   # --- Dot --- #
+   # --- Dot product --- #
 
    @pytest.mark.parametrize("shapes, inds, outinds", [
       [[(3,4),   (4,6)  ], ["ij",  "jk" ], "ik"  ], 
