@@ -33,7 +33,7 @@ from tadpole.index import (
 
 ###############################################################################
 ###                                                                         ###
-###  Helpers: indexing and other logic needed for a tensor decomposition    ### 
+###  Helpers: indexing and other logic needed for linalg decompositions     ### 
 ###                                                                         ###
 ###############################################################################
 
@@ -66,14 +66,14 @@ class SIndexFun:
 
 ###############################################################################
 ###                                                                         ###
-###  Tensor decomposition engine and operator                               ###
+###  Linalg decomposition engine and operator                               ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- Tensor decomposition factory ------------------------------------------ #
+# --- Linalg decomposition factory ------------------------------------------ #
 
-def tensor_decomp(x, sind=None):
+def linalg_decomp(x, sind=None):
 
     if sind is None:
        sind = "sind"
@@ -81,15 +81,15 @@ def tensor_decomp(x, sind=None):
     if not isinstance(sind, SIndexFun):
        sind = SIndexFun(sind)
 
-    engine = x.pluginto(EngineDecomp(sind))
+    engine = x.pluginto(EngineLinalgDecomp(sind))
     return engine.operator()
 
 
 
 
-# --- Tensor decomposition engine ------------------------------------------- #
+# --- Linalg decomposition engine ------------------------------------------- #
 
-class EngineDecomp(tn.Engine): 
+class EngineLinalgDecomp(tn.Engine): 
 
    def __init__(self, sind, train=None):
 
@@ -131,14 +131,14 @@ class EngineDecomp(tn.Engine):
        data, = self._train.data()
        inds, = self._train.inds()
 
-       return TensorDecomp(data, inds, self._sind)
+       return LinalgDecomp(data, inds, self._sind)
 
 
 
 
-# --- Tensor decomposition operator ----------------------------------------- #
+# --- Linalg decomposition operator ----------------------------------------- #
 
-class TensorDecomp:
+class LinalgDecomp:
 
    # --- Construction --- #
 
@@ -146,7 +146,7 @@ class TensorDecomp:
 
        if inds.ndim != 2:
           raise ValueError(
-             f"TensorDecomp: input must have ndim = 2, "
+             f"LinalgDecomp: input must have ndim = 2, "
              f"but data.ndim = {data.ndim}, inds.ndim = {inds.ndim}."
           )
 
@@ -198,17 +198,26 @@ class TensorDecomp:
 
    # --- Explicit-rank decompositions --- #
 
-   def svd(self, trunc):
+   def svd(self, trunc=None):
+
+       if trunc is None:
+          trunc = TruncNull()
 
        return self._explicit(ar.svd, trunc)
 
 
-   def eig(self, trunc):
+   def eig(self, trunc=None):
+
+       if trunc is None:
+          trunc = TruncNull()
 
        return self._explicit(ar.eig, trunc)
 
 
-   def eigh(self, trunc):
+   def eigh(self, trunc=None):
+
+       if trunc is None:
+          trunc = TruncNull()
 
        return self._explicit(ar.eigh, trunc)
 
@@ -229,7 +238,7 @@ class TensorDecomp:
 
 ###############################################################################
 ###                                                                         ###
-###  Standalone functions corresponding to TensorDecomp methods             ###
+###  Standalone functions corresponding to LinalgDecomp methods             ###
 ###                                                                         ###
 ###############################################################################
 
@@ -239,11 +248,7 @@ class TensorDecomp:
 @ad.differentiable
 def svd(x, sind=None, trunc=None):
 
-    if trunc is None:
-       trunc = TruncNull()
-
-    op = tensor_decomp(x, sind)
-
+    op = linalg_decomp(x, sind)
     return op.svd(trunc)
 
 
@@ -251,11 +256,7 @@ def svd(x, sind=None, trunc=None):
 @ad.differentiable
 def eig(x, sind=None, trunc=None):
 
-    if trunc is None:
-       trunc = TruncNull()
-
-    op = tensor_decomp(x, sind) 
-
+    op = linalg_decomp(x, sind) 
     return op.eig(trunc)
 
 
@@ -263,11 +264,7 @@ def eig(x, sind=None, trunc=None):
 @ad.differentiable
 def eigh(x, sind=None, trunc=None):
 
-    if trunc is None:
-       trunc = TruncNull()
-
-    op = tensor_decomp(x, sind) 
-
+    op = linalg_decomp(x, sind) 
     return op.eigh(trunc)
 
 
@@ -278,8 +275,7 @@ def eigh(x, sind=None, trunc=None):
 @ad.differentiable
 def qr(x, sind=None):
 
-    op = tensor_decomp(x, sind)
-
+    op = linalg_decomp(x, sind)
     return op.qr()
 
 
@@ -287,8 +283,7 @@ def qr(x, sind=None):
 @ad.differentiable
 def lq(x, sind=None):
 
-    op = tensor_decomp(x, sind)
-
+    op = linalg_decomp(x, sind)
     return op.lq()
 
 
