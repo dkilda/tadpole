@@ -154,7 +154,7 @@ class TensorReindex:
 
    def reindex(self, indmap):
 
-       indmap      = ReindexMap(indmap) # FIXME remove ReindexMap?
+       indmap      = ReindexMap(indmap) 
        output_inds = list(self._inds)
 
        for i, ind in enumerate(self._inds):
