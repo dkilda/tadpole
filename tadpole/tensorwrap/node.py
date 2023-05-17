@@ -282,7 +282,7 @@ class NodeContainer(an.NodeGen, TensorContainer, tn.Grad):
 
 # --- Register NodeContainer with the types it can wrap --------------------- #
 
-an.register(tc.ContainerGen, NodeContainer) # TODO Functions returning a tuple of Tensors must return a TensorContainer instead!
+an.register(tc.ContainerGen, NodeContainer) 
 an.register(tc.SparseGrad,   NodeContainer)
 an.register(tc.NullGrad,     NodeContainer)
 
