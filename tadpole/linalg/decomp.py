@@ -22,6 +22,10 @@ from tadpole.tensor.engine import (
    TooManyArgsError,
 )
 
+from tadpole.tensorwrap import (
+   ContainerGen,
+)
+
 from tadpole.index import (
    Index,
    IndexGen, 
@@ -178,22 +182,22 @@ class LinalgDecomp:
        error       = trunc.error(output_data[1])
        output_data = trunc.apply(*output_data)
 
-       return (
-               self._ltensor(output_data[0]), 
-               self._stensor(output_data[1]), 
-               self._rtensor(output_data[2]), 
-               error,
-              )
+       return ContainerGen(
+          self._ltensor(output_data[0]), 
+          self._stensor(output_data[1]), 
+          self._rtensor(output_data[2]), 
+          error,
+       )
 
        
    def _hidden(self, fun):
 
        output_data = fun(self._data)
 
-       return (
-               self._ltensor(output_data[0]), 
-               self._rtensor(output_data[1]), 
-              )
+       return ContainerGen(
+          self._ltensor(output_data[0]), 
+          self._rtensor(output_data[1]), 
+       )
 
 
    # --- Explicit-rank decompositions --- #

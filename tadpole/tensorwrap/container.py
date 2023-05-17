@@ -450,7 +450,10 @@ class ContainerGen(TensorContainer, tn.Grad):
 
    # --- Construction --- #
 
-   def __init__(self, data):
+   def __init__(self, data, *args):
+
+       if len(args) > 0:
+          data = (data, *args)
 
        if not isinstance(data, tuple):
           data = tuple(data)
