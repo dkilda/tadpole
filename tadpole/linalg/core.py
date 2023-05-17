@@ -104,7 +104,10 @@ class DecompOp:
 
 class DecompExplicit:
 
-   def __init__(self, op):
+   def __init__(self, op, *args, **kwargs):
+
+       if not isinstance(op, DecompOp):
+          op = DecompOp(op, *args, **kwargs)
 
        self._op = op
 
@@ -124,7 +127,10 @@ class DecompExplicit:
 
 class DecompHidden:
 
-   def __init__(self, op):
+   def __init__(self, op, *args, **kwargs):
+
+       if not isinstance(op, DecompOp):
+          op = DecompOp(op, *args, **kwargs)
 
        self._op = op
 
@@ -145,24 +151,21 @@ class DecompHidden:
 @aligned
 def svd(x, linds, rinds, *args, **kwargs):
 
-    decomp = DecompExplicit(DecompOp(lad.svd, linds, rinds))
-
+    decomp = DecompExplicit(lad.svd, linds, rinds)
     return decomp(x, *args, **kwargs)
 
 
 @aligned
 def eig(x, linds, rinds, *args, **kwargs):
 
-    decomp = DecompExplicit(DecompOp(lad.eig, linds, rinds)) 
-
+    decomp = DecompExplicit(lad.eig, linds, rinds) 
     return decomp(x, *args, **kwargs)
 
 
 @aligned
 def eigh(x, linds, rinds, *args, **kwargs):
 
-    decomp = DecompExplicit(DecompOp(lad.eigh, linds, rinds)) 
-
+    decomp = DecompExplicit(lad.eigh, linds, rinds) 
     return decomp(x, *args, **kwargs)
 
 
@@ -173,16 +176,14 @@ def eigh(x, linds, rinds, *args, **kwargs):
 @aligned
 def qr(x, linds, rinds, *args, **kwargs):
 
-    decomp = DecompHidden(DecompOp(lad.qr, linds, rinds)) 
-
+    decomp = DecompHidden(lad.qr, linds, rinds) 
     return decomp(x, *args, **kwargs)
 
 
 @aligned
 def lq(x, linds, rinds, *args, **kwargs):
 
-    decomp = DecompHidden(DecompOp(lad.lq, linds, rinds)) 
-
+    decomp = DecompHidden(lad.lq, linds, rinds) 
     return decomp(x, *args, **kwargs)
 
 
