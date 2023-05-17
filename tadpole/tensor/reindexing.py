@@ -279,27 +279,6 @@ class TensorReindex:
        return self.fuse({self._inds: ind})
 
 
-   def diag(self, ind=None): # TODO move diag to linalg!
-
-       if ind is None:
-          ind = self._inds[0]
-
-       if not isinstance(ind, Index):
-          ind = IndexGen(ind, len(self._inds[0]))
-
-       if self._inds.ndim == 1:
-          return core.TensorGen(ar.diag(self._data), (ind, *self._inds))
-
-       if self._inds.ndim == 2:
-          return core.TensorGen(ar.diag(self._data), (ind,))
-
-       raise ValueError(
-          f"TensorReindex.diag: "
-          f"diag is only supported for tensors with "
-          f"ndim = 1 or 2, but ndim != {self._inds.ndim}."
-       )
-
-
 
 
 ###############################################################################
