@@ -72,7 +72,10 @@ class EngineLinalgTransform(tn.Engine):
 
    def operator(self):
 
-       return LinalgTransform(self._train.data(), self._train.inds())
+       return LinalgTransform(
+                 tuple(self._train.data()), 
+                 tuple(self._train.inds())
+              )
 
 
 
@@ -85,7 +88,7 @@ class LinalgTransform:
 
    def __init__(self, data, inds): 
 
-       if all(x.ndim == 2 for x in inds):
+       if not all(x.ndim == 2 for x in inds):
           raise ValueError(
              f"LinalgTransform: input must have ndim = 2, but "
              f"data  ndims = {tuple(x.ndim for x in data)}, "
@@ -102,7 +105,7 @@ class LinalgTransform:
 
        axis = {"left": 0, "right": 1}[which] 
 
-       data = ar.concat(*self._data, axis=axis, **opts)
+       data = ar.concat(self._data, axis=axis, **opts)
        return tn.TensorGen(data, inds)
 
 

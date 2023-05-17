@@ -273,49 +273,49 @@ class LinalgMatrix:
 # --- Linear algebra properties --------------------------------------------- #
 
 @aligned
-def norm(x, linds, rinds, *args, **kwargs):
+def norm(x, *args, linds, rinds, **kwargs):
 
     unary = LinalgProperty(lap.norm, linds, rinds)
     return unary(x, *args, **kwargs)  
 
 
 @aligned
-def trace(x, linds, rinds, *args, **kwargs):
+def trace(x, *args, linds, rinds, **kwargs):
 
     unary = LinalgProperty(lap.trace, linds, rinds)
     return unary(x, *args, **kwargs)  
 
 
 @aligned
-def det(x, linds, rinds, *args, **kwargs):
+def det(x, *args, linds, rinds, **kwargs):
 
     unary = LinalgProperty(lap.det, linds, rinds)
     return unary(x, *args, **kwargs)  
 
 
 @aligned
-def inv(x, linds, rinds, *args, **kwargs):
+def inv(x, *args, linds, rinds, **kwargs):
 
     unary = LinalgMatrix(lap.inv, linds, rinds)
     return unary(x, *args, **kwargs) 
 
 
 @aligned
-def tril(x, linds, rinds, *args, **kwargs):
+def tril(x, *args, linds, rinds, **kwargs):
 
     unary = LinalgMatrix(lap.tril, linds, rinds)
     return unary(x, *args, **kwargs) 
 
 
 @aligned
-def triu(x, linds, rinds, *args, **kwargs):
+def triu(x, *args, linds, rinds, **kwargs):
 
     unary = LinalgMatrix(lap.triu, linds, rinds)
     return unary(x, *args, **kwargs) 
 
 
 @aligned
-def diag(x, linds, rinds, *args, **kwargs):
+def diag(x, *args, linds, rinds, **kwargs):
 
     unary = LinalgProperty(lap.diag, linds, rinds)
     return unary(x, *args, **kwargs) 
@@ -352,7 +352,7 @@ class LinalgSolver:
        k = IndexGen("k", tid.sizeof(*indsK))
 
        a = tn.transpose(tn.fuse(a, {indsI: i, indsJ: j}), i, j)
-       b = tn.transpose(tn.fuse(b, {indsI: i, indsK: k}), j, k)
+       b = tn.transpose(tn.fuse(b, {indsI: i, indsK: k}), i, k)
 
        x = self._fun(a, b, *args, **kwargs) 
        x = tn.split(x, {j: indsJ, k: indsK}) 

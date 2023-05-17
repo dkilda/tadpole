@@ -91,7 +91,10 @@ class EngineLinalgSolver(tn.Engine):
 
    def operator(self):
 
-       return LinalgSolver(self._train.data(), self._train.inds())
+       return LinalgSolver(
+                 tuple(self._train.data()), 
+                 tuple(self._train.inds())
+              )
 
 
 
@@ -104,7 +107,7 @@ class LinalgSolver:
 
    def __init__(self, data, inds): 
 
-       if all(x.ndim == 2 for x in inds):
+       if not all(x.ndim == 2 for x in inds):
           raise ValueError(
              f"LinalgSolver: input must have ndim = 2, but "
              f"data  ndims = {tuple(x.ndim for x in data)}, "

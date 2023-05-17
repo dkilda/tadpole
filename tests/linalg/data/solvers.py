@@ -39,9 +39,9 @@ SolverInputData = collections.namedtuple("SolverInputData", [
                      "indsA", "shapeA",
                      "indsB", "shapeB",
                      "indsX", "shapeX",
-                     "indsI", "shapeI", "sizeI", "axesI",
-                     "indsJ", "shapeJ", "sizeJ", "axesJA", "axesJB",
-                     "indsK", "shapeK", "sizeK", "axesK",  
+                     "indsI", "shapeI", "sizeI", "axesIA", "axesIB",
+                     "indsJ", "shapeJ", "sizeJ", "axesJA", "axesJX",
+                     "indsK", "shapeK", "sizeK", "axesKB", "axesKX", 
                   ])
 
 
@@ -52,29 +52,31 @@ def solver_input_000():
     return SolverInputData(
 
        indsA  = "mno",     
-       shapeA = (2,3,4),
+       shapeA = (2,8,4),
 
-       indsB  = "mop"
-       shapeB = (2,4,1)
+       indsB  = "mop",
+       shapeB = (2,4,1),
 
-       indsX  = "np"
-       shapeX = (3,1)
+       indsX  = "np",
+       shapeX = (8,1),
 
-       indsI  = "mo" 
-       shapeI = (2,4)
-       sizeI  = 8
-       axesI  = (0,2)
+       indsI  = "mo", 
+       shapeI = (2,4),
+       sizeI  = 8,
+       axesIA = (0,2),
+       axesIB = (0,1),
 
-       indsJ  = "n" 
-       shapeJ = (3,)
-       sizeJ  = 3
-       axesJA = (1,)
-       axesJB = (0,) 
+       indsJ  = "n", 
+       shapeJ = (8,),
+       sizeJ  = 8,
+       axesJA = (1,),
+       axesJX = (0,), 
 
-       indsK  = "p" 
-       shapeK = (1,)
-       sizeK  = 1
-       axesK  = (1,)
+       indsK  = "p", 
+       shapeK = (1,),
+       sizeK  = 1,
+       axesKB = (1,),
+       axesKX = (1,),
     )
 
 
@@ -85,29 +87,31 @@ def solver_input_001():
     return SolverInputData(
 
        indsA  = "mno",     
-       shapeA = (2,3,4),
+       shapeA = (2,8,4),
 
-       indsB  = "mopq"
-       shapeB = (2,4,5,6)
+       indsB  = "mopq",
+       shapeB = (2,4,5,6),
 
-       indsX  = "npq"
-       shapeX = (3,5,6)
+       indsX  = "npq",
+       shapeX = (8,5,6),
 
-       indsI  = "mo" 
-       shapeI = (2,4)
-       sizeI  = 8
-       axesI  = (0,2)
+       indsI  = "mo", 
+       shapeI = (2,4),
+       sizeI  = 8,
+       axesIA = (0,2),
+       axesIB = (0,1),
 
-       indsJ  = "n" 
-       shapeJ = (3,)
-       sizeJ  = 3
-       axesJA = (1,)
-       axesJB = (0,) 
+       indsJ  = "n", 
+       shapeJ = (8,),
+       sizeJ  = 8,
+       axesJA = (1,),
+       axesJX = (0,), 
 
-       indsK  = "pq" 
-       shapeK = (5,6)
-       sizeK  = 30
-       axesK  = (1,2)
+       indsK  = "pq", 
+       shapeK = (5,6),
+       sizeK  = 30,
+       axesKB = (2,3),
+       axesKX = (1,2),
     )
 
 
@@ -118,29 +122,31 @@ def solver_input_002():
     return SolverInputData(
 
        indsA  = "lmno",     
-       shapeA = (2,3,4,5),
+       shapeA = (2,3,6,4),
 
-       indsB  = "mopq"
-       shapeB = (2,5,6,7)
+       indsB  = "mopq",
+       shapeB = (3,4,5,7),
 
-       indsX  = "nlpq"
-       shapeX = (4,2,6,7)
+       indsX  = "lnpq",
+       shapeX = (2,6,5,7),
 
-       indsI  = "mo" 
-       shapeI = (3,5)
-       sizeI  = 15
-       axesI  = (1,3)
+       indsI  = "mo", 
+       shapeI = (3,4),
+       sizeI  = 12,
+       axesIA = (1,3),
+       axesIB = (0,1),
 
-       indsJ  = "nl" 
-       shapeJ = (4,2)
-       sizeJ  = 8
-       axesJA = (2,0)
-       axesJB = (0,1) 
+       indsJ  = "ln", 
+       shapeJ = (2,6),
+       sizeJ  = 12,
+       axesJA = (0,2),
+       axesJX = (0,1), 
 
-       indsK  = "pq" 
-       shapeK = (6,7)
-       sizeK  = 42
-       axesK  = (2,3)
+       indsK  = "pq", 
+       shapeK = (5,7),
+       sizeK  = 35,
+       axesKB = (2,3),
+       axesKX = (2,3),
     )
 
 
@@ -157,7 +163,6 @@ SolverData = collections.namedtuple("SolverData", [
                 "indsI",    "indsJ",    "indsK",
                 "shapeI",   "shapeJ",   "shapeK",
                 "sizeI",    "sizeJ",    "sizeK",
-                "inds",
                 "backend", 
              ])
 
@@ -166,24 +171,34 @@ SolverData = collections.namedtuple("SolverData", [
 
 def solver_data(datafun):
 
+    def argsort(*xs):
+
+        return tuple(util.argsort(xs))
+
+
     def wrap(method, backend, solver_input, **opts):
 
         # --- Input --- #
 
         w = solver_input 
-        v = data.indices_dat(w.indsA + w.indsB, w.shapeA + w.shapeB)  
+        v = data.nindices_dat([w.indsA, w.indsB], [w.shapeA, w.shapeB])  
+
+        indsA = v.inds.map(*w.indsA)
+        indsB = v.inds.map(*w.indsB)
+        indsX = v.inds.map(*w.indsX)
+
         a = data.array_dat(datafun)(backend, (w.sizeI, w.sizeJ), **opts)  
         b = data.array_dat(datafun)(backend, (w.sizeI, w.sizeK), **opts)   
 
         # --- Run solver on matrices --- #
 
         matrixA = a.array
-        arrayA  = ar.reshape(matrixA,  (*w.shapeI, *w.shapeJ))  
-        arrayA  = ar.transpose(arrayA, v.inds.axes(*w.indsA)) 
+        arrayA  = ar.reshape(matrixA,  (*w.shapeI, *w.shapeJ)) 
+        arrayA  = ar.transpose(arrayA, argsort(*w.axesIA, *w.axesJA)) 
 
         matrixB = b.array
         arrayB  = ar.reshape(matrixB,  (*w.shapeI, *w.shapeK))  
-        arrayB  = ar.transpose(arrayB, v.inds.axes(*w.indsB)) 
+        arrayB  = ar.transpose(arrayB, argsort(*w.axesIB, *w.axesKB))
 
         matrixX = {
                    "solve":          ar.solve,
@@ -194,15 +209,11 @@ def solver_data(datafun):
         # --- Create input and output tensors --- #
 
         arrayX = ar.reshape(matrixX,  (*w.shapeJ, *w.shapeK))
-        arrayX = ar.transpose(arrayX, v.inds.axes(*w.indsX))
+        arrayX = ar.transpose(arrayX, argsort(*w.axesJX, *w.axesKX))
 
-        indsA = v.inds.map(*w.indsA)
-        indsB = v.inds.map(*w.indsB)
-        indsX = v.inds.map(*w.indsX)
-
-        tensorA = tn.TensorGen(arrayA, indsA)
-        tensorB = tn.TensorGen(arrayB, indsB)
-        tensorX = tn.TensorGen(arrayX, indsX)
+        tensorA = tn.TensorGen(arrayA, v.inds.map(*w.indsA))
+        tensorB = tn.TensorGen(arrayB, v.inds.map(*w.indsB))
+        tensorX = tn.TensorGen(arrayX, v.inds.map(*w.indsX))
 
         return SolverData(
                 tensorA,  tensorB,  tensorX,
@@ -213,7 +224,6 @@ def solver_data(datafun):
                 w.indsI,  w.indsJ,  w.indsK,
                 w.shapeI, w.shapeJ, w.shapeK,
                 w.sizeI,  w.sizeJ,  w.sizeK,
-                v.inds,
                 a.backend, 
                )
 

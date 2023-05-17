@@ -61,7 +61,7 @@ class TestLinalgTransforms:
       [[(4,4), (5,4)       ], ["ij", "kj"      ], (9,4),  "lr", "left",  0], 
       [[(4,4), (4,5)       ], ["ij", "ik"      ], (4,9),  "lr", "right", 1], 
       [[(4,4), (5,4), (6,4)], ["ij", "kj", "lj"], (15,4), "lr", "left",  0], 
-      [[(4,4), (4,5), (4,6)], ["ij", "kj", "lj"], (8,15), "lr", "right", 1], 
+      [[(4,4), (4,5), (4,6)], ["ij", "ik", "il"], (4,15), "lr", "right", 1], 
    ])   
    def test_concat(self, shapes, inds, outshape, outinds, which, axis):
 
