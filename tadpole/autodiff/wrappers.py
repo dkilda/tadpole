@@ -100,7 +100,7 @@ def checkpoint(fun):
 
     @nary.nary_op
     def grad(fun, x):
-        op = ad.DifferentialOpReverse(fun, x)
+        op = ad.diffop_reverse(fun, x)
         return lambda g: op.grad(g)
 
     def checkpointed_vjpfun(g, adx, out, *args, **kwargs):

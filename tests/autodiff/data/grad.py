@@ -19,35 +19,6 @@ import tadpole.autodiff.grad  as ad
 
 ###############################################################################
 ###                                                                         ###
-###  Differential operators: forward and reverse                            ###
-###                                                                         ###
-###############################################################################
-
-
-# --- Differential operator ------------------------------------------------- #
-
-DiffOpData = collections.namedtuple("DiffOpData", [
-                "diffop", "prop", 
-                "graphop", "graph", "layer", "root", "fun", 
-                "x", "out", "start", "end",
-             ])
-
-
-
-
-def diffop_dat(which):
-
-    dat  = data.graph_dat(which)
-    prop = fake.Propagation(graphop=fake.Fun(dat.graphop, dat.fun, dat.x))
-
-    diffop = ad.DifferentialOp(prop, dat.fun, dat.x) 
-    return DiffOpData(diffop, prop, *dat) 
-
-    
-
-
-###############################################################################
-###                                                                         ###
 ###  Topological sort of the computation graph                              ###
 ###                                                                         ###
 ###############################################################################
@@ -102,7 +73,7 @@ def childcount_dat(valency=1, **countmaps):
 # --- Node network ---------------------------------------------------------- #
 
 NodeNetworkData = collections.namedtuple("NodeNetworkData", [
-                     "end", "nodes", "leaves", 
+                     "end", "start", "nodes", "leaves", 
                      "gradmap", "parentmap", "countmap",
                   ])
 
@@ -212,7 +183,7 @@ def forward_node_network_dat(layer=None):
                  leaf0_dat.node: 2, 
                 }
 
-    return NodeNetworkData(end, nodes, leaves, 
+    return NodeNetworkData(end, leaves[0], nodes, leaves, 
                            gradmap, parentmap, countmap)
 
 
@@ -324,7 +295,7 @@ def reverse_node_network_dat(layer=None):
                  leaf0_dat.node: 2,
                 }
 
-    return NodeNetworkData(end, nodes, leaves,
+    return NodeNetworkData(end, leaves[0], nodes, leaves,
                            gradmap, parentmap, countmap)
 
 

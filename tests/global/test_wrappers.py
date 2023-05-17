@@ -104,7 +104,7 @@ class TestCheckpoint:
               )
 
 
-   @pytest.mark.skip
+   #@pytest.mark.skip
    @pytest.mark.parametrize("indnames, shape", [
       ["i", (100000,)],
    ])
@@ -121,7 +121,7 @@ class TestCheckpoint:
            )
 
        def fun(x):
-           for _ in range(50): 
+           for _ in range(10): 
                x = tn.sin(x**2 + 1)
            return x
 
@@ -151,7 +151,6 @@ class TestCheckpoint:
        print("Ratio:                ", max_usage_checkpt / max_usage)
 
        assert max_usage_checkpt < (max_usage / 2.)
-
 
 
 

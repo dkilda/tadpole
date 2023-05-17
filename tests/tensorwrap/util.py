@@ -52,8 +52,8 @@ def numerical_grad(fun, x, eps=1e-6):
 
 def assert_vjp(fun, x):
 
-    op = agrad.DifferentialOpReverse(fun, x)
-    y  = op.evaluate()
+    op = agrad.diffop_reverse(fun, x)
+    y  = op.value()
 
     dx = tn.space(x).randn()
     dy = tn.space(y).randn()
@@ -77,7 +77,7 @@ def assert_vjp(fun, x):
 
 def assert_jvp(fun, x):
 
-    op = agrad.DifferentialOpForward(fun, x)
+    op = agrad.diffop_forward(fun, x)
     dx = tn.space(x).randn()
 
     jv_out = op.grad(dx)
@@ -99,8 +99,8 @@ def assert_jvp(fun, x):
 
 def assert_vjp_real(fun, x):
 
-    op = agrad.DifferentialOpReverse(fun, x)
-    y  = op.evaluate()
+    op = agrad.diffop_reverse(fun, x)
+    y  = op.value()
 
     dx = tn.space(x).randn()
     dy = tn.space(y).randn()
@@ -124,8 +124,8 @@ def assert_vjp_real(fun, x):
 
 def assert_vjp_null(fun, x):
 
-    op = agrad.DifferentialOpReverse(fun, x)
-    y  = op.evaluate()
+    op = agrad.diffop_reverse(fun, x)
+    y  = op.value()
 
     dx = tn.space(x).randn()
     dy = tn.space(y).randn()
@@ -148,8 +148,8 @@ def assert_vjp_null(fun, x):
 
 def assert_jvp_null(fun, x):
 
-    op = agrad.DifferentialOpForward(fun, x)
-    y  = op.evaluate()
+    op = agrad.diffop_forward(fun, x)
+    y  = op.value()
 
     dx = tn.space(x).randn()
     i  = IndexGen("i", dx.size)
@@ -167,8 +167,8 @@ def assert_jvp_null(fun, x):
 
 def assert_vjp_type(fun, x):
 
-    op = agrad.DifferentialOpReverse(fun, x)
-    y  = op.evaluate()
+    op = agrad.diffop_reverse(fun, x)
+    y  = op.value()
 
     dx = tn.space(x).randn()
     dy = tn.space(y).randn()
@@ -183,8 +183,8 @@ def assert_vjp_type(fun, x):
 
 def assert_jvp_type(fun, x):
 
-    op = agrad.DifferentialOpForward(fun, x)
-    y  = op.evaluate()
+    op = agrad.diffop_forward(fun, x)
+    y  = op.value()
 
     dx = tn.space(x).randn()
     dy = tn.space(y).randn()
@@ -199,8 +199,8 @@ def assert_jvp_type(fun, x):
 
 def assert_vjp_container(fun, x):
 
-    op = agrad.DifferentialOpReverse(fun, x)
-    y  = op.evaluate()
+    op = agrad.diffop_reverse(fun, x)
+    y  = op.value()
 
     dx = tn.space(x).randn() 
     dy = tn.space(y).randn() 
@@ -221,7 +221,7 @@ def assert_vjp_container(fun, x):
 
 def assert_jvp_container(fun, x):
 
-    op = agrad.DifferentialOpForward(fun, x)
+    op = agrad.diffop_forward(fun, x)
     dx = tn.space(x).randn()
 
     jv_out = op.grad(dx)
@@ -313,8 +313,8 @@ def assert_grad(fun, x, modes=("vjp","jvp"), submode=None, order=2):
            def gradfun(x):
 
                op = {
-                     "vjp": agrad.DifferentialOpReverse, 
-                     "jvp": agrad.DifferentialOpForward,
+                     "vjp": agrad.diffop_reverse, 
+                     "jvp": agrad.diffop_forward,
                     }[mode](fun, x)
 
                return op.grad(g)

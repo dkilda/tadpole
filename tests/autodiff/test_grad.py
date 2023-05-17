@@ -28,31 +28,42 @@ import tadpole.autodiff.grad  as ad
 class TestDifferentialOp:
 
    @pytest.mark.parametrize("which", ["REVERSE", "FORWARD"])
-   def test_graphop(self, which):
+   def test_value(self, which):
 
-       w = data.diffop_dat(which)
-       assert w.diffop.graphop() == w.graphop
+       w    = data.graph_dat(which)
+       prop = {
+               "REVERSE": ad.PropagationReverse,
+               "FORWARD": ad.PropagationForward,
+              }[which](w.start, w.end)
 
-
-   @pytest.mark.parametrize("which", ["REVERSE", "FORWARD"])
-   def test_start(self, which):
-
-       w = data.diffop_dat(which)
-       assert w.diffop.start() == w.start
-
-
-   @pytest.mark.parametrize("which", ["REVERSE", "FORWARD"])
-   def test_end(self, which):
-
-       w = data.diffop_dat(which)
-       assert w.diffop.end() == w.end
+       diffop = ad.DifferentialOp(prop)
+       assert diffop.value() == w.out
 
 
-   @pytest.mark.parametrize("which", ["REVERSE", "FORWARD"])
-   def test_evaluate(self, which):
+   @pytest.mark.parametrize("layer", [0,1])
+   def test_grad_reverse(self, layer):
 
-       w = data.diffop_dat(which)
-       assert w.diffop.evaluate() == w.out
+       w = data.reverse_node_network_dat(layer)
+
+       prop = ad.PropagationReverse(w.start, w.end)
+       grad = w.gradmap[w.start]
+       seed = w.gradmap[w.end]
+
+       diffop = ad.DifferentialOp(prop)
+       assert diffop.grad(seed) == grad
+
+
+   @pytest.mark.parametrize("layer", [0,1])
+   def test_grad_forward(self, layer):
+
+       w = data.forward_node_network_dat(layer)
+
+       prop = ad.PropagationForward(w.start, w.end)
+       grad = w.gradmap[w.end] 
+       seed = w.gradmap[w.start]  
+
+       diffop = ad.DifferentialOp(prop)
+       assert diffop.grad(seed) == grad
 
 
 
@@ -68,27 +79,24 @@ class TestDifferentialOp:
 
 class TestPropagationForward:
 
-   def test_graphop(self):
+   def test_apply(self):
 
        dat  = data.graph_dat("FORWARD")
-       prop = ad.PropagationForward()
+       prop = ad.PropagationForward(dat.start, dat.end)
 
-       assert prop.graphop(dat.fun, dat.x) == dat.graphop
+       assert prop.apply(lambda x: ag.ArgsGen(x).deshelled()[0]) == dat.out
 
 
    @pytest.mark.parametrize("layer", [0])
-   def test_accum(self, layer):
+   def test_grads(self, layer):
 
-       network = data.forward_node_network_dat(layer)
-       prop    = ad.PropagationForward()
+       w = data.forward_node_network_dat(layer)
 
-       end   = network.end
-       start = network.leaves[0]
-       seed  = network.gradmap[start]
+       prop  = ad.PropagationForward(w.start, w.end)
+       seed  = w.gradmap[w.start]
+       grads = ad.GradSum(seed, w.gradmap) 
 
-       grads = ad.GradSum(seed, network.gradmap) 
-
-       assert prop.accum(start, end, seed) == grads
+       assert prop.grads(seed) == grads
 
 
 
@@ -97,68 +105,54 @@ class TestPropagationForward:
 
 class TestPropagationReverse:
 
-   def test_graphop(self):
+   def test_apply(self):
 
        dat  = data.graph_dat("REVERSE")
-       prop = ad.PropagationReverse()
+       prop = ad.PropagationReverse(dat.start, dat.end)
 
-       assert prop.graphop(dat.fun, dat.x) == dat.graphop
+       assert prop.apply(lambda x: ag.ArgsGen(x).deshelled()[0]) == dat.out
 
 
    @pytest.mark.parametrize("layer", [0])
-   def test_accum(self, layer):
+   def test_grads(self, layer):
 
-       network = data.reverse_node_network_dat(layer)
-       prop    = ad.PropagationReverse()
+       w = data.reverse_node_network_dat(layer)
 
-       end   = network.end
-       start = network.leaves[0]
-       seed  = network.gradmap[network.end]
+       prop  = ad.PropagationReverse(w.start, w.end)
+       seed  = w.gradmap[w.end]
+       grads = ad.GradAccum({None: w.gradmap[w.start]})
 
-       grads = ad.GradAccum({None: network.gradmap[start]})
-
-       assert prop.accum(start, end, seed) == grads
+       assert prop.grads(seed) == grads
 
 
 
 
 ###############################################################################
 ###                                                                         ###
-###  Computation graph operator.                                            ###
+###  Function evaluation operator (builds AD computation graph)             ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- Graph operator -------------------------------------------------------- #
+# --- Function evaluation operator ------------------------------------------ #
 
-class TestGraphOp:
+class TestEvalOp:
 
    @pytest.mark.parametrize("which", ["REVERSE", "FORWARD"])
    def test_graph(self, which):
 
        dat = data.graph_dat(which)
-       assert dat.graphop.graph() == dat.graph
+       assert dat.evalop.graph(dat.root) == dat.graph
 
 
    @pytest.mark.parametrize("which", ["REVERSE", "FORWARD"])
-   def test_start(self, which):
+   def test_execute(self, which):
 
-       dat = data.graph_dat(which)
-       assert dat.graphop.start() == dat.start
+       dat        = data.graph_dat(which)
+       start, end = dat.evalop.execute(dat.root)
 
-
-   @pytest.mark.parametrize("which", ["REVERSE", "FORWARD"])
-   def test_end(self, which):
-
-       dat = data.graph_dat(which)
-       assert dat.graphop.end() == dat.end
-
-
-   @pytest.mark.parametrize("which", ["REVERSE", "FORWARD"])
-   def test_evaluate(self, which):
-
-       dat = data.graph_dat(which)
-       assert dat.graphop.evaluate() == dat.out
+       assert start == dat.start
+       assert end   == dat.end
 
 
 

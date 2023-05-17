@@ -44,7 +44,6 @@ def returns_node(fun):
 
 
 
-
 # --- Graph ----------------------------------------------------------------- #
 
 class Graph:
@@ -236,13 +235,11 @@ class ArgsGen(Args):
        return self._denodified()[idx]
 
 
-   #@util.cacheable
    def _nodified(self):
 
        return nodify(*self._args)
 
 
-   #@util.cacheable
    def _denodified(self):
 
        return denodify(*self._nodified())
@@ -452,19 +449,16 @@ class ConcatArgs(Sequential, Cohesive):
        return iter(self._train.layers())
 
 
-   #@util.cacheable
    def innermost(self):
 
        return self.layer() == misc.minlayer() 
 
 
-   #@util.cacheable
    def layer(self):
 
        return max(self._layers)
 
 
-   #@util.cacheable
    def adxs(self):
 
        if self.innermost():
@@ -475,7 +469,6 @@ class ConcatArgs(Sequential, Cohesive):
        )
 
 
-   #@util.cacheable
    def parents(self):
 
        nodes = list(self._nodes)
@@ -484,7 +477,6 @@ class ConcatArgs(Sequential, Cohesive):
        return an.ParentsGen(*nodes)
 
 
-   #@util.cacheable 
    def deshell(self):
 
        if self.innermost():

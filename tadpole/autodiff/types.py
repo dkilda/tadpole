@@ -272,11 +272,11 @@ class Envelope(abc.ABC):
 class Propagation(abc.ABC):
 
    @abc.abstractmethod
-   def graphop(self, fun, x):
+   def apply(self, fun):
        pass
 
    @abc.abstractmethod
-   def accum(self, end, seed):
+   def grads(self, seed):
        pass
 
 

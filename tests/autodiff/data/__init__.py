@@ -41,7 +41,6 @@ from .graph import (
 
 
 from .grad import (
-   diffop_dat,
    childcount_dat,
    forward_node_network_dat,
    reverse_node_network_dat,

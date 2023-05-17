@@ -30,16 +30,14 @@ class Propagation(at.Propagation):
        self._fun = fake.FunMap(**data)
 
 
-   def graphop(self, fun, x):
+   def apply(self, fun):
 
-       graphop = ad.GraphOp(fake.Gate(), fun, x)
-
-       return self._fun["graphop", graphop](fun, x)
+       return self._fun["apply", fake.Node()](fun)
 
 
-   def accum(self, end, seed):
+   def grads(self, seed):
 
-       return self._fun["accum", Cumulative()](end, seed)
+       return self._fun["grads", Cumulative()](seed)
 
 
 

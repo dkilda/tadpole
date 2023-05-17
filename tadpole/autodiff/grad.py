@@ -34,10 +34,9 @@ from tadpole.autodiff.types import (
 @nary.nary_op
 def gradient(fun, x):  
 
-    op  = DifferentialOpReverse(fun, x)
-    out = op.evaluate()
+    op = diffop_reverse(fun, x)
 
-    return op.grad(out.space().ones())
+    return op.grad(op.value().space().ones())
 
 
 
@@ -47,31 +46,52 @@ def gradient(fun, x):
 @nary.nary_op
 def derivative(fun, x):
 
-    op  = DifferentialOpForward(fun, x)
-    out = op.evaluate()
+    op = diffop_forward(fun, x)
 
-    return op.grad(out.space().ones())
+    return op.grad(op.value().space().ones())
 
 
 
 
 ###############################################################################
 ###                                                                         ###
-###  Differential operators: forward and reverse                            ###
+###  Differential operator                                                  ###
 ###                                                                         ###
 ###############################################################################
+
+
+# --- Create reverse differential operator ---------------------------------- #
+
+def diffop_reverse(fun, x):
+
+    evalop     = EvalOp(fun, x)
+    start, end = evalop.execute(an.GateReverse())
+
+    return DifferentialOp(PropagationReverse(start, end))
+
+
+
+
+# --- Create forward differential operator ---------------------------------- #
+
+def diffop_forward(fun, x):
+
+    evalop     = EvalOp(fun, x)
+    start, end = evalop.execute(an.GateForward())
+
+    return DifferentialOp(PropagationForward(start, end))
+
+
 
 
 # --- Differential operator ------------------------------------------------- #
 
 class DifferentialOp:
 
-   def __init__(self, propagation, fun, x):
+   def __init__(self, prop):
 
-       self._prop = propagation
-       self._fun  = fun
-       self._x    = x
-
+       self._prop = prop
+ 
 
    def __repr__(self):
 
@@ -79,8 +99,6 @@ class DifferentialOp:
 
        rep.typ(self)
        rep.val("prop", self._prop)
-       rep.val("fun",  self._fun)
-       rep.ref("x",    self._x)
 
        return str(rep)
 
@@ -92,66 +110,25 @@ class DifferentialOp:
 
        if bool(log):
           log.val(self._prop, other._prop)
-          log.val(self._fun,  other._fun)
-          log.val(self._x,    other._x)
 
        return bool(log)
 
 
-   #@util.cacheable
-   def graphop(self):
+   def value(self):
 
-       return self._prop.graphop(self._fun, self._x)
-
-
-   def start(self):
-
-       return self.graphop().start()
-
-
-   def end(self):
-
-       return self.graphop().end()
-
-
-   def evaluate(self):
-
-       return self.graphop().evaluate()
-
+       return self._prop.apply(lambda x: ag.ArgsGen(x).deshelled()[0])
+       
 
    def grad(self, seed):
 
-       grads = self._prop.accum(self.start(), self.end(), seed)       
-       return grads.result()
-
-
-
-
-# --- Forward differential operator ----------------------------------------- #
-
-class DifferentialOpForward(DifferentialOp):
-
-   def __init__(self, fun, x):
-
-       super().__init__(PropagationForward(), fun, x)
-
-
-
-
-# --- Reverse differential operator ----------------------------------------- #
-
-class DifferentialOpReverse(DifferentialOp):
-
-   def __init__(self, fun, x):
-
-       super().__init__(PropagationReverse(), fun, x)
+       return self._prop.grads(seed).result()
 
 
 
 
 ###############################################################################
 ###                                                                         ###
-###  Gradient propagation through the AD computation graph.                 ###
+###  Gradient propagation through AD computation graph                      ###
 ###                                                                         ###
 ###############################################################################
 
@@ -160,24 +137,46 @@ class DifferentialOpReverse(DifferentialOp):
 
 class PropagationForward(Propagation):
 
+   def __init__(self, start, end):
+
+       self._start = start
+       self._end   = end
+
+
    def __repr__(self):
 
        rep = util.ReprChain()
+
        rep.typ(self)
+       rep.val("start", self._start)
+       rep.val("end",   self._end)
+
        return str(rep)
 
 
-   def graphop(self, fun, x):
+   def __eq__(self, other):
 
-       return GraphOp(an.GateForward(), fun, x)
+       log = util.LogicalChain()
+       log.typ(self, other)
+
+       if bool(log):
+          log.val(self._start, other._start)
+          log.val(self._end,   other._end)
+
+       return bool(log)
 
 
-   def accum(self, start, end, seed):
+   def apply(self, fun):
 
-       if not end.connected(start):
-          return GradSum(seed, end.tonull())
+       return fun(self._end)
 
-       return end.grads(GradSum(seed))
+       
+   def grads(self, seed):
+
+       if not self._end.connected(self._start):
+          return GradSum(seed, self._end.tonull())
+
+       return self._end.grads(GradSum(seed))
 
 
 
@@ -186,26 +185,48 @@ class PropagationForward(Propagation):
 
 class PropagationReverse(Propagation):
 
+   def __init__(self, start, end):
+
+       self._start = start
+       self._end   = end
+
+
    def __repr__(self):
 
        rep = util.ReprChain()
+
        rep.typ(self)
+       rep.val("start", self._start)
+       rep.val("end",   self._end)
+
        return str(rep)
 
 
-   def graphop(self, fun, x):
+   def __eq__(self, other):
 
-       return GraphOp(an.GateReverse(), fun, x)
+       log = util.LogicalChain()
+       log.typ(self, other)
+
+       if bool(log):
+          log.val(self._start, other._start)
+          log.val(self._end,   other._end)
+
+       return bool(log)
 
 
-   def accum(self, start, end, seed):
+   def apply(self, fun):
 
-       if not end.connected(start):
-          return GradAccum(start.tonull())
+       return fun(self._end)
 
-       grads = GradAccum({end: seed})
 
-       for node in toposort(end): 
+   def grads(self, seed):
+
+       if not self._end.connected(self._start):
+          return GradAccum(self._start.tonull())
+
+       grads = GradAccum({self._end: seed})
+
+       for node in toposort(self._end): 
            grads = node.grads(grads)
 
        return grads
@@ -215,20 +236,19 @@ class PropagationReverse(Propagation):
 
 ###############################################################################
 ###                                                                         ###
-###  Computation graph operator                                             ###
+###  Function evaluation operator (builds AD computation graph)             ###
 ###                                                                         ###
 ###############################################################################
 
 
-# --- Graph operator -------------------------------------------------------- #
+# --- Function evaluation operator ------------------------------------------ #
 
-class GraphOp:
+class EvalOp:
 
-   def __init__(self, root, fun, x):
+   def __init__(self, fun, x):
 
-       self._root = root
-       self._fun  = fun
-       self._x    = x
+       self._fun = fun
+       self._x   = x
 
 
    def __repr__(self):
@@ -236,7 +256,6 @@ class GraphOp:
        rep = util.ReprChain()
 
        rep.typ(self)
-       rep.ref("root", self._root)
        rep.val("fun",  self._fun)
        rep.ref("x",    self._x)
 
@@ -249,44 +268,23 @@ class GraphOp:
        log.typ(self, other)
 
        if bool(log):
-          log.val(self._root, other._root)
           log.val(self._fun,  other._fun)
           log.val(self._x,    other._x)
 
        return bool(log)
 
 
-   @util.cacheable
-   def _build(self):
+   def graph(self, root):
 
-       with self.graph() as graph:
+       return ag.Graph(root)
+
+
+   def execute(self, root):
+
+       with self.graph(root) as graph:
           start, end = graph.build(self._fun, self._x)  
 
        return start, end
-
-
-   def graph(self):
-
-       return ag.Graph(self._root)
-
-
-   def start(self):
-
-       return self._build()[0]
-
-
-   def end(self):
-
-       return self._build()[1]
-
-
-   @util.cacheable
-   def evaluate(self):
-
-       args = ag.ArgsGen(self.end())
-       args = args.deshelled()
-
-       return args[0]
 
 
 
@@ -437,7 +435,6 @@ class TopoSort:
        return str(rep)
 
 
-   @util.cacheable
    def traverse(self):
 
        self._traversal.apply(self._count.collect)

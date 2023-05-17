@@ -30,8 +30,8 @@ import tadpole.autodiff.adjointmap as adj
 # --- Graph ----------------------------------------------------------------- #
 
 GraphData = collections.namedtuple("GraphData", [
-               "graphop", "graph", "layer", "root", "fun",
-               "x", "out", "start", "end",
+               "evalop", "graph", "layer", "root", 
+               "fun", "x", "out", "start", "end",
             ])
 
 
@@ -60,12 +60,12 @@ def graph_dat(which="REVERSE", layer=None,
     if end is None:
        end = an.node(out, layer, fake.Gate())
 
-    fun     = fake.Fun(end, start)
-    graph   = ag.Graph(root)
-    graphop = ad.GraphOp(root, fun, x)
+    fun    = fake.Fun(end, start)
+    graph  = ag.Graph(root)
+    evalop = ad.EvalOp(fun, x)
 
-    return GraphData(graphop, graph, layer, root, fun, 
-                     x, out, start, end)
+    return GraphData(evalop, graph, layer, root, 
+                     fun, x, out, start, end)
 
 
 
