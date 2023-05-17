@@ -100,11 +100,11 @@ PropertyData = collections.namedtuple("PropertyData", [
 
 
 
-def property_tensor_dat(property_input_dat):
+def property_linalg_dat(property_input):
 
     def wrap(datafun, backend, **opts):
 
-        w = property_input_dat() 
+        w = property_input() 
         v = data.indices_dat(w.inds, w.shape)
         x = data.array_dat(datafun)(backend, (w.lsize, w.rsize), **opts)  
 
@@ -128,14 +128,6 @@ def property_tensor_dat(property_input_dat):
                )
 
     return wrap
-
-
-
-
-
-
-
-
 
 
 

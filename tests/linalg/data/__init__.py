@@ -61,11 +61,20 @@ from .decomp import (
 
 
 from .properties import (
-   property_tensor_dat,
    property_input_001,
    property_input_002,
+   property_linalg_dat,
 )
 
+
+from .solvers import (
+   solver_input_000,
+   solver_input_001,
+   solver_input_002,
+   solve_linalg_dat,
+   trisolve_upper_linalg_dat,
+   trisolve_lower_linalg_dat,
+)
 
 
 

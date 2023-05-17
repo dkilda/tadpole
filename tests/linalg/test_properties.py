@@ -13,18 +13,11 @@ import tadpole.tensor   as tn
 import tadpole.index    as tid
 import tadpole.linalg   as la
 
-import tadpole.array.backends as backends
-import tadpole.tensor.engine  as tne 
-
 import tests.linalg.fakes as fake
 import tests.linalg.data  as data
 
 from tests.common import (
    available_backends,
-)
-
-from tadpole.linalg.decomp import (
-   SIndexFun, 
 )
 
 from tadpole.index import (
@@ -72,7 +65,7 @@ class TestLinalgProperties:
    ])
    def test_norm(self, property_input, order, alignment):
 
-       w = data.property_tensor_dat(property_input)(
+       w = data.property_linalg_dat(property_input)(
               data.randn, self.backend
            )
 
@@ -98,7 +91,7 @@ class TestLinalgProperties:
    ])
    def test_trace(self, property_input, alignment):
 
-       w = data.property_tensor_dat(property_input)(
+       w = data.property_linalg_dat(property_input)(
               data.randn, self.backend
            )
 
@@ -123,7 +116,7 @@ class TestLinalgProperties:
    ])
    def test_det(self, property_input, alignment):
 
-       w = data.property_tensor_dat(property_input)(
+       w = data.property_linalg_dat(property_input)(
               data.randn, self.backend
            )
 
@@ -148,7 +141,7 @@ class TestLinalgProperties:
    ])
    def test_inv(self, property_input, alignment):
 
-       w = data.property_tensor_dat(property_input)(
+       w = data.property_linalg_dat(property_input)(
               data.randn, self.backend
            )
 
@@ -176,7 +169,7 @@ class TestLinalgProperties:
    ])
    def test_tril(self, property_input, alignment):
 
-       w = data.property_tensor_dat(property_input)(
+       w = data.property_linalg_dat(property_input)(
               data.randn, self.backend
            )
 
@@ -204,7 +197,7 @@ class TestLinalgProperties:
    ])
    def test_triu(self, property_input, alignment):
 
-       w = data.property_tensor_dat(property_input)(
+       w = data.property_linalg_dat(property_input)(
               data.randn, self.backend
            )
 
@@ -232,7 +225,7 @@ class TestLinalgProperties:
    ])
    def test_diag(self, property_input, alignment):
 
-       w = data.property_tensor_dat(property_input)(
+       w = data.property_linalg_dat(property_input)(
               data.randn, self.backend
            )
 
@@ -249,38 +242,6 @@ class TestLinalgProperties:
        ans = tn.TensorGen(ans, (i,)) 
 
        assert tn.allclose(out, ans)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

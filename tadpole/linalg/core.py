@@ -41,14 +41,14 @@ def aligned(fun):
            linds = Indices(*inds.map(*linds))
            rinds = Indices(*inds.remove(*linds)) 
 
-           return fun(x, linds, rinds, *args, **kwargs) 
+           return fun(x, *args, linds=linds, rinds=rinds, **kwargs)
 
         if rinds is not None:
 
            rinds = Indices(*inds.map(*rinds))
            linds = Indices(*inds.remove(*rinds)) 
 
-           return fun(x, linds, rinds, *args, **kwargs) 
+           return fun(x, *args, linds=linds, rinds=rinds, **kwargs) 
 
         raise ValueError(
            f"align: must provide at least one of linds and rinds, "
@@ -334,26 +334,30 @@ def diag(x, linds, rinds, *args, **kwargs):
 
 class LinalgSolver:
 
-   def __init__(self, fun, indsI, indsJ, indsK):
+   def __init__(self, fun, linds, rinds):
 
        self._fun   = fun
-       self._indsI = indsI
-       self._indsJ = indsJ
-       self._indsK = indsK
+       self._linds = linds
+       self._rinds = rinds
 
 
    def __call__(self, a, b, *args, **kwargs):
- 
-       i = IndexGen("i", tid.sizeof(*self._indsI))
-       j = IndexGen("j", tid.sizeof(*self._indsJ))
-       k = IndexGen("k", tid.sizeof(*self._indsK))
 
-       a = tn.transpose(tn.fuse(a, {self._indsI: i, self._indsJ: j}), i, j)
-       b = tn.transpose(tn.fuse(b, {self._indsI: i, self._indsK: k}), j, k)
+       indsI = self._linds
+       indsJ = self._rinds
+       indsK = tuple(tn.complement_inds(b, a))
+ 
+       i = IndexGen("i", tid.sizeof(*indsI))
+       j = IndexGen("j", tid.sizeof(*indsJ))
+       k = IndexGen("k", tid.sizeof(*indsK))
+
+       a = tn.transpose(tn.fuse(a, {indsI: i, indsJ: j}), i, j)
+       b = tn.transpose(tn.fuse(b, {indsI: i, indsK: k}), j, k)
 
        x = self._fun(a, b, *args, **kwargs) 
-       x = tn.split(tn.transpose(x, j, k), {self._indsJ: j, self._indsK: k})
-    
+       x = tn.split(x, {j: indsJ, k: indsK}) 
+       x = tn.transpose(x, *indsJ, *indsK)   
+
        return x
 
 
@@ -361,15 +365,17 @@ class LinalgSolver:
 
 # --- Linear algebra solvers ------------------------------------------------ #
 
-def solve(a, b, indsI, indsJ, indsK):
+@aligned
+def solve(a, b, linds, rinds):
 
-    solver = LinalgSolver(las.solve, indsI, indsJ, indsK)
+    solver = LinalgSolver(las.solve, linds, rinds)
     return solver(a, b)   
 
 
-def trisolve(a, b, indsI, indsJ, indsK, *args, **kwargs):   
+@aligned
+def trisolve(a, b, linds, rinds, *args, **kwargs):   
 
-    solver = LinalgSolver(las.trisolve, indsI, indsJ, indsK)
+    solver = LinalgSolver(las.trisolve, linds, rinds)
     return solver(a, b, *args, **kwargs) 
 
 
