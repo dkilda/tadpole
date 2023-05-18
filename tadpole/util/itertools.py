@@ -96,6 +96,15 @@ def relsort(xs, ys):
 ###############################################################################
 
 
+# --- Identity dictionary (each key equals its corresponding value) --------- #
+
+def identity_dict(dct):
+
+    return len(set(zip(*dct.items()))) == 1
+
+
+
+
 # --- Inverted dictionary --------------------------------------------------- #
 
 def inverted_dict(dct):

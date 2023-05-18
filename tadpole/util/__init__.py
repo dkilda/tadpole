@@ -21,6 +21,7 @@ from tadpole.util.itertools import (
    range_from_slice,
    argsort,
    relsort,
+   identity_dict,
    inverted_dict,
    unpacked_dict,
    listofdicts,

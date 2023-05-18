@@ -582,6 +582,7 @@ class TestTensorGen:
        ans = tn.TensorGen(w.array, inds1)
 
        assert w.tensor(*indnames1) == ans
+       assert w.tensor(indnames1)  == ans
 
 
    @pytest.mark.parametrize("shape, indnames, shape1, indnames1, inds1", [
@@ -600,11 +601,10 @@ class TestTensorGen:
        y = data.array_dat(data.randn)(
               self.backend, shape1, seed=1
            ) 
-
-
        ans = tn.TensorGen(y.array, inds1)
 
        assert x.tensor(*indnames1) == ans
+       assert x.tensor(indnames1)  == ans
 
 
    @pytest.mark.parametrize("shape, inds, inds1", [

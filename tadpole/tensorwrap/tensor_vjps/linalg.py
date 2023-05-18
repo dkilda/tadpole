@@ -5,6 +5,40 @@ import tadpole.util     as util
 import tadpole.autodiff as ad
 import tadpole.tensor   as tn
 
+from tadpole.linalg.decomp import (
+  svd,
+  eig,
+  eigh,
+  qr,
+  lq
+)
+
+from tadpole.linalg.properties import (
+  norm,
+  trace,
+  det,
+  inv,
+  tril,
+  triu,
+  diag,
+)
+
+from tadpole.linalg.solvers import (
+  solve,
+  trisolve,
+)
+
+from tadpole.linalg.transform import (
+  concat,
+)
+
+from tadpole.index import (
+   Index,
+   IndexGen, 
+   IndexLit,
+   Indices,
+)
+
 
 
 
@@ -15,13 +49,28 @@ import tadpole.tensor   as tn
 ###############################################################################
 
 
+# --- Helpers: identity matrix ---------------------------------------------- #
+
+def eye(x, inds=None): 
+
+    if inds is None:
+       return tn.space(x).eye()
+
+    sind  = IndexLit(inds[0], s.shape[0])
+    sind1 = IndexLit(inds[1], s.shape[1])
+
+    return tn.space(x).eye(sind, sind1)
+
+
+
+
 # --- Helpers: F-matrix ----------------------------------------------------- #
 
-def fmatrix(s): # Assume S = Matrix(ldim=1, rdim=size) by default 
-                # We should overload all elemwise methods for Matrix objects! 
-    eye = tn.space(s).eye()
+def fmatrix(s): 
 
-    return 1. / (s - s.T + eye) - eye 
+    seye = eye(s,"sz")
+
+    return 1. / (s("1z") - s("s1") + seye) - seye 
 
 
 
@@ -40,34 +89,35 @@ def vjp_svd(g, out, x):
     du, ds, dv = g[0],   g[1],   g[2].H
     u,  s,  v  = out[0], out[1], out[2].H
 
-    f = fmatrix(s**2)
+    f = fmatrix(s**2)("sz")
 
-    uTdu = u.T @ du
-    vTdv = v.T @ dv
+    uTdu = u.T("sl") @ du("lz")
+    vTdv = v.T("sr") @ dv("rz")
 
-    g1 = tn.space(s).eye() * ds.T 
-    g1 = g1 + f * s   * (uTdu - uTdu.H)  
-    g1 = g1 + f * s.T * (vTdv - vTdv.H)
+    g1 = eye(s,"sz") * ds("s1") 
+    g1 = g1 + f("sz") * s("1z") * (uTdu - uTdu.H)("sz")  
+    g1 = g1 + f("sz") * s("s1") * (vTdv - vTdv.H)("sz")
+
 
     if tn.iscomplex(u):
-       g1 = g1 + 1j * tn.imag(tn.diag(tn.space(uTdu).eye() * uTdu)) / s
+       g1 = g1 + 1j * tn.imag(eye(uTdu) * uTdu)("sz") / s("s1")
 
 
-    g1 = u.C @ tn.diag(g1) @ v.T # FIXME u.C @ g1 @ v.T
+    g1 = u("ls").C @ g1("sz") @ v.T("zr") 
 
 
     if x.ldim < x.rdim:
 
-       vvH = v @ v.H
+       vvH = v("Rs") @ v.H("sr")
 
-       return g1 + (u / s) @ dv.T @ (tn.space(vvH).eye() - vvH)
+       return g1 + (u("ls") / s("1s")) @ dv.T("sR") @ (eye(vvH) - vvH)("Rr")
 
 
     if x.ldim > x.rdim:
 
-       uuH = u @ u.H
+       uuH = u("ls") @ u.H("sL")
 
-       return g1 + (tn.space(uuH).eye() - uuH) @ du @ (v.T / s.T) 
+       return g1 + (eye(uuH) - uuH)("lL") @ du("Ls") @ (v.T("sr") / s("s1")) 
 
 
     return g1

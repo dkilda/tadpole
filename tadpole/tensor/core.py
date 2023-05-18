@@ -571,6 +571,9 @@ class TensorGen(Tensor, Grad, Pluggable):
 
    def __call__(self, *inds):
 
+       if len(inds) == 1 and isinstance(inds[0], str):
+          inds = list(inds[0])
+
        inds = ["1" if ind in ("1", 1, None) else ind for ind in inds]
 
        renamed_inds = [ind for ind in inds if ind != "1"] 
@@ -578,6 +581,9 @@ class TensorGen(Tensor, Grad, Pluggable):
 
        indmap = {i1: i2 if isinstance(i2, Index) else IndexLit(i2, len(i1)) 
                      for i1, i2 in zip(self._inds, renamed_inds)} 
+
+       if util.identity_dict(indmap):  
+          return self
          
        out = reidx.reindex(self, indmap)
 
