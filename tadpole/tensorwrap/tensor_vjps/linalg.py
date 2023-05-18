@@ -1,36 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import tadpole.util     as util
-import tadpole.autodiff as ad
-import tadpole.tensor   as tn
-
-from tadpole.linalg.decomp import (
-  svd,
-  eig,
-  eigh,
-  qr,
-  lq
-)
-
-from tadpole.linalg.properties import (
-  norm,
-  trace,
-  det,
-  inv,
-  tril,
-  triu,
-  diag,
-)
-
-from tadpole.linalg.solvers import (
-  solve,
-  trisolve,
-)
-
-from tadpole.linalg.transform import (
-  concat,
-)
+import tadpole.util          as util
+import tadpole.autodiff      as ad
+import tadpole.tensor        as tn
+import tadpole.linalg.matrix as la
 
 from tadpole.index import (
    Index,
@@ -85,11 +59,12 @@ def vjp_svd(g, out, x):
     Eq. 1, 2, 36 (take complex conjugate of both sides)
 
     """
+    lind, rind = tn.union_inds(x)
 
     du, ds, dv = g[0],   g[1],   g[2].H
     u,  s,  v  = out[0], out[1], out[2].H
 
-    f = fmatrix(s**2)("sz")
+    f = fmatrix(s**2)
 
     uTdu = u.T("sl") @ du("lz")
     vTdv = v.T("sr") @ dv("rz")
@@ -106,21 +81,23 @@ def vjp_svd(g, out, x):
     g1 = u("ls").C @ g1("sz") @ v.T("zr") 
 
 
-    if x.ldim < x.rdim:
+    if len(lind) < len(rind): 
 
        vvH = v("Rs") @ v.H("sr")
 
-       return g1 + (u("ls") / s("1s")) @ dv.T("sR") @ (eye(vvH) - vvH)("Rr")
+       g1 = g1 + (u("ls") / s("1s")) @ dv.T("sR") @ (eye(vvH) - vvH)("Rr")
+       return g1(lind, rind)
 
 
-    if x.ldim > x.rdim:
+    if len(lind) > len(rind):
 
        uuH = u("ls") @ u.H("sL")
 
-       return g1 + (eye(uuH) - uuH)("lL") @ du("Ls") @ (v.T("sr") / s("s1")) 
+       g1 = g1 + (eye(uuH) - uuH)("lL") @ du("Ls") @ (v.T("sr") / s("s1")) 
+       return g1(lind, rind)
 
 
-    return g1
+    return g1(lind, rind)
 
     
 
@@ -135,22 +112,24 @@ def vjp_eig(g, out, x):
     Eq. 4.77 (take complex conjugate of both sides)
 
     """
+    lind, rind = tn.union_inds(x)
 
     dv, ds = g
     v,  s  = out
 
-    f   = fmatrix(s)
-    eye = tn.space(v).eye()
+    f     = fmatrix(s)
+    vdiag = tn.real(v.T("sr") @ dv("rz")) * eye(s, "sz")
 
-    g1 = f * (v.T @ dv)
-    g2 = f * ((v.T @ v.C) @ (tn.real(v.T @ dv) * eye))
+    g1 = f("sz") * (v.T("sr") @  dv("rz"))
+    g2 = f("sz") * (v.T("sr") @ v.C("rz")) @ vdiag("sz")
 
-    g12 = tn.inv(v.T) @ (tn.diag(ds) + g1 - g2) @ v.T
+    g12 = ds("1z") * eye(s, "sz") + g1("sz") - g2("sz")
+    g12 = la.inv(v.T)("ls") @ g12("sz") @ v.T("zr")
     
     if not tn.iscomplex(x):
-       return tn.real(g12)
+       return tn.real(g12)(lind, rind)
 
-    return g12
+    return g12(lind, rind)
 
 
 
@@ -171,44 +150,26 @@ def vjp_eigh(g, out, x):
     * tensorflow always uses UPLO="L"
       https://www.tensorflow.org/api_docs/python/tf/linalg/eigh
 
-    But vjp_eigh should not depend on the details of a backend...
-    Could add grad_eigh to backend instead! Usage:
-
-    -- REMOVE THIS:
-
-    eye  = tn.space(grad).eye()
-    tril = tn.tril(tn.space(x).ones(), -1)
-
-    return tn.real(grad) * eye + (grad + grad.H) * tril  
-
-    -- ADD THIS:
-
-    return tn.grad_eigh(grad) 
-
-    which delegates the work to backend or grad internal Array
-    and computes 
-
-    tn.real(grad) * eye + (grad + grad.H) * tril 
-   
-    internally.    
-
     """
+    lind, rind = tn.union_inds(x)
 
     dv, ds = g
     v,  s  = out
 
-    grad = v.C @ tn.diag(ds) @ v.T
+    grad = (v.C("ls") * ds("1s")) @ v.T("sr")
 
     if not tn.allclose(dv, tn.space(dv).zeros()): 
 
        f    = fmatrix(s)
-       grad = grad + v.C @ (f * (v.T @ dv.C)) @ v.T
+       grad = (
+          grad + 
+          v.C("ls") @ (f("sz") * (v.T("sn") @ dv.C("nz"))) @ v.T("zr")
+       )
 
-    eye  = tn.space(grad).eye()
-    tril = tn.tril(tn.space(x).ones(), -1)
+    tl = la.tril(tn.space(x).ones()("lr"), k=-1)
 
-    return tn.real(grad) * eye + (grad + grad.H) * tril        
-    
+    grad = tn.real(grad) * eye(grad, "lr") + (grad + grad.H) * tl        
+    return grad(lind, rind)
 
 
 
@@ -223,35 +184,37 @@ def vjp_qr(g, out, x):
 
     def trisolve(r, a):
 
-        return tn.trisolve(r, a.H, "upper").H
+        return la.trisolve(r, a.H, which="upper").H
 
 
     def hcopyltu(m):
 
-        return m.H + tn.space(m).tril() * (m - m.H) 
+        return m.H("ji") + tril(m("ij")) * (m("ij") - m.H("ji")) 
 
 
     def kernel(q, dq, r, dr):
 
-        m = r @ dr.H - dq.H @ q
+        m = r("sr") @ dr.H("rz") - dq.H("sl") @ q("lz")
 
-        return trisolve(r, dq + q @ hcopyltu(m))
+        return trisolve(r("sr"), dq("ls") + q("lz") @ hcopyltu(m)("zs"))
 
+
+    lind, rind = tn.union_inds(x)
 
     dq, dr = g
     q,  r  = out
 
-    if x.ldim >= x.rdim:
-       return kernel(q, dq, r, dr)
+    if len(lind) >= len(rind):
+       return kernel(q, dq, r, dr)(lind, rind)
 
-    x1,  x2  =  x[:, : x.ldim],  x[:, x.ldim :]
-    r1,  r2  =  r[:, : x.ldim],  r[:, x.ldim :]
-    dr1, dr2 = dr[:, : x.ldim], dr[:, x.ldim :]
+    x1,  x2  =  x[:, : len(lind)],  x[:, len(lind) :]
+    r1,  r2  =  r[:, : len(lind)],  r[:, len(lind) :]
+    dr1, dr2 = dr[:, : len(lind)], dr[:, len(lind) :]
 
-    dx1 = kernel(q, dq + x2 @ dr2.H, r1, dr1)
-    dx2 = q @ dr2
+    dx1 = kernel(q, dq("ls") + x2("lr") @ dr2.H("rs"), r1, dr1)
+    dx2 = q("ls") @ dr2("sr")
 
-    return tn.stack((dx1, dx2), "right")
+    return la.concat((dx1("lr"), dx2("lR")), (lind, rind), which="right")
 
 
 
@@ -267,46 +230,48 @@ def vjp_lq(g, out, x):
 
     def trisolve(l, a):
 
-        return tn.trisolve(l.H, a, "upper")
+        return la.trisolve(l.H, a, which="upper")
 
 
     def hcopyltu(m):
 
-        return m.H + tn.space(m).tril() * (m - m.H) 
+        return m.H("ji") + la.tril(m("ij")) * (m("ij") - m.H("ji")) 
 
 
     def kernel(l, dl, q, dq):
 
-        m = l.H @ dl - dq @ q.H
+        m = l.H("sl") @ dl("lz") - dq("sr") @ q.H("rz")
 
-        return trisolve(l, dq + q @ hcopyltu(m))
+        return trisolve(l("ls"), dq("sr") + q("sR") @ hcopyltu(m)("Rr"))
 
+
+    lind, rind = tn.union_inds(x)
 
     dl, dq = g
     l,  q  = out
 
-    if x.ldim <= x.rdim:
-       return kernel(l, dl, q, dq)
+    if len(lind) <= len(rind):
+       return kernel(l, dl, q, dq)(lind, rind)
 
-    x1,  x2  =  x[: x.rdim, :],  x[x.rdim :, :]
-    l1,  l2  =  l[: x.rdim, :],  l[x.rdim :, :]
-    dl1, dl2 = dl[: x.rdim, :], dl[x.rdim :, :]
+    x1,  x2  =  x[: len(rind), :],  x[len(rind) :, :]
+    l1,  l2  =  l[: len(rind), :],  l[len(rind) :, :]
+    dl1, dl2 = dl[: len(rind), :], dl[len(rind) :, :]
 
-    dx1 = kernel(l1, dl1, q, dq + dl2.H @ x2)
-    dx2 = dl2 @ q
+    dx1 = kernel(l1, dl1, q, dq("sr") + dl2.H("sl") @ x2("lr"))
+    dx2 = dl2("ls") @ q("sr")
 
-    return tn.stack((dx1, dx2), "left")
+    return la.concat((dx1("lr"), dx2("lR")), (lind, rind), which="left")
 
 
 
 
 # --- Record decomp VJPs ---------------------------------------------------- # 
 
-ad.makevjp(tn.svd,  vjp_svd)
-ad.makevjp(tn.eig,  vjp_eig)
-ad.makevjp(tn.eigh, vjp_eigh)
-ad.makevjp(tn.qr,   vjp_qr)
-ad.makevjp(tn.lq,   vjp_lq)
+ad.makevjp(la.svd,  vjp_svd)
+ad.makevjp(la.eig,  vjp_eig)
+ad.makevjp(la.eigh, vjp_eigh)
+ad.makevjp(la.qr,   vjp_qr)
+ad.makevjp(la.lq,   vjp_lq)
 
 
 
@@ -335,17 +300,17 @@ def vjp_norm(g, out, x, order=None):
 
     if order == 'nuc':
 
-       U, S, VH = tn.svd(x)
+       U, S, VH = la.svd(x)
 
        return g * (U @ VH)
 
 
     if isinstance(order, int):
 
-       if not (x.ldim == 1 or x.rdim == 1):
+       if not (x.shape[0] == 1 or x.shape[1] == 1):
           raise ValueError(
              f"vjp_norm: an integer norm order {order} is only valid for " 
-             f"vectors, but x has dimensions ({x.ldim}, {x.rdim})."
+             f"vectors, but x has dimensions ({x.shape[0]}, {x.shape[1]})."
           )
 
        return (g / out**(order-1)) * x * tn.abs(x)**(order-2)
@@ -363,8 +328,10 @@ def vjp_norm(g, out, x, order=None):
 
 def vjp_inv(g, out, x):
 
-    return - out.T @ g @ out.T
+    lind, rind = tn.union_inds(x)
 
+    grad = - out.T("ij") @ g("jk") @ out.T("kl")
+    return grad(lind, rind)
 
 
 
@@ -372,7 +339,7 @@ def vjp_inv(g, out, x):
 
 def vjp_det(g, out, x):
 
-    return g * out * tn.inv(x).T
+    return g * out * la.inv(x).T
 
 
 
@@ -386,45 +353,43 @@ def vjp_trace(g, out, x):
 
 
 
-# --- Stack matrices -------------------------------------------------------- #
-
-def vjp_stack(g, adx, out, xs, ind): # TODO def stack for matrices only! 
-                                     #      def Matrix .slice(slicemap), .dim(ind) methods                                
-    start = sum([x.dim(ind) for x in xs[:adx]])
-    size  = xs[adx].dim(ind) 
-
-    adx_slice = out.slice({ind: slice(start, start + size)})
-
-    return g[adx_slice] 
-
-
-
-
 # --- Diagonal -------------------------------------------------------------- #
 
-def vjp_diag(g, out, x): # TODO move diag from reindexing to linalg, keep it for Matrix objects only!
+def vjp_diag(g, out, x, inds, **opts): 
 
-    return tn.diag(g)
+    return la.diag(g, tuple(tn.union_inds(x)))
+
+   
+
+
+# --- Stack matrices -------------------------------------------------------- #
+
+def vjp_concat(g, adx, out, xs, inds, which=None, **opts): 
+                              
+    axis  = {None: 0, "left": 0, "right": 1}[which]   
+                                        
+    start = sum([x("left","right").shape[axis] for x in xs[:adx]])
+    size  = xs[adx].shape[axis] 
+
+    adx_slice = slice(start, start + size)
+
+    return g[adx_slice](*tn.union_inds(xs[adx])) 
 
 
 
 
 # --- Record standard linalg VJPs ------------------------------------------- #
 
-ad.makevjp(tn.norm,  vjp_norm)
-ad.makevjp(tn.inv,   vjp_inv)
-ad.makevjp(tn.det,   vjp_det)
-ad.makevjp(tn.trace, vjp_trace)
-ad.makevjp(tn.diag,  vjp_diag)
+ad.makevjp(la.norm,  vjp_norm)
+ad.makevjp(la.inv,   vjp_inv)
+ad.makevjp(la.det,   vjp_det)
+ad.makevjp(la.trace, vjp_trace)
+ad.makevjp(la.diag,  vjp_diag)
 
-ad.makevjp(tn.tril, lambda g, out, x, which=0: tn.tril(g, which=which))
-ad.makevjp(tn.triu, lambda g, out, x, which=0: tn.triu(g, which=which))
+ad.makevjp(la.tril, lambda g, out, x, **opts: la.tril(g, **opts))
+ad.makevjp(la.triu, lambda g, out, x, **opts: la.triu(g, **opts))
 
-ad.makevjp(tn.dot, lambda g, out, x, y: tn.match(g @ y.T, x),
-                   lambda g, out, x, y: tn.match(x.T @ g, y),
-)
-
-ad.makevjp_combo(tn.stack, vjp_stack)
+ad.makevjp_combo(la.concat, vjp_concat)
 
 
 
@@ -440,12 +405,12 @@ ad.makevjp_combo(tn.stack, vjp_stack)
 
 def vjpA_solve(g, out, a, b):
 
-    return -tn.solve(a.H, g) @ out.T
+    return -la.solve(a.T, g) @ out.T
 
 
 def vjpB_solve(g, out, a, b):
 
-    return tn.solve(a.H, g)
+    return la.solve(a.T, g)
 
 
 
@@ -455,27 +420,27 @@ def vjpB_solve(g, out, a, b):
 def tri(which):
 
     return {
-            "lower": tn.tril, 
-            "upper": tn.triu,
+            "lower": la.tril, 
+            "upper": la.triu,
            }[which]
 
 
-def vjpA_trisolve(g, out, a, b, which="upper"):
+def vjpA_trisolve(g, out, a, b, which=None):
 
-    return - tri(which)(tn.trisolve(a.H, g, which) @ out.T)
+    return - tri(which)(la.trisolve(a.H, g, which=which) @ out.T)
     
 
-def vjpB_trisolve(g, out, a, b, which="upper"):
+def vjpB_trisolve(g, out, a, b, which=None):
 
-    return tn.trisolve(a.H, g, which)
+    return la.trisolve(a.H, g, which)
 
 
 
 
 # --- Record linalg solver VJPs --------------------------------------------- #
 
-ad.makevjp(tn.solve,    vjpA_solve,    vjpB_solve)
-ad.makevjp(tn.trisolve, vjpA_trisolve, vjpB_trisolve)
+ad.makevjp(la.solve,    vjpA_solve,    vjpB_solve)
+ad.makevjp(la.trisolve, vjpA_trisolve, vjpB_trisolve)
     
 
     

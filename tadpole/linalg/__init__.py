@@ -2,6 +2,14 @@
 # -*- coding: utf-8 -*-
 
 
+
+# --- Pure routines for matrix-like (2D) tensors ---------------------------- #
+
+from . import matrix
+
+
+
+
 # --- Types ----------------------------------------------------------------- #
 
 from .types import (
@@ -37,7 +45,7 @@ from .truncation import (
 
 
 
-# --- Linalg routines: decomposition ---------------------------------------- #
+# --- Linalg routines ------------------------------------------------------- #
 
 from .core import (
    svd,
@@ -63,6 +71,12 @@ from .core import (
    solve,
    trisolve,
 )
+
+
+
+
+
+
 
 
 

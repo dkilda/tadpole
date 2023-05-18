@@ -103,9 +103,9 @@ class LinalgTransform:
 
    def concat(self, inds, which=None, **opts):
 
-       axis = {"left": 0, "right": 1}[which] 
-
+       axis = {None: 0, "left": 0, "right": 1}[which] 
        data = ar.concat(self._data, axis=axis, **opts)
+
        return tn.TensorGen(data, inds)
 
 
