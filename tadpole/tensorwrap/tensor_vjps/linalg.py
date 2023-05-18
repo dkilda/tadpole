@@ -51,7 +51,7 @@ def fmatrix(s):
 
 # --- SVD ------------------------------------------------------------------- #
 
-def vjp_svd(g, out, x):
+def vjp_svd(g, out, x, sind=None, trunc=None):
 
     """
     https://arxiv.org/pdf/1909.02659.pdf
@@ -60,6 +60,7 @@ def vjp_svd(g, out, x):
 
     """
     lind, rind = tn.union_inds(x)
+
     du, ds, dv = g[0],   g[1],   g[2].H
     u,  s,  v  = out[0], out[1], out[2].H
 
@@ -103,7 +104,7 @@ def vjp_svd(g, out, x):
 
 # --- Eigendecomposition (general) ------------------------------------------ #
 
-def vjp_eig(g, out, x):
+def vjp_eig(g, out, x, sind=None, trunc=None):
 
     """
     https://arxiv.org/abs/1701.00392
@@ -135,7 +136,7 @@ def vjp_eig(g, out, x):
 
 # --- Eigendecomposition (Hermitian) ---------------------------------------- #
 
-def vjp_eigh(g, out, x):
+def vjp_eigh(g, out, x, sind=None, trunc=None):
 
     """
     https://arxiv.org/abs/1701.00392
@@ -172,9 +173,10 @@ def vjp_eigh(g, out, x):
 
 
 
+
 # --- QR decomposition ------------------------------------------------------ #
 
-def vjp_qr(g, out, x):
+def vjp_qr(g, out, x, sind=None):
 
     """
     https://arxiv.org/abs/2009.10071
@@ -188,7 +190,7 @@ def vjp_qr(g, out, x):
 
     def hcopyltu(m):
 
-        return m.H("ji") + tril(m("ij")) * (m("ij") - m.H("ji")) 
+        return m.H("ji") + la.tril(m("ij")) * (m("ij") - m.H("ji")) 
 
 
     def kernel(q, dq, r, dr):
@@ -220,7 +222,7 @@ def vjp_qr(g, out, x):
 
 # --- LQ decomposition ------------------------------------------------------ #
 
-def vjp_lq(g, out, x):
+def vjp_lq(g, out, x, sind=None):
 
     """
     https://arxiv.org/abs/2009.10071
@@ -284,7 +286,7 @@ ad.makevjp(la.lq,   vjp_lq)
 
 # --- Norm ------------------------------------------------------------------ #
 
-def vjp_norm(g, out, x, order=None):
+def vjp_norm(g, out, x, order=None, **opts):
 
     """
     https://people.maths.ox.ac.uk/gilesm/files/NA-08-01.pdf
@@ -316,10 +318,9 @@ def vjp_norm(g, out, x, order=None):
 
 def vjp_inv(g, out, x):
 
-    lind, rind = tn.union_inds(x)
+    grad = -out.T("ij") @ g("jk") @ out.T("kl")
 
-    grad = - out.T("ij") @ g("jk") @ out.T("kl")
-    return grad(lind, rind)
+    return grad(*tn.union_inds(x))
 
 
 
@@ -334,7 +335,7 @@ def vjp_det(g, out, x):
 
 # --- Trace ----------------------------------------------------------------- #
 
-def vjp_trace(g, out, x):
+def vjp_trace(g, out, x, **opts):
 
     return tn.space(x).eye() * g
 
@@ -350,7 +351,7 @@ def vjp_diag(g, out, x, inds, **opts):
    
 
 
-# --- Stack matrices -------------------------------------------------------- #
+# --- Concatenate matrices -------------------------------------------------- #
 
 def vjp_concat(g, adx, out, xs, inds, which=None, **opts): 
 
@@ -420,7 +421,7 @@ def tri(which):
 
 def vjpA_trisolve(g, out, a, b, which=None):
 
-    return - tri(which)(la.trisolve(a.H, g, which=which) @ out.T)
+    return -tri(which)(la.trisolve(a.H, g, which=which) @ out.T)
     
 
 def vjpB_trisolve(g, out, a, b, which=None):

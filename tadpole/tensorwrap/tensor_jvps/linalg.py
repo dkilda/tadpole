@@ -12,6 +12,17 @@ from tadpole.tensorwrap.tensor_vjps.linalg import (
    tri,
 )
 
+from tadpole.tensorwrap import (
+   ContainerGen,
+)
+
+from tadpole.index import (
+   Index,
+   IndexGen, 
+   IndexLit,
+   Indices,
+)
+
 
 
 
@@ -24,7 +35,7 @@ from tadpole.tensorwrap.tensor_vjps.linalg import (
 
 # --- SVD ------------------------------------------------------------------- #
 
-def jvp_svd(g, out, x):
+def jvp_svd(g, out, x, sind=None, trunc=None):
 
     """
     https://arxiv.org/pdf/1909.02659.pdf
@@ -33,59 +44,64 @@ def jvp_svd(g, out, x):
     Eq. 16-18
 
     """
-    lind, rind = tn.union_inds(x)
-    u, s, v    = out[0], out[1], out[2].H   
-
-    f = fmatrix(s**2)
+    u, s, v = out[0], out[1], out[2].H  
+    f       = fmatrix(s**2)
 
     g1 = u.H("sl") @ dx("lr")   @ v("rz")
     g2 = v.H("sr") @ dx.H("rl") @ u("lz") 
 
-    ds = 0.5 * tn.space(s).eye() * (g1 + g2)
-    du = u @ (f * (g1  * s  + s.T * g2))
-    dv = v @ (f * (s.T * g1 + g2  * s))
+    ds = 0.5 * eye(s,"sz")  * (g1("sz") + g2("sz"))
+    du = u("ls") @ (f("sz") * (g1("sz") * s("1z")  + s("s1")  * g2("sz")))
+    dv = v("rs") @ (f("sz") * (s("s1")  * g1("sz") + g2("sz") * s("1z")))
 
 
-    if x.ldim < x.rdim:
+    if x.shape[0] < x.shape[1]:
 
-       vvH = v @ v.H
-       dv  = dv + (tn.space(vvH).eye() - vvH) @ dx.H @ (u / s)
-
-
-    if x.ldim > x.rdim:
-
-       uuH = u @ u.H
-       du  = du + (tn.space(uuH).eye() - uuH) @ dx @ (v / s) 
+       vvH = v("rs") @ v.H("sR")
+       dv  = dv("rs") \
+           + (eye(vvH) - vvH)("rR") @ dx.H("RL") @ (u("Ls") / s("1s"))
 
 
-    return du, ds, dv.H
+    if x.shape[0] > x.shape[1]:
+
+       uuH = u("ls") @ u.H("sL")
+       du  = du("ls") \
+           + (eye(uuH) - uuH)("lL") @ dx("LR") @ (v("Rs") / s("1s")) 
+
+    du = du(*tn.union_inds(u))
+    dv = dv(*tn.union_inds(v))
+    ds = la.diag(ds, tuple(tn.union_inds(s)))
+
+    return ContainerGen(du, ds, dv.H)
 
 
 
 
 # --- Eigendecomposition (general) ------------------------------------------ #
 
-def jvp_eig(g, out, x): 
+def jvp_eig(g, out, x, sind=None, trunc=None): 
 
     """
     https://people.maths.ox.ac.uk/gilesm/files/NA-08-01.pdf    
 
     """
-
     v, s = out
     f    = fmatrix(s)
 
-    dv = v @ (f * (tn.inv(v) @ g @ v))
-    ds = tn.space(s).eye() * (tn.inv(v) @ g @ v)
+    dv = v("rs") @ (f("sz") * (la.inv(v)("sm") @ g("mn") @ v("nz")))
+    ds = eye(s,"sz") * (la.inv(v)("sm") @ g("mn") @ v("nz"))
 
-    return (dv, ds)
+    dv = dv(*tn.union_inds(v))
+    ds = la.diag(ds, tuple(tn.union_inds(s)))
+
+    return ContainerGen(dv, ds)
 
     
 
 
 # --- Eigendecomposition (Hermitian) ---------------------------------------- #
 
-def jvp_eigh(g, out, x): 
+def jvp_eigh(g, out, x, sind=None, trunc=None): 
 
     """
     https://people.maths.ox.ac.uk/gilesm/files/NA-08-01.pdf    
@@ -95,17 +111,20 @@ def jvp_eigh(g, out, x):
     v, s = out
     f    = fmatrix(s)
 
-    dv = v @ (f * (v.H @ g @ v))
-    ds = tn.space(s).eye() * (v.H @ g @ v)
+    dv = v("ls") @ (f("sz") * (v.H("sm") @ g("mn") @ v("nz")))
+    ds = eye(s, "sz")       * (v.H("sm") @ g("mn") @ v("nz"))
 
-    return (dv, ds)
+    dv = dv(*tn.union_inds(v))
+    ds = la.diag(ds, tuple(tn.union_inds(s)))
+
+    return ContainerGen(dv, ds)
 
 
 
 
 # --- QR decomposition ------------------------------------------------------ #
 
-def jvp_qr(g, out, x):
+def jvp_qr(g, out, x, sind=None):
 
     """
     https://arxiv.org/abs/2009.10071
@@ -116,49 +135,52 @@ def jvp_qr(g, out, x):
 
     def trisolve(r, a):
     
-        return tn.trisolve(r.H, a.H, "lower").H
+        return la.trisolve(r.H, a.H, which="lower").H
 
 
     def trisym(m):
 
-        space = tn.space(m)
-        E     = 2 * space.tril() + space.eye()
+        E = 2 * la.tril(m("ij")) + eye(m("ij"))
 
-        return 0.5 * (m + m.H) * E.H
+        return 0.5 * (m("ij") + m.H("ji")) * E.H("ji")
 
 
     def kernel(q, r, dx):
 
-        c = trisolve(r, q.H @ dx) 
-
-        dr = trisym(c) @ r
-        dq = trisolve(r, dx - q @ dr)
+        c  = trisolve(r("sr"), q.H("zl") @ dx("lr")) 
+        dr = trisym(c)("sz") @ r("zr")
+        dq = trisolve(r("sr"), dx("lr") - q("ls") @ dr("sr"))
 
         return dq, dr
 
 
     q, r = out
 
-    if x.ldim >= x.rdim:
+    if x.shape[0] >= x.shape[1]:
        return kernel(q, r, g)
 
-    dx1, dx2 = g[:, : x.ldim], g[:, x.ldim :]
-    x1,  x2  = x[:, : x.ldim], x[:, x.ldim :]
-    r1,  r2  = r[:, : x.ldim], r[:, x.ldim :]
+    dx1, dx2 = g[:, : x.shape[0]], g[:, x.shape[0] :]
+    x1,  x2  = x[:, : x.shape[0]], x[:, x.shape[0] :]
+    r1,  r2  = r[:, : x.shape[0]], r[:, x.shape[0] :]
 
     dq, dr1 = kernel(q, r1, dx1)
-    dr2     = q.H @ (dx2 - dq @ r2) 
+    dr2     = q.H("sl") @ (dx2("lr") - dq("lz") @ r2("zr")) 
 
-    dr = tn.stack((dr1, dr2), "right")
+    dr = la.concat(
+            (dr1("sr"), dr2("sR")), tuple(tn.union_inds(r)), which="right"
+         )
 
-    return dq, dr
+    dq = dq(*tn.union_inds(q)) 
+    dr = dr(*tn.union_inds(r)) 
+
+    return ContainerGen(dq, dr)
 
 
 
 
 # --- LQ decomposition ------------------------------------------------------ #
 
-def jvp_lq(g, out, x):
+def jvp_lq(g, out, x, sind=None):
 
     """
     https://arxiv.org/abs/2009.10071
@@ -169,40 +191,41 @@ def jvp_lq(g, out, x):
 
     def trisolve(l, a):
     
-        return tn.trisolve(l, a, "lower")
+        return la.trisolve(l, a, which="lower")
 
 
     def trisym(m):
 
-        space = tn.space(m)
-        E     = 2 * space.tril() + space.eye()
+        E = 2 * la.tril(m("ij")) + eye(m("ij"))
 
-        return 0.5 * (m + m.H) * E
+        return 0.5 * (m("ij") + m.H("ji")) * E("ij")
 
 
     def kernel(l, q, dx):
 
-        c = trisolve(l, dx @ q.H) 
+        c = trisolve(l("ls"), dx("lr") @ q.H("rz")) 
 
-        dl = l @ trisym(c)
-        dq = trisolve(l, dx - dl @ q)
+        dl = l("ls") @ trisym(c)("sz")
+        dq = trisolve(l("ls"), dx("lr") - dl("lz") @ q("zr"))
 
         return dl, dq
 
 
     l, q = out
 
-    if x.ldim <= x.rdim:
+    if x.shape[0] <= x.shape[1]:
        return kernel(l, q, g)
 
-    dx1, dx2 = g[: x.rdim, :], g[: x.rdim, :]
-    x1,  x2  = x[: x.rdim, :], x[: x.rdim, :]
-    l1,  l2  = l[: x.rdim, :], l[: x.rdim, :]
+    dx1, dx2 = g[: x.shape[1], :], g[: x.shape[1], :]
+    x1,  x2  = x[: x.shape[1], :], x[: x.shape[1], :]
+    l1,  l2  = l[: x.shape[1], :], l[: x.shape[1], :]
 
     dl1, dq = kernel(l1, q, dx1)
-    dl2     = (dx2 - l2 @ dq) @ q.H 
+    dl2     = (dx2("Lr") - l2("Ls") @ dq("sr")) @ q.H("rz") 
 
-    dl = tn.stack((dl1, dl2), "left")
+    dl = la.concat(
+            (dl1("ls"), dl2("Ls")), tuple(tn.union_inds(l)), which="left"
+         )
 
     return dl, dq
 
@@ -211,11 +234,11 @@ def jvp_lq(g, out, x):
 
 # --- Record decomp JVPs to JVP map ----------------------------------------- # 
 
-ad.makejvp(tn.svd,  jvp_svd)
-ad.makejvp(tn.eig,  jvp_eig)
-ad.makejvp(tn.eigh, jvp_eigh)
-ad.makejvp(tn.qr,   jvp_qr)
-ad.makejvp(tn.lq,   jvp_lq)
+ad.makejvp(la.svd,  jvp_svd)
+ad.makejvp(la.eig,  jvp_eig)
+ad.makejvp(la.eigh, jvp_eigh)
+ad.makejvp(la.qr,   jvp_qr)
+ad.makejvp(la.lq,   jvp_lq)
 
 
 
@@ -229,7 +252,7 @@ ad.makejvp(tn.lq,   jvp_lq)
 
 # --- Norm ------------------------------------------------------------------ #
 
-def jvp_norm(g, out, x, order=None):
+def jvp_norm(g, out, x, order=None, **opts):
 
     """
     https://people.maths.ox.ac.uk/gilesm/files/NA-08-01.pdf
@@ -244,7 +267,7 @@ def jvp_norm(g, out, x, order=None):
 
     if order == 'nuc':
 
-       U, S, VH = tn.svd(x)
+       U, S, VH = la.svd(x)
 
        return tn.sum(g * (U @ VH))
 
@@ -261,8 +284,9 @@ def jvp_norm(g, out, x, order=None):
 
 def jvp_inv(g, out, x):
 
-    return - out @ g @ out
+    grad = -out("ij") @ g("jk") @ out("kl")
 
+    return grad(*tn.union_inds(out))
 
 
 
@@ -270,23 +294,23 @@ def jvp_inv(g, out, x):
 
 def jvp_det(g, out, x):
 
-    return out * tn.trace(tn.inv(x) * g)  
+    return out * la.trace(la.inv(x) * g)  
 
 
 
 
 # --- Trace ----------------------------------------------------------------- #
 
-def jvp_trace(g, out, x):
+def jvp_trace(g, out, x, **opts):
 
-    return tn.trace(g)
-
-
+    return la.trace(g, **opts)
 
 
-# --- Stack matrices -------------------------------------------------------- #
 
-def jvp_stack(g, adx, out, xs, ind):
+
+# --- Concatenate matrices -------------------------------------------------- #
+
+def jvp_concat(g, adx, out, xs, inds, which=None, **opts):
 
     def grad(idx):
 
@@ -297,24 +321,23 @@ def jvp_stack(g, adx, out, xs, ind):
 
     gs = tuple(grad(idx) for idx in range(len(xs)))
       
-    return tn.stack(gs, ind)
+    return la.concat(gs, inds, which=which, **opts)
 
 
 
 
 # --- Record standard linalg JVPs ------------------------------------------- #
 
-ad.makejvp(tn.norm,  jvp_norm)
-ad.makejvp(tn.inv,   jvp_inv)
-ad.makejvp(tn.det,   jvp_det)
-ad.makejvp(tn.trace, jvp_trace)
-ad.makejvp(tn.diag,  "linear")
+ad.makejvp(la.norm,  jvp_norm)
+ad.makejvp(la.inv,   jvp_inv)
+ad.makejvp(la.det,   jvp_det)
+ad.makejvp(la.trace, jvp_trace)
+ad.makejvp(la.diag,  "linear")
 
-ad.makejvp(tn.tril,  lambda g, out, x, which=0: tn.tril(g, which=which))
-ad.makejvp(tn.triu,  lambda g, out, x, which=0: tn.triu(g, which=which))
+ad.makejvp(la.tril,  lambda g, out, x, **opts: la.tril(g, **opts))
+ad.makejvp(la.triu,  lambda g, out, x, **opts: la.triu(g, **opts))
 
-ad.makejvp_combo(tn.stack, jvp_stack)
-ad.makejvp_combo(tn.dot,   "linear")
+ad.makejvp_combo(la.concat, jvp_concat)
 
 
 
@@ -330,34 +353,34 @@ ad.makejvp_combo(tn.dot,   "linear")
 
 def jvpA_solve(g, out, a, b):
 
-    return - tn.solve(a, g @ out)
+    return -la.solve(a, g @ out)
 
 
 def jvpB_solve(g, out, a, b):
 
-    return tn.solve(a, g)
+    return la.solve(a, g)
 
 
 
 
 # --- Solve the equation ax = b, assuming a is a triangular matrix ---------- #
 
-def jvpA_trisolve(g, out, a, b, which="upper"):
+def jvpA_trisolve(g, out, a, b, which=None):
 
-    return - tri(which)(tn.trisolve(a, g @ out, which))
+    return -tri(which)(la.trisolve(a, g @ out, which=which))
 
 
-def jvpB_trisolve(g, out, a, b, which="upper"):
+def jvpB_trisolve(g, out, a, b, which=None):
 
-    return tn.trisolve(a, g, which)
+    return la.trisolve(a, g, which)
 
 
 
 
 # --- Record linalg solver JVPs --------------------------------------------- #
 
-ad.makejvp(tn.solve,    jvpA_solve,    jvpB_solve)
-ad.makejvp(tn.trisolve, jvpA_trisolve, jvpB_trisolve)
+ad.makejvp(la.solve,    jvpA_solve,    jvpB_solve)
+ad.makejvp(la.trisolve, jvpA_trisolve, jvpB_trisolve)
 
 
 
