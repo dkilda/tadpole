@@ -56,10 +56,13 @@ class TestLinalgTransforms:
 
 
    @pytest.mark.parametrize("shapes, inds, outshape, outinds, which, axis", [
+      [[(4,4), (4,4)       ], ["ij", "ij"      ], (8,4),  "lr", None,    0], 
       [[(4,4), (4,4)       ], ["ij", "ij"      ], (8,4),  "lr", "left",  0], 
-      [[(4,4), (4,4)       ], ["ij", "ij"      ], (4,8),  "lr", "right", 1], 
+      [[(4,4), (4,4)       ], ["ij", "ij"      ], (4,8),  "lr", "right", 1],
+      [[(4,4), (5,4)       ], ["ij", "kj"      ], (9,4),  "lr", None,    0],  
       [[(4,4), (5,4)       ], ["ij", "kj"      ], (9,4),  "lr", "left",  0], 
       [[(4,4), (4,5)       ], ["ij", "ik"      ], (4,9),  "lr", "right", 1], 
+      [[(4,4), (5,4), (6,4)], ["ij", "kj", "lj"], (15,4), "lr", None,    0], 
       [[(4,4), (5,4), (6,4)], ["ij", "kj", "lj"], (15,4), "lr", "left",  0], 
       [[(4,4), (4,5), (4,6)], ["ij", "ik", "il"], (4,15), "lr", "right", 1], 
    ])   
@@ -70,7 +73,11 @@ class TestLinalgTransforms:
            )
        v = data.indices_dat(outinds, outshape)
 
-       out = lat.concat(w.tensors, v.inds, which=which)
+       if   which is None:
+            out = lat.concat(w.tensors, v.inds)
+       else:
+            out = lat.concat(w.tensors, v.inds, which=which)
+
        ans = ar.concat(w.arrays, axis=axis)
        ans = tn.TensorGen(ans, v.inds)
 

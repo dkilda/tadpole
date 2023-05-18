@@ -58,7 +58,7 @@ class TestLinalgProperties:
       data.property_input_002,
    ])
    @pytest.mark.parametrize("order", [
-      None, "fro", "nuc", 1, 2, -1, -2, 
+      None, "fro", "nuc", 
    ])
    @pytest.mark.parametrize("alignment", [
       "l", "r", "lr", 

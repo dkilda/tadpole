@@ -110,6 +110,12 @@ class LinalgProperties:
 
    def norm(self, order=None, **opts):
 
+       if order not in (None, 'fro', 'nuc'):
+          raise ValueError(
+             f"norm: invalid norm order {order} provided. The order must "
+             f"be one of: None, 'fro', 'nuc'."
+          )
+
        return self._apply(ar.norm, order=order, **opts)
 
 

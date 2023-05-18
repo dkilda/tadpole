@@ -60,7 +60,6 @@ def vjp_svd(g, out, x):
 
     """
     lind, rind = tn.union_inds(x)
-
     du, ds, dv = g[0],   g[1],   g[2].H
     u,  s,  v  = out[0], out[1], out[2].H
 
@@ -305,20 +304,9 @@ def vjp_norm(g, out, x, order=None):
        return g * (U @ VH)
 
 
-    if isinstance(order, int):
-
-       if not (x.shape[0] == 1 or x.shape[1] == 1):
-          raise ValueError(
-             f"vjp_norm: an integer norm order {order} is only valid for " 
-             f"vectors, but x has dimensions ({x.shape[0]}, {x.shape[1]})."
-          )
-
-       return (g / out**(order-1)) * x * tn.abs(x)**(order-2)
-
-
     raise ValueError(
        f"vjp_norm: invalid norm order {order} provided. The order must "
-       f"be one of: None, 'fro', 'nuc', or an integer vector norm order."
+       f"be one of: None, 'fro', 'nuc'."
     )
 
 
@@ -365,14 +353,19 @@ def vjp_diag(g, out, x, inds, **opts):
 # --- Stack matrices -------------------------------------------------------- #
 
 def vjp_concat(g, adx, out, xs, inds, which=None, **opts): 
-                              
-    axis  = {None: 0, "left": 0, "right": 1}[which]   
-                                        
-    start = sum([x("left","right").shape[axis] for x in xs[:adx]])
+
+    axis = {
+            None:    0, 
+            "left":  0, 
+            "right": 1,
+           }[which]
+                           
+    start = sum([x.shape[axis] for x in xs[:adx]])
     size  = xs[adx].shape[axis] 
 
-    adx_slice = slice(start, start + size)
-
+    adx_slice = {axis: slice(start, start + size), 1 - axis: slice(None)}
+    adx_slice = tuple(adx_slice[i] for i in range(out.ndim))
+    
     return g[adx_slice](*tn.union_inds(xs[adx])) 
 
 

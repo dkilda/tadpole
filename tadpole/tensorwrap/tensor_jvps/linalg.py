@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import tadpole.util     as util
-import tadpole.autodiff as ad
-import tadpole.tensor   as tn
-
+import tadpole.util          as util
+import tadpole.autodiff      as ad
+import tadpole.tensor        as tn
+import tadpole.linalg.matrix as la
 
 from tadpole.tensorwrap.tensor_vjps.linalg import (
+   eye,
    fmatrix,
    tri,
 )
@@ -32,13 +33,13 @@ def jvp_svd(g, out, x):
     Eq. 16-18
 
     """
-
-    u, s, v = out[0], out[1], out[2].H   
+    lind, rind = tn.union_inds(x)
+    u, s, v    = out[0], out[1], out[2].H   
 
     f = fmatrix(s**2)
 
-    g1 = u.H @ dx   @ v
-    g2 = v.H @ dx.H @ u 
+    g1 = u.H("sl") @ dx("lr")   @ v("rz")
+    g2 = v.H("sr") @ dx.H("rl") @ u("lz") 
 
     ds = 0.5 * tn.space(s).eye() * (g1 + g2)
     du = u @ (f * (g1  * s  + s.T * g2))
@@ -248,20 +249,9 @@ def jvp_norm(g, out, x, order=None):
        return tn.sum(g * (U @ VH))
 
 
-    if isinstance(order, int):
-
-       if not (x.ldim == 1 or x.rdim == 1):
-          raise ValueError(
-             f"jvp_norm: an integer norm order {order} is only valid for " 
-             f"vectors, but x has dimensions ({x.ldim}, {x.rdim})."
-          )
-
-       return tn.sum(g * x * tn.abs(x)**(order-2)) / out**(order-1) 
-
-
     raise ValueError(
        f"jvp_norm: invalid norm order {order} provided. The order must "
-       f"be one of: None, 'fro', 'nuc', or an integer vector norm order."
+       f"be one of: None, 'fro', 'nuc'."
     )
 
 
