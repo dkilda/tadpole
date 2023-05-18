@@ -624,6 +624,25 @@ class TestTensorGen:
        assert w.tensor(*inds1) == ans
 
 
+   @pytest.mark.parametrize("shape, indnames, indnames1, inds1", [
+      [(2,3,4), "ijk", "aib",  ( 
+                                IndexLit("a",2), 
+                                IndexLit("i",3), 
+                                IndexLit("b",4),
+                               )],
+   ])
+   def test_call_003(self, shape, indnames, indnames1, inds1):
+
+       w = data.tensor_dat(data.randn)(
+              self.backend, indnames, shape
+           ) 
+       ans = tn.TensorGen(w.array, inds1)
+       out = w.tensor(indnames1)
+
+       assert out(indnames1) == ans
+       assert out(indnames1) is out
+
+
    @pytest.mark.parametrize("indnames, shape", [
       ["ijk", (2,3,4)],
    ])
