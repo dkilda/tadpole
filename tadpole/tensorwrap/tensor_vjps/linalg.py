@@ -59,45 +59,44 @@ def vjp_svd(g, out, x, sind=None, trunc=None):
     Eq. 1, 2, 36 (take complex conjugate of both sides)
 
     """
-    lind, rind = tn.union_inds(x)
 
     du, ds, dv = g[0],   g[1],   g[2].H
     u,  s,  v  = out[0], out[1], out[2].H
 
-    f = fmatrix(s**2)
+    f = fmatrix(s**2)("ij")
 
-    uTdu = u.T("sl") @ du("lz")
-    vTdv = v.T("sr") @ dv("rz")
+    uTdu = u.T("im") @ du("mj")
+    vTdv = v.T("im") @ dv("mj")
 
-    g1 = eye(s,"sz") * ds("s1") 
-    g1 = g1 + f("sz") * s("1z") * (uTdu - uTdu.H)("sz")  
-    g1 = g1 + f("sz") * s("s1") * (vTdv - vTdv.H)("sz")
-
-
+    grad = eye(s,"ij") * ds("i1") 
+    grad = grad + f *  s("1j") * (uTdu - uTdu.H)  
+    grad = grad + f *  s("i1") * (vTdv - vTdv.H)
+ 
     if tn.iscomplex(u):
-       g1 = g1 + 1j * tn.imag(eye(uTdu) * uTdu)("sz") / s("s1")
+       grad = grad + 1j * tn.imag(eye(uTdu) * uTdu) / s("i1")
+
+    grad = u("li").C @ grad("ij") @ v.T("jr") 
 
 
-    g1 = u("ls").C @ g1("sz") @ v.T("zr") 
+    if x.shape[0] < x.shape[1]: 
+
+       vvH  = v("bm") @ v.H("mr")
+       grad = grad \
+            + ((u("la") / s("1a")) @ dv.T("ab") @ (eye(vvH) - vvH)).C
+
+       return grad(*tn.union_inds(x))
 
 
-    if len(lind) < len(rind): 
+    if x.shape[0] > x.shape[1]:
 
-       vvH = v("Rs") @ v.H("sr")
+       uuH  = u("bm") @ u.H("ml")
+       grad = grad \
+            + ((v("ra") / s("1a")) @ du.T("ab") @ (eye(uuH) - uuH)).T
 
-       g1 = g1 + (u("ls") / s("1s")) @ dv.T("sR") @ (eye(vvH) - vvH)("Rr")
-       return g1(lind, rind)
-
-
-    if len(lind) > len(rind):
-
-       uuH = u("ls") @ u.H("sL")
-
-       g1 = g1 + (eye(uuH) - uuH)("lL") @ du("Ls") @ (v.T("sr") / s("s1")) 
-       return g1(lind, rind)
+       return grad(*tn.union_inds(x))
 
 
-    return g1(lind, rind)
+    return grad(*tn.union_inds(x))
 
     
 
@@ -112,24 +111,23 @@ def vjp_eig(g, out, x, sind=None):
     Eq. 4.77 (take complex conjugate of both sides)
 
     """
-    lind, rind = tn.union_inds(x)
 
     dv, ds = g
     v,  s  = out
 
-    f     = fmatrix(s)
-    vdiag = tn.real(v.T("sr") @ dv("rz")) * eye(s, "sz")
+    f    = fmatrix(s)("ij")
+    vTdv = v.T("im") @ dv("mj")
 
-    g1 = f("sz") * (v.T("sr") @  dv("rz"))
-    g2 = f("sz") * (v.T("sr") @ v.C("rz")) @ vdiag("sz")
+    grad1 = f * vTdv  
+    grad2 = f * (v.T("im") @ v.C("mn") @ (tn.real(vTdv) * eye(vTdv))("nj"))
 
-    g12 = ds("1z") * eye(s, "sz") + g1("sz") - g2("sz")
-    g12 = la.inv(v.T)("ls") @ g12("sz") @ v.T("zr")
+    grad = ds("1j") * eye(s,"ij") + grad1 - grad2
+    grad = la.inv(v.T)("li") @ grad("ij") @ v.T("jr")
     
     if not tn.iscomplex(x):
-       return tn.real(g12)(lind, rind)
+       grad = tn.real(grad)
 
-    return g12(lind, rind)
+    return grad(*tn.union_inds(x))
 
 
 
@@ -151,25 +149,21 @@ def vjp_eigh(g, out, x, sind=None):
       https://www.tensorflow.org/api_docs/python/tf/linalg/eigh
 
     """
-    lind, rind = tn.union_inds(x)
 
     dv, ds = g
     v,  s  = out
 
-    grad = (v.C("ls") * ds("1s")) @ v.T("sr")
+    grad = (v.C("lm") * ds("1m")) @ v.T("mr")
 
     if not tn.allclose(dv, tn.space(dv).zeros()): 
 
-       f    = fmatrix(s)
-       grad = (
-          grad + 
-          v.C("ls") @ (f("sz") * (v.T("sn") @ dv.C("nz"))) @ v.T("zr")
-       )
+       f    = fmatrix(s)("ij")
+       grad = grad + v.C("li") @ (f * (v.T("im") @ dv("mj"))) @ v.T("jr")
 
-    tl = la.tril(tn.space(x).ones()("lr"), k=-1)
-
-    grad = tn.real(grad) * eye(grad, "lr") + (grad + grad.H) * tl        
-    return grad(lind, rind)
+    tl   = la.tril(tn.space(grad).ones(), k=-1)
+    grad = tn.real(grad) * eye(grad) + (grad + grad.H) * tl 
+       
+    return grad(*tn.union_inds(x))
 
 
 
@@ -200,22 +194,22 @@ def vjp_qr(g, out, x, sind=None):
         return trisolve(r("sr"), dq("ls") + q("lz") @ hcopyltu(m)("zs"))
 
 
-    lind, rind = tn.union_inds(x)
-
     dq, dr = g
     q,  r  = out
 
-    if len(lind) >= len(rind):
-       return kernel(q, dq, r, dr)(lind, rind)
+    if x.shape[0] >= x.shape[1]:
+       return kernel(q, dq, r, dr)(*tn.union_inds(x))
 
-    x1,  x2  =  x[:, : len(lind)],  x[:, len(lind) :]
-    r1,  r2  =  r[:, : len(lind)],  r[:, len(lind) :]
-    dr1, dr2 = dr[:, : len(lind)], dr[:, len(lind) :]
+    x1,  x2  =  x[:, : x.shape[0]],  x[:, x.shape[0] :]
+    r1,  r2  =  r[:, : x.shape[0]],  r[:, x.shape[0] :]
+    dr1, dr2 = dr[:, : x.shape[0]], dr[:, x.shape[0] :]
 
     dx1 = kernel(q, dq("ls") + x2("lr") @ dr2.H("rs"), r1, dr1)
     dx2 = q("ls") @ dr2("sr")
 
-    return la.concat((dx1("lr"), dx2("lR")), (lind, rind), which="right")
+    return la.concat(
+       (dx1("lr"), dx2("lR")), tuple(tn.union_inds(x)), which="right"
+    )
 
 
 
@@ -246,22 +240,22 @@ def vjp_lq(g, out, x, sind=None):
         return trisolve(l("ls"), dq("sr") + q("sR") @ hcopyltu(m)("Rr"))
 
 
-    lind, rind = tn.union_inds(x)
-
     dl, dq = g
     l,  q  = out
 
-    if len(lind) <= len(rind):
-       return kernel(l, dl, q, dq)(lind, rind)
+    if x.shape[0] <= x.shape[1]:
+       return kernel(l, dl, q, dq)(*tn.union_inds(x))
 
-    x1,  x2  =  x[: len(rind), :],  x[len(rind) :, :]
-    l1,  l2  =  l[: len(rind), :],  l[len(rind) :, :]
-    dl1, dl2 = dl[: len(rind), :], dl[len(rind) :, :]
+    x1,  x2  =  x[: x.shape[1], :],  x[x.shape[1] :, :]
+    l1,  l2  =  l[: x.shape[1], :],  l[x.shape[1] :, :]
+    dl1, dl2 = dl[: x.shape[1], :], dl[x.shape[1] :, :]
 
     dx1 = kernel(l1, dl1, q, dq("sr") + dl2.H("sl") @ x2("lr"))
     dx2 = dl2("ls") @ q("sr")
 
-    return la.concat((dx1("lr"), dx2("lR")), (lind, rind), which="left")
+    return la.concat(
+       (dx1("lr"), dx2("lR")), tuple(tn.union_inds(x)), which="left"
+    )
 
 
 
@@ -347,7 +341,7 @@ def vjp_inv(g, out, x):
 
 def vjp_diag(g, out, x, inds, **opts): 
 
-    return la.diag(g, tuple(tn.union_inds(x)))
+    return la.diag(g, tuple(tn.union_inds(x)), **opts)
 
    
 
@@ -365,10 +359,10 @@ def vjp_concat(g, adx, out, xs, inds, which=None, **opts):
     start = sum([x.shape[axis] for x in xs[:adx]])
     size  = xs[adx].shape[axis] 
 
-    adx_slice = {axis: slice(start, start + size), 1 - axis: slice(None)}
-    adx_slice = tuple(adx_slice[i] for i in range(out.ndim))
+    adx_slice       = [slice(None), slice(None)]
+    adx_slice[axis] = slice(start, start + size)
     
-    return g[adx_slice](*tn.union_inds(xs[adx])) 
+    return g[tuple(adx_slice)](*tn.union_inds(xs[adx])) 
 
 
 

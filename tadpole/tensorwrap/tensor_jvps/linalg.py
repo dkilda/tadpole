@@ -280,15 +280,6 @@ def jvp_norm(g, out, x, order=None, **opts):
 
 
 
-# --- Trace ----------------------------------------------------------------- #
-
-def jvp_trace(g, out, x, **opts):
-
-    return la.trace(g, **opts)
-
-
-
-
 # --- Determinant ----------------------------------------------------------- #
 
 def jvp_det(g, out, x):
@@ -330,13 +321,12 @@ def jvp_concat(g, adx, out, xs, inds, which=None, **opts):
 # --- Record standard linalg JVPs ------------------------------------------- #
 
 ad.makejvp(la.norm,  jvp_norm)
-ad.makejvp(la.inv,   jvp_inv)
+ad.makejvp(la.trace, "linear")
 ad.makejvp(la.det,   jvp_det)
-ad.makejvp(la.trace, jvp_trace)
+ad.makejvp(la.inv,   jvp_inv)
 ad.makejvp(la.diag,  "linear")
-
-ad.makejvp(la.tril,  lambda g, out, x, **opts: la.tril(g, **opts))
-ad.makejvp(la.triu,  lambda g, out, x, **opts: la.triu(g, **opts))
+ad.makejvp(la.tril,  "linear")
+ad.makejvp(la.triu,  "linear")
 
 ad.makejvp_combo(la.concat, jvp_concat)
 
