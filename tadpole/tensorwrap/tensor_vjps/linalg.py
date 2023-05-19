@@ -104,7 +104,7 @@ def vjp_svd(g, out, x, sind=None, trunc=None):
 
 # --- Eigendecomposition (general) ------------------------------------------ #
 
-def vjp_eig(g, out, x, sind=None, trunc=None):
+def vjp_eig(g, out, x, sind=None):
 
     """
     https://arxiv.org/abs/1701.00392
@@ -136,7 +136,7 @@ def vjp_eig(g, out, x, sind=None, trunc=None):
 
 # --- Eigendecomposition (Hermitian) ---------------------------------------- #
 
-def vjp_eigh(g, out, x, sind=None, trunc=None):
+def vjp_eigh(g, out, x, sind=None):
 
     """
     https://arxiv.org/abs/1701.00392
@@ -314,13 +314,12 @@ def vjp_norm(g, out, x, order=None, **opts):
 
 
 
-# --- Inverse --------------------------------------------------------------- #
+# --- Trace ----------------------------------------------------------------- #
 
-def vjp_inv(g, out, x):
+def vjp_trace(g, out, x, **opts):
 
-    grad = -out.T("ij") @ g("jk") @ out.T("kl")
+    return tn.space(x).eye() * g
 
-    return grad(*tn.union_inds(x))
 
 
 
@@ -333,11 +332,13 @@ def vjp_det(g, out, x):
 
 
 
-# --- Trace ----------------------------------------------------------------- #
+# --- Inverse --------------------------------------------------------------- #
 
-def vjp_trace(g, out, x, **opts):
+def vjp_inv(g, out, x):
 
-    return tn.space(x).eye() * g
+    grad = -out.T("ij") @ g("jk") @ out.T("kl")
+
+    return grad(*tn.union_inds(x))
 
 
 
@@ -375,9 +376,9 @@ def vjp_concat(g, adx, out, xs, inds, which=None, **opts):
 # --- Record standard linalg VJPs ------------------------------------------- #
 
 ad.makevjp(la.norm,  vjp_norm)
-ad.makevjp(la.inv,   vjp_inv)
-ad.makevjp(la.det,   vjp_det)
 ad.makevjp(la.trace, vjp_trace)
+ad.makevjp(la.det,   vjp_det)
+ad.makevjp(la.inv,   vjp_inv)
 ad.makevjp(la.diag,  vjp_diag)
 
 ad.makevjp(la.tril, lambda g, out, x, **opts: la.tril(g, **opts))

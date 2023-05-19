@@ -33,8 +33,6 @@ from tadpole.index import (
 def aligned(fun):
 
     def wrap(x, *args, linds=None, rinds=None, **kwargs):
-
-        print("ALIGNED: ", linds, rinds, x, args, kwargs)
       
         inds = Indices(*tn.union_inds(x))
 

@@ -79,7 +79,7 @@ def jvp_svd(g, out, x, sind=None, trunc=None):
 
 # --- Eigendecomposition (general) ------------------------------------------ #
 
-def jvp_eig(g, out, x, sind=None, trunc=None): 
+def jvp_eig(g, out, x, sind=None): 
 
     """
     https://people.maths.ox.ac.uk/gilesm/files/NA-08-01.pdf    
@@ -101,7 +101,7 @@ def jvp_eig(g, out, x, sind=None, trunc=None):
 
 # --- Eigendecomposition (Hermitian) ---------------------------------------- #
 
-def jvp_eigh(g, out, x, sind=None, trunc=None): 
+def jvp_eigh(g, out, x, sind=None): 
 
     """
     https://people.maths.ox.ac.uk/gilesm/files/NA-08-01.pdf    
@@ -280,13 +280,12 @@ def jvp_norm(g, out, x, order=None, **opts):
 
 
 
-# --- Inverse --------------------------------------------------------------- #
+# --- Trace ----------------------------------------------------------------- #
 
-def jvp_inv(g, out, x):
+def jvp_trace(g, out, x, **opts):
 
-    grad = -out("ij") @ g("jk") @ out("kl")
+    return la.trace(g, **opts)
 
-    return grad(*tn.union_inds(out))
 
 
 
@@ -294,16 +293,18 @@ def jvp_inv(g, out, x):
 
 def jvp_det(g, out, x):
 
-    return out * la.trace(la.inv(x) * g)  
+    return out * la.trace(la.inv(x) * g)
 
 
 
+  
+# --- Inverse --------------------------------------------------------------- #
 
-# --- Trace ----------------------------------------------------------------- #
+def jvp_inv(g, out, x):
 
-def jvp_trace(g, out, x, **opts):
+    grad = -out("ij") @ g("jk") @ out("kl")
 
-    return la.trace(g, **opts)
+    return grad(*tn.union_inds(out))
 
 
 
