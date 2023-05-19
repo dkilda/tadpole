@@ -171,7 +171,6 @@ def jvp_qr(g, out, x, sind=None):
     dr = la.concat(
             (dr1("ia"), dr2("ib")), tuple(tn.union_inds(r)), which="right"
          )
-    dr = dr(*tn.union_inds(r)) 
     dq = dq(*tn.union_inds(q)) 
 
     return ContainerGen(dq, dr)
@@ -226,7 +225,6 @@ def jvp_lq(g, out, x, sind=None):
     dl = la.concat(
             (dl1("ai"), dl2("bi")), tuple(tn.union_inds(l)), which="left"
          )
-    dl = dl(*tn.union_inds(l)) 
     dq = dq(*tn.union_inds(q)) 
 
     return ContainerGen(dl, dq)
