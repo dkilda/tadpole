@@ -229,7 +229,7 @@ def jvp_lq(g, out, x, sind=None):
     dl = dl(*tn.union_inds(l)) 
     dq = dq(*tn.union_inds(q)) 
 
-    return dl, dq
+    return ContainerGen(dl, dq)
 
 
 
