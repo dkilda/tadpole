@@ -533,16 +533,16 @@ class Array(types.Array):
 
    def eig(self):
 
-       U, S, VH = self._backend.eig(self._data)
+       S, V = self._backend.eig(self._data)
 
-       return self.new(U), self.new(S), self.new(VH) 
+       return self.new(S), self.new(V) 
 
 
    def eigh(self):
 
-       U, S, VH = self._backend.eigh(self._data)
+       S, V = self._backend.eigh(self._data)
 
-       return self.new(U), self.new(S), self.new(VH) 
+       return self.new(S), self.new(V)
 
 
    # --- Linear algebra: other methods --- #

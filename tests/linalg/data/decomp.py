@@ -99,8 +99,6 @@ def randn_decomp_000(shape, dtype="complex128", seed=1, backend=None):
 
 
 
-
-
 # --- Decomposition input data ---------------------------------------------- #
 
 DecompInputData = collections.namedtuple("DecompInputData", [
@@ -279,6 +277,103 @@ def lq_tensor_dat(decomp_input):
 
 
 
+# --- Implicit-rank decomposition data -------------------------------------- #
+
+ImplicitDecompData = collections.namedtuple("ImplicitDecompData", [
+                        "xtensor", "ltensor", "stensor",
+                        "xarray",  "larray",  "sarray",
+                        "xmatrix", "lmatrix", "smatrix",
+                        "xinds",   "linds",   "sind",  
+                        "shape",   "lshape",  "srank",
+                        "rshape",  "rinds",   "backend", 
+                     ])
+
+
+
+
+def implicit_decomp_data(datafun):
+
+    def wrap(method, backend, decomp_input_dat, **opts):
+
+        # --- Input --- #
+
+        w = decomp_input_dat 
+        x = data.array_dat(datafun)(backend, (w.lsize, w.rsize), **opts) 
+
+        # --- Matrix decomp --- #
+
+        xmatrix = x.array
+        if method == "eigh":
+           xmatrix = xmatrix + ar.transpose(ar.conj(xmatrix), (1,0))
+              
+        larray, sarray = {
+                          "eig":  ar.eig,
+                          "eigh": ar.eigh,
+                         }[method](xmatrix)
+
+        lmatrix = larray
+        smatrix = sarray
+
+        srank = sarray.shape[0]
+
+        # --- Create tensors --- #
+
+        v = data.indices_dat(w.inds + w.sind, w.shape + (srank,))
+
+        xarray = ar.reshape(xmatrix,  (*w.lshape, *w.rshape))  
+        xarray = ar.transpose(xarray, v.inds.axes(*(w.linds + w.rinds)))  
+        larray = ar.reshape(larray, (*w.lshape, srank))
+
+        sind  = v.inds.map(*w.sind)[0]
+        linds = v.inds.map(*w.linds)       
+        xinds = v.inds.map(*w.inds)
+
+        ltensor = tn.TensorGen(larray, (*linds, sind))
+        stensor = tn.TensorGen(sarray, (sind,))
+        xtensor = tn.TensorGen(xarray, xinds)
+
+        return ImplicitDecompData(
+                  xtensor,   ltensor,   stensor,
+                  xarray,    larray,    sarray,
+                  xmatrix,   lmatrix,   smatrix,                  
+                  xinds,     linds,     sind,    
+                  w.shape,   w.lshape,  srank,
+                  w.rshape,  w.rinds,   x.backend, 
+               )
+
+    return wrap
+
+
+
+
+# --- Eigenvalue decomposition data ----------------------------------------- #
+
+def eig_tensor_dat(decomp_input):
+
+    def wrap(datafun, backend, **opts):
+
+        return implicit_decomp_data(datafun)(
+                  "eig", backend, decomp_input(), **opts
+               )
+    return wrap
+
+
+
+
+# --- Hermitian eigenvalue decomposition data ------------------------------- #
+
+def eigh_tensor_dat(decomp_input):
+
+    def wrap(datafun, backend, **opts):
+
+        return implicit_decomp_data(datafun)(
+                  "eigh", backend, decomp_input(), **opts
+               )
+    return wrap
+
+
+
+
 # --- Explicit-rank decomposition data ---------------------------------------- #
 
 ExplicitDecompData = collections.namedtuple("ExplicitDecompData", [
@@ -305,13 +400,9 @@ def explicit_decomp_data(datafun):
         # --- Matrix decomp --- #
 
         xmatrix = x.array
-        if method == "eigh":
-           xmatrix = xmatrix + ar.transpose(ar.conj(xmatrix), (1,0))
-              
+             
         larray, sarray, rarray = {
                                   "svd":  ar.svd,
-                                  "eig":  ar.eig,
-                                  "eigh": ar.eigh,
                                  }[method](xmatrix)
 
         error                  = trunc.error(sarray)
@@ -370,30 +461,6 @@ def svd_tensor_dat(decomp_input):
 
 
 
-# --- Eigenvalue decomposition data ----------------------------------------- #
-
-def eig_tensor_dat(decomp_input):
-
-    def wrap(datafun, backend, **opts):
-
-        return explicit_decomp_data(datafun)(
-                  "eig", backend, decomp_input(), **opts
-               )
-    return wrap
-
-
-
-
-# --- Hermitian eigenvalue decomposition data ------------------------------- #
-
-def eigh_tensor_dat(decomp_input):
-
-    def wrap(datafun, backend, **opts):
-
-        return explicit_decomp_data(datafun)(
-                  "eigh", backend, decomp_input(), **opts
-               )
-    return wrap
 
 
 

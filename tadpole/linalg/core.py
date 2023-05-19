@@ -34,6 +34,8 @@ def aligned(fun):
 
     def wrap(x, *args, linds=None, rinds=None, **kwargs):
 
+        print("ALIGNED: ", linds, rinds, x, args, kwargs)
+      
         inds = Indices(*tn.union_inds(x))
 
         if linds is not None:
@@ -90,12 +92,14 @@ class DecompOp:
        return self._fun(x, *args, **kwargs)
 
 
-   def unreshape(self, L, R):
+   def unreshape_left(self, x):
 
-       L = tn.split(L, {"l": self._linds})  
-       R = tn.split(R, {"r": self._rinds})
+       return tn.split(x, {"l": self._linds})  
 
-       return L, R
+
+   def unreshape_right(self, x):
+ 
+       return tn.split(x, {"r": self._rinds})
 
 
 
@@ -114,11 +118,37 @@ class DecompExplicit:
 
    def __call__(self, x, *args, **kwargs):
 
-       x               = self._op.reshape(x)
+       x = self._op.reshape(x)
+
        U, S, VH, error = self._op.apply(x, *args, **kwargs)
-       U, VH           = self._op.unreshape(U, VH)
+
+       U  = self._op.unreshape_left(U)
+       VH = self._op.unreshape_right(VH)
 
        return U, S, VH, error
+
+
+
+
+# --- Implicit-rank decomposition functor ----------------------------------- #
+
+class DecompImplicit:
+
+   def __init__(self, op, *args, **kwargs):
+
+       if not isinstance(op, DecompOp):
+          op = DecompOp(op, *args, **kwargs)
+
+       self._op = op
+
+
+   def __call__(self, x, *args, **kwargs):
+
+       x    = self._op.reshape(x)
+       V, S = self._op.apply(x, *args, **kwargs)
+       V    = self._op.unreshape_left(V)
+
+       return V, S
 
 
 
@@ -137,16 +167,19 @@ class DecompHidden:
 
    def __call__(self, x, *args, **kwargs):
 
-       x    = self._op.reshape(x)
+       x = self._op.reshape(x)
+
        L, R = self._op.apply(x, *args, **kwargs)
-       L, R = self._op.unreshape(L, R)
+
+       L = self._op.unreshape_left(L)
+       R = self._op.unreshape_right(R)
 
        return L, R
 
 
 
 
-# --- Explicit-rank decompositions ------------------------------------------ #
+# --- Decompositions -------------------------------------------------------- #
 
 @aligned
 def svd(x, linds, rinds, *args, **kwargs):
@@ -158,20 +191,16 @@ def svd(x, linds, rinds, *args, **kwargs):
 @aligned
 def eig(x, linds, rinds, *args, **kwargs):
 
-    decomp = DecompExplicit(lad.eig, linds, rinds) 
+    decomp = DecompImplicit(lad.eig, linds, rinds) 
     return decomp(x, *args, **kwargs)
 
 
 @aligned
 def eigh(x, linds, rinds, *args, **kwargs):
 
-    decomp = DecompExplicit(lad.eigh, linds, rinds) 
+    decomp = DecompImplicit(lad.eigh, linds, rinds) 
     return decomp(x, *args, **kwargs)
 
-
-
-
-# --- Hidden-rank decompositions -------------------------------------------- #
 
 @aligned
 def qr(x, linds, rinds, *args, **kwargs):

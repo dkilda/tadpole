@@ -131,7 +131,7 @@ class LinalgProperties:
 
    def inv(self): 
 
-       return self._create(ar.inv)
+       return tn.TensorGen(ar.inv(self._data), reversed(self._inds))
 
 
    def tril(self, **opts):

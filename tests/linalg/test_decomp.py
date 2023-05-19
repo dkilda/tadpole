@@ -193,7 +193,7 @@ class TestTensorDecomp:
 
 
    @pytest.mark.parametrize("decomp_input", [
-      data.decomp_input_001,
+      data.decomp_input_002,
    ])
    @pytest.mark.parametrize("alignment", [
       "l", "r", "lr", 
@@ -210,20 +210,25 @@ class TestTensorDecomp:
                "lr": {"linds": w.linds, "rinds": w.rinds},
               }[alignment]
 
-       U, S, V, error = la.eig(w.xtensor, **inds, sind="s")
+       V, S = la.eig(w.xtensor, **inds, sind="s")
 
-       sind, = tn.overlap_inds(U, S)
-       U1    = tn.reindex(w.ltensor, {w.sind: sind})
+       sind, = tn.overlap_inds(V, S)
+       V1    = tn.reindex(w.ltensor, {w.sind: sind})
        S1    = tn.reindex(w.stensor, {w.sind: sind})
-       V1    = tn.reindex(w.rtensor, {w.sind: sind})
 
-       assert U.space() == U1.space()
-       assert S.space() == S1.space()
        assert V.space() == V1.space()
+       assert S.space() == S1.space()
 
+       i = IndexGen("i", tid.sizeof(*w.linds))
+
+       out1 = tn.contract(V, S, product=Indices(*w.linds, sind))
+       out2 = tn.contract(
+                 tn.fuse(w.xtensor, {w.rinds: i}), 
+                 tn.fuse(V,         {w.linds: i})
+              )
+
+       assert tn.allclose(out1, out2)
        assert tn.allclose(S, S1)
-       assert ar.allclose(error, 0)
-       assert tn.allclose(tn.contract(U, S, V, product=w.xinds), w.xtensor)
 
 
    @pytest.mark.parametrize("decomp_input", [
@@ -244,20 +249,25 @@ class TestTensorDecomp:
                "lr": {"linds": w.linds, "rinds": w.rinds},
               }[alignment]
 
-       U, S, V, error = la.eigh(w.xtensor, **inds, sind="s")
+       V, S = la.eigh(w.xtensor, **inds, sind="s")
 
-       sind, = tn.overlap_inds(U, S)
-       U1    = tn.reindex(w.ltensor, {w.sind: sind})
+       sind, = tn.overlap_inds(V, S)
+       V1    = tn.reindex(w.ltensor, {w.sind: sind})
        S1    = tn.reindex(w.stensor, {w.sind: sind})
-       V1    = tn.reindex(w.rtensor, {w.sind: sind})
 
-       assert U.space() == U1.space()
-       assert S.space() == S1.space()
        assert V.space() == V1.space()
+       assert S.space() == S1.space()
 
+       i = IndexGen("i", tid.sizeof(*w.linds))
+
+       out1 = tn.contract(V, S, product=Indices(*w.linds, sind))
+       out2 = tn.contract(
+                 tn.fuse(w.xtensor, {w.rinds: i}), 
+                 tn.fuse(V,         {w.linds: i})
+              )
+
+       assert tn.allclose(out1, out2)
        assert tn.allclose(S, S1)
-       assert ar.allclose(error, 0)
-       assert tn.allclose(tn.contract(U, S, V, product=w.xinds), w.xtensor)
 
        
    # --- Hidden-rank decompositions --- #

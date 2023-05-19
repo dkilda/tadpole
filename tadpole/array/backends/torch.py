@@ -562,12 +562,14 @@ class TorchBackend(backend.Backend):
 
    def eig(self, x):
 
-       return util.eig(self, lambda v: torch.linalg.eigh(v), x)
+       S, V = torch.linalg.eig(x)
+       return V, S
        
 
    def eigh(self, x):
 
-       return util.eigh(self, lambda v: torch.linalg.eigh(v), x)
+       S, V = torch.linalg.eigh(x)
+       return V, S
        
 
    # --- Linear algebra: misc --- #

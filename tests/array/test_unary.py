@@ -916,17 +916,15 @@ class TestArray:
 
        w = data.array_dat(data.randn)(self.backend, shape, dtype=dtype)
 
-       U, S, V = ar.eig(w.array)
+       V, S = ar.eig(w.array)
 
-       dimU = shape[-2]
        dimS = min(shape[-2], shape[-1])
-       dimV = shape[-1]
+       dimV = shape[-2]
 
-       assert U.shape == (dimU, dimS)
        assert S.shape == (dimS,     )
-       assert V.shape == (dimS, dimV)
+       assert V.shape == (dimV, dimS)
 
-       x = ar.dot(U, ar.dot(ar.diag(S), V)) 
+       x = ar.dot(V, ar.dot(ar.diag(S), ar.inv(V))) 
        assert ar.allclose(x, w.array)
 
 
@@ -937,17 +935,15 @@ class TestArray:
        w      = data.array_dat(data.randn)(self.backend, shape, dtype=dtype)
        warray = ar.add(w.array, ar.transpose(ar.conj(w.array), (1,0)))
        
-       U, S, V = ar.eigh(warray)
+       V, S = ar.eigh(warray)
 
-       dimU = shape[-2]
        dimS = min(shape[-2], shape[-1])
-       dimV = shape[-1]
+       dimV = shape[-2]
 
-       assert U.shape == (dimU, dimS)
        assert S.shape == (dimS,     )
-       assert V.shape == (dimS, dimV)
+       assert V.shape == (dimV, dimS)
 
-       x = ar.dot(U, ar.dot(ar.diag(S), V)) 
+       x = ar.dot(V, ar.dot(ar.diag(S), ar.moveaxis(ar.conj(V), -2, -1))) 
        assert ar.allclose(x, warray)
 
 

@@ -523,12 +523,14 @@ class NumpyBackend(backend.Backend):
 
    def eig(self, x):
 
-       return util.eig(self, lambda v: np.linalg.eigh(v), x)
-       
+       S, V = np.linalg.eig(x)
+       return V, S
+
 
    def eigh(self, x):
 
-       return util.eigh(self, lambda v: np.linalg.eigh(v), x)
+       S, V = np.linalg.eigh(x)
+       return V, S
 
 
    # --- Linear algebra: misc --- #

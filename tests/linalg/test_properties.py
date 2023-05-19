@@ -153,8 +153,8 @@ class TestLinalgProperties:
 
        out = la.inv(w.tensor, **inds)
        ans = ar.inv(w.matrix)
-       ans = ar.reshape(ans,   (*w.lshape, *w.rshape))
-       ans = tn.TensorGen(ans, (*w.linds,  *w.rinds)) 
+       ans = ar.reshape(ans,   (*w.rshape, *w.lshape))
+       ans = tn.TensorGen(ans, (*w.rinds,  *w.linds)) 
        ans = tn.transpose(ans, *w.inds)
 
        assert tn.allclose(out, ans)

@@ -189,7 +189,17 @@ class LinalgDecomp:
           error,
        )
 
-       
+
+   def _implicit(self, fun):
+
+       output_data = fun(self._data)
+
+       return ContainerGen(
+          self._ltensor(output_data[0]), 
+          self._stensor(output_data[1]), 
+       )
+
+
    def _hidden(self, fun):
 
        output_data = fun(self._data)
@@ -210,20 +220,14 @@ class LinalgDecomp:
        return self._explicit(ar.svd, trunc)
 
 
-   def eig(self, trunc=None):
+   def eig(self):
 
-       if trunc is None:
-          trunc = TruncNull()
-
-       return self._explicit(ar.eig, trunc)
+       return self._implicit(ar.eig)
 
 
-   def eigh(self, trunc=None):
+   def eigh(self):
 
-       if trunc is None:
-          trunc = TruncNull()
-
-       return self._explicit(ar.eigh, trunc)
+       return self._implicit(ar.eigh)
 
 
    # --- Hidden-rank decompositions --- #
@@ -247,7 +251,7 @@ class LinalgDecomp:
 ###############################################################################
 
 
-# --- Explicit-rank decompositions ------------------------------------------ #
+# --- Decompositions -------------------------------------------------------- #
 
 @ad.differentiable
 def svd(x, sind=None, trunc=None):
@@ -258,23 +262,20 @@ def svd(x, sind=None, trunc=None):
 
 
 @ad.differentiable
-def eig(x, sind=None, trunc=None):
+def eig(x, sind=None):
 
     op = linalg_decomp(x, sind) 
-    return op.eig(trunc)
+    return op.eig()
 
 
 
 @ad.differentiable
-def eigh(x, sind=None, trunc=None):
+def eigh(x, sind=None):
 
     op = linalg_decomp(x, sind) 
-    return op.eigh(trunc)
+    return op.eigh()
 
 
-
-
-# --- Hidden-rank decompositions -------------------------------------------- #
 
 @ad.differentiable
 def qr(x, sind=None):
