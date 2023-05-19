@@ -44,29 +44,30 @@ def jvp_svd(g, out, x, sind=None, trunc=None):
     Eq. 16-18
 
     """
+
     u, s, v = out[0], out[1], out[2].H  
-    f       = fmatrix(s**2)
+    f       = fmatrix(s**2)("ij")
 
-    g1 = u.H("sl") @ dx("lr")   @ v("rz")
-    g2 = v.H("sr") @ dx.H("rl") @ u("lz") 
+    grad1 = u.H("il") @ dx("lr")   @ v("rj")
+    grad2 = v.H("ir") @ dx.H("rl") @ u("lj") 
 
-    ds = 0.5 * eye(s,"sz")  * (g1("sz") + g2("sz"))
-    du = u("ls") @ (f("sz") * (g1("sz") * s("1z")  + s("s1")  * g2("sz")))
-    dv = v("rs") @ (f("sz") * (s("s1")  * g1("sz") + g2("sz") * s("1z")))
+    ds = 0.5 * eye(s,"ij")  * (grad1 + grad2)
+    du = u("li") @ (f * (grad1 * s("1j") + s("i1") * grad2))
+    dv = v("ri") @ (f * (grad1 * s("i1") + s("1j") * grad2))
 
 
     if x.shape[0] < x.shape[1]:
 
-       vvH = v("rs") @ v.H("sR")
-       dv  = dv("rs") \
-           + (eye(vvH) - vvH)("rR") @ dx.H("RL") @ (u("Ls") / s("1s"))
+       vvH = v("rm") @ v.H("ma")
+       dv  = dv("ri") \
+           + (eye(vvH) - vvH) @ dx.H("ab") @ (u("bi") / s("1i"))
 
 
     if x.shape[0] > x.shape[1]:
 
-       uuH = u("ls") @ u.H("sL")
-       du  = du("ls") \
-           + (eye(uuH) - uuH)("lL") @ dx("LR") @ (v("Rs") / s("1s")) 
+       uuH = u("lm") @ u.H("ma")
+       du  = du("li") \
+           + (eye(uuH) - uuH) @ dx("ab") @ (v("bi") / s("1i")) 
 
     du = du(*tn.union_inds(u))
     dv = dv(*tn.union_inds(v))
@@ -85,11 +86,12 @@ def jvp_eig(g, out, x, sind=None):
     https://people.maths.ox.ac.uk/gilesm/files/NA-08-01.pdf    
 
     """
-    v, s = out
-    f    = fmatrix(s)
 
-    dv = v("rs") @ (f("sz") * (la.inv(v)("sm") @ g("mn") @ v("nz")))
-    ds = eye(s,"sz") * (la.inv(v)("sm") @ g("mn") @ v("nz"))
+    v, s = out
+    f    = fmatrix(s)("ij")
+
+    dv = v("li") @ (f * (la.inv(v)("im") @ g("mn") @ v("nj")))
+    ds = eye(s,"ij")  * (la.inv(v)("im") @ g("mn") @ v("nj"))
 
     dv = dv(*tn.union_inds(v))
     ds = la.diag(ds, tuple(tn.union_inds(s)))
@@ -109,10 +111,10 @@ def jvp_eigh(g, out, x, sind=None):
     """
 
     v, s = out
-    f    = fmatrix(s)
+    f    = fmatrix(s)("ij")
 
-    dv = v("ls") @ (f("sz") * (v.H("sm") @ g("mn") @ v("nz")))
-    ds = eye(s, "sz")       * (v.H("sm") @ g("mn") @ v("nz"))
+    dv = v("li") @ (f * (v.H("im") @ g("mn") @ v("nj")))
+    ds = eye(s, "ij") * (v.H("im") @ g("mn") @ v("nj"))
 
     dv = dv(*tn.union_inds(v))
     ds = la.diag(ds, tuple(tn.union_inds(s)))
@@ -140,16 +142,16 @@ def jvp_qr(g, out, x, sind=None):
 
     def trisym(m):
 
-        E = 2 * la.tril(m("ij")) + eye(m("ij"))
+        E = 2 * la.tril(m) + eye(m)
 
-        return 0.5 * (m("ij") + m.H("ji")) * E.H("ji")
+        return 0.5 * (m + m.H) * E.H
 
 
     def kernel(q, r, dx):
 
-        c  = trisolve(r("sr"), q.H("zl") @ dx("lr")) 
-        dr = trisym(c)("sz") @ r("zr")
-        dq = trisolve(r("sr"), dx("lr") - q("ls") @ dr("sr"))
+        c  = trisolve(r("jr"), q.H("il") @ dx("lr")) 
+        dr = trisym(c)("ij") @ r("jr")
+        dq = trisolve(r("ir"), dx("lr") - q("lj") @ dr("jr"))
 
         return dq, dr
 
@@ -164,14 +166,13 @@ def jvp_qr(g, out, x, sind=None):
     r1,  r2  = r[:, : x.shape[0]], r[:, x.shape[0] :]
 
     dq, dr1 = kernel(q, r1, dx1)
-    dr2     = q.H("sl") @ (dx2("lr") - dq("lz") @ r2("zr")) 
+    dr2     = q.H("il") @ (dx2("lr") - dq("lm") @ r2("mr")) 
 
     dr = la.concat(
-            (dr1("sr"), dr2("sR")), tuple(tn.union_inds(r)), which="right"
+            (dr1("ia"), dr2("ib")), tuple(tn.union_inds(r)), which="right"
          )
-
-    dq = dq(*tn.union_inds(q)) 
     dr = dr(*tn.union_inds(r)) 
+    dq = dq(*tn.union_inds(q)) 
 
     return ContainerGen(dq, dr)
 
@@ -196,17 +197,16 @@ def jvp_lq(g, out, x, sind=None):
 
     def trisym(m):
 
-        E = 2 * la.tril(m("ij")) + eye(m("ij"))
+        E = 2 * la.tril(m) + eye(m)
 
-        return 0.5 * (m("ij") + m.H("ji")) * E("ij")
+        return 0.5 * (m + m.H) * E
 
 
     def kernel(l, q, dx):
 
-        c = trisolve(l("ls"), dx("lr") @ q.H("rz")) 
-
-        dl = l("ls") @ trisym(c)("sz")
-        dq = trisolve(l("ls"), dx("lr") - dl("lz") @ q("zr"))
+        c  = trisolve(l("li"), dx("lr") @ q.H("rj")) 
+        dl = l("li") @ trisym(c)("ij")
+        dq = trisolve(l("lj"), dx("lr") - dl("li") @ q("ir"))
 
         return dl, dq
 
@@ -221,11 +221,13 @@ def jvp_lq(g, out, x, sind=None):
     l1,  l2  = l[: x.shape[1], :], l[: x.shape[1], :]
 
     dl1, dq = kernel(l1, q, dx1)
-    dl2     = (dx2("Lr") - l2("Ls") @ dq("sr")) @ q.H("rz") 
+    dl2     = (dx2("lr") - l2("lm") @ dq("mr")) @ q.H("ri") 
 
     dl = la.concat(
-            (dl1("ls"), dl2("Ls")), tuple(tn.union_inds(l)), which="left"
+            (dl1("ai"), dl2("bi")), tuple(tn.union_inds(l)), which="left"
          )
+    dl = dl(*tn.union_inds(l)) 
+    dq = dq(*tn.union_inds(q)) 
 
     return dl, dq
 

@@ -184,14 +184,14 @@ def vjp_qr(g, out, x, sind=None):
 
     def hcopyltu(m):
 
-        return m.H("ji") + la.tril(m("ij")) * (m("ij") - m.H("ji")) 
+        return m.H + la.tril(m) * (m - m.H) 
 
 
     def kernel(q, dq, r, dr):
 
-        m = r("sr") @ dr.H("rz") - dq.H("sl") @ q("lz")
+        m = r("im") @ dr.H("mj") - dq.H("im") @ q("mj")
 
-        return trisolve(r("sr"), dq("ls") + q("lz") @ hcopyltu(m)("zs"))
+        return trisolve(r("jr"), dq("lj") + q("li") @ hcopyltu(m)("ij"))
 
 
     dq, dr = g
@@ -204,11 +204,11 @@ def vjp_qr(g, out, x, sind=None):
     r1,  r2  =  r[:, : x.shape[0]],  r[:, x.shape[0] :]
     dr1, dr2 = dr[:, : x.shape[0]], dr[:, x.shape[0] :]
 
-    dx1 = kernel(q, dq("ls") + x2("lr") @ dr2.H("rs"), r1, dr1)
-    dx2 = q("ls") @ dr2("sr")
+    dx1 = kernel(q, dq("li") + x2("lr") @ dr2.H("ri"), r1, dr1)
+    dx2 = q("li") @ dr2("ir")
 
     return la.concat(
-       (dx1("lr"), dx2("lR")), tuple(tn.union_inds(x)), which="right"
+       (dx1("ia"), dx2("ib")), tuple(tn.union_inds(x)), which="right"
     )
 
 
@@ -230,14 +230,14 @@ def vjp_lq(g, out, x, sind=None):
 
     def hcopyltu(m):
 
-        return m.H("ji") + la.tril(m("ij")) * (m("ij") - m.H("ji")) 
+        return m.H + la.tril(m) * (m - m.H) 
 
 
     def kernel(l, dl, q, dq):
 
-        m = l.H("sl") @ dl("lz") - dq("sr") @ q.H("rz")
+        m = l.H("im") @ dl("mj") - dq("im") @ q.H("mj")
 
-        return trisolve(l("ls"), dq("sr") + q("sR") @ hcopyltu(m)("Rr"))
+        return trisolve(l("li"), dq("ir") + hcopyltu(m)("ij") @ q("jr"))
 
 
     dl, dq = g
@@ -250,11 +250,11 @@ def vjp_lq(g, out, x, sind=None):
     l1,  l2  =  l[: x.shape[1], :],  l[x.shape[1] :, :]
     dl1, dl2 = dl[: x.shape[1], :], dl[x.shape[1] :, :]
 
-    dx1 = kernel(l1, dl1, q, dq("sr") + dl2.H("sl") @ x2("lr"))
-    dx2 = dl2("ls") @ q("sr")
+    dx1 = kernel(l1, dl1, q, dq("ir") + dl2.H("il") @ x2("lr"))
+    dx2 = dl2("li") @ q("ir")
 
     return la.concat(
-       (dx1("lr"), dx2("lR")), tuple(tn.union_inds(x)), which="left"
+       (dx1("ai"), dx2("bi")), tuple(tn.union_inds(x)), which="left"
     )
 
 
