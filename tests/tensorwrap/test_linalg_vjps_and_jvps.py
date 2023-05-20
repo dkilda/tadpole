@@ -71,12 +71,14 @@ class TestGradsDecomp:
    def test_svd(self, decomp_input):
 
        def fun(x, sind):
-           return la.svd(x, sind) 
+           #return la.svd(x, sind)
+           return tc.ascontainer(la.svd(x, sind))
+
            #U, S, VH, error = la.svd(x, sind) 
-           #return tc.ContainerGen(tn.absolute(U), S, tn.absolute(VH)) #, error)
+           #return tc.ascontainer(U, S, VH)  #tn.absolute(U), S, tn.absolute(VH)) #, error)
          
        w = data.svd_tensor_dat(decomp_input)(
-              data.randn, self.backend, dtype="complex128" #"float64"
+              data.randn, self.backend, dtype="float64" #"complex128" #"float64"
            )
 
        lind = IndexGen("l", w.xmatrix.shape[0])

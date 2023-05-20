@@ -71,6 +71,24 @@ class TestGradsContainer:
       [[(3,4,6), tuple(), (6,2,5)  ], ["ijk",  "",    "klm" ]],  
       [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk",  "klm", "mqlj"]],
    ]) 
+   def test_ascontainer(self, shapes, inds):
+
+       def fun(*xs):
+           return tc.ascontainer(*xs)
+
+       w = data.container_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+       assert_grad(fun, submode="container")(*w.tensors)
+
+
+   @pytest.mark.parametrize("shapes, inds", [
+      [[(3,4,6),                   ], ["ijk",               ]],   
+      [[(3,4,6), (6,2,5)           ], ["ijk",  "klm",       ]], 
+      [[(3,4,6), tuple(), (6,2,5)  ], ["ijk",  "",    "klm" ]],  
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk",  "klm", "mqlj"]],
+   ]) 
    def test_getitem(self, shapes, inds):
 
        positions = {

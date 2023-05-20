@@ -446,13 +446,23 @@ class SparseGrad(TensorContainer, tn.Grad):
 
 # --- Container factories --------------------------------------------------- #
 
-@ad.nondifferentiable
+@ad.differentiable
 def ascontainer(*args):
-
+ 
     if len(args) == 1 and isinstance(args[0], TensorContainer):
        return args[0]
 
     return ContainerGen(*args)
+
+
+ad.makevjp_combo(ascontainer,    
+              lambda g, adx, out, *args: g[adx]
+)
+
+
+ad.makejvp_combo(ascontainer,    
+              lambda g, adx, out, *args: sparsegrad(g, adx, out.space())
+)
 
 
 

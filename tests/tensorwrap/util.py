@@ -316,22 +316,44 @@ def dot_container(xs, ys):
 
 def numerical_grad_container(fun, x, eps=1e-6):
 
-    def grad(gs):
 
-        xs = x
+    def compute(fun, x, y):
 
+        return tc.ContainerGen([fun(xi, yi) for xi, yi in zip(x, y)])
+
+
+    def grad(g):
+
+        if   isinstance(x, tn.Tensor):
+             out1 = fun(x + g * eps/2)  
+             out2 = fun(x - g * eps/2)
+        else:      
+             out1 = fun(compute(lambda a,b: a + b * eps/2, x, g)) 
+             out2 = fun(compute(lambda a,b: a - b * eps/2, x, g)) 
+
+        """
         if isinstance(xs, tn.Tensor): xs = tc.ContainerGen([xs])
         if isinstance(gs, tn.Tensor): gs = tc.ContainerGen([gs])
+
+        print("NUMGRAD: ", xs, gs, " | ", xs._data, gs._data)
    
         out1 = fun(tc.ContainerGen([x + g * eps/2 for x, g in zip(xs, gs)])) 
         out2 = fun(tc.ContainerGen([x - g * eps/2 for x, g in zip(xs, gs)]))
 
+        print("NUMGRAD-1: ", out1, out2, " | ", out1._data, out2._data)
+        """
+
         if isinstance(out1, tn.Tensor):
            return (out1 - out2) / eps
 
+        return compute(lambda a,b: (a - b) / eps, out1, out2)
+
+
+        """
         return tc.ContainerGen(
                   [(o1 - o2) / eps for o1, o2 in zip(out1, out2)]
                )
+        """
 
     return grad 
 
