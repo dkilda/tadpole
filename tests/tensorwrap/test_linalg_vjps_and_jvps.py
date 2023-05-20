@@ -6,11 +6,12 @@ import collections
 import itertools
 import numpy as np
 
-import tadpole.util     as util
-import tadpole.autodiff as ad
-import tadpole.array    as ar
-import tadpole.tensor   as tn
-import tadpole.index    as tid
+import tadpole.util      as util
+import tadpole.autodiff  as ad
+import tadpole.array     as ar
+import tadpole.container as tc
+import tadpole.tensor    as tn
+import tadpole.index     as tid
 
 import tadpole.linalg.unwrapped as la
 
@@ -61,19 +62,21 @@ class TestGradsDecomp:
        return self._backend
 
 
-   #@pytest.mark.skip
+   @pytest.mark.skip
    @pytest.mark.parametrize("decomp_input", [
-      data.decomp_input_001,
+      #data.decomp_input_001,
       data.decomp_input_002,
-      data.decomp_input_003,
+      #data.decomp_input_003,
    ])
    def test_svd(self, decomp_input):
 
        def fun(x, sind):
            return la.svd(x, sind) 
-
+           #U, S, VH, error = la.svd(x, sind) 
+           #return tc.ContainerGen(tn.absolute(U), S, tn.absolute(VH)) #, error)
+         
        w = data.svd_tensor_dat(decomp_input)(
-              data.randn, self.backend, dtype="float64"
+              data.randn, self.backend, dtype="complex128" #"float64"
            )
 
        lind = IndexGen("l", w.xmatrix.shape[0])

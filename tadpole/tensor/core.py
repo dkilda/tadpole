@@ -429,6 +429,9 @@ class SparseGrad(Tensor, Grad, Pluggable):
 
 # --- Tensor factories ------------------------------------------------------ #
 
+#@ad.nondifferentiable TODO slows down the code, because node 
+# unfolding/folding is called many times unnecessarily! Need another solution.
+
 def astensor(data, inds=None, **opts):
 
     if isinstance(data, Tensor):

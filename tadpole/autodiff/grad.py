@@ -221,6 +221,8 @@ class PropagationReverse(Propagation):
 
    def grads(self, seed):
 
+       print("GRADS: ", self._end, self._start, self._end.connected(self._start))
+
        if not self._end.connected(self._start):
           return GradAccum(self._start.tonull())
 

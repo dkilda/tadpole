@@ -444,6 +444,19 @@ class SparseGrad(TensorContainer, tn.Grad):
 ###############################################################################
 
 
+# --- Container factories --------------------------------------------------- #
+
+@ad.nondifferentiable
+def ascontainer(*args):
+
+    if len(args) == 1 and isinstance(args[0], TensorContainer):
+       return args[0]
+
+    return ContainerGen(*args)
+
+
+
+
 # --- General tensor container ---------------------------------------------- #
 
 class ContainerGen(TensorContainer, tn.Grad):
@@ -455,6 +468,9 @@ class ContainerGen(TensorContainer, tn.Grad):
        if len(args) > 0:
           data = (data, *args)
 
+       if not isinstance(data, (list, tuple, util.Container)):
+          data = (data, )
+   
        if not isinstance(data, tuple):
           data = tuple(data)
 

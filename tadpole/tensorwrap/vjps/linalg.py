@@ -70,11 +70,12 @@ def vjp_svd(g, out, x, sind=None, trunc=None):
     vTdv = v.T("im") @ dv("mj")
 
     grad = eye(s,"ij") * ds("i1") 
-    grad = grad + f *  s("1j") * (uTdu - uTdu.H)  
-    grad = grad + f *  s("i1") * (vTdv - vTdv.H)
+    grad = grad + f * s("1j") * (uTdu - uTdu.H)  
+    grad = grad + f * s("i1") * (vTdv - vTdv.H)
  
     if tn.iscomplex(u):
-       grad = grad + 1j * tn.imag(eye(uTdu) * uTdu) / s("i1")
+       print("SVD COMPLEX: ", tn.iscomplex(u))
+       grad = grad + 1j * tn.imag(eye(uTdu) * uTdu) / s("1j")
 
     grad = u("li").C @ grad("ij") @ v.T("jr") 
 

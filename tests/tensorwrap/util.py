@@ -259,7 +259,7 @@ def assert_vjp_decomp(fun, x):
  
     vjv_out = tn.flatten(vj, i) @ tn.flatten(dx, i)
 
-    print("VJP DECOMP-2: ")
+    print("VJP DECOMP-2: ", vj, dx)
 
     vjv_ans = dot_container(dy, jv) 
 

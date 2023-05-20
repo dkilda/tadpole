@@ -797,6 +797,24 @@ class TestContainerGen:
        return self._backend
 
 
+   # --- Factories --- #
+
+   @pytest.mark.parametrize("shapes, inds", [
+      [[(3,4,6),                   ], ["ijk",               ]], 
+      [[(3,4,6), (6,2,5)           ], ["ijk",  "klm",       ]], 
+      [[(3,4,6), tuple(), (6,2,5)  ], ["ijk",  "",    "klm" ]],  
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk",  "klm", "mqlj"]],
+   ]) 
+   def test_ascontainer(self, shapes, inds):
+
+       w = data.container_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+       assert tc.ascontainer(w.container) is w.container
+       assert tc.ascontainer(*w.tensors) == w.container
+
+
    # --- Grad methods --- #
 
    @pytest.mark.parametrize("shapes, inds", [
