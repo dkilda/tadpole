@@ -61,7 +61,7 @@ class TestGradsDecomp:
        return self._backend
 
 
-   @pytest.mark.skip
+   #@pytest.mark.skip
    @pytest.mark.parametrize("decomp_input", [
       data.decomp_input_001,
    ])
@@ -74,7 +74,12 @@ class TestGradsDecomp:
               data.randn, self.backend
            )
 
-       assert_grad(fun)(w.xmatrix, sind=w.sind)     
+       lind = IndexGen("l", w.xmatrix.shape[0])
+       rind = IndexGen("r", w.xmatrix.shape[1])
+
+       x = tn.TensorGen(w.xmatrix, (lind, rind)) 
+
+       assert_grad(fun, order=1, modes="vjp")(x, sind=w.sind)     
 
 
 
