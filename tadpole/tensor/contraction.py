@@ -82,9 +82,31 @@ def unicode_symbol(ind):
 
 
 
+# --- Helper: lru cache for indices (does not throw if __eq__ fails)  ------- # 
+
+def lru_cache_indices(*cache_args, **cache_kwargs):
+
+    lru_cache_wrap = functools.lru_cache(*cache_args, **cache_kwargs) 
+
+    def wrap(fun):
+        
+        def _wrap(*args, **kwargs):
+
+            try:
+               return lru_cache_wrap(fun)(*args, **kwargs)
+            except (ValueError, AssertionError):
+               return fun(*args, **kwargs)
+
+        return _wrap
+
+    return wrap
+
+
+
+
 # --- Create einsum equation from input and output indices ------------------ #
 
-@functools.lru_cache(2**12)
+@lru_cache_indices(2**12)
 def make_equation(input_inds, output_inds): 
 
     symbols = Symbols(unicode_symbol)

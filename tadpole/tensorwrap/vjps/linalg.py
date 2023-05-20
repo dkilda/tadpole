@@ -31,8 +31,8 @@ def eye(x, inds=None):
     if inds is None:
        return tn.space(x).eye()
 
-    sind  = IndexLit(inds[0], s.shape[0])
-    sind1 = IndexLit(inds[1], s.shape[1])
+    sind  = IndexLit(inds[0], x.shape[0])
+    sind1 = IndexLit(inds[1], x.shape[-1])
 
     return tn.space(x).eye(sind, sind1)
 

@@ -186,7 +186,7 @@ class LinalgDecomp:
           self._ltensor(output_data[0]), 
           self._stensor(output_data[1]), 
           self._rtensor(output_data[2]), 
-          error,
+          tn.astensor(error),
        )
 
 

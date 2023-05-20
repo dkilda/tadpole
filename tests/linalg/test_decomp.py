@@ -151,7 +151,7 @@ class TestTensorDecomp:
        assert S.space() == S1.space()
        assert V.space() == V1.space()
 
-       assert ar.allclose(error, w.error)
+       assert tn.allclose(error, w.error)
        assert tn.allclose(S, S1)
        assert tn.allclose(x, x1)
 
@@ -188,7 +188,7 @@ class TestTensorDecomp:
        assert V.space() == V1.space()
 
        assert tn.allclose(S, S1)
-       assert ar.allclose(error, 0)
+       assert tn.allclose(error, 0)
        assert tn.allclose(tn.contract(U, S, V, product=w.xinds), w.xtensor)
 
 
