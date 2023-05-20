@@ -5,13 +5,12 @@ import collections
 import itertools
 import numpy as np
 
-import tadpole.util     as util
-import tadpole.autodiff as ad
-import tadpole.array    as ar
-import tadpole.tensor   as tn
-import tadpole.index    as tid
-
-import tadpole.tensorwrap.container as tc
+import tadpole.util      as util
+import tadpole.autodiff  as ad
+import tadpole.array     as ar
+import tadpole.container as tc
+import tadpole.tensor    as tn
+import tadpole.index     as tid
 
 import tadpole.autodiff.nary as nary
 import tadpole.autodiff.grad as agrad

@@ -7,6 +7,8 @@ from . import elemwise_ternary
 from . import reindexing
 from . import reduction
 from . import contraction
+from . import linalg
+
 
 
 

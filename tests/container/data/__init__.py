@@ -77,7 +77,7 @@ from tests.linalg.data import (
 )
 
 
-from tests.container.data import (
+from tests.container.data.containers import (
    null_container_dat,
    sparse_container_dat,
    container_dat,

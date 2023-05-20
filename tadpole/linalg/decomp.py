@@ -22,7 +22,7 @@ from tadpole.tensor.engine import (
    TooManyArgsError,
 )
 
-from tadpole.tensorwrap import (
+from tadpole.container import (
    ContainerGen,
 )
 

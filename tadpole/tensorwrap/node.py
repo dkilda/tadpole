@@ -5,13 +5,8 @@ import tadpole.util     as util
 import tadpole.autodiff as ad
 import tadpole.tensor   as tn
 
-import tadpole.autodiff.node        as an
-import tadpole.tensorwrap.container as tc
-
-from tadpole.tensorwrap.types import (
-   Container,
-   TensorContainer,
-)
+import tadpole.autodiff.node as an
+import tadpole.container     as tc
 
 
 
@@ -214,7 +209,7 @@ an.register(tn.NullGrad,   NodeTensor)
 
 # --- Node for Container objects -------------------------------------------- #
 
-class NodeContainer(an.NodeGen, TensorContainer, tn.Grad):
+class NodeContainer(an.NodeGen, tc.TensorContainer, tn.Grad):
 
    # --- Gradient operations --- #
 

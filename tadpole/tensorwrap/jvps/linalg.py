@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import tadpole.util          as util
-import tadpole.autodiff      as ad
-import tadpole.tensor        as tn
-import tadpole.linalg.matrix as la
+import tadpole.util     as util
+import tadpole.autodiff as ad
+import tadpole.tensor   as tn
 
-from tadpole.tensorwrap.tensor_vjps.linalg import (
+import tadpole.linalg.unwrapped as la
+
+from tadpole.tensorwrap.vjps.linalg import (
    eye,
    fmatrix,
    tri,
 )
 
-from tadpole.tensorwrap import (
+from tadpole.container import (
    ContainerGen,
 )
 

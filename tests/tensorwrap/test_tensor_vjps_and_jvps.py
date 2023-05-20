@@ -12,11 +12,6 @@ import tadpole.array    as ar
 import tadpole.tensor   as tn
 import tadpole.index    as tid
 
-import tadpole.array.backends as backends
-
-import tadpole.tensorwrap.tensor_vjps as tvjps
-import tadpole.tensorwrap.tensor_jvps as tjvps
-
 import tests.tensorwrap.fakes as fake
 import tests.tensorwrap.data  as data
 import tests.array.data       as ardata
@@ -33,6 +28,7 @@ from tests.tensorwrap.util import (
 from tadpole.index import (
    Index,
    IndexGen,  
+   IndexLit,
    Indices,
 )
 

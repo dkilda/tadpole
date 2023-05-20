@@ -7,7 +7,7 @@ import tadpole.autodiff as ad
 import tadpole.tensor   as tn
 import tadpole.index    as tid
 
-from tadpole.tensorwrap.types import (
+from tadpole.container.types import (
    Container,
    TensorContainer,
 )

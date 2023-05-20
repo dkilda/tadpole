@@ -4,26 +4,24 @@
 import collections
 import numpy as np
 
-import tadpole.util     as util
-import tadpole.autodiff as ad
-import tadpole.array    as ar
-import tadpole.tensor   as tn
-import tadpole.index    as tid
+import tadpole.util      as util
+import tadpole.autodiff  as ad
+import tadpole.array     as ar
+import tadpole.container as tc
+import tadpole.tensor    as tn
+import tadpole.index     as tid
 
-import tadpole.array.backends       as backends
-import tadpole.tensorwrap.container as tc
+import tadpole.array.backends as backends
 
 import tests.tensor.fakes as fake
 import tests.tensor.data  as data
 
-
-from tadpole.tensorwrap.container import (
+from tadpole.container import (
    NullGrad,
    SparseGrad,
    ContainerGen,
    ContainerSpace,
 )
-
 
 from tadpole.index import (
    Index,
