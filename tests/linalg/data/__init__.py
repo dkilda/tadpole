@@ -52,6 +52,7 @@ from .decomp import (
    decomp_input_000,
    decomp_input_001,
    decomp_input_002,
+   decomp_input_003,
    qr_tensor_dat,
    lq_tensor_dat,
    svd_tensor_dat,

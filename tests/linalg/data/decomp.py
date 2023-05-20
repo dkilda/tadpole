@@ -183,6 +183,30 @@ def decomp_input_002():
 
 
 
+def decomp_input_003():
+
+    return DecompInputData(
+
+       inds   = "ijk",     
+       shape  = (2,3,4),
+
+       linds  = "j",
+       lshape = (3,),
+       lsize  = 3,
+       laxes  = (1,),
+
+       rinds  = "ik",
+       rshape = (2,4),
+       rsize  = 8,
+       raxes  = (0,2),
+
+       sind   = "s",
+       srank  = 3,
+    )
+
+
+
+
 # --- Hidden-rank decomposition data ---------------------------------------- #
 
 HiddenDecompData = collections.namedtuple("HiddenDecompData", [

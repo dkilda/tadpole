@@ -159,7 +159,10 @@ class TestTensorDecomp:
    # --- Explicit-rank decompositions --- #
 
    @pytest.mark.parametrize("decomp_input", [
+      data.decomp_input_000,
       data.decomp_input_001,
+      data.decomp_input_002,
+      data.decomp_input_003,
    ])
    @pytest.mark.parametrize("alignment", [
       "l", "r", "lr", 
@@ -273,7 +276,10 @@ class TestTensorDecomp:
    # --- Hidden-rank decompositions --- #
 
    @pytest.mark.parametrize("decomp_input", [
+      data.decomp_input_000,
       data.decomp_input_001,
+      data.decomp_input_002,
+      data.decomp_input_003,
    ])
    @pytest.mark.parametrize("alignment", [
       "l", "r", "lr", 
@@ -304,7 +310,10 @@ class TestTensorDecomp:
 
 
    @pytest.mark.parametrize("decomp_input", [
+      data.decomp_input_000,
       data.decomp_input_001,
+      data.decomp_input_002,
+      data.decomp_input_003,
    ])
    @pytest.mark.parametrize("alignment", [
       "l", "r", "lr", 

@@ -61,9 +61,11 @@ class TestGradsDecomp:
        return self._backend
 
 
-   @pytest.mark.skip
+   #@pytest.mark.skip
    @pytest.mark.parametrize("decomp_input", [
       data.decomp_input_001,
+      data.decomp_input_002,
+      data.decomp_input_003,
    ])
    def test_svd(self, decomp_input):
 
@@ -71,7 +73,7 @@ class TestGradsDecomp:
            return la.svd(x, sind) 
 
        w = data.svd_tensor_dat(decomp_input)(
-              data.randn, self.backend
+              data.randn, self.backend, dtype="float64"
            )
 
        lind = IndexGen("l", w.xmatrix.shape[0])
