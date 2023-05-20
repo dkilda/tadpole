@@ -112,7 +112,7 @@ class Error(ErrorMode):
    def apply(self, S, rank):
 
        if S.shape[0] == rank: 
-          return 0
+          return 0.0
 
        cumsum = ar.cumsum(S**self._power, 0)
        error  = (cumsum[-1] - cumsum)[rank-1]  
@@ -143,7 +143,7 @@ class TruncNull(Trunc):
 
    def error(self, S):
 
-       return 0
+       return 0.0
 
 
    def apply(self, U, S, VH):

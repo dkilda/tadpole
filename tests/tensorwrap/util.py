@@ -237,6 +237,65 @@ def assert_jvp_container(fun, x):
 
 
 
+# --- Assert decomposition VJP ---------------------------------------------- # 
+
+def assert_vjp_decomp(fun, x):
+
+    op = agrad.diffop_reverse(fun, x)
+    y  = op.value()
+
+    dx = tn.space(x).randn()
+    dy = tn.space(y).randn()
+
+    vj = op.grad(dy)
+
+    print("VJP DECOMP-4: ")
+
+    jv = numerical_grad_decomp(fun, x)(dx)
+
+    print("VJP DECOMP-3: ")
+
+    i = IndexGen("i", dx.size)
+ 
+    vjv_out = tn.flatten(vj, i) @ tn.flatten(dx, i)
+
+    print("VJP DECOMP-2: ")
+
+    vjv_ans = dot_container(dy, jv) 
+
+    print("VJP DECOMP-1: ")
+
+    assert tn.space(vj) == tn.space(x)
+
+    print("VJP DECOMP: ", vjv_out._data._data, vjv_ans._data._data)
+
+    assert tn.allclose(vjv_out, vjv_ans)
+
+
+
+
+# --- Assert decomposition JVP ---------------------------------------------- #
+
+def assert_jvp_decomp(fun, x):
+
+    op = agrad.diffop_forward(fun, x)
+    dx = tn.space(x).randn()
+
+    jv_out = op.grad(dx)
+    jv_ans = numerical_grad_decomp(fun, x)(dx)
+
+    dy = tn.space(jv_ans).randn()
+    
+    vjv_out = dot_container(dy, jv_out) 
+    vjv_ans = dot_container(dy, jv_ans)
+
+    assert tn.space(jv_out) == tn.space(jv_ans)
+    assert tn.allclose(vjv_out, vjv_ans) 
+
+
+
+
+
 # --- Helpers: container dot ------------------------------------------------ #
 
 def dot_container(xs, ys):
@@ -279,6 +338,27 @@ def numerical_grad_container(fun, x, eps=1e-6):
 
 
 
+# --- Helpers: decomposition numerical grad --------------------------------- #
+
+def numerical_grad_decomp(fun, x, eps=1e-6):
+
+    def grad(g):
+
+        out1 = fun(x + g * eps/2)  
+        out2 = fun(x - g * eps/2)
+
+        if isinstance(out1, tn.Tensor):
+           return (out1 - out2) / eps
+
+        return tc.ContainerGen(
+                  [(o1 - o2) / eps for o1, o2 in zip(out1, out2)]
+               )
+
+    return grad 
+
+
+
+
 # --- Assert gradients of a given mode and order ---------------------------- #
 
 @nary.nary_op
@@ -300,6 +380,8 @@ def assert_grad(fun, x, modes=("vjp","jvp"), submode=None, order=2):
          ("jvp", "type"     ): assert_jvp_type,
          ("vjp", "container"): assert_vjp_container, 
          ("jvp", "container"): assert_jvp_container,
+         ("vjp", "decomp"   ): assert_vjp_decomp,
+         ("jvp", "decomp"   ): assert_jvp_decomp,
         }[mode, submode](fun, x)  
 
         if order > 1:

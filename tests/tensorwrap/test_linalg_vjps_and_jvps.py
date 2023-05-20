@@ -79,7 +79,7 @@ class TestGradsDecomp:
 
        x = tn.TensorGen(w.xmatrix, (lind, rind)) 
 
-       assert_grad(fun, order=1, modes="vjp")(x, sind=w.sind)     
+       assert_grad(fun, order=1, modes="vjp", submode="decomp")(x, sind=w.sind)     
 
 
 
