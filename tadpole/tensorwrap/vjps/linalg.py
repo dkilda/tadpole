@@ -43,14 +43,68 @@ def eye(x, inds=None):
 
 def fmatrix(s): 
 
-    seye = eye(s,"sz")
+    seye = eye(s,"ij")
 
-    return 1. / (s("1z") - s("s1") + seye) - seye 
+    return 1. / (s("1j") - s("i1") + seye) - seye 
 
 
 
 
 # --- SVD ------------------------------------------------------------------- #
+
+def OLD_vjp_svd(g, out, x, sind=None, trunc=None):
+
+    """
+    https://arxiv.org/pdf/1909.02659.pdf
+
+    Eq. 1, 2, 36 (take complex conjugate of both sides)
+
+    """
+
+    du, ds, dv = g[0],   g[1],   g[2].H
+    u,  s,  v  = out[0], out[1], out[2].H
+
+    f = fmatrix(s**2)("ij")
+
+    uTdu = u.T("im") @ du("mj")
+    vTdv = v.T("im") @ dv("mj")
+
+    grad = eye(s,"ij") * ds("i1") 
+    grad = grad + f * s("1j") * (uTdu - uTdu.H)  
+    grad = grad + f * s("i1") * (vTdv - vTdv.H)
+ 
+    '''
+    if tn.iscomplex(u):
+       grad = grad + 1j * tn.imag(eye(uTdu) * uTdu) / s("1j")
+    '''
+
+    grad = u("li").C @ grad("ij") @ v.T("jr") 
+
+    '''
+    if x.shape[0] < x.shape[1]: 
+
+       vvH  = v("bm") @ v.H("mr")
+       grad = grad \
+            + ((u("la") / s("1a")) @ dv.T("ab") @ (eye(vvH) - vvH)).C
+
+       return grad(*tn.union_inds(x))
+
+
+    if x.shape[0] > x.shape[1]:
+
+       uuH  = u("bm") @ u.H("ml")
+       grad = grad \
+            + ((v("ra") / s("1a")) @ du.T("ab") @ (eye(uuH) - uuH)).T
+
+       return grad(*tn.union_inds(x))
+    '''
+
+
+    return grad(*tn.union_inds(x))
+
+
+
+
 
 def vjp_svd(g, out, x, sind=None, trunc=None):
 
@@ -73,30 +127,7 @@ def vjp_svd(g, out, x, sind=None, trunc=None):
     grad = grad + f * s("1j") * (uTdu - uTdu.H)  
     grad = grad + f * s("i1") * (vTdv - vTdv.H)
  
-    if tn.iscomplex(u):
-       grad = grad + 1j * tn.imag(eye(uTdu) * uTdu) / s("1j")
-
-
     grad = u("li").C @ grad("ij") @ v.T("jr") 
-
-
-    if x.shape[0] < x.shape[1]: 
-
-       vvH  = v("bm") @ v.H("mr")
-       grad = grad \
-            + ((u("la") / s("1a")) @ dv.T("ab") @ (eye(vvH) - vvH)).C
-
-       return grad(*tn.union_inds(x))
-
-
-    if x.shape[0] > x.shape[1]:
-
-       uuH  = u("bm") @ u.H("ml")
-       grad = grad \
-            + ((v("ra") / s("1a")) @ du.T("ab") @ (eye(uuH) - uuH)).T
-
-       return grad(*tn.union_inds(x))
-
 
     return grad(*tn.union_inds(x))
 

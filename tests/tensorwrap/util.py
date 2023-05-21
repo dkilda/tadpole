@@ -304,6 +304,26 @@ def assert_jvp_decomp(fun, x):
 
 
 
+# --- Assert decomposition VJP with customized gradients  ------------------- # 
+
+def assert_vjp_custom(fun, x, dx, dy):
+
+    op = agrad.diffop_reverse(fun, x)
+    y  = op.value()
+
+    vj = op.grad(dy)
+    jv = numerical_grad_container(fun, x)(dx)
+
+    i = IndexGen("i", dx.size)
+ 
+    vjv_out = tn.real(tn.flatten(vj, i) @ tn.flatten(dx, i))
+    vjv_ans = tn.real(dot_container(dy, jv)) 
+
+    assert tn.space(vj) == tn.space(x)
+    assert tn.allclose(vjv_out, vjv_ans)
+
+
+
 
 # --- Helpers: container dot ------------------------------------------------ #
 
