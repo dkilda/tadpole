@@ -125,7 +125,7 @@ class Tensor(abc.ABC):
        pass
 
 
-   # --- Arithmetics and element access --- # 
+   # --- Arithmetics --- # 
 
    @abc.abstractmethod
    def __neg__(self):
@@ -148,8 +148,23 @@ class Tensor(abc.ABC):
        pass
 
    @abc.abstractmethod
+   def __floordiv__(self, other):
+       pass
+
+   @abc.abstractmethod
+   def __mod__(self, other):
+       pass
+
+   @abc.abstractmethod
    def __pow__(self, other):
        pass
+
+   @abc.abstractmethod
+   def __matmul__(self, other):
+       pass
+
+
+   # --- Reflected arithmetics --- # 
 
    @abc.abstractmethod
    def __radd__(self, other):
@@ -168,9 +183,20 @@ class Tensor(abc.ABC):
        pass
 
    @abc.abstractmethod
+   def __rfloordiv__(self, other):
+       pass
+
+   @abc.abstractmethod
+   def __rmod__(self, other):
+       pass
+
+   @abc.abstractmethod
    def __rpow__(self, other):
        pass
 
+   @abc.abstractmethod
+   def __rmatmul__(self, other):
+       pass
 
 
 

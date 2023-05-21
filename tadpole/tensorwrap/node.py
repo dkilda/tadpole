@@ -138,20 +138,27 @@ class NodeTensor(an.NodeGen, tn.Tensor, tn.Grad):
        return tn.div(self, other)
 
 
-   def __mod__(self, other):
-
-       return tn.mod(self, other)
-
-
    def __floordiv__(self, other):
 
        return tn.floordiv(self, other)
+
+
+   def __mod__(self, other):
+
+       return tn.mod(self, other)
 
 
    def __pow__(self, other):
 
        return tn.power(self, other)
 
+
+   def __matmul__(self, other):
+
+       return tn.contract(self, other)
+
+
+   # --- Tensor methods: reflected arithmetics --- # 
 
    def __radd__(self, other):
 
@@ -173,19 +180,24 @@ class NodeTensor(an.NodeGen, tn.Tensor, tn.Grad):
        return tn.div(other, self)
 
 
-   def __rmod__(self, other):
-
-       return tn.mod(other, self)
-
-
    def __rfloordiv__(self, other):
 
        return tn.floordiv(other, self)
 
 
+   def __rmod__(self, other):
+
+       return tn.mod(other, self)
+
+
    def __rpow__(self, other):
 
        return tn.power(other, self)
+
+
+   def __rmatmul__(self, other):
+
+       return tn.contract(other, self)
 
 
 

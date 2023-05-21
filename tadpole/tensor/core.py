@@ -185,10 +185,27 @@ class NullGrad(Tensor, Grad, Pluggable):
        return self.todense()
 
 
+   def __floordiv__(self, other):
+
+       return self.todense()
+
+
+   def __mod__(self, other):
+
+       return self.todense()
+
+
    def __pow__(self, other):
 
        return self.todense() 
 
+
+   def __matmul__(self, other):
+
+       return self.todense()
+
+
+   # --- Reflected arithmetics --- # 
 
    def __radd__(self, other): 
 
@@ -213,12 +230,33 @@ class NullGrad(Tensor, Grad, Pluggable):
        )
 
 
+   def __rfloordiv__(self, other):
+
+       raise ValueError(
+          f"{type(self).__name__}.__rfloordiv__: "
+          f"division by zero encountered!"
+       )
+
+
+   def __rmod__(self, other):
+
+       raise ValueError(
+          f"{type(self).__name__}.__rmod__: "
+          f"division by zero encountered!"
+       )
+
+
    def __rpow__(self, other):
 
        if not isinstance(other, Tensor):
           other = astensor(other)
 
        return other.space().ones()
+
+
+   def __rmatmul__(self, other):
+
+       return self.todense()
 
 
 
@@ -388,10 +426,27 @@ class SparseGrad(Tensor, Grad, Pluggable):
        return self.todense() / other 
 
 
+   def __floordiv__(self, other):
+
+       return binary.floordiv(self.todense(), other) 
+
+
+   def __mod__(self, other):
+
+       return binary.mod(self.todense(), other) 
+
+
    def __pow__(self, other):
 
        return self.todense() ** other 
 
+
+   def __matmul__(self, other):
+
+       return self.todense() @ other
+
+
+   # --- Reflected arithmetics --- # 
 
    def __radd__(self, other): 
 
@@ -413,9 +468,24 @@ class SparseGrad(Tensor, Grad, Pluggable):
        return other / self.todense()
 
 
+   def __rfloordiv__(self, other):
+
+       return binary.floordiv(other, self.todense())
+
+
+   def __rmod__(self, other):
+
+       return binary.mod(other, self.todense())
+
+
    def __rpow__(self, other):
 
        return other ** self.todense() 
+
+
+   def __rmatmul__(self, other):
+
+       return other @ self.todense()
 
 
 
@@ -573,29 +643,6 @@ class TensorGen(Tensor, Grad, Pluggable):
 
        return reidx.reindexto(self, *inds)
 
-   """
-       if len(inds) == 1 and isinstance(inds[0], str):
-          inds = list(inds[0])
-
-       inds = ["1" if ind in ("1", 1, None) else ind for ind in inds]
-
-       renamed_inds = [ind for ind in inds if ind != "1"] 
-       new_inds     = [ind for ind in inds if ind == "1"]  
-
-       indmap = {i1: i2 if isinstance(i2, Index) else IndexLit(i2, len(i1)) 
-                     for i1, i2 in zip(self._inds, renamed_inds)} 
-
-       if util.identity_dict(indmap):  
-          return self
-         
-       out = reidx.reindex(self, indmap)
-
-       if len(new_inds) > 0:
-          out = reidx.unsqueeze(out, [IndexLit(ind) for ind in new_inds])
-          out = reidx.transpose(out, *inds)
-
-       return out
-   """
 
    @property
    def C(self):
@@ -644,14 +691,14 @@ class TensorGen(Tensor, Grad, Pluggable):
        return binary.div(self, other)
 
 
-   def __mod__(self, other):
-
-       return binary.mod(self, other)
-
-
    def __floordiv__(self, other):
 
        return binary.floordiv(self, other)
+
+
+   def __mod__(self, other):
+
+       return binary.mod(self, other)
 
 
    def __pow__(self, other):
@@ -663,6 +710,8 @@ class TensorGen(Tensor, Grad, Pluggable):
 
        return contraction.contract(self, other)
 
+
+   # --- Reflected arithmetics --- # 
 
    def __radd__(self, other):
 
@@ -684,14 +733,14 @@ class TensorGen(Tensor, Grad, Pluggable):
        return binary.div(other, self)
 
 
-   def __rmod__(self, other):
-
-       return binary.mod(other, self)
-
-
    def __rfloordiv__(self, other):
 
        return binary.floordiv(other, self)
+
+
+   def __rmod__(self, other):
+
+       return binary.mod(other, self)
 
 
    def __rpow__(self, other):
