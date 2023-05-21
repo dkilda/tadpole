@@ -346,27 +346,6 @@ def numerical_grad_container(fun, x, eps=1e-6):
     return grad 
 
 
-"""
-
-# --- Helpers: decomposition numerical grad --------------------------------- #
-
-def numerical_grad_decomp(fun, x, eps=1e-6):
-
-    def grad(g):
-
-        out1 = fun(x + g * eps/2)  
-        out2 = fun(x - g * eps/2)
-
-        if isinstance(out1, tn.Tensor):
-           return (out1 - out2) / eps
-
-        return tc.ContainerGen(
-                  [(o1 - o2) / eps for o1, o2 in zip(out1, out2)]
-               )
-
-    return grad 
-"""
-
 
 
 # --- Assert gradients of a given mode and order ---------------------------- #
@@ -408,13 +387,7 @@ def assert_grad(fun, x, modes=("vjp","jvp"), submode=None, order=2):
                      "jvp": agrad.diffop_forward,
                     }[mode](fun, x)
 
-               out = op.grad(g)
-
-               print("GRADFUN: ", g, x, out)
-
-               return out
-
-               #return op.grad(g)
+               return op.grad(g)
 
            assert_grad(
               gradfun, modes=mode, submode=submode, order=order-1

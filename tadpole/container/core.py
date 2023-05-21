@@ -512,8 +512,6 @@ class ContainerGen(TensorContainer, tn.Grad):
        if not isinstance(data, tuple):
           data = tuple(data)
 
-       print("CONTAINER-CTOR: ", data)
-
        self._data = data
 
 

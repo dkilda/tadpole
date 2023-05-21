@@ -61,19 +61,8 @@ def vjp_svd(g, out, x, sind=None, trunc=None):
 
     """
 
-    #print("VJP-SVD: ", g)
-
     du, ds, dv = g[0],   g[1],   g[2].H
     u,  s,  v  = out[0], out[1], out[2].H
-
-    print("VJP-SVD-INPUT: ", x, out, u, s, v)
-
-    print("VJP-SVD-INPUT-0: ", du, ds, dv)
-
-    print("VJP-SVD-0: ", u.T("im"), s("i1"))
-
-    #print("VJP-SVD-1: ", s, s._inds)
-    #assert False
 
     f = fmatrix(s**2)("ij")
 
@@ -86,8 +75,6 @@ def vjp_svd(g, out, x, sind=None, trunc=None):
  
     if tn.iscomplex(u):
        grad = grad + 1j * tn.imag(eye(uTdu) * uTdu) / s("1j")
-
-    print("VJP-SVD-1: ", uTdu, vTdv, grad)
 
 
     grad = u("li").C @ grad("ij") @ v.T("jr") 
@@ -111,15 +98,9 @@ def vjp_svd(g, out, x, sind=None, trunc=None):
        return grad(*tn.union_inds(x))
 
 
-    res = grad(*tn.union_inds(x))
+    return grad(*tn.union_inds(x))
 
-    print("VJP-SVD-RETURN: ", grad, res)
 
-    return res
-
-    #return grad(*tn.union_inds(x))
-
-    
 
 
 # --- Eigendecomposition (general) ------------------------------------------ #

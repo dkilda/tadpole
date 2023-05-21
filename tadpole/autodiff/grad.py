@@ -216,21 +216,10 @@ class PropagationReverse(Propagation):
 
    def apply(self, fun):
 
-       print("APPLY: ", self._end, self._end._source)
-
        return fun(self._end)
 
 
    def grads(self, seed):
-
-       print("GRADS: ", self._start, self._end, self._end.connected(self._start))
-
-       """
-       try:
-          print("GRADS: ", self._start._source._source, self._end._source, self._end.connected(self._start))
-       except AttributeError:
-          print("GRADS: ", self._start, self._end, self._end.connected(self._start))
-       """
 
        if not self._end.connected(self._start):
           return GradAccum(self._start.tonull())

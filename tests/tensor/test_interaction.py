@@ -177,12 +177,14 @@ class TestTensorInteraction:
 
    @pytest.mark.parametrize("shapes, inds, outinds, keepinds", [
       [[(3,4,5),   (3,4,5)      ], ["ijk",  "ijk"   ], "ijk",    None], 
-      [[(3,4,5),   (3,1,4,5)    ], ["ijk",  "imjk"  ], "ijk",    None],
+      #[[(3,4,5),   (3,1,4,5)    ], ["ijk",  "imjk"  ], "ijk",    None],
+      [[(3,4,5),   (3,1,4,5)    ], ["ijk",  "imjk"  ], "imjk",   None],
       [[(3,4,5),   (3,1,4,5)    ], ["ijk",  "imjk"  ], "ijk",    False],
       [[(3,4,5),   (3,1,4,5)    ], ["ijk",  "imjk"  ], "imjk",   True],
       [[(3,4,5),   (3,2,4,5)    ], ["ijk",  "imjk"  ], "imjk",   None], 
       [[(3,2,4,5), (3,4,5)      ], ["imjk", "ijk"   ], "ijk",    None],
-      [[(3,4,5),   (3,2,1,4,1,5)], ["ijk",  "imnjpk"], "imjk",   None],
+      #[[(3,4,5),   (3,2,1,4,1,5)], ["ijk",  "imnjpk"], "imjk",   None],
+      [[(3,4,5),   (3,2,1,4,1,5)], ["ijk",  "imnjpk"], "imnjpk", None],
       [[(3,4,5),   (3,2,1,4,1,5)], ["ijk",  "imnjpk"], "imjk",   False],
       [[(3,4,5),   (3,2,1,4,1,5)], ["ijk",  "imnjpk"], "imnjpk", True],
    ])

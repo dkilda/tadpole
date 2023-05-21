@@ -199,7 +199,7 @@ def expand_like(x, target, inds=None):
 
 
 
-def reshape_like(x, target, keepinds=False): 
+def reshape_like(x, target, keepinds=True): #False): 
 
     if  not keepinds:
         target = reidx.squeeze(target) 
