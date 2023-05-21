@@ -29,6 +29,7 @@ from tadpole.container import (
 from tadpole.index import (
    Index,
    IndexGen, 
+   IndexLit,
    Indices,
 )
 

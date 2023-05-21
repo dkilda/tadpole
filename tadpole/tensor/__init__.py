@@ -70,7 +70,6 @@ from .core import (
    todense,
    tonull,
    withdata,
-   withinds,
    space,
    item,
    dtype,
@@ -120,6 +119,7 @@ from .reduction import (
 # --- Reindexing ------------------------------------------------------------ #
 
 from .reindexing import (
+   reindexto,
    reindex, 
    transpose,
    htranspose,

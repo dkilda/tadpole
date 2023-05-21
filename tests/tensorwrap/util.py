@@ -241,27 +241,36 @@ def assert_jvp_container(fun, x):
 
 def assert_vjp_decomp(fun, x):
 
+    print("VJP DECOMP-6: ")
+
     op = agrad.diffop_reverse(fun, x)
+
+    print("VJP DECOMP-6.1: ")
+
     y  = op.value()
+
+    print("VJP DECOMP-6.2: ")
 
     dx = tn.space(x).randn()
     dy = tn.space(y).randn()
+
+    print("VJP DECOMP-5: ", dx, x, dy, y)
 
     vj = op.grad(dy)
 
     print("VJP DECOMP-4: ")
 
-    jv = numerical_grad_decomp(fun, x)(dx)
+    jv = numerical_grad_container(fun, x)(dx)
 
     print("VJP DECOMP-3: ")
 
     i = IndexGen("i", dx.size)
  
-    vjv_out = tn.flatten(vj, i) @ tn.flatten(dx, i)
+    vjv_out = tn.real(tn.flatten(vj, i) @ tn.flatten(dx, i))
 
     print("VJP DECOMP-2: ", vj, dx)
 
-    vjv_ans = dot_container(dy, jv) 
+    vjv_ans = tn.real(dot_container(dy, jv)) 
 
     print("VJP DECOMP-1: ")
 
@@ -282,12 +291,12 @@ def assert_jvp_decomp(fun, x):
     dx = tn.space(x).randn()
 
     jv_out = op.grad(dx)
-    jv_ans = numerical_grad_decomp(fun, x)(dx)
+    jv_ans = numerical_grad_container(fun, x)(dx)
 
     dy = tn.space(jv_ans).randn()
     
-    vjv_out = dot_container(dy, jv_out) 
-    vjv_ans = dot_container(dy, jv_ans)
+    vjv_out = tn.real(dot_container(dy, jv_out)) 
+    vjv_ans = tn.real(dot_container(dy, jv_ans))
 
     assert tn.space(jv_out) == tn.space(jv_ans)
     assert tn.allclose(vjv_out, vjv_ans) 
@@ -316,11 +325,9 @@ def dot_container(xs, ys):
 
 def numerical_grad_container(fun, x, eps=1e-6):
 
-
     def compute(fun, x, y):
 
         return tc.ContainerGen([fun(xi, yi) for xi, yi in zip(x, y)])
-
 
     def grad(g):
 
@@ -331,34 +338,15 @@ def numerical_grad_container(fun, x, eps=1e-6):
              out1 = fun(compute(lambda a,b: a + b * eps/2, x, g)) 
              out2 = fun(compute(lambda a,b: a - b * eps/2, x, g)) 
 
-        """
-        if isinstance(xs, tn.Tensor): xs = tc.ContainerGen([xs])
-        if isinstance(gs, tn.Tensor): gs = tc.ContainerGen([gs])
-
-        print("NUMGRAD: ", xs, gs, " | ", xs._data, gs._data)
-   
-        out1 = fun(tc.ContainerGen([x + g * eps/2 for x, g in zip(xs, gs)])) 
-        out2 = fun(tc.ContainerGen([x - g * eps/2 for x, g in zip(xs, gs)]))
-
-        print("NUMGRAD-1: ", out1, out2, " | ", out1._data, out2._data)
-        """
-
         if isinstance(out1, tn.Tensor):
            return (out1 - out2) / eps
 
         return compute(lambda a,b: (a - b) / eps, out1, out2)
 
-
-        """
-        return tc.ContainerGen(
-                  [(o1 - o2) / eps for o1, o2 in zip(out1, out2)]
-               )
-        """
-
     return grad 
 
 
-
+"""
 
 # --- Helpers: decomposition numerical grad --------------------------------- #
 
@@ -377,7 +365,7 @@ def numerical_grad_decomp(fun, x, eps=1e-6):
                )
 
     return grad 
-
+"""
 
 
 
@@ -420,7 +408,13 @@ def assert_grad(fun, x, modes=("vjp","jvp"), submode=None, order=2):
                      "jvp": agrad.diffop_forward,
                     }[mode](fun, x)
 
-               return op.grad(g)
+               out = op.grad(g)
+
+               print("GRADFUN: ", g, x, out)
+
+               return out
+
+               #return op.grad(g)
 
            assert_grad(
               gradfun, modes=mode, submode=submode, order=order-1

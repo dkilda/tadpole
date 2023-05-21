@@ -571,6 +571,9 @@ class TensorGen(Tensor, Grad, Pluggable):
 
    def __call__(self, *inds):
 
+       return reidx.reindexto(self, *inds)
+
+   """
        if len(inds) == 1 and isinstance(inds[0], str):
           inds = list(inds[0])
 
@@ -592,7 +595,7 @@ class TensorGen(Tensor, Grad, Pluggable):
           out = reidx.transpose(out, *inds)
 
        return out
-
+   """
 
    @property
    def C(self):
@@ -775,15 +778,6 @@ def shape(x):
 
     return x.shape
 
-
-
-
-# --- Tensor manipulation --------------------------------------------------- #
-
-@ad.nondifferentiable
-def withinds(x, *inds):
-
-    return x(*inds)
 
 
 

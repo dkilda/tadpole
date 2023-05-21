@@ -35,6 +35,7 @@ from tadpole.tensor.types import (
 from tadpole.index import (
    Index,
    IndexGen,  
+   IndexLit,
    Indices,
 )
 
@@ -404,6 +405,91 @@ class TestTensorReindex:
        ans  = tn.TensorGen(ans, (ind,))
 
        assert out == ans
+
+
+   # --- Advanced reindexing for tensor equations --- #
+
+   @pytest.mark.parametrize("shape, indnames, indnames1, inds1", [
+      [(2,3,4), "ijk", "aib",  ( 
+                                IndexLit("a",2), 
+                                IndexLit("i",3), 
+                                IndexLit("b",4),
+                               )],
+   ])
+   def test_reindexto(self, shape, indnames, indnames1, inds1):
+
+       w = data.tensor_dat(data.randn)(
+              self.backend, indnames, shape
+           ) 
+       ans = tn.TensorGen(w.array, inds1)
+
+       assert w.tensor(*indnames1) == ans
+       assert w.tensor(indnames1)  == ans
+
+
+   @pytest.mark.parametrize("shape, indnames, shape1, indnames1, inds1", [
+      [(2,3,4), "ijk", (2,1,3,4), "a1ib", (
+                                           IndexLit("a",2), 
+                                           IndexLit("1",1), 
+                                           IndexLit("i",3), 
+                                           IndexLit("b",4),
+                                          )],
+   ])
+   def test_reindexto_001(self, shape, indnames, shape1, indnames1, inds1):
+
+       x = data.tensor_dat(data.randn)(
+              self.backend, indnames, shape, seed=1
+           ) 
+       y = data.array_dat(data.randn)(
+              self.backend, shape1, seed=1
+           ) 
+       ans = tn.TensorGen(y.array, inds1)
+
+       assert x.tensor(*indnames1) == ans
+       assert x.tensor(indnames1)  == ans
+
+
+   @pytest.mark.parametrize("shape, inds, inds1", [
+      [(2,3,4), "ijk", (
+                        IndexLit("a",2), 
+                        IndexLit("i",3), 
+                        IndexLit("b",4),
+                       )],
+   ])
+   def test_reindexto_002(self, shape, inds, inds1):
+
+       w = data.tensor_dat(data.randn)(
+              self.backend, inds, shape
+           ) 
+       ans = tn.TensorGen(w.array, inds1)
+
+       assert w.tensor(*inds1) == ans
+
+
+   @pytest.mark.parametrize("shape, indnames, indnames1, inds1", [
+      [(2,3,4), "ijk", "aib",  ( 
+                                IndexLit("a",2), 
+                                IndexLit("i",3), 
+                                IndexLit("b",4),
+                               )],
+   ])
+   def test_reindexto_003(self, shape, indnames, indnames1, inds1):
+
+       w = data.tensor_dat(data.randn)(
+              self.backend, indnames, shape
+           ) 
+       ans = tn.TensorGen(w.array, inds1)
+       out = w.tensor(indnames1)
+
+       assert out(indnames1) == ans
+       assert out(indnames1) is out
+
+
+
+
+
+
+
 
 
 

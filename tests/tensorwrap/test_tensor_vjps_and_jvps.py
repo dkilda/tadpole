@@ -792,6 +792,26 @@ class TestGradsReindexing:
        assert_grad(fun)(x.tensor, ind) 
 
 
+   @pytest.mark.parametrize("shape, inds, inds1", [
+      [(2,3,4), "ijk", ( 
+                        IndexLit("a",2), 
+                        IndexLit("i",3), 
+                        IndexLit("b",4),
+                       )],
+      [(2,3,4), "ijk", "aib" ],
+      [(2,3,4), "ijk", "a1ib"],
+   ])
+   def test_reindexto(self, shape, inds, inds1):
+
+       def fun(x, *inds):
+           return x(*inds) 
+
+       w = data.tensor_dat(data.randn)(
+              self.backend, inds, shape
+           )
+       assert_grad(fun)(w.tensor, *inds1)
+
+
 
 
 ###############################################################################

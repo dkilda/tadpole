@@ -88,7 +88,7 @@ class NodeTensor(an.NodeGen, tn.Tensor, tn.Grad):
 
    def __call__(self, *inds):
 
-       return tn.withinds(self, *inds) 
+       return tn.reindexto(self, *inds) 
 
 
    @property

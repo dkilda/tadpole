@@ -449,12 +449,40 @@ class SparseGrad(TensorContainer, tn.Grad):
 @ad.differentiable
 def ascontainer(*args):
  
-    if len(args) == 1 and isinstance(args[0], TensorContainer):
+    if iscontainer(*args):
        return args[0]
 
     return ContainerGen(*args)
 
 
+def vjp_ascontainer(g, adx, out, *args):
+
+    if iscontainer(*args):
+       return g
+
+    return g[adx]
+
+
+def jvp_ascontainer(g, adx, out, *args):
+
+    if iscontainer(*args):
+       return g
+
+    return sparsegrad(g, adx, out.space())
+
+
+def iscontainer(*args):
+
+    return len(args) == 1 and isinstance(args[0], TensorContainer)
+
+
+ad.makevjp_combo(ascontainer, vjp_ascontainer)  
+ad.makejvp_combo(ascontainer, jvp_ascontainer)
+
+
+    
+
+"""
 ad.makevjp_combo(ascontainer,    
               lambda g, adx, out, *args: g[adx]
 )
@@ -463,7 +491,7 @@ ad.makevjp_combo(ascontainer,
 ad.makejvp_combo(ascontainer,    
               lambda g, adx, out, *args: sparsegrad(g, adx, out.space())
 )
-
+"""
 
 
 
@@ -483,6 +511,8 @@ class ContainerGen(TensorContainer, tn.Grad):
    
        if not isinstance(data, tuple):
           data = tuple(data)
+
+       print("CONTAINER-CTOR: ", data)
 
        self._data = data
 

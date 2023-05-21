@@ -9,6 +9,7 @@ import tadpole.array    as ar
 import tadpole.index    as tid
 
 import tadpole.tensor.core           as core
+import tadpole.tensor.interaction    as tni
 import tadpole.tensor.elemwise_unary as unary
 
 
@@ -356,6 +357,60 @@ def diag(x, ind=None):
 
     op = tensor_reindex(x)
     return op.diag(ind)
+
+
+
+
+# --- Advanced reindexing for tensor equations ------------------------------ #
+
+def parse_str_input(fun):
+
+    def wrap(x, *inds):
+
+        if len(inds) == 1 and isinstance(inds[0], str):
+           inds = list(inds[0])
+
+        return fun(x, *inds)
+
+    return wrap 
+
+
+def insert_new_inds(fun):
+
+    def wrap(x, *inds):
+
+        inds = ["1" if ind in ("1", 1, None) else ind for ind in inds]
+
+        renamed_inds = [ind for ind in inds if ind != "1"] 
+        new_inds     = [ind for ind in inds if ind == "1"]
+
+        out = fun(x, *renamed_inds) 
+
+        if len(new_inds) > 0:
+           out = unsqueeze(out, [IndexLit(ind) for ind in new_inds])
+           out = transpose(out, *inds)
+
+        return out
+
+    return wrap    
+
+
+@parse_str_input
+@insert_new_inds
+def reindexto(x, *inds):
+
+    def index(ind, size):
+        if isinstance(ind, Index):
+           return ind
+        return IndexLit(ind, size)
+
+    indmap = {i1: index(i2, len(i1)) 
+                  for i1, i2 in zip(tni.union_inds(x), inds)} 
+
+    if util.identity_dict(indmap):  
+       return x
+         
+    return reindex(x, indmap)
 
 
 

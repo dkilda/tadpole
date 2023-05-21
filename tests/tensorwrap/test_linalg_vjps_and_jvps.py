@@ -71,11 +71,20 @@ class TestGradsDecomp:
    def test_svd(self, decomp_input):
 
        def fun(x, sind):
-           #return la.svd(x, sind)
-           return tc.ascontainer(la.svd(x, sind))
+           return la.svd(x, sind)
+           #print("FUN RETURN ", out, out._source._source)
+           #return out
 
            #U, S, VH, error = la.svd(x, sind) 
-           #return tc.ascontainer(U, S, VH)  #tn.absolute(U), S, tn.absolute(VH)) #, error)
+
+           """
+           try:
+              print("FUN: ", S, S._inds)
+           except AttributeError:
+              print("FUN: ", S, S._source._source._inds)
+           """
+
+           #return tc.ascontainer(tn.absolute(U), S, tn.absolute(VH)) 
          
        w = data.svd_tensor_dat(decomp_input)(
               data.randn, self.backend, dtype="float64" #"complex128" #"float64"
@@ -86,9 +95,8 @@ class TestGradsDecomp:
 
        x = tn.TensorGen(w.xmatrix, (lind, rind)) 
 
-       assert_grad(fun, order=1, modes="vjp", submode="decomp")(x, sind=w.sind)     
-
-
+       assert_grad(fun, order=2, modes="vjp", submode="decomp")(x, sind="s")     
+       #assert False
 
 
 
