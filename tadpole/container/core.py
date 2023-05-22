@@ -634,6 +634,12 @@ def tonull(x):
 
 
 
+ad.makevjp(addgrads, "identity", "identity")
+ad.makejvp(addgrads, "identity", "identity") 
+
+
+
+
 # --- Container functions --------------------------------------------------- #
 
 @ad.nondifferentiable

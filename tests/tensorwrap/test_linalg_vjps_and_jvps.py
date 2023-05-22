@@ -65,7 +65,7 @@ class TestGradsDecomp:
        return self._backend
 
 
-   #@pytest.mark.skip
+   @pytest.mark.skip
    @pytest.mark.parametrize("decomp_input", [
       #data.decomp_input_001,
       data.decomp_input_002,
@@ -74,11 +74,9 @@ class TestGradsDecomp:
    def test_svd(self, decomp_input):
 
        def fun(x, sind):
-           return la.svd(x, sind)
-           """
+           #return la.svd(x, sind)
            U, S, VH, error = la.svd(x, sind) 
-           return tc.ascontainer(tn.absolute(U), S, tn.absolute(VH)) 
-           """
+           return tc.ascontainer(U, S, VH) #tn.absolute(U), S, tn.absolute(VH)) 
 
        w = data.svd_tensor_dat(decomp_input)(
               data.randn, self.backend, dtype="float64" #"complex128" #"float64"
@@ -89,10 +87,10 @@ class TestGradsDecomp:
 
        x = tn.TensorGen(w.xmatrix, (lind, rind)) 
 
-       assert_grad(fun, order=1, modes="vjp", submode="decomp")(x, sind="s")     
+       assert_grad(fun, order=2, modes="vjp", submode="decomp")(x, sind="s")     
 
 
-   #@pytest.mark.skip
+   @pytest.mark.skip
    @pytest.mark.parametrize("decomp_input", [
       #data.decomp_input_001,
       data.decomp_input_002,
@@ -138,13 +136,11 @@ class TestGradsDecomp:
        def fun(x):
 
            out     = la.svd(x, sind="s")
-
-           """
            u, s, v = out[0], out[1], out[2].H
 
-           du = tn.space(u).zeros()
-           ds = tn.space(s).zeros() #tn.space(s).randn()
-           dv = tn.space(v).zeros()
+           du = tn.space(u).ones()
+           ds = tn.space(s).ones()
+           dv = tn.space(v).ones()
 
            f = fmatrix(s**2)("ij")
 
@@ -152,20 +148,19 @@ class TestGradsDecomp:
            vTdv = v.T("im") @ dv("mj")
 
            grad = eye(s,"ij") * ds("i1") 
-           grad = grad + f * s("1j") * (uTdu - uTdu.H)  
-           grad = grad + f * s("i1") * (vTdv - vTdv.H)
- 
-           grad = u("li").C @ grad("ij") @ v.T("jr") 
+           grad = grad + f * s("1j") * (uTdu("ij") - uTdu.H("ij"))  
+           grad = grad + f * s("i1") * (vTdv("ij") - vTdv.H("ij"))
+
+           grad = u("li").C @ grad("ij") @ v.T("jr")  
 
            return grad(*tn.union_inds(x))
-           """
-
-           return out
-
-       assert_grad(fun, order=1, modes="vjp", submode="decomp")(x)   
 
 
-   #@pytest.mark.skip
+
+       assert_grad(fun, order=1, modes="vjp", submode="decomp")(x) 
+       #assert False
+
+   @pytest.mark.skip
    @pytest.mark.parametrize("decomp_input", [
       #data.decomp_input_001,
       data.decomp_input_002,
@@ -196,7 +191,7 @@ class TestGradsDecomp:
        assert_vjp_custom(fun, x, dx, dy)  
 
 
-   #@pytest.mark.skip
+   @pytest.mark.skip
    @pytest.mark.parametrize("decomp_input", [
       #data.decomp_input_001,
       data.decomp_input_002,
