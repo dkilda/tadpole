@@ -221,7 +221,7 @@ an.register(tn.NullGrad,   NodeTensor)
 
 # --- Node for Container objects -------------------------------------------- #
 
-class NodeContainer(an.NodeGen, tc.TensorContainer, tn.Grad):
+class NodeContainer(an.NodeGen, tc.Container, tn.Grad):
 
    # --- Gradient operations --- #
 

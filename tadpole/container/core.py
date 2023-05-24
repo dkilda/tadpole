@@ -9,7 +9,7 @@ import tadpole.index    as tid
 
 from tadpole.container.types import (
    Container,
-   TensorContainer,
+   Container,
 )
 
 
@@ -36,7 +36,7 @@ def container_opts(opts, i):
 
 # --- ContainerSpace -------------------------------------------------------- #
 
-class ContainerSpace(Container, tn.Space):
+class ContainerSpace(util.Container, tn.Space):
 
    # --- Construction --- #
 
@@ -235,7 +235,7 @@ class ContainerSpace(Container, tn.Space):
 
 # --- Null gradient --------------------------------------------------------- #
 
-class NullGrad(TensorContainer, tn.Grad):
+class NullGrad(Container, tn.Grad):
 
    # --- Construction --- #
 
@@ -330,7 +330,7 @@ class NullGrad(TensorContainer, tn.Grad):
 
 # --- Sparse gradient ------------------------------------------------------- #
 
-class SparseGrad(TensorContainer, tn.Grad):
+class SparseGrad(Container, tn.Grad):
 
    # --- Construction --- #
 
@@ -449,57 +449,38 @@ class SparseGrad(TensorContainer, tn.Grad):
 # --- Container factories --------------------------------------------------- #
 
 @ad.differentiable
-def ascontainer(*args):
+def container(*args):
  
-    if iscontainer(*args):
-       return args[0]
-
     return ContainerGen(*args)
 
 
-def vjp_ascontainer(g, adx, out, *args):
-
-    if iscontainer(*args):
-       return g
+def vjp_container(g, adx, out, *args):
 
     return g[adx]
 
 
-def jvp_ascontainer(g, adx, out, *args):
-
-    if iscontainer(*args):
-       return g
+def jvp_container(g, adx, out, *args):
 
     return ungetitem(g, adx, out.space())
 
 
-def iscontainer(*args):
-
-    return len(args) == 1 and isinstance(args[0], TensorContainer)
 
 
-ad.makevjp_combo(ascontainer, vjp_ascontainer)  
-ad.makejvp_combo(ascontainer, jvp_ascontainer)
-
-
-    
-
-"""
-ad.makevjp_combo(ascontainer,    
+ad.makevjp_combo(container,    
               lambda g, adx, out, *args: g[adx]
 )
 
 
-ad.makejvp_combo(ascontainer,    
+ad.makejvp_combo(container,    
               lambda g, adx, out, *args: ungetitem(g, adx, out.space())
 )
-"""
+
 
 
 
 # --- General tensor container ---------------------------------------------- #
 
-class ContainerGen(TensorContainer, tn.Grad):
+class ContainerGen(Container, tn.Grad):
 
    # --- Construction --- #
 
@@ -732,7 +713,7 @@ def ungetitem(x, pos, space):
 
     if isinstance(pos, int):
 
-       #if isinstance(x, TensorContainer) and len(x) == 1:
+       #if isinstance(x, Container) and len(x) == 1:
        #   x = x.item()
 
        pos = [pos]

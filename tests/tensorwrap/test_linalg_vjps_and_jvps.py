@@ -83,8 +83,8 @@ class TestGradsDecomp:
    def test_gradfun_000(self, indnames, shape):
 
        def fun(x):
-           U, S = tc.ascontainer(x,x) 
-           return tc.ascontainer(U, tn.sin(S)) 
+           U, S = tc.container(x,x) 
+           return tc.container(U, tn.sin(S)) 
 
        def gradfun(x, g):
            op = agrad.diffop_reverse(fun, x)
@@ -94,7 +94,7 @@ class TestGradsDecomp:
        def _assert_grad(fun, x):
 
            if isinstance(x, tuple):
-              x = tc.ascontainer(x)
+              x = tc.container(x)
 
            assert_vjp_container(fun, x)
 
@@ -125,7 +125,7 @@ class TestGradsDecomp:
        def _assert_grad(fun, x):
 
            if isinstance(x, tuple):
-              x = tc.ascontainer(x)
+              x = tc.container(x)
 
            assert_vjp_container(fun, x)
 
@@ -155,7 +155,7 @@ class TestGradsDecomp:
        def _assert_grad(fun, x):
 
            if isinstance(x, tuple):
-              x = tc.ascontainer(x)
+              x = tc.container(x)
 
            assert_vjp_container(fun, x)
 
@@ -204,7 +204,7 @@ class TestGradsDecomp:
        def _assert_grad(fun, x):
 
            if isinstance(x, tuple):
-              x = tc.ascontainer(x)
+              x = tc.container(x)
 
            assert_vjp_container(fun, x)
 
@@ -232,7 +232,7 @@ class TestGradsDecomp:
        def _assert_grad(fun, x):
 
            if isinstance(x, tuple):
-              x = tc.ascontainer(x)
+              x = tc.container(x)
 
            assert_jvp_container(fun, x)
 
@@ -262,7 +262,7 @@ class TestGradsDecomp:
        def _assert_grad(fun, x):
 
            if isinstance(x, tuple):
-              x = tc.ascontainer(x)
+              x = tc.container(x)
 
            assert_jvp_container(fun, x)
 
@@ -311,7 +311,7 @@ class TestGradsDecomp:
        def _assert_grad(fun, x):
 
            if isinstance(x, tuple):
-              x = tc.ascontainer(x)
+              x = tc.container(x)
 
            assert_jvp_container(fun, x)
 
@@ -323,7 +323,7 @@ class TestGradsDecomp:
 
    # --- MAIN --- #
 
-   @pytest.mark.skip
+   #@pytest.mark.skip
    @pytest.mark.parametrize("decomp_input", [
       data.decomp_input_001,
       data.decomp_input_002,
@@ -338,7 +338,7 @@ class TestGradsDecomp:
        if 'complex' in dtype: 
           def fun(x, sind):
               U, S, VH, error = la.svd(x, sind) 
-              return tc.ascontainer(tn.absolute(U), tn.absolute(S), tn.absolute(VH)) 
+              return tc.container(tn.absolute(U), tn.absolute(S), tn.absolute(VH)) 
        else:
           def fun(x, sind):
               return la.svd(x, sind)
@@ -366,14 +366,14 @@ class TestGradsDecomp:
    def test_svd_ascontainer(self, decomp_input):
 
        def fun(x, sind): 
-           #U, S = tc.ascontainer(x, x)  # U, S, VH = tc.ascontainer(x, x, x) 
+           #U, S = tc.container(x, x)  # U, S, VH = tc.container(x, x, x) 
             
-           out = tc.ascontainer(x, x)
+           out = tc.container(x, x)
 
            U = out[0]
            S = out[1]
 
-           return tc.ascontainer(tn.sin(U), tn.sin(S)) #, tn.sin(U)) #tn.absolute(U)) #tn.absolute(U), S, tn.absolute(VH)) 
+           return tc.container(tn.sin(U), tn.sin(S)) #, tn.sin(U)) #tn.absolute(U)) #tn.absolute(U), S, tn.absolute(VH)) 
 
        w = data.svd_tensor_dat(decomp_input)(
               data.randn, self.backend, dtype="float64" #"complex128" #"float64"
@@ -432,7 +432,7 @@ class TestGradsDecomp:
            out     = la.svd(x, sind="s")
 
            #U, S, VH, error = la.svd(x, sind="s")
-           #out = tc.ascontainer(tn.absolute(U), S, tn.absolute(VH))
+           #out = tc.container(tn.absolute(U), S, tn.absolute(VH))
 
            u, s, v = out[0], out[1], out[2].H
 

@@ -13,18 +13,18 @@ import tadpole.util as util
 ###                                                                         ###
 ###############################################################################
 
-
+"""
 # --- Generic container ----------------------------------------------------- #
 
 class Container(util.Container):
    pass
 
+"""
 
 
+# --- Container interface --------------------------------------------------- #
 
-# --- Tensor container ------------------------------------------------------ #
-
-class TensorContainer(util.Container):
+class Container(util.Container):
 
    @abc.abstractmethod
    def copy(self, **opts):

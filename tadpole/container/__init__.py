@@ -3,7 +3,6 @@
 
 from .types import (
    Container,
-   TensorContainer,
 )
 
 from .core import (
@@ -14,7 +13,7 @@ from .core import (
 )
 
 from .core import (
-   ascontainer,
+   container,
    addgrads,
    tonull,
    todense,
