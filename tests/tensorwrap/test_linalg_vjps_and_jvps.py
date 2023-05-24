@@ -74,6 +74,39 @@ class TestGradsDecomp:
        return self._backend
 
 
+   # --- ADVANCED --- #
+
+   @pytest.mark.skip
+   @pytest.mark.parametrize("indnames, shape", [
+      ["ijk", (2,3,4)],
+   ])
+   def test_gradfun_000(self, indnames, shape):
+
+       def fun(x):
+           U, S = tc.ascontainer(x,x) 
+           return tc.ascontainer(U, tn.sin(S)) 
+
+       def gradfun(x, g):
+           op = agrad.diffop_reverse(fun, x)
+           return op.grad(g)
+
+       @nary.nary_op
+       def _assert_grad(fun, x):
+
+           if isinstance(x, tuple):
+              x = tc.ascontainer(x)
+
+           assert_vjp_container(fun, x)
+
+       x = data.tensor_dat(data.randn)(
+              self.backend, indnames, shape, seed=1
+           )
+       g = tn.space(fun(x.tensor)).randn()
+
+       _assert_grad(gradfun, (0,1))(x.tensor, g)
+       #_assert_grad(fun)(x.tensor)
+
+
    # --- VJP's --- #
 
    @pytest.mark.parametrize("indnames, shape", [

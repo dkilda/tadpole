@@ -116,7 +116,7 @@ class TestGradsContainer:
       [[(3,4,6), tuple(), (6,2,5)  ], ["ijk",  "",    "klm" ]],  
       [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk",  "klm", "mqlj"]],
    ]) 
-   def test_sparsegrad(self, shapes, inds):
+   def test_ungetitem(self, shapes, inds):
 
        positions = {
           1: [0,       slice(0,1),                       ],
@@ -126,7 +126,7 @@ class TestGradsContainer:
        }[len(shapes)]
 
        def fun(x, pos, space):
-           return tc.sparsegrad(x, pos, space)
+           return tc.ungetitem(x, pos, space)
 
        w = data.container_dat(data.randn)(
               self.backend, inds, shapes

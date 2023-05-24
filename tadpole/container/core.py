@@ -470,7 +470,7 @@ def jvp_ascontainer(g, adx, out, *args):
     if iscontainer(*args):
        return g
 
-    return sparsegrad(g, adx, out.space())
+    return ungetitem(g, adx, out.space())
 
 
 def iscontainer(*args):
@@ -491,7 +491,7 @@ ad.makevjp_combo(ascontainer,
 
 
 ad.makejvp_combo(ascontainer,    
-              lambda g, adx, out, *args: sparsegrad(g, adx, out.space())
+              lambda g, adx, out, *args: ungetitem(g, adx, out.space())
 )
 """
 
@@ -728,12 +728,12 @@ def put(data, pos, vals, accumulate=False):
 # --- Element access VJPs --------------------------------------------------- #
 
 @ad.differentiable
-def sparsegrad(x, pos, space):
+def ungetitem(x, pos, space):
 
     if isinstance(pos, int):
 
-       if isinstance(x, TensorContainer) and len(x) == 1:
-          x = x.item()
+       #if isinstance(x, TensorContainer) and len(x) == 1:
+       #   x = x.item()
 
        pos = [pos]
        x   = [x]
@@ -747,11 +747,11 @@ def sparsegrad(x, pos, space):
 
 
 ad.makevjp(getitem,    
-              lambda g, out, x, pos: sparsegrad(g, pos, x.space())
+              lambda g, out, x, pos: ungetitem(g, pos, x.space())
 )
 
  
-ad.makevjp(sparsegrad, 
+ad.makevjp(ungetitem, 
               lambda g, out, x, pos, size: g[pos]
 )
 
@@ -760,8 +760,8 @@ ad.makevjp(sparsegrad,
 
 # --- Element access JVPs --------------------------------------------------- #
 
-ad.makejvp(getitem,    "linear")
-ad.makejvp(sparsegrad, "linear")
+ad.makejvp(getitem,   "linear")
+ad.makejvp(ungetitem, "linear")
 
 
 

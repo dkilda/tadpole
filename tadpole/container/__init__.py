@@ -15,7 +15,6 @@ from .core import (
 
 from .core import (
    ascontainer,
-   sparsegrad,
    addgrads,
    tonull,
    todense,
@@ -30,6 +29,7 @@ from .core import (
    contains,
    iterate,
    getitem,
+   ungetitem,
 )
 
 
