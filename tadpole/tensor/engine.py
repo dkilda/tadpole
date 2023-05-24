@@ -178,8 +178,8 @@ def aligned_ind(inds):
     if len(set(non_singleton_inds)) == 1:
        return non_singleton_inds[0]
 
-    #if len(set(map(len, non_singleton_inds))) == 1:
-    #   return non_singleton_inds[0]
+    if len(set(map(len, non_singleton_inds))) == 1:
+       return non_singleton_inds[0]
 
     raise ValueError(
        f"aligned_ind: an elementwise operation cannot be "

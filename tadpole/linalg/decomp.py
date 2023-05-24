@@ -56,7 +56,7 @@ class SIndexFun:
    def __call__(self, size):
 
        if self._ind is None:
-          self._ind = IndexGen(self._name, size)
+          self._ind = IndexLit(self._name, size)
 
        if size != len(self._ind):
           raise ValueError(

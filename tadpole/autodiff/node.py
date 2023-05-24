@@ -358,6 +358,13 @@ class GateReverse(Gate):
    def grads(self, node, grads):
 
        seed = grads.pick(node)
+       """
+       try:
+          print("\n\nGATE.grads(): ", node, self._parents, [v._source for v in self._parents], seed, tuple(self._op.vjp(seed)), self._op._fun._fun.__name__, self._op._args)
+       except AttributeError:
+          print("\n\nGATE.grads(): ", node, self._parents, seed, tuple(self._op.vjp(seed)), self._op)
+       """
+
        return grads.add(self._parents, self._op.vjp(seed))
 
 

@@ -51,6 +51,9 @@ def numerical_grad(fun, x, eps=1e-6):
 
 def assert_vjp(fun, x):
 
+    if isinstance(x, tuple):
+       x = tc.ascontainer(x)
+
     op = agrad.diffop_reverse(fun, x)
     y  = op.value()
 
@@ -58,15 +61,16 @@ def assert_vjp(fun, x):
     dy = tn.space(y).randn()
 
     vj = op.grad(dy)
-    jv = numerical_grad(fun, x)(dx)
+    jv = numerical_grad_container(fun, x)(dx)
 
-    i = IndexGen("i", dx.size)
-    j = IndexGen("j", dy.size)  
+    #i = IndexGen("i", dx.size)
+    #j = IndexGen("j", dy.size)  
 
-    vjv_out = tn.flatten(vj, i) @ tn.flatten(dx, i)
-    vjv_ans = tn.flatten(dy, j) @ tn.flatten(jv, j)
+    #vjv_out = tn.flatten(vj, i) @ tn.flatten(dx, i)
+    #vjv_ans = tn.flatten(dy, j) @ tn.flatten(jv, j)
 
-    print("ASSERT-VJP: ", vjv_out, vjv_ans)
+    vjv_out = dot_container(vj, dx)
+    vjv_ans = dot_container(dy, jv)
 
     assert tn.space(vj) == tn.space(x)
     assert tn.allclose(vjv_out, vjv_ans)
@@ -78,17 +82,23 @@ def assert_vjp(fun, x):
 
 def assert_jvp(fun, x):
 
+    if isinstance(x, tuple):
+       x = tc.ascontainer(x)
+
     op = agrad.diffop_forward(fun, x)
     dx = tn.space(x).randn()
 
     jv_out = op.grad(dx)
-    jv_ans = numerical_grad(fun, x)(dx)
+    jv_ans = numerical_grad_container(fun, x)(dx)
 
     dy = tn.space(jv_ans).randn()
-    i  = IndexGen("i", dy.size)
+    #i  = IndexGen("i", dy.size)
     
-    vjv_out = tn.flatten(dy, i) @ tn.flatten(jv_out, i)
-    vjv_ans = tn.flatten(dy, i) @ tn.flatten(jv_ans, i)
+    #vjv_out = tn.flatten(dy, i) @ tn.flatten(jv_out, i)
+    #vjv_ans = tn.flatten(dy, i) @ tn.flatten(jv_ans, i)
+
+    vjv_out = dot_container(dy, jv_out)
+    vjv_ans = dot_container(dy, jv_ans)
 
     assert tn.space(jv_out) == tn.space(jv_ans)
     assert tn.allclose(vjv_out, vjv_ans) 
@@ -100,6 +110,9 @@ def assert_jvp(fun, x):
 
 def assert_vjp_real(fun, x):
 
+    if isinstance(x, tuple):
+       x = tc.ascontainer(x)
+
     op = agrad.diffop_reverse(fun, x)
     y  = op.value()
 
@@ -107,13 +120,16 @@ def assert_vjp_real(fun, x):
     dy = tn.space(y).randn()
 
     vj = op.grad(dy)
-    jv = numerical_grad(fun, x)(dx)
+    jv = numerical_grad_container(fun, x)(dx)
 
-    i = IndexGen("i", dx.size)
-    j = IndexGen("j", dy.size)  
+    #i = IndexGen("i", dx.size)
+    #j = IndexGen("j", dy.size)  
 
-    vjv_out = tn.real(tn.flatten(vj, i) @ tn.flatten(dx, i))
-    vjv_ans = tn.real(tn.flatten(dy, j) @ tn.flatten(jv, j)) 
+    #vjv_out = tn.real(tn.flatten(vj, i) @ tn.flatten(dx, i))
+    #vjv_ans = tn.real(tn.flatten(dy, j) @ tn.flatten(jv, j)) 
+
+    vjv_out = tn.real(dot_container(vj, dx))
+    vjv_ans = tn.real(dot_container(dy, jv))
 
     assert tn.space(vj) == tn.space(x)
     assert tn.allclose(vjv_out, vjv_ans)
@@ -125,6 +141,9 @@ def assert_vjp_real(fun, x):
 
 def assert_vjp_null(fun, x):
 
+    if isinstance(x, tuple):
+       x = tc.ascontainer(x)
+
     op = agrad.diffop_reverse(fun, x)
     y  = op.value()
 
@@ -134,10 +153,10 @@ def assert_vjp_null(fun, x):
     if tn.iscomplex(y):
        dy = tn.conj(dy)
 
-    i = IndexGen("i", dx.size)
+    #i = IndexGen("i", dx.size)
 
     vj  = op.grad(dy)
-    vjv = tn.flatten(vj, i) @ tn.flatten(dx, i)
+    vjv = dot_container(vj, dx) #tn.flatten(vj, i) @ tn.flatten(dx, i)
 
     assert tn.space(vj) == tn.space(x)
     assert isinstance(vj, tn.NullGrad) or tn.allclose(vjv, 0)
@@ -149,14 +168,17 @@ def assert_vjp_null(fun, x):
 
 def assert_jvp_null(fun, x):
 
+    if isinstance(x, tuple):
+       x = tc.ascontainer(x)
+
     op = agrad.diffop_forward(fun, x)
     y  = op.value()
 
     dx = tn.space(x).randn()
-    i  = IndexGen("i", dx.size)
+    #i  = IndexGen("i", dx.size)
 
     jv  = op.grad(dx)
-    vjv = tn.flatten(dx, i) @ tn.flatten(jv, i)
+    vjv = dot_container(dx, jv) #tn.flatten(dx, i) @ tn.flatten(jv, i)
 
     assert tn.space(jv) == tn.space(y)
     assert isinstance(jv, tn.NullGrad) or tn.allclose(vjv, 0) 
@@ -167,6 +189,9 @@ def assert_jvp_null(fun, x):
 # --- Assert type VJP ------------------------------------------------------- # 
 
 def assert_vjp_type(fun, x):
+
+    if isinstance(x, tuple):
+       x = tc.ascontainer(x)
 
     op = agrad.diffop_reverse(fun, x)
     y  = op.value()
@@ -184,6 +209,9 @@ def assert_vjp_type(fun, x):
 
 def assert_jvp_type(fun, x):
 
+    if isinstance(x, tuple):
+       x = tc.ascontainer(x)
+
     op = agrad.diffop_forward(fun, x)
     y  = op.value()
 
@@ -199,6 +227,9 @@ def assert_jvp_type(fun, x):
 # --- Assert container VJP -------------------------------------------------- # 
 
 def assert_vjp_container(fun, x):
+
+    if isinstance(x, tuple):
+       x = tc.ascontainer(x)
 
     op = agrad.diffop_reverse(fun, x)
     y  = op.value()
@@ -222,6 +253,9 @@ def assert_vjp_container(fun, x):
 
 def assert_jvp_container(fun, x):
 
+    if isinstance(x, tuple):
+       x = tc.ascontainer(x)
+
     op = agrad.diffop_forward(fun, x)
     dx = tn.space(x).randn()
 
@@ -243,7 +277,10 @@ def assert_jvp_container(fun, x):
 
 def assert_vjp_decomp(fun, x):
 
-    print("VJP DECOMP-6: ")
+    if isinstance(x, tuple):
+       x = tc.ascontainer(x)
+
+    print("VJP DECOMP-6: ", x)
 
     op = agrad.diffop_reverse(fun, x)
 
@@ -251,7 +288,7 @@ def assert_vjp_decomp(fun, x):
 
     y  = op.value()
 
-    print("VJP DECOMP-6.2: ")
+    print("VJP DECOMP-6.2: ", x)
 
     dx = tn.space(x).randn()
     dy = tn.space(y).randn()
@@ -266,9 +303,9 @@ def assert_vjp_decomp(fun, x):
 
     print("VJP DECOMP-3: ")
 
-    i = IndexGen("i", dx.size)
+    #i = IndexGen("i", dx.size)
  
-    vjv_out = tn.real(tn.flatten(vj, i) @ tn.flatten(dx, i))
+    vjv_out = tn.real(dot_container(vj, dx)) # tn.real(tn.flatten(vj, i) @ tn.flatten(dx, i))
 
     print("VJP DECOMP-2: ", vj, dx)
 
@@ -288,6 +325,9 @@ def assert_vjp_decomp(fun, x):
 # --- Assert decomposition JVP ---------------------------------------------- #
 
 def assert_jvp_decomp(fun, x):
+
+    if isinstance(x, tuple):
+       x = tc.ascontainer(x)
 
     op = agrad.diffop_forward(fun, x)
     dx = tn.space(x).randn()
@@ -310,15 +350,24 @@ def assert_jvp_decomp(fun, x):
 
 def assert_vjp_custom(fun, x, dx, dy):
 
+    if isinstance(x, tuple):
+       x = tc.ascontainer(x)
+
+    if isinstance(dx, tuple):
+       dx = tc.ascontainer(dx)
+
+    if isinstance(dy, tuple):
+       dy = tc.ascontainer(dy)
+
     op = agrad.diffop_reverse(fun, x)
     y  = op.value()
 
     vj = op.grad(dy)
     jv = numerical_grad_container(fun, x)(dx)
 
-    i = IndexGen("i", dx.size)
+    # i = IndexGen("i", dx.size)
  
-    vjv_out = tn.real(tn.flatten(vj, i) @ tn.flatten(dx, i))
+    vjv_out = tn.real(dot_container(vj, dx))  # tn.real(tn.flatten(vj, i) @ tn.flatten(dx, i))
     vjv_ans = tn.real(dot_container(dy, jv)) 
 
     assert tn.space(vj) == tn.space(x)
@@ -329,6 +378,7 @@ def assert_vjp_custom(fun, x, dx, dy):
 
 # --- Helpers: container dot ------------------------------------------------ #
 
+"""
 def dot_container(xs, ys):
 
     def _dot(x, y):
@@ -340,6 +390,24 @@ def dot_container(xs, ys):
 
     return sum(_dot(x, y) for x, y in zip(xs, ys))  
 
+"""
+
+
+def dot_container(x, y):
+
+    def dot(x, y):
+
+        if isinstance(x, tn.Tensor):
+           i = IndexGen("i", x.size)
+           return tn.flatten(x, i) @ tn.flatten(y, i)
+
+        return dot_container(x, y)
+
+    if isinstance(x, tn.Tensor): 
+       return dot(x, y)
+
+    return sum(dot(xi, yi) for xi, yi in zip(x, y))  
+
 
 
 
@@ -349,7 +417,17 @@ def numerical_grad_container(fun, x, eps=1e-6):
 
     def compute(fun, x, y):
 
-        return tc.ContainerGen([fun(xi, yi) for xi, yi in zip(x, y)])
+        print("COMPUTE: ", x, y, list(zip(x,y)))
+
+        def funwrap(xi, yi):
+
+            if isinstance(xi, tn.Tensor):
+               return fun(xi, yi)
+
+            return compute(fun, xi, yi)
+
+        return tc.ContainerGen([funwrap(xi, yi) for xi, yi in zip(x, y)])
+
 
     def grad(g):
 
@@ -372,6 +450,59 @@ def numerical_grad_container(fun, x, eps=1e-6):
 
 # --- Assert gradients of a given mode and order ---------------------------- #
 
+@nary.nary_op
+def assert_grad(fun, x, modes=("vjp","jvp"), submode=None, order=2):
+
+    if isinstance(x, tuple):
+       x = tc.ascontainer(x)
+
+    if  isinstance(modes, str):
+        modes = (modes,)
+     
+    for mode in modes:
+
+        {
+         ("vjp", None       ): assert_vjp, 
+         ("jvp", None       ): assert_jvp,
+         ("vjp", "real"     ): assert_vjp_real, 
+         ("jvp", "real"     ): assert_jvp,
+         ("vjp", "null"     ): assert_vjp_null, 
+         ("jvp", "null"     ): assert_jvp_null,
+         ("vjp", "type"     ): assert_vjp_type, 
+         ("jvp", "type"     ): assert_jvp_type,
+         ("vjp", "container"): assert_vjp_container, 
+         ("jvp", "container"): assert_jvp_container,
+         ("vjp", "decomp"   ): assert_vjp_decomp,
+         ("jvp", "decomp"   ): assert_jvp_decomp,
+        }[mode, submode](fun, x)  
+
+        if order > 1:
+
+           g = {
+                "vjp": lambda: tn.space(fun(x)).randn(),
+                "jvp": lambda: tn.space(x).randn(),
+               }[mode]()
+                  
+           def gradfun(x, g):
+
+               print("GRADFUN ", x, g)
+
+               op = {
+                     "vjp": agrad.diffop_reverse, 
+                     "jvp": agrad.diffop_forward,
+                    }[mode](fun, x)
+
+               return op.grad(g)
+
+           assert_grad(
+              gradfun, (0, 1), modes=mode, submode=submode, order=order-1 
+           )(x, g) 
+
+
+
+
+
+"""
 @nary.nary_op
 def assert_grad(fun, x, modes=("vjp","jvp"), submode=None, order=2):
 
@@ -414,6 +545,7 @@ def assert_grad(fun, x, modes=("vjp","jvp"), submode=None, order=2):
            assert_grad(
               gradfun, modes=mode, submode=submode, order=order-1
            )(x)
+"""
 
 
 

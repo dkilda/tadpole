@@ -107,7 +107,7 @@ class NaryOp:
    def __call__(self, *args, **kwargs):
 
        @functools.wraps(self._fun)
-       def unary_fun(x):
+       def unary_fun(x): 
            return self._fun(*self._argproxy.insert(args, x), **kwargs)
             
        return self._unary_op(unary_fun, self._argproxy.extract(args))

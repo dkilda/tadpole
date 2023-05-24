@@ -71,12 +71,17 @@ class TestGradsDecomp:
       data.decomp_input_002,
       #data.decomp_input_003,
    ])
-   def test_svd(self, decomp_input):
+   def test_svd_ascontainer(self, decomp_input):
 
-       def fun(x, sind):
-           #return la.svd(x, sind)
-           U, S, VH, error = la.svd(x, sind) 
-           return tc.ascontainer(U, S, VH) #tn.absolute(U), S, tn.absolute(VH)) 
+       def fun(x, sind): 
+           #U, S = tc.ascontainer(x, x)  # U, S, VH = tc.ascontainer(x, x, x) 
+            
+           out = tc.ascontainer(x, x)
+
+           U = out[0]
+           S = out[1]
+
+           return tc.ascontainer(tn.sin(U), tn.sin(S)) #, tn.sin(U)) #tn.absolute(U)) #tn.absolute(U), S, tn.absolute(VH)) 
 
        w = data.svd_tensor_dat(decomp_input)(
               data.randn, self.backend, dtype="float64" #"complex128" #"float64"
@@ -88,6 +93,39 @@ class TestGradsDecomp:
        x = tn.TensorGen(w.xmatrix, (lind, rind)) 
 
        assert_grad(fun, order=2, modes="vjp", submode="decomp")(x, sind="s")     
+       #assert False
+
+
+   #@pytest.mark.skip
+   @pytest.mark.parametrize("decomp_input", [
+      data.decomp_input_001,
+      data.decomp_input_002,
+      data.decomp_input_003,
+   ])
+   @pytest.mark.parametrize("dtype", [
+      "float64",
+      "complex128",
+   ])
+   def test_svd(self, decomp_input, dtype):
+
+       if 'complex' in dtype: 
+          def fun(x, sind):
+              U, S, VH, error = la.svd(x, sind) 
+              return tc.ascontainer(tn.absolute(U), tn.absolute(S), tn.absolute(VH)) 
+       else:
+          def fun(x, sind):
+              return la.svd(x, sind)
+
+       w = data.svd_tensor_dat(decomp_input)(
+              data.randn, self.backend, dtype=dtype
+           )
+
+       lind = IndexGen("l", w.xmatrix.shape[0])
+       rind = IndexGen("r", w.xmatrix.shape[1])
+
+       x = tn.TensorGen(w.xmatrix, (lind, rind)) 
+
+       assert_grad(fun, modes="vjp", submode="decomp")(x, sind="s")     
 
 
    @pytest.mark.skip
@@ -111,9 +149,6 @@ class TestGradsDecomp:
        s = tn.TensorGen(w.smatrix, (sind,     )) 
        v = tn.TensorGen(w.rmatrix, (sind, rind)) 
 
-       #out = tc.ContainerGen(u, s, v)
-       #g   = tn.space(out).randn()
-
 
        def eye(x, inds=None): 
 
@@ -136,6 +171,10 @@ class TestGradsDecomp:
        def fun(x):
 
            out     = la.svd(x, sind="s")
+
+           #U, S, VH, error = la.svd(x, sind="s")
+           #out = tc.ascontainer(tn.absolute(U), S, tn.absolute(VH))
+
            u, s, v = out[0], out[1], out[2].H
 
            du = tn.space(u).ones()
@@ -156,9 +195,9 @@ class TestGradsDecomp:
            return grad(*tn.union_inds(x))
 
 
-
        assert_grad(fun, order=1, modes="vjp", submode="decomp")(x) 
        #assert False
+
 
    @pytest.mark.skip
    @pytest.mark.parametrize("decomp_input", [

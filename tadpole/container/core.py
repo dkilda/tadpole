@@ -351,11 +351,13 @@ class SparseGrad(TensorContainer, tn.Grad):
        if isinstance(other, self.__class__):
           other = other.todense()
 
-       assert len(self) == len(other), (
+       assert self.space() == other.space(), (
           f"{type(self).__name__}.addto: "
           f"gradient accumulation cannot be performed for containers "
           f"with non-matching spaces {self.space()} != {other.space()}"
        )
+
+       # print("\n\nCONTAINER-SPARSEG: ", other, other._data)
 
        data = put(other._data, self._pos, self._vals, accumulate=True) 
        return type(other)(data)
@@ -730,7 +732,7 @@ def sparsegrad(x, pos, space):
 
     if isinstance(pos, int):
 
-       if isinstance(x, TensorContainer):
+       if isinstance(x, TensorContainer) and len(x) == 1:
           x = x.item()
 
        pos = [pos]

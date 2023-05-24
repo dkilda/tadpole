@@ -87,14 +87,6 @@ def concat_adjfuns(make_adjfun):
 
         def adjfun(g, adx, out, *args, **kwargs): 
 
-            """
-            print("ADJFUN-1: ", g, adx, out, args, kwargs)
-            try:
-               print("ADJFUN-2: ", g._inds, adx, out._source._inds, [arg._inds for arg in args], kwargs)
-            except AttributeError:
-               pass
-            """
-
             return adjfun_by_adx[adx](g, out, *args, **kwargs)
 
         return adjfun 
