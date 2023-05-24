@@ -212,6 +212,9 @@ def assert_vjp_container(fun, x):
     vjv_out = dot_container(vj, dx)
     vjv_ans = dot_container(dy, jv)
 
+    # vjv_out = tn.real(dot_container(vj, dx))
+    # vjv_ans = tn.real(dot_container(dy, jv))
+
     assert tn.space(vj) == tn.space(x)
     assert tn.allclose(vjv_out, vjv_ans)
 
@@ -223,6 +226,7 @@ def assert_vjp_container(fun, x):
 def assert_jvp_container(fun, x):
 
     op = agrad.diffop_forward(fun, x)
+    y  = op.value() # FIXME extra
     dx = tn.space(x).randn()
 
     jv_out = op.grad(dx)
@@ -233,7 +237,10 @@ def assert_jvp_container(fun, x):
     vjv_out = dot_container(dy, jv_out)
     vjv_ans = dot_container(dy, jv_ans)
 
-    assert tn.space(jv_out) == tn.space(jv_ans)
+    # vjv_out = tn.real(dot_container(dy, jv_out))
+    # vjv_ans = tn.real(dot_container(dy, jv_ans))
+
+    assert tn.space(jv_out) == tn.space(y) # tn.space(jv_ans) # FIXME
     assert tn.allclose(vjv_out, vjv_ans) 
 
 

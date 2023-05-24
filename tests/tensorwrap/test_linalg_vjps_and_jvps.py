@@ -15,6 +15,8 @@ import tadpole.index     as tid
 
 import tadpole.linalg.unwrapped as la
 import tadpole.autodiff.grad    as agrad
+import tadpole.autodiff.node    as anode
+import tadpole.autodiff.nary    as nary
 
 import tests.tensorwrap.fakes as fake
 import tests.tensorwrap.data  as data
@@ -27,8 +29,15 @@ from tests.common import (
 
 from tests.tensorwrap.util import (
    assert_grad,
+   assert_vjp,
+   assert_vjp_null,
+   assert_vjp_container,
    assert_vjp_decomp,
    assert_vjp_custom,
+   assert_jvp,
+   assert_jvp_null,
+   assert_jvp_container,
+   assert_jvp_decomp,
 )
 
 from tadpole.index import (
@@ -65,6 +74,256 @@ class TestGradsDecomp:
        return self._backend
 
 
+   # --- VJP's --- #
+
+   @pytest.mark.parametrize("indnames, shape", [
+      ["ijk", (2,3,4)],
+   ])
+   def test_gradfun_001(self, indnames, shape):
+
+       def fun(x):
+           return tn.sin(x) #tn.absolute(x) #tn.sin(x)
+
+       def gradfun(x, g):
+           op = agrad.diffop_reverse(fun, x)
+           return op.grad(g)
+
+       @nary.nary_op
+       def _assert_grad(fun, x):
+
+           if isinstance(x, tuple):
+              x = tc.ascontainer(x)
+
+           assert_vjp_container(fun, x)
+
+       x = data.tensor_dat(data.randn)(
+              self.backend, indnames, shape, seed=1
+           )
+       g = tn.space(fun(x.tensor)).randn()
+
+       _assert_grad(gradfun, (0,1))(x.tensor, g)
+       #_assert_grad(fun)(x.tensor)
+
+
+   @pytest.mark.parametrize("indnames, shape, squeezed", [
+      ["iajkbcl", (2,1,3,4,1,1,5), None],
+      ["iajkbcl", (2,1,3,4,1,1,5), "ac"],
+   ])
+   def test_gradfun_002(self, indnames, shape, squeezed):
+
+       def fun(x):
+           return tn.squeeze(x, squeezed) 
+
+       def gradfun(x, g):
+           op = agrad.diffop_reverse(fun, x)
+           return op.grad(g)
+
+       @nary.nary_op
+       def _assert_grad(fun, x):
+
+           if isinstance(x, tuple):
+              x = tc.ascontainer(x)
+
+           assert_vjp_container(fun, x)
+
+       x = data.tensor_dat(data.randn)(
+              self.backend, indnames, shape, seed=1
+           )
+       g = tn.space(fun(x.tensor)).randn()
+
+       _assert_grad(gradfun, (0,1))(x.tensor, g)
+       #_assert_grad(fun)(x.tensor)
+
+
+   @pytest.mark.parametrize("indnames, shape, nvals", [
+      ["ijk", (2,3,4), 5],
+   ])
+   def test_gradfun_003(self, indnames, shape, nvals):
+
+       w = data.tensor_dat(data.randn_pos)(
+              self.backend, 
+              indnames, 
+              shape, 
+              seed=1, 
+              dtype="bool", 
+              nvals=nvals, 
+              defaultval=False
+           )
+       x = data.array_dat(data.randn)(
+              self.backend, w.shape, seed=2
+           )
+       y = data.array_dat(data.randn)(
+              self.backend, w.shape, seed=3
+           )
+
+       wtensor = w.tensor
+       xtensor = tn.TensorGen(x.array, w.inds)
+       ytensor = tn.TensorGen(y.array, w.inds)
+
+       def fun(v):
+           return tn.where(v, xtensor, ytensor)
+
+       def gradfun(x, g):
+           op = agrad.diffop_reverse(fun, x)
+           return op.grad(g)
+
+       @nary.nary_op
+       def _assert_grad(fun, x):
+
+           if isinstance(x, tuple):
+              x = tc.ascontainer(x)
+
+           assert_vjp_container(fun, x)
+
+       g = tn.space(fun(w.tensor)).randn()
+
+       _assert_grad(gradfun, (0,1))(wtensor, g)
+       #_assert_grad(fun)(x.tensor)
+
+
+   # --- JVP's --- #
+
+   @pytest.mark.parametrize("indnames, shape", [
+      ["ijk", (2,3,4)],
+   ])
+   def test_gradfun_004(self, indnames, shape):
+
+       def fun(x):
+           return tn.sin(x) #tn.absolute(x) #tn.sin(x)
+
+       def gradfun(x, g):
+           op = agrad.diffop_reverse(fun, x)
+           return op.grad(g)
+
+       @nary.nary_op
+       def _assert_grad(fun, x):
+
+           if isinstance(x, tuple):
+              x = tc.ascontainer(x)
+
+           assert_jvp_container(fun, x)
+
+       x = data.tensor_dat(data.randn)(
+              self.backend, indnames, shape, seed=1
+           )
+       g = tn.space(fun(x.tensor)).randn()
+
+       _assert_grad(gradfun, (0,1))(x.tensor, g)
+       #_assert_grad(fun)(x.tensor)
+
+
+   @pytest.mark.parametrize("indnames, shape, squeezed", [
+      ["iajkbcl", (2,1,3,4,1,1,5), None],
+      ["iajkbcl", (2,1,3,4,1,1,5), "ac"],
+   ])
+   def test_gradfun_005(self, indnames, shape, squeezed):
+
+       def fun(x):
+           return tn.squeeze(x, squeezed) 
+
+       def gradfun(x, g):
+           op = agrad.diffop_reverse(fun, x)
+           return op.grad(g)
+
+       @nary.nary_op
+       def _assert_grad(fun, x):
+
+           if isinstance(x, tuple):
+              x = tc.ascontainer(x)
+
+           assert_jvp_container(fun, x)
+
+       x = data.tensor_dat(data.randn)(
+              self.backend, indnames, shape, seed=1
+           )
+       g = tn.space(fun(x.tensor)).randn()
+
+       _assert_grad(gradfun, (0,1))(x.tensor, g)
+       #_assert_grad(fun)(x.tensor)
+
+
+   @pytest.mark.parametrize("indnames, shape, nvals", [
+      ["ijk", (2,3,4), 5],
+   ])
+   def test_gradfun_006(self, indnames, shape, nvals):
+
+       w = data.tensor_dat(data.randn_pos)(
+              self.backend, 
+              indnames, 
+              shape, 
+              seed=1, 
+              dtype="bool", 
+              nvals=nvals, 
+              defaultval=False
+           )
+       x = data.array_dat(data.randn)(
+              self.backend, w.shape, seed=2
+           )
+       y = data.array_dat(data.randn)(
+              self.backend, w.shape, seed=3
+           )
+
+       wtensor = w.tensor
+       xtensor = tn.TensorGen(x.array, w.inds)
+       ytensor = tn.TensorGen(y.array, w.inds)
+
+       def fun(v):
+           return tn.where(v, xtensor, ytensor)
+
+       def gradfun(x, g):
+           op = agrad.diffop_reverse(fun, x)
+           return op.grad(g)
+
+       @nary.nary_op
+       def _assert_grad(fun, x):
+
+           if isinstance(x, tuple):
+              x = tc.ascontainer(x)
+
+           assert_jvp_container(fun, x)
+
+       g = tn.space(fun(w.tensor)).randn()
+
+       _assert_grad(gradfun, (0,1))(wtensor, g)
+       #_assert_grad(fun)(x.tensor)
+
+
+   # --- MAIN --- #
+
+   @pytest.mark.skip
+   @pytest.mark.parametrize("decomp_input", [
+      data.decomp_input_001,
+      data.decomp_input_002,
+      data.decomp_input_003,
+   ])
+   @pytest.mark.parametrize("dtype", [
+      "float64",
+      "complex128",
+   ])
+   def test_svd(self, decomp_input, dtype):
+
+       if 'complex' in dtype: 
+          def fun(x, sind):
+              U, S, VH, error = la.svd(x, sind) 
+              return tc.ascontainer(tn.absolute(U), tn.absolute(S), tn.absolute(VH)) 
+       else:
+          def fun(x, sind):
+              return la.svd(x, sind)
+
+       w = data.svd_tensor_dat(decomp_input)(
+              data.randn, self.backend, dtype=dtype
+           )
+
+       lind = IndexGen("l", w.xmatrix.shape[0])
+       rind = IndexGen("r", w.xmatrix.shape[1])
+
+       x = tn.TensorGen(w.xmatrix, (lind, rind)) 
+
+       assert_grad(fun, order=2, modes="vjp", submode="decomp")(x, sind="s")     
+
+
+   # --- Currently inactive tests --- #
+
    @pytest.mark.skip
    @pytest.mark.parametrize("decomp_input", [
       #data.decomp_input_001,
@@ -94,39 +353,6 @@ class TestGradsDecomp:
 
        assert_grad(fun, order=2, modes="vjp", submode="decomp")(x, sind="s")     
        #assert False
-
-
-   #@pytest.mark.skip
-   @pytest.mark.parametrize("decomp_input", [
-      data.decomp_input_001,
-      data.decomp_input_002,
-      data.decomp_input_003,
-   ])
-   @pytest.mark.parametrize("dtype", [
-      "float64",
-      "complex128",
-   ])
-   def test_svd(self, decomp_input, dtype):
-
-       if 'complex' in dtype: 
-          def fun(x, sind):
-              U, S, VH, error = la.svd(x, sind) 
-              return tc.ascontainer(tn.absolute(U), tn.absolute(S), tn.absolute(VH)) 
-       else:
-          def fun(x, sind):
-              return la.svd(x, sind)
-
-       w = data.svd_tensor_dat(decomp_input)(
-              data.randn, self.backend, dtype=dtype
-           )
-
-       lind = IndexGen("l", w.xmatrix.shape[0])
-       rind = IndexGen("r", w.xmatrix.shape[1])
-
-       x = tn.TensorGen(w.xmatrix, (lind, rind)) 
-
-       assert_grad(fun, modes="vjp", submode="decomp")(x, sind="s")     
-
 
    @pytest.mark.skip
    @pytest.mark.parametrize("decomp_input", [

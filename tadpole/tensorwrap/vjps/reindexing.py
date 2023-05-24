@@ -71,7 +71,7 @@ def vjp_split(g, out, x, splitmap):
 
 def vjp_squeeze(g, out, x, inds=None):
 
-    singletons = tn.complement_inds(x, out)
+    singletons = tuple(tn.complement_inds(x, out))
 
     return tn.transpose_like(tn.unsqueeze(g, singletons), x)
 
