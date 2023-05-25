@@ -31,6 +31,13 @@ from tests.tensorwrap.util import (
    assert_grad,
    assert_vjp,
    assert_vjp_null,
+   assert_jvp,
+   assert_jvp_null,
+)
+
+"""
+   assert_vjp,
+   assert_vjp_null,
    assert_vjp_container,
    assert_vjp_decomp,
    assert_vjp_custom,
@@ -39,6 +46,7 @@ from tests.tensorwrap.util import (
    assert_jvp_container,
    assert_jvp_decomp,
 )
+"""
 
 from tadpole.index import (
    Index,
@@ -95,7 +103,7 @@ class TestGradsDecomp:
            if isinstance(x, tuple):
               x = tc.container(x)
 
-           assert_vjp_container(fun, x)
+           assert_vjp(fun, x)
 
            def gradfun(x, g):
                op = agrad.diffop_reverse(fun, x)
@@ -111,7 +119,7 @@ class TestGradsDecomp:
            if isinstance(x, tuple):
               x = tc.container(x)
 
-           assert_vjp_container(fun, x)
+           assert_vjp(fun, x)
 
        _assert_grad(fun)(x.tensor, squeezed)
 
@@ -151,7 +159,7 @@ class TestGradsDecomp:
               x = tc.container(x)
 
            assert_vjp_null(fun, x)
-           #assert_vjp_container(fun, x)
+           #assert_vjp(fun, x)
 
            def gradfun(x, g):
                op = agrad.diffop_reverse(fun, x)
@@ -168,7 +176,7 @@ class TestGradsDecomp:
               x = tc.container(x)
 
            assert_vjp_null(fun, x)
-           #assert_vjp_container(fun, x)
+           #assert_vjp(fun, x)
 
        _assert_grad(fun, 0)(wtensor, xtensor, ytensor)
        #_assert_grad(fun, 1)(wtensor, xtensor, ytensor)
@@ -195,7 +203,7 @@ class TestGradsDecomp:
            if isinstance(x, tuple):
               x = tc.container(x)
 
-           assert_vjp_container(fun, x)
+           assert_vjp(fun, x)
 
        x = data.tensor_dat(data.randn)(
               self.backend, indnames, shape, seed=1
@@ -226,7 +234,7 @@ class TestGradsDecomp:
            if isinstance(x, tuple):
               x = tc.container(x)
 
-           assert_vjp_container(fun, x)
+           assert_vjp(fun, x)
 
        x = data.tensor_dat(data.randn)(
               self.backend, indnames, shape, seed=1
@@ -256,7 +264,7 @@ class TestGradsDecomp:
            if isinstance(x, tuple):
               x = tc.container(x)
 
-           assert_vjp_container(fun, x)
+           assert_vjp(fun, x)
 
        x = data.tensor_dat(data.randn)(
               self.backend, indnames, shape, seed=1
@@ -305,7 +313,7 @@ class TestGradsDecomp:
            if isinstance(x, tuple):
               x = tc.container(x)
 
-           assert_vjp_container(fun, x)
+           assert_vjp(fun, x)
 
        g = tn.space(fun(w.tensor)).randn()
 
@@ -333,7 +341,7 @@ class TestGradsDecomp:
            if isinstance(x, tuple):
               x = tc.container(x)
 
-           assert_jvp_container(fun, x)
+           assert_jvp(fun, x)
 
        x = data.tensor_dat(data.randn)(
               self.backend, indnames, shape, seed=1
@@ -363,7 +371,7 @@ class TestGradsDecomp:
            if isinstance(x, tuple):
               x = tc.container(x)
 
-           assert_jvp_container(fun, x)
+           assert_jvp(fun, x)
 
        x = data.tensor_dat(data.randn)(
               self.backend, indnames, shape, seed=1
@@ -412,7 +420,7 @@ class TestGradsDecomp:
            if isinstance(x, tuple):
               x = tc.container(x)
 
-           assert_jvp_container(fun, x)
+           assert_jvp(fun, x)
 
        g = tn.space(fun(w.tensor)).randn()
 
@@ -435,10 +443,12 @@ class TestGradsDecomp:
    def test_svd(self, decomp_input, dtype):
 
        if 'complex' in dtype: 
+          opts = {"submode": "real"}
           def fun(x):
               U, S, VH, error = la.svd(x, sind="s") 
               return tc.container(tn.absolute(U), tn.absolute(S), tn.absolute(VH)) 
        else:
+          opts = {}
           def fun(x):
               return la.svd(x, sind="s")
 
@@ -451,7 +461,7 @@ class TestGradsDecomp:
 
        x = tn.TensorGen(w.xmatrix, (lind, rind)) 
 
-       assert_grad(fun, order=2, modes="vjp", submode="decomp")(x)     
+       assert_grad(fun, order=2, modes="vjp", **opts)(x)     
 
 
    # --- Currently inactive tests --- #
@@ -483,7 +493,7 @@ class TestGradsDecomp:
 
        x = tn.TensorGen(w.xmatrix, (lind, rind)) 
 
-       assert_grad(fun, order=2, modes="vjp", submode="decomp")(x, sind="s")     
+       assert_grad(fun, order=2, modes="vjp")(x, sind="s")     
        #assert False
 
 
@@ -554,7 +564,7 @@ class TestGradsDecomp:
            return grad(*tn.union_inds(x))
 
 
-       assert_grad(fun, order=1, modes="vjp", submode="decomp")(x) 
+       assert_grad(fun, order=1, modes="vjp")(x) 
        #assert False
 
 
@@ -627,7 +637,7 @@ class TestGradsDecomp:
            op = agrad.diffop_reverse(fun, x)
            return op.grad(dy)
 
-       assert_vjp_decomp(gradfun, x)  
+       assert_vjp(gradfun, x)  
 
 
 

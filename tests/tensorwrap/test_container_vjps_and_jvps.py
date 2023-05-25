@@ -80,7 +80,7 @@ class TestGradsContainer:
               self.backend, inds, shapes
            )
 
-       assert_grad(fun, submode="container")(*w.tensors)
+       assert_grad(fun)(*w.tensors)
 
 
    @pytest.mark.parametrize("shapes, inds", [
@@ -107,7 +107,7 @@ class TestGradsContainer:
            )
 
        for pos in positions:
-           assert_grad(fun, submode="container")(w.container, pos)
+           assert_grad(fun)(w.container, pos)
 
 
    @pytest.mark.parametrize("shapes, inds", [
@@ -139,7 +139,7 @@ class TestGradsContainer:
            if isinstance(pos, slice):
               x = ContainerGen(x)
 
-           assert_grad(fun, submode="container")(x, pos, w.space)
+           assert_grad(fun)(x, pos, w.space)
 
 
    @pytest.mark.parametrize("shapes, inds", [
@@ -157,8 +157,8 @@ class TestGradsContainer:
        def fun(x, y):
            return tc.cmap(lambda a, b: a + b, x, y)
 
-       assert_grad(fun, 0, submode="container")(w.container, w.container)
-       assert_grad(fun, 1, submode="container")(w.container, w.container)
+       assert_grad(fun, 0)(w.container, w.container)
+       assert_grad(fun, 1)(w.container, w.container)
 
 
    def test_cmap_001(self):
@@ -176,8 +176,8 @@ class TestGradsContainer:
        def fun(x, y):
            return tc.cmap(lambda a, b: a + b, x, y)
 
-       assert_grad(fun, 0, submode="container")(u, v)
-       assert_grad(fun, 1, submode="container")(u, v)
+       assert_grad(fun, 0)(u, v)
+       assert_grad(fun, 1)(u, v)
 
 
    @pytest.mark.parametrize("shapes, inds", [
@@ -195,8 +195,8 @@ class TestGradsContainer:
        def fun(x, y):
            return tc.csum(lambda a, b: a @ b, x, y)
 
-       assert_grad(fun, 0, submode="container")(w.container, w.container)
-       assert_grad(fun, 1, submode="container")(w.container, w.container)
+       assert_grad(fun, 0)(w.container, w.container)
+       assert_grad(fun, 1)(w.container, w.container)
 
 
    def test_csum_001(self):
@@ -214,8 +214,8 @@ class TestGradsContainer:
        def fun(x, y):
            return tc.csum(lambda a, b: a @ b, x, y)
 
-       assert_grad(fun, 0, submode="container")(u, v)
-       assert_grad(fun, 1, submode="container")(u, v)
+       assert_grad(fun, 0)(u, v)
+       assert_grad(fun, 1)(u, v)
 
 
 
