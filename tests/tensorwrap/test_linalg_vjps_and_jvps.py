@@ -183,7 +183,6 @@ class TestGradsDecomp:
        #_assert_grad(fun, 2)(wtensor, xtensor, ytensor)
 
 
-   @pytest.mark.skip
    @pytest.mark.parametrize("indnames, shape", [
       ["ijk", (2,3,4)],
    ])
@@ -430,7 +429,6 @@ class TestGradsDecomp:
 
    # --- MAIN --- #
 
-   #@pytest.mark.skip
    @pytest.mark.parametrize("decomp_input", [
       data.decomp_input_001,
       data.decomp_input_002,
@@ -446,7 +444,7 @@ class TestGradsDecomp:
           opts = {"submode": "real"}
           def fun(x):
               U, S, VH, error = la.svd(x, sind="s") 
-              return tc.container(tn.absolute(U), tn.absolute(S), tn.absolute(VH)) 
+              return tc.container(tn.absolute(U), S, tn.absolute(VH))  
        else:
           opts = {}
           def fun(x):

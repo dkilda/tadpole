@@ -64,11 +64,13 @@ def tsum(fun, *args):
 
 def dot(x, y):
 
-    def dot(x, y):
+    print("DOT: ", x, y)
+
+    def _dot(x, y):
         i = IndexGen("i", x.size)
         return tn.flatten(x, i) @ tn.flatten(y, i)
 
-    return tsum(dot, x, y)
+    return tsum(_dot, x, y)
 
 
 
@@ -185,9 +187,11 @@ def assert_jvp_null(fun, x):
     op = agrad.diffop_forward(fun, x)
     y  = op.value()
 
-    dx  = tn.space(x).randn()
+    dx = tn.space(x).randn()
+    dy = tn.space(y).randn()
+
     jv  = op.grad(dx)
-    vjv = dot(jv, dx)   
+    vjv = dot(jv, dy) 
 
     assert tn.space(jv) == tn.space(y)
     assert isinstance(jv, tn.NullGrad) or tn.allclose(vjv, 0) 
@@ -232,6 +236,59 @@ def assert_jvp_type(fun, x):
 @nary.nary_op
 def assert_grad(fun, x, modes=("vjp","jvp"), submode=None, order=2):
 
+    if isinstance(x, tuple):
+       x = tc.container(x)
+
+    if isinstance(modes, str):
+       modes = (modes,)
+     
+    for mode in modes:
+
+        {
+         ("vjp", None       ): assert_vjp, 
+         ("jvp", None       ): assert_jvp,
+         ("vjp", "real"     ): assert_vjp_real, 
+         ("jvp", "real"     ): assert_jvp,
+         ("vjp", "null"     ): assert_vjp_null, 
+         ("jvp", "null"     ): assert_jvp_null,
+         ("vjp", "type"     ): assert_vjp_type, 
+         ("jvp", "type"     ): assert_jvp_type,
+        }[mode, submode](fun, x)  
+
+        if order > 1:
+
+           g = {
+                "vjp": lambda: tn.space(fun(x)).randn(),
+                "jvp": lambda: tn.space(x).randn(),
+               }[mode]()
+     
+           def gradfun(x, g):
+
+               op = {
+                     "vjp": agrad.diffop_reverse, 
+                     "jvp": agrad.diffop_forward,
+                    }[mode](fun, x)
+
+               return op.grad(g)
+
+           assert_grad(
+              gradfun, (0, 1), modes=mode, submode=submode, order=order-1
+           )(x, g)
+
+
+
+
+
+
+
+
+
+
+"""
+
+@nary.nary_op
+def assert_grad(fun, x, modes=("vjp","jvp"), submode=None, order=2):
+
     if  isinstance(modes, str):
         modes = (modes,)
      
@@ -268,6 +325,6 @@ def assert_grad(fun, x, modes=("vjp","jvp"), submode=None, order=2):
               gradfun, modes=mode, submode=submode, order=order-1
            )(x)
 
-
+"""
 
 

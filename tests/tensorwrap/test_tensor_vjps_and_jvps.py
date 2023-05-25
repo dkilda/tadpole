@@ -59,6 +59,7 @@ class TestGradsElemwiseUnary:
        return self._backend
 
 
+   @pytest.mark.filterwarnings('ignore::RuntimeWarning')
    @pytest.mark.parametrize("indnames, shape", [
       ["ijk", (2,3,4)],
    ])
@@ -444,7 +445,7 @@ class TestGradsElemwiseTernary:
        def fun(w,x,y):
            return tn.where(w,x,y)
 
-       assert_grad(fun, 0, submode="null")(wtensor, xtensor, ytensor)
+       assert_grad(fun, 0, submode="null")(wtensor, xtensor, ytensor) 
        assert_grad(fun, 1                )(wtensor, xtensor, ytensor)
        assert_grad(fun, 2                )(wtensor, xtensor, ytensor)
 
