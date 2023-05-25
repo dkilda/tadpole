@@ -134,10 +134,11 @@ def assert_vjp_null(fun, x):
     if tn.iscomplex(y):
        dy = tn.conj(dy)
 
-    i = IndexGen("i", dx.size)
+    #i = IndexGen("i", dx.size)
 
     vj  = op.grad(dy)
-    vjv = tn.flatten(vj, i) @ tn.flatten(dx, i)
+    vjv = dot_container(vj, dx)
+    #vjv = tn.flatten(vj, i) @ tn.flatten(dx, i)
 
     assert tn.space(vj) == tn.space(x)
     assert isinstance(vj, tn.NullGrad) or tn.allclose(vjv, 0)
@@ -215,6 +216,8 @@ def assert_vjp_container(fun, x):
     # vjv_out = tn.real(dot_container(vj, dx))
     # vjv_ans = tn.real(dot_container(dy, jv))
 
+    print("ASSERT VJP: ", vjv_out._data._data, vjv_ans._data._data)
+
     assert tn.space(vj) == tn.space(x)
     assert tn.allclose(vjv_out, vjv_ans)
 
@@ -288,6 +291,8 @@ def assert_vjp_decomp(fun, x):
     print("VJP DECOMP: ", vjv_out._data._data, vjv_ans._data._data)
 
     assert tn.allclose(vjv_out, vjv_ans)
+
+    print("VJP DECOMP END: ")
 
 
 
@@ -408,7 +413,7 @@ def assert_grad(fun, x, modes=("vjp","jvp"), submode=None, order=2):
                 "vjp": lambda: tn.space(fun(x)).randn(),
                 "jvp": lambda: tn.space(x).randn(),
                }[mode]()
-                  
+     
            def gradfun(x):
 
                op = {

@@ -76,6 +76,105 @@ class TestGradsDecomp:
 
    # --- ADVANCED --- #
 
+   @pytest.mark.parametrize("indnames, shape, squeezed", [
+      ["iajkbcl", (2,1,3,4,1,1,5), None],
+      ["iajkbcl", (2,1,3,4,1,1,5), "ac"],
+   ])
+   def test_gradfun_squeeze(self, indnames, shape, squeezed):
+
+       x = data.tensor_dat(data.randn)(
+              self.backend, indnames, shape, seed=1
+           )
+
+       def fun(x, squeezed):
+           return tn.squeeze(x, squeezed) 
+
+       @nary.nary_op
+       def _assert_grad(fun, x):
+
+           if isinstance(x, tuple):
+              x = tc.container(x)
+
+           assert_vjp_container(fun, x)
+
+           def gradfun(x, g):
+               op = agrad.diffop_reverse(fun, x)
+               return op.grad(g)
+
+           g = tn.space(fun(x)).randn()
+
+           _assert_grad_1(gradfun, (0,1))(x, g)
+
+       @nary.nary_op
+       def _assert_grad_1(fun, x):
+
+           if isinstance(x, tuple):
+              x = tc.container(x)
+
+           assert_vjp_container(fun, x)
+
+       _assert_grad(fun)(x.tensor, squeezed)
+
+
+   @pytest.mark.parametrize("indnames, shape, nvals", [
+      ["ijk", (2,3,4), 5],
+   ])
+   def test_gradfun_where(self, indnames, shape, nvals):
+
+       w = data.tensor_dat(data.randn_pos)(
+              self.backend, 
+              indnames, 
+              shape, 
+              seed=1, 
+              dtype="bool", 
+              nvals=nvals, 
+              defaultval=False
+           )
+       x = data.array_dat(data.randn)(
+              self.backend, w.shape, seed=2
+           )
+       y = data.array_dat(data.randn)(
+              self.backend, w.shape, seed=3
+           )
+
+       wtensor = w.tensor
+       xtensor = tn.TensorGen(x.array, w.inds)
+       ytensor = tn.TensorGen(y.array, w.inds)
+
+       def fun(v, x, y):
+           return tn.where(v, x, y) 
+
+       @nary.nary_op
+       def _assert_grad(fun, x):
+
+           if isinstance(x, tuple):
+              x = tc.container(x)
+
+           assert_vjp_null(fun, x)
+           #assert_vjp_container(fun, x)
+
+           def gradfun(x, g):
+               op = agrad.diffop_reverse(fun, x)
+               return op.grad(g)
+
+           g = tn.space(fun(x)).randn()
+
+           _assert_grad_1(gradfun, (0,1))(x, g)
+
+       @nary.nary_op
+       def _assert_grad_1(fun, x):
+
+           if isinstance(x, tuple):
+              x = tc.container(x)
+
+           assert_vjp_null(fun, x)
+           #assert_vjp_container(fun, x)
+
+       _assert_grad(fun, 0)(wtensor, xtensor, ytensor)
+       #_assert_grad(fun, 1)(wtensor, xtensor, ytensor)
+       #_assert_grad(fun, 2)(wtensor, xtensor, ytensor)
+
+
    @pytest.mark.skip
    @pytest.mark.parametrize("indnames, shape", [
       ["ijk", (2,3,4)],
@@ -336,12 +435,12 @@ class TestGradsDecomp:
    def test_svd(self, decomp_input, dtype):
 
        if 'complex' in dtype: 
-          def fun(x, sind):
-              U, S, VH, error = la.svd(x, sind) 
+          def fun(x):
+              U, S, VH, error = la.svd(x, sind="s") 
               return tc.container(tn.absolute(U), tn.absolute(S), tn.absolute(VH)) 
        else:
-          def fun(x, sind):
-              return la.svd(x, sind)
+          def fun(x):
+              return la.svd(x, sind="s")
 
        w = data.svd_tensor_dat(decomp_input)(
               data.randn, self.backend, dtype=dtype
@@ -352,7 +451,7 @@ class TestGradsDecomp:
 
        x = tn.TensorGen(w.xmatrix, (lind, rind)) 
 
-       assert_grad(fun, order=2, modes="vjp", submode="decomp")(x, sind="s")     
+       assert_grad(fun, order=2, modes="vjp", submode="decomp")(x)     
 
 
    # --- Currently inactive tests --- #
@@ -386,6 +485,7 @@ class TestGradsDecomp:
 
        assert_grad(fun, order=2, modes="vjp", submode="decomp")(x, sind="s")     
        #assert False
+
 
    @pytest.mark.skip
    @pytest.mark.parametrize("decomp_input", [

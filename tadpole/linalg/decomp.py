@@ -64,6 +64,8 @@ class SIndexFun:
              f"an incompatible size {size} != original size {len(self._ind)}"
           )
 
+       print("SIndexFun: ", self._ind)
+
        return self._ind
 
 

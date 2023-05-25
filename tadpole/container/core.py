@@ -713,9 +713,6 @@ def ungetitem(x, pos, space):
 
     if isinstance(pos, int):
 
-       #if isinstance(x, Container) and len(x) == 1:
-       #   x = x.item()
-
        pos = [pos]
        x   = [x]
 
