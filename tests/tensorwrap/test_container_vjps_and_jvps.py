@@ -142,6 +142,90 @@ class TestGradsContainer:
            assert_grad(fun, submode="container")(x, pos, w.space)
 
 
+   @pytest.mark.parametrize("shapes, inds", [
+      [[(3,4,6),                   ], ["ijk",               ]], 
+      [[(3,4,6), (6,2,5)           ], ["ijk",  "klm",       ]], 
+      [[(3,4,6), tuple(), (6,2,5)  ], ["ijk",  "",    "klm" ]],  
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk",  "klm", "mqlj"]],
+   ]) 
+   def test_cmap(self, shapes, inds):
+
+       w = data.container_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+       def fun(x, y):
+           return tc.cmap(lambda a, b: a + b, x, y)
+
+       assert_grad(fun, 0, submode="container")(w.container, w.container)
+       assert_grad(fun, 1, submode="container")(w.container, w.container)
+
+
+   def test_cmap_001(self):
+
+       inds   = ["ijk",   "klm",   "mqlj"]
+       shapes = [(3,4,6), (6,2,5), (5,7,2,4)]
+
+       w = data.container_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+       u = ContainerGen(ContainerGen(w.tensors[0], w.tensors[2]), w.tensors[1])
+       v = ContainerGen(ContainerGen(w.tensors[0], w.tensors[2]), w.tensors[1])
+
+       def fun(x, y):
+           return tc.cmap(lambda a, b: a + b, x, y)
+
+       assert_grad(fun, 0, submode="container")(u, v)
+       assert_grad(fun, 1, submode="container")(u, v)
+
+
+   @pytest.mark.parametrize("shapes, inds", [
+      [[(3,4,6),                   ], ["ijk",               ]], 
+      [[(3,4,6), (6,2,5)           ], ["ijk",  "klm",       ]], 
+      [[(3,4,6), tuple(), (6,2,5)  ], ["ijk",  "",    "klm" ]],  
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk",  "klm", "mqlj"]],
+   ]) 
+   def test_csum(self, shapes, inds):
+
+       w = data.container_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+       def fun(x, y):
+           return tc.csum(lambda a, b: a @ b, x, y)
+
+       assert_grad(fun, 0, submode="container")(w.container, w.container)
+       assert_grad(fun, 1, submode="container")(w.container, w.container)
+
+
+   def test_csum_001(self):
+
+       inds   = ["ijk",   "klm",   "mqlj"]
+       shapes = [(3,4,6), (6,2,5), (5,7,2,4)]
+
+       w = data.container_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+       u = ContainerGen(ContainerGen(w.tensors[0], w.tensors[2]), w.tensors[1])
+       v = ContainerGen(ContainerGen(w.tensors[0], w.tensors[2]), w.tensors[1])
+
+       def fun(x, y):
+           return tc.csum(lambda a, b: a @ b, x, y)
+
+       assert_grad(fun, 0, submode="container")(u, v)
+       assert_grad(fun, 1, submode="container")(u, v)
+
+
+
+
+
+
+
+
+
+
 
 
 

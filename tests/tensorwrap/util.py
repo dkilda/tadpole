@@ -340,7 +340,7 @@ def assert_vjp_custom(fun, x, dx, dy):
 
 
 # --- Helpers: container dot ------------------------------------------------ #
-
+"""
 def dot_container(xs, ys):
 
     def _dot(x, y):
@@ -351,6 +351,22 @@ def dot_container(xs, ys):
     if isinstance(ys, tn.Tensor): ys = tc.ContainerGen([ys])
 
     return sum(_dot(x, y) for x, y in zip(xs, ys))  
+"""
+
+def dot_container(x, y):
+
+    def dot(x, y):
+
+        if isinstance(x, tn.Tensor):
+           i = IndexGen("i", x.size)
+           return tn.flatten(x, i) @ tn.flatten(y, i)
+
+        return dot_container(x, y)
+
+    if isinstance(x, tn.Tensor): 
+       return dot(x, y)
+
+    return sum(dot(xi, yi) for xi, yi in zip(x, y))  
 
 
 
@@ -359,9 +375,24 @@ def dot_container(xs, ys):
 
 def numerical_grad_container(fun, x, eps=1e-6):
 
+    """
     def compute(fun, x, y):
 
         return tc.ContainerGen([fun(xi, yi) for xi, yi in zip(x, y)])
+    """
+
+
+    def compute(fun, x, y):
+
+        def funwrap(xi, yi):
+
+            if isinstance(xi, tn.Tensor):
+               return fun(xi, yi)
+
+            return compute(fun, xi, yi)
+
+        return tc.ContainerGen([funwrap(xi, yi) for xi, yi in zip(x, y)])
+
 
     def grad(g):
 

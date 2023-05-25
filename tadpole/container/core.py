@@ -744,3 +744,42 @@ ad.makejvp(ungetitem, "linear")
 
 
 
+###############################################################################
+###                                                                         ###
+###  Container operators: map, sum, etc                                     ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Container map --------------------------------------------------------- #
+
+def cmap(fun, *args):
+
+    def funwrap(*xs):
+
+        if all(isinstance(x, Container) for x in xs):
+           return cmap(fun, *xs)
+
+        return fun(*xs)
+
+    return container(*map(funwrap, *args))
+
+
+
+
+# --- Container sum --------------------------------------------------------- #
+
+def csum(fun, *args):
+
+    def funwrap(*xs):
+
+        if all(isinstance(x, Container) for x in xs):
+           return csum(fun, *xs)
+
+        return fun(*xs)
+
+    return sum(map(funwrap, *args))
+
+
+
+

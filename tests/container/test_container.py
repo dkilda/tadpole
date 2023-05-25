@@ -1238,3 +1238,140 @@ class TestGradAccum:
 
 
 
+###############################################################################
+###                                                                         ###
+###  Container operators: map, sum, etc                                     ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Container operators --------------------------------------------------- #
+
+@pytest.mark.parametrize("current_backend", available_backends, indirect=True)
+class TestOperators:
+
+   @pytest.fixture(autouse=True)
+   def request_backend(self, current_backend):
+
+       self._backend = current_backend
+
+
+   @property
+   def backend(self):
+
+       return self._backend
+
+
+   @pytest.mark.parametrize("shapes, inds", [
+      [[(3,4,6),                   ], ["ijk",               ]], 
+      [[(3,4,6), (6,2,5)           ], ["ijk",  "klm",       ]], 
+      [[(3,4,6), tuple(), (6,2,5)  ], ["ijk",  "",    "klm" ]],  
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk",  "klm", "mqlj"]],
+   ]) 
+   def test_cmap(self, shapes, inds):
+
+       w = data.container_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+       def fun(x, y):
+           return x + y
+
+       out = tc.cmap(fun, w.container, w.container)
+       ans = ContainerGen(*(fun(x, y) for x, y in zip(w.container, w.container)))
+
+       assert out.space() == ans.space()
+       for i in range(len(out)):
+           assert tn.allclose(out[i], ans[i])
+
+
+   def test_cmap_001(self):
+
+       inds   = ["ijk",   "klm",   "mqlj"]
+       shapes = [(3,4,6), (6,2,5), (5,7,2,4)]
+
+       w = data.container_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+       a = ContainerGen(ContainerGen(w.tensors[0], w.tensors[2]), w.tensors[1])
+       b = ContainerGen(ContainerGen(w.tensors[0], w.tensors[2]), w.tensors[1])
+
+       def fun(x, y):
+           return x + y
+
+       out = tc.cmap(fun, a, b)
+       ans = ContainerGen(
+                ContainerGen(fun(a[0][0], b[0][0]), fun(a[0][1], b[0][1])), 
+                fun(a[1], b[1])
+             )
+
+       assert out.space()    == ans.space()
+       assert out[0].space() == ans[0].space()
+ 
+       for i in range(len(out[0])):
+           assert tn.allclose(out[0][i], ans[0][i])
+
+       assert tn.allclose(out[1], ans[1])
+
+
+   @pytest.mark.parametrize("shapes, inds", [
+      [[(3,4,6),                   ], ["ijk",               ]], 
+      [[(3,4,6), (6,2,5)           ], ["ijk",  "klm",       ]], 
+      [[(3,4,6), tuple(), (6,2,5)  ], ["ijk",  "",    "klm" ]],  
+      [[(3,4,6), (6,2,5), (5,7,2,4)], ["ijk",  "klm", "mqlj"]],
+   ]) 
+   def test_csum(self, shapes, inds):
+
+       w = data.container_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+       def fun(x, y):
+           return x @ y
+
+       out = tc.csum(fun, w.container, w.container)
+       ans = 0
+       for x, y in zip(w.container, w.container):
+           ans = ans + fun(x,y)
+
+       assert out.space() == ans.space()
+       assert tn.allclose(out, ans)
+
+
+   def test_csum_001(self):
+
+       inds   = ["ijk",   "klm",   "mqlj"]
+       shapes = [(3,4,6), (6,2,5), (5,7,2,4)]
+
+       w = data.container_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+
+       a = ContainerGen(ContainerGen(w.tensors[0], w.tensors[2]), w.tensors[1])
+       b = ContainerGen(ContainerGen(w.tensors[0], w.tensors[2]), w.tensors[1])
+
+       def fun(x, y):
+           return x @ y
+
+       out = tc.csum(fun, a, b)
+       ans = fun(a[0][0], b[0][0]) + fun(a[0][1], b[0][1]) + fun(a[1], b[1])
+
+       assert out.space() == ans.space()
+       assert tn.allclose(out, ans)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

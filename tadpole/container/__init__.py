@@ -13,7 +13,6 @@ from .core import (
 )
 
 from .core import (
-   container,
    addgrads,
    tonull,
    todense,
@@ -31,6 +30,11 @@ from .core import (
    ungetitem,
 )
 
+from .core import (
+   container,
+   cmap,
+   csum,
+)
 
 
 
