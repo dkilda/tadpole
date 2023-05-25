@@ -9,7 +9,6 @@ import tadpole.index    as tid
 
 from tadpole.container.types import (
    Container,
-   Container,
 )
 
 

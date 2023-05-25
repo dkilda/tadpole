@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import tadpole.util     as util
-import tadpole.autodiff as ad
-import tadpole.tensor   as tn
+import tadpole.util      as util
+import tadpole.autodiff  as ad
+import tadpole.container as tc
+import tadpole.tensor    as tn
 
 import tadpole.linalg.unwrapped as la
 
@@ -48,12 +49,14 @@ def jvp_svd(g, out, x, sind=None, trunc=None):
     """
 
     u, s, v = out[0], out[1], out[2].H  
-    f       = fmatrix(s**2)("ij")
+
+    dx = g
+    f  = fmatrix(s**2)("ij")
 
     grad1 = u.H("il") @ dx("lr")   @ v("rj")
     grad2 = v.H("ir") @ dx.H("rl") @ u("lj") 
 
-    ds = 0.5 * eye(s,"ij")  * (grad1 + grad2)
+    ds = 0.5 * eye(s,"ij") * (grad1 + grad2)
     du = u("li") @ (f * (grad1 * s("1j") + s("i1") * grad2))
     dv = v("ri") @ (f * (grad1 * s("i1") + s("1j") * grad2))
 
@@ -71,11 +74,12 @@ def jvp_svd(g, out, x, sind=None, trunc=None):
        du  = du("li") \
            + (eye(uuH) - uuH) @ dx("ab") @ (v("bi") / s("1i")) 
 
+
     du = du(*tn.union_inds(u))
     dv = dv(*tn.union_inds(v))
-    ds = la.diag(ds, tuple(tn.union_inds(s)))
+    ds = la.diag(tn.astype_like(ds, s), tuple(tn.union_inds(s)))
 
-    return ContainerGen(du, ds, dv.H)
+    return tc.container(du, ds, dv.H, tn.NullGrad(tn.space(out[-1]))) 
 
 
 
