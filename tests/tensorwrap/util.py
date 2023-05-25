@@ -64,8 +64,6 @@ def tsum(fun, *args):
 
 def dot(x, y):
 
-    print("DOT: ", x, y)
-
     def _dot(x, y):
         i = IndexGen("i", x.size)
         return tn.flatten(x, i) @ tn.flatten(y, i)
@@ -227,6 +225,57 @@ def assert_jvp_type(fun, x):
 
     jv = op.grad(dx)
     assert tn.space(jv) == tn.space(y)
+
+
+
+
+# --- Assert VJP with customized gradients ---------------------------------- #
+
+def assert_vjp_custom(fun, x, g):
+
+    if isinstance(x, tuple):
+       x = tc.container(x)
+
+    if isinstance(g, tuple):
+       g = tc.container(g)
+
+    op = agrad.diffop_reverse(fun, x)
+    y  = op.value()
+
+    dx = tn.space(x).randn()
+    dy = g
+
+    vj = op.grad(dy)
+    jv = numerical_grad(fun, x)(dx)
+
+    vjv_out = tn.real(dot(vj, dx))  
+    vjv_ans = tn.real(dot(jv, dy)) 
+
+    assert tn.space(vj) == tn.space(x)
+    assert tn.allclose(vjv_out, vjv_ans)
+
+
+
+
+# --- Assert JVP with customized gradients ---------------------------------- #
+
+def assert_jvp_custom(fun, x, g):
+
+    op = agrad.diffop_forward(fun, x)
+    y  = op.value()
+
+    dx = g
+
+    jv_out = op.grad(dx)
+    jv_ans = numerical_grad(fun, x)(dx)
+
+    dy = tn.space(jv_ans).randn()
+    
+    vjv_out = dot(dy, jv_out) 
+    vjv_ans = dot(dy, jv_ans)  
+
+    assert tn.space(jv_out) == tn.space(y)
+    assert tn.allclose(vjv_out, vjv_ans) 
 
 
 

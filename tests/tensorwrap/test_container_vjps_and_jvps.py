@@ -83,6 +83,70 @@ class TestGradsContainer:
        assert_grad(fun)(*w.tensors)
 
 
+   @pytest.mark.parametrize("indnames, shape", [
+      ["ijk", (2,3,4)],
+   ])
+   def test_container_001(self, indnames, shape):
+
+       def fun(x):
+           u, v = tc.container(x, x) 
+           return tc.container(u, tn.sin(v)) 
+
+       x = data.tensor_dat(data.randn)(
+              self.backend, indnames, shape, seed=1
+           )
+
+       assert_grad(fun)(x.tensor)   
+
+
+   @pytest.mark.parametrize("indnames, shape", [
+      ["ijk", (2,3,4)],
+   ])
+   def test_container_002(self, indnames, shape):
+
+       def fun(x):
+           u, v = tc.container(x, x) 
+           return tc.container(tn.sin(u), v) 
+
+       x = data.tensor_dat(data.randn)(
+              self.backend, indnames, shape, seed=1
+           )
+
+       assert_grad(fun)(x.tensor)   
+
+
+   @pytest.mark.parametrize("indnames, shape", [
+      ["ijk", (2,3,4)],
+   ])
+   def test_container_003(self, indnames, shape):
+
+       def fun(x):
+           u, v = tc.container(x, x) 
+           return tc.container(tn.sin(u), tn.sin(v)) 
+
+       x = data.tensor_dat(data.randn)(
+              self.backend, indnames, shape, seed=1
+           )
+
+       assert_grad(fun)(x.tensor) 
+
+
+   @pytest.mark.parametrize("indnames, shape", [
+      ["ijk", (2,3,4)],
+   ])
+   def test_container_004(self, indnames, shape):
+
+       def fun(x):
+           u, v = tc.container(x, x) 
+           return tc.container(u + v) 
+
+       x = data.tensor_dat(data.randn)(
+              self.backend, indnames, shape, seed=1
+           )
+
+       assert_grad(fun)(x.tensor) 
+
+
    @pytest.mark.parametrize("shapes, inds", [
       [[(3,4,6),                   ], ["ijk",               ]],   
       [[(3,4,6), (6,2,5)           ], ["ijk",  "klm",       ]], 
@@ -216,6 +280,7 @@ class TestGradsContainer:
 
        assert_grad(fun, 0)(u, v)
        assert_grad(fun, 1)(u, v)
+
 
 
 

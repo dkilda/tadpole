@@ -357,8 +357,6 @@ class SparseGrad(Container, tn.Grad):
           f"with non-matching spaces {self.space()} != {other.space()}"
        )
 
-       # print("\n\nCONTAINER-SPARSEG: ", other, other._data)
-
        data = put(other._data, self._pos, self._vals, accumulate=True) 
        return type(other)(data)
 
