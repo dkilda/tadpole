@@ -419,20 +419,34 @@ def vjpB_solve(g, out, a, b):
 
 def tri(which):
 
+    if which is None:
+       which = "upper"
+
     return {
             "lower": la.tril, 
             "upper": la.triu,
            }[which]
 
 
+def opposite(which):
+
+    if which is None:
+       which = "upper"
+
+    return {
+            "lower": "upper", 
+            "upper": "lower",
+           }[which]
+
+
 def vjpA_trisolve(g, out, a, b, which=None):
 
-    return -tri(which)(la.trisolve(a.H, g, which=which) @ out.T)
+    return -tri(which)(la.trisolve(a.T, g, which=opposite(which)) @ out.T)
     
 
 def vjpB_trisolve(g, out, a, b, which=None):
 
-    return la.trisolve(a.H, g, which)
+    return la.trisolve(a.T, g, which=opposite(which))
 
 
 

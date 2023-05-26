@@ -161,9 +161,6 @@ class LinalgSolver:
 
    def trisolve(self, which=None):
 
-       if which is None:
-          which = "upper"
-
        return self._apply(ar.trisolve, which=which)
       
 

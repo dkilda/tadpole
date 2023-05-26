@@ -82,9 +82,9 @@ class LinalgProperties:
 
    def __init__(self, data, inds): 
 
-       if inds.ndim not in (1,2):
+       if inds.ndim != 2:
           raise ValueError(
-             f"LinalgProperties: input must have ndim = 1 or 2, "
+             f"LinalgProperties: input must have ndim = 2, "
              f"but data.ndim = {data.ndim}, inds.ndim = {inds.ndim}."
           )
 

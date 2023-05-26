@@ -570,6 +570,126 @@ class TestGradsSolvers:
        return self._backend
 
 
+   @pytest.mark.parametrize("solver_input", [
+      data.solver_input_000, 
+      data.solver_input_001, 
+      data.solver_input_002,
+   ])
+   @pytest.mark.parametrize("dtype", [
+      "float64",
+      "complex128",
+   ])
+   def test_solve(self, solver_input, dtype):
+
+       opts = {"modes": "vjp"} if 'complex' in dtype else {}         
+
+       def fun(a, b):
+           return la.solve(a, b)
+
+       w = data.solve_linalg_dat(solver_input)(
+              data.randn, self.backend, dtype=dtype
+           )
+
+       i = IndexGen("i", w.sizeI)
+       j = IndexGen("j", w.sizeJ)
+       k = IndexGen("k", w.sizeK)
+
+       A = tn.TensorGen(w.matrixA, (i, j)) 
+       B = tn.TensorGen(w.matrixB, (i, k)) 
+
+       assert_grad(fun, **opts)(A, B) 
+
+
+   @pytest.mark.parametrize("solver_input", [
+      data.solver_input_000, 
+      data.solver_input_001, 
+      data.solver_input_002,
+   ])
+   @pytest.mark.parametrize("dtype", [
+      "float64",
+      "complex128",
+   ])
+   def test_trisolve(self, solver_input, dtype):
+
+       opts = {"modes": "vjp"} if 'complex' in dtype else {}         
+
+       def fun(a, b):
+           return la.trisolve(a, b)
+
+       w = data.trisolve_upper_linalg_dat(solver_input)(
+              data.randn, self.backend, dtype=dtype
+           )
+
+       i = IndexGen("i", w.sizeI)
+       j = IndexGen("j", w.sizeJ)
+       k = IndexGen("k", w.sizeK)
+
+       A = tn.TensorGen(w.matrixA, (i, j)) 
+       B = tn.TensorGen(w.matrixB, (i, k)) 
+
+       assert_grad(fun, **opts)(A, B) 
+
+
+   @pytest.mark.parametrize("solver_input", [
+      data.solver_input_000, 
+      data.solver_input_001, 
+      data.solver_input_002,
+   ])
+   @pytest.mark.parametrize("dtype", [
+      "float64",
+      "complex128",
+   ])
+   def test_trisolve_upper(self, solver_input, dtype):
+
+       opts = {"modes": "vjp"} if 'complex' in dtype else {}         
+
+       def fun(a, b):
+           return la.trisolve(a, b, which="upper") 
+
+       w = data.trisolve_upper_linalg_dat(solver_input)(
+              data.randn, self.backend, dtype=dtype
+           )
+
+       i = IndexGen("i", w.sizeI)
+       j = IndexGen("j", w.sizeJ)
+       k = IndexGen("k", w.sizeK)
+
+       A = tn.TensorGen(w.matrixA, (i, j)) 
+       B = tn.TensorGen(w.matrixB, (i, k)) 
+
+       assert_grad(fun, **opts)(A, B) 
+
+
+   @pytest.mark.parametrize("solver_input", [
+      data.solver_input_000, 
+      data.solver_input_001, 
+      data.solver_input_002,
+   ])
+   @pytest.mark.parametrize("dtype", [
+      "float64",
+      "complex128",
+   ])
+   def test_trisolve_lower(self, solver_input, dtype):
+
+       opts = {"modes": "vjp"} if 'complex' in dtype else {}         
+
+       def fun(a, b):
+           return la.trisolve(a, b, which="lower") 
+
+       w = data.trisolve_lower_linalg_dat(solver_input)(
+              data.randn, self.backend, dtype=dtype
+           )
+
+       i = IndexGen("i", w.sizeI)
+       j = IndexGen("j", w.sizeJ)
+       k = IndexGen("k", w.sizeK)
+
+       A = tn.TensorGen(w.matrixA, (i, j)) 
+       B = tn.TensorGen(w.matrixB, (i, k)) 
+
+       assert_grad(fun, **opts)(A, B) 
+
+
 
 
 ###############################################################################
@@ -596,14 +716,40 @@ class TestGradsTransforms:
        return self._backend
 
 
+   @pytest.mark.skip
+   @pytest.mark.parametrize("shapes, inds, outshape, outinds, which", [
+      [[(4,4), (4,4)       ], ["ij", "ij"      ], (8,4),  "lr", None   ], 
+   ])  
+   def test_concat(self, shapes, inds, outshape, outinds, which):
+
+       w = data.ntensor_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+       v = data.indices_dat(outinds, outshape)     
+
+       def fun(xs):
+           if isinstance(xs, (tuple, list)):
+              xs = tc.container(*xs)
+           return la.concat(xs, v.inds, which=which)
+
+       assert_grad(fun, 0, order=1, modes="jvp")(*w.tensors) 
 
 
 
 
-
-
-
-
+"""
+   @pytest.mark.parametrize("shapes, inds, outshape, outinds, which", [
+      [[(4,4), (4,4)       ], ["ij", "ij"      ], (8,4),  "lr", None   ], 
+      [[(4,4), (4,4)       ], ["ij", "ij"      ], (8,4),  "lr", "left" ], 
+      [[(4,4), (4,4)       ], ["ij", "ij"      ], (4,8),  "lr", "right"],
+      [[(4,4), (5,4)       ], ["ij", "kj"      ], (9,4),  "lr", None   ],  
+      [[(4,4), (5,4)       ], ["ij", "kj"      ], (9,4),  "lr", "left" ], 
+      [[(4,4), (4,5)       ], ["ij", "ik"      ], (4,9),  "lr", "right"], 
+      [[(4,4), (5,4), (6,4)], ["ij", "kj", "lj"], (15,4), "lr", None   ], 
+      [[(4,4), (5,4), (6,4)], ["ij", "kj", "lj"], (15,4), "lr", "left" ], 
+      [[(4,4), (4,5), (4,6)], ["ij", "ik", "il"], (4,15), "lr", "right"], 
+   ])  
+"""
 
 
 

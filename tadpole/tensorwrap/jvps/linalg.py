@@ -364,12 +364,12 @@ def jvpB_solve(g, out, a, b):
 
 def jvpA_trisolve(g, out, a, b, which=None):
 
-    return -tri(which)(la.trisolve(a, g @ out, which=which))
+    return -la.trisolve(a, tri(which)(g) @ out, which=which) 
 
 
 def jvpB_trisolve(g, out, a, b, which=None):
 
-    return la.trisolve(a, g, which)
+    return la.trisolve(a, g, which=which) 
 
 
 

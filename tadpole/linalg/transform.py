@@ -33,8 +33,11 @@ from tadpole.index import (
 
 def linalg_transform(xs):
 
+    print("LINALG-TRANSF: ", xs)
+
     engine = EngineLinalgTransform()
     for x in xs:
+        #print("LINALG-TRANSF-1: ", x, x._source._source)
         engine = x.pluginto(engine)
 
     return engine.operator()
