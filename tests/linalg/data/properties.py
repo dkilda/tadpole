@@ -86,6 +86,27 @@ def property_input_002():
 
 
 
+def property_input_003():
+
+    return PropertyInputData(
+
+       inds   = "ijk",     
+       shape  = (2,3,4),
+
+       linds  = "j",
+       lshape = (3,),
+       lsize  = 3,
+       laxes  = (1,),
+
+       rinds  = "ik",
+       rshape = (2,4),
+       rsize  = 8,
+       raxes  = (0,2),
+    )
+
+
+
+
 # --- Property data ---------------------------------------- #
 
 PropertyData = collections.namedtuple("PropertyData", [

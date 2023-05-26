@@ -73,6 +73,7 @@ class TestGradsDecomp:
 
    # --- Main tests --- #
 
+   #@pytest.mark.skip
    @pytest.mark.parametrize("decomp_input", [
       data.decomp_input_001,
       data.decomp_input_002,
@@ -317,6 +318,301 @@ class TestGradsDecomp:
 
 
        assert_grad(fun, order=1, modes="jvp", submode="real")(x) 
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Linalg property grads                                                  ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Linalg property grads ------------------------------------------------- #
+
+@pytest.mark.parametrize("current_backend", available_backends, indirect=True)
+class TestGradsProperties:
+
+   @pytest.fixture(autouse=True)
+   def request_backend(self, current_backend):
+
+       self._backend = current_backend
+
+
+   @property
+   def backend(self):
+
+       return self._backend
+
+
+   @pytest.mark.parametrize("property_input", [
+      data.property_input_001,
+      data.property_input_002,
+      data.property_input_003,
+   ])
+   @pytest.mark.parametrize("order", [
+      None, "fro", "nuc", 
+   ])
+   @pytest.mark.parametrize("dtype", [
+      "float64",
+      "complex128",
+   ])
+   def test_norm(self, property_input, order, dtype):
+
+       opts = {}
+       if 'complex' in dtype:
+          opts = {"modes": "vjp", "submode": "real"} 
+
+       def fun(x):
+           return la.norm(x, order=order)
+
+       w = data.property_linalg_dat(property_input)(
+              data.randn, self.backend, dtype=dtype
+           )
+
+       lind = IndexGen("l", w.matrix.shape[0])
+       rind = IndexGen("r", w.matrix.shape[1])
+
+       x = tn.TensorGen(w.matrix, (lind, rind)) 
+
+       assert_grad(fun, **opts)(x)  
+
+
+   @pytest.mark.parametrize("property_input", [
+      data.property_input_001,
+      data.property_input_002,
+      data.property_input_003,
+   ])
+   @pytest.mark.parametrize("dtype", [
+      "float64",
+      "complex128",
+   ])
+   def test_trace(self, property_input, dtype):
+
+       opts = {"modes": "vjp"} if 'complex' in dtype else {}         
+
+       def fun(x):
+           return la.trace(x)
+
+       w = data.property_linalg_dat(property_input)(
+              data.randn, self.backend, dtype=dtype
+           )
+
+       lind = IndexGen("l", w.matrix.shape[0])
+       rind = IndexGen("r", w.matrix.shape[1])
+
+       x = tn.TensorGen(w.matrix, (lind, rind)) 
+
+       assert_grad(fun, **opts)(x) 
+
+
+   @pytest.mark.parametrize("property_input", [
+      data.property_input_002,
+   ])
+   @pytest.mark.parametrize("dtype", [
+      "float64",
+      "complex128",
+   ])
+   def test_det(self, property_input, dtype):
+
+       opts = {"modes": "vjp"} if 'complex' in dtype else {}         
+
+       def fun(x):
+           return la.det(x)
+
+       w = data.property_linalg_dat(property_input)(
+              data.randn, self.backend, dtype=dtype
+           )
+
+       lind = IndexGen("l", w.matrix.shape[0])
+       rind = IndexGen("r", w.matrix.shape[1])
+
+       x = tn.TensorGen(w.matrix, (lind, rind)) 
+
+       assert_grad(fun, **opts)(x) 
+
+
+   @pytest.mark.parametrize("property_input", [
+      data.property_input_002,
+   ])
+   @pytest.mark.parametrize("dtype", [
+      "float64",
+      "complex128",
+   ])
+   def test_inv(self, property_input, dtype):
+
+       opts = {"modes": "vjp"} if 'complex' in dtype else {}         
+
+       def fun(x):
+           return la.inv(x)
+
+       w = data.property_linalg_dat(property_input)(
+              data.randn, self.backend, dtype=dtype
+           )
+
+       lind = IndexGen("l", w.matrix.shape[0])
+       rind = IndexGen("r", w.matrix.shape[1])
+
+       x = tn.TensorGen(w.matrix, (lind, rind)) 
+
+       assert_grad(fun, **opts)(x) 
+
+
+   @pytest.mark.parametrize("property_input", [
+      data.property_input_001,
+      data.property_input_002,
+      data.property_input_003,
+   ])
+   @pytest.mark.parametrize("dtype", [
+      "float64",
+      "complex128",
+   ])
+   def test_tril(self, property_input, dtype):
+
+       opts = {"modes": "vjp"} if 'complex' in dtype else {}         
+
+       def fun(x):
+           return la.tril(x)
+
+       w = data.property_linalg_dat(property_input)(
+              data.randn, self.backend, dtype=dtype
+           )
+
+       lind = IndexGen("l", w.matrix.shape[0])
+       rind = IndexGen("r", w.matrix.shape[1])
+
+       x = tn.TensorGen(w.matrix, (lind, rind)) 
+
+       assert_grad(fun, **opts)(x) 
+
+
+   @pytest.mark.parametrize("property_input", [
+      data.property_input_001,
+      data.property_input_002,
+      data.property_input_003,
+   ])
+   @pytest.mark.parametrize("dtype", [
+      "float64",
+      "complex128",
+   ])
+   def test_triu(self, property_input, dtype):
+
+       opts = {"modes": "vjp"} if 'complex' in dtype else {}         
+
+       def fun(x):
+           return la.triu(x)
+
+       w = data.property_linalg_dat(property_input)(
+              data.randn, self.backend, dtype=dtype
+           )
+
+       lind = IndexGen("l", w.matrix.shape[0])
+       rind = IndexGen("r", w.matrix.shape[1])
+
+       x = tn.TensorGen(w.matrix, (lind, rind)) 
+
+       assert_grad(fun, **opts)(x) 
+
+
+   @pytest.mark.parametrize("property_input", [
+      data.property_input_001,
+      data.property_input_002,
+      data.property_input_003,
+   ])
+   @pytest.mark.parametrize("dtype", [
+      "float64",
+      "complex128",
+   ])
+   def test_diag(self, property_input, dtype):
+
+       opts = {"modes": "vjp"} if 'complex' in dtype else {}         
+
+       def fun(x, inds):
+           return la.diag(x, inds)
+
+       w = data.property_linalg_dat(property_input)(
+              data.randn, self.backend, dtype=dtype
+           )
+
+       lind = IndexGen("l", w.matrix.shape[0])
+       rind = IndexGen("r", w.matrix.shape[1])
+       sind = IndexGen("s", min(w.lsize, w.rsize))
+
+       x = tn.TensorGen(w.matrix, (lind, rind)) 
+
+       assert_grad(fun, **opts)(x, sind) 
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Linalg solver grads                                                    ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Linalg solver grads --------------------------------------------------- #
+
+@pytest.mark.parametrize("current_backend", available_backends, indirect=True)
+class TestGradsSolvers:
+
+   @pytest.fixture(autouse=True)
+   def request_backend(self, current_backend):
+
+       self._backend = current_backend
+
+
+   @property
+   def backend(self):
+
+       return self._backend
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Linalg transformation grads                                            ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Linalg transformation grads ------------------------------------------- #
+
+@pytest.mark.parametrize("current_backend", available_backends, indirect=True)
+class TestGradsTransforms:
+
+   @pytest.fixture(autouse=True)
+   def request_backend(self, current_backend):
+
+       self._backend = current_backend
+
+
+   @property
+   def backend(self):
+
+       return self._backend
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

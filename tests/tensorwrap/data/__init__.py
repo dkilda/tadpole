@@ -64,6 +64,7 @@ from tests.linalg.data import (
 from tests.linalg.data import (
    property_input_001,
    property_input_002,
+   property_input_003,
    property_linalg_dat,
 )
 

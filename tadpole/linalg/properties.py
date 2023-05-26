@@ -82,9 +82,9 @@ class LinalgProperties:
 
    def __init__(self, data, inds): 
 
-       if inds.ndim != 2:
+       if inds.ndim not in (1,2):
           raise ValueError(
-             f"LinalgProperties: input must have ndim = 2, "
+             f"LinalgProperties: input must have ndim = 1 or 2, "
              f"but data.ndim = {data.ndim}, inds.ndim = {inds.ndim}."
           )
 
@@ -144,9 +144,9 @@ class LinalgProperties:
        return self._create(ar.triu, **opts)
 
 
-   def diag(self, inds, **opts):
+   def diag(self, ind, **opts):
 
-       return tn.TensorGen(ar.diag(self._data, **opts), inds)
+       return tn.TensorGen(ar.diag(self._data, **opts), (ind,))
 
 
 
@@ -203,10 +203,10 @@ def triu(x, **opts):
 
 
 @ad.differentiable
-def diag(x, inds, **opts):
+def diag(x, ind, **opts):
 
     op = linalg_properties(x)
-    return op.diag(inds, **opts) 
+    return op.diag(ind, **opts) 
 
 
 

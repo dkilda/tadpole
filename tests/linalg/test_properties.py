@@ -56,6 +56,7 @@ class TestLinalgProperties:
    @pytest.mark.parametrize("property_input", [
       data.property_input_001,
       data.property_input_002,
+      data.property_input_003,
    ])
    @pytest.mark.parametrize("order", [
       None, "fro", "nuc", 
@@ -85,6 +86,7 @@ class TestLinalgProperties:
    @pytest.mark.parametrize("property_input", [
       data.property_input_001,
       data.property_input_002,
+      data.property_input_003,
    ])
    @pytest.mark.parametrize("alignment", [
       "l", "r", "lr", 
@@ -163,6 +165,7 @@ class TestLinalgProperties:
    @pytest.mark.parametrize("property_input", [
       data.property_input_001,
       data.property_input_002,
+      data.property_input_003,
    ])
    @pytest.mark.parametrize("alignment", [
       "l", "r", "lr", 
@@ -191,6 +194,7 @@ class TestLinalgProperties:
    @pytest.mark.parametrize("property_input", [
       data.property_input_001,
       data.property_input_002,
+      data.property_input_003,
    ])
    @pytest.mark.parametrize("alignment", [
       "l", "r", "lr", 
@@ -219,6 +223,7 @@ class TestLinalgProperties:
    @pytest.mark.parametrize("property_input", [
       data.property_input_001,
       data.property_input_002,
+      data.property_input_003,
    ])
    @pytest.mark.parametrize("alignment", [
       "l", "r", "lr", 
@@ -237,11 +242,12 @@ class TestLinalgProperties:
 
        i = IndexGen("l", min(w.lsize, w.rsize))
 
-       out = la.diag(w.tensor, (i,), **inds)
+       out = la.diag(w.tensor, i, **inds)
        ans = ar.diag(w.matrix)
        ans = tn.TensorGen(ans, (i,)) 
 
        assert tn.allclose(out, ans)
+
 
 
 

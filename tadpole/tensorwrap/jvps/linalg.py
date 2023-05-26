@@ -77,7 +77,7 @@ def jvp_svd(g, out, x, sind=None, trunc=None):
 
     du = du(*tn.union_inds(u))
     dv = dv(*tn.union_inds(v))
-    ds = la.diag(tn.astype_like(ds, s), tuple(tn.union_inds(s)))
+    ds = la.diag(tn.astype_like(ds, s), next(tn.union_inds(s)))
 
     return tc.container(du, ds, dv.H, tn.NullGrad(tn.space(out[-1]))) 
 
@@ -100,7 +100,7 @@ def jvp_eig(g, out, x, sind=None):
     ds = eye(s,"ij")  * (la.inv(v)("im") @ g("mn") @ v("nj"))
 
     dv = dv(*tn.union_inds(v))
-    ds = la.diag(ds, tuple(tn.union_inds(s)))
+    ds = la.diag(ds, next(tn.union_inds(s)))
 
     return ContainerGen(dv, ds)
 
@@ -123,7 +123,7 @@ def jvp_eigh(g, out, x, sind=None):
     ds = eye(s, "ij") * (v.H("im") @ g("mn") @ v("nj"))
 
     dv = dv(*tn.union_inds(v))
-    ds = la.diag(ds, tuple(tn.union_inds(s)))
+    ds = la.diag(ds, next(tn.union_inds(s)))
 
     return ContainerGen(dv, ds)
 
@@ -268,14 +268,14 @@ def jvp_norm(g, out, x, order=None, **opts):
 
     if order in (None, 'fro'):
 
-       return tn.sum(x * g) / out
+       return tn.sumover(x * g) / out
 
 
     if order == 'nuc':
 
-       U, S, VH = la.svd(x)
+       U, S, VH, error = la.svd(x)
 
-       return tn.sum(g * (U @ VH))
+       return tn.sumover(g * (U @ VH))
 
 
     raise ValueError(
@@ -290,7 +290,7 @@ def jvp_norm(g, out, x, order=None, **opts):
 
 def jvp_det(g, out, x):
 
-    return out * la.trace(la.inv(x) * g)
+    return out * la.trace(la.inv(x)("im") @ g("mj"))
 
 
 

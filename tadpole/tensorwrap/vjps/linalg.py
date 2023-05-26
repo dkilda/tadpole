@@ -104,35 +104,6 @@ def vjp_svd(g, out, x, sind=None, trunc=None):
 
 
 
-
-def NEW_vjp_svd(g, out, x, sind=None, trunc=None):
-
-    """
-    https://arxiv.org/pdf/1909.02659.pdf
-
-    Eq. 1, 2, 36 (take complex conjugate of both sides)
-
-    """
-
-    du, ds, dv = g[0],   g[1],   g[2].H
-    u,  s,  v  = out[0], out[1], out[2].H
-
-    f = fmatrix(s**2)("ij")
-
-    uTdu = u.T("im") @ du("mj")
-    vTdv = v.T("im") @ dv("mj")
-
-    grad = eye(s,"ij") * ds("i1") 
-    grad = grad + f * s("1j") * (uTdu("ij") - uTdu.H("ij"))  
-    grad = grad + f * s("i1") * (vTdv("ij") - vTdv.H("ij"))
- 
-    grad = u("li").C @ grad("ij") @ v.T("jr") 
-
-    return grad(*tn.union_inds(x))
-
-
-
-
 # --- Eigendecomposition (general) ------------------------------------------ #
 
 def vjp_eig(g, out, x, sind=None):
@@ -322,14 +293,14 @@ def vjp_norm(g, out, x, order=None, **opts):
 
     if order in (None, 'fro'):
 
-       return (g / out) * x
+       return (g / out) * x.C 
 
 
     if order == 'nuc':
 
-       U, S, VH = la.svd(x)
+       U, S, VH, error = la.svd(x)
 
-       return g * (U @ VH)
+       return g * (U.C @ VH.C)
 
 
     raise ValueError(
@@ -373,9 +344,17 @@ def vjp_inv(g, out, x):
 
 def vjp_diag(g, out, x, inds, **opts): 
 
-    return la.diag(g, tuple(tn.union_inds(x)), **opts)
+    xinds = list(tn.union_inds(x))
 
-   
+    i = min(xinds, key=len)
+    j = i.retagged("j")
+    k = xinds[1 - xinds.index(i)] 
+
+    grad = (g(i,"1") * tn.space(x).eye(i,j)) @ tn.space(x).eye(j,k) 
+
+    return tn.transpose_like(grad, x)
+
+
 
 
 # --- Concatenate matrices -------------------------------------------------- #
