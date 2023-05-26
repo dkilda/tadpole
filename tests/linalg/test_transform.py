@@ -74,9 +74,9 @@ class TestLinalgTransforms:
        v = data.indices_dat(outinds, outshape)
 
        if   which is None:
-            out = lat.concat(w.tensors, v.inds)
+            out = lat.concat(*w.tensors, inds=v.inds)
        else:
-            out = lat.concat(w.tensors, v.inds, which=which)
+            out = lat.concat(*w.tensors, inds=v.inds, which=which)
 
        ans = ar.concat(w.arrays, axis=axis)
        ans = tn.TensorGen(ans, v.inds)

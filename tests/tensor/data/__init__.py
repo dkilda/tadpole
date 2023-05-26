@@ -22,6 +22,7 @@ from .tensors import (
    sparsegrad_dat_003,
    sparsegrad_dat_004,
    sparsegrad_dat_005,
+   sparsegrad_dat_006,
    nullgrad_dat,
    nullgrad_dat_001,
    tensor_dat,

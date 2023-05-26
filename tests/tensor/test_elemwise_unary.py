@@ -259,6 +259,7 @@ class TestTensorElemwiseUnary:
       data.sparsegrad_dat_003,
       data.sparsegrad_dat_004,
       data.sparsegrad_dat_005,
+      data.sparsegrad_dat_006,
    ])
    @pytest.mark.parametrize("wrap", [
       True, 
@@ -300,11 +301,13 @@ class TestTensorElemwiseUnary:
       [data.sparsegrad_dat_003, "ijk", (0,1,2)],
       [data.sparsegrad_dat_004, "ijk", (0,1,2)],
       [data.sparsegrad_dat_005, "ijk", (0,1,2)],
+      [data.sparsegrad_dat_006, "ijk", (0,1,2)],
       [data.sparsegrad_dat_001, "kij", (2,0,1)],
       [data.sparsegrad_dat_002, "kij", (2,0,1)],
       [data.sparsegrad_dat_003, "kij", (2,0,1)],
       [data.sparsegrad_dat_004, "kij", (2,0,1)],
       [data.sparsegrad_dat_005, "kij", (2,0,1)],
+      [data.sparsegrad_dat_006, "kij", (2,0,1)],
    ])
    def test_getitem_by_inds_001(self, graddat, eleminds, elemaxes):
 
@@ -323,6 +326,7 @@ class TestTensorElemwiseUnary:
       data.sparsegrad_dat_003,
       data.sparsegrad_dat_004,
       data.sparsegrad_dat_005,
+      data.sparsegrad_dat_006,
    ])
    @pytest.mark.parametrize("wrap", [
       True, 
@@ -346,11 +350,13 @@ class TestTensorElemwiseUnary:
       [data.sparsegrad_dat_003, "ijk", (0,1,2)],
       [data.sparsegrad_dat_004, "ijk", (0,1,2)],
       [data.sparsegrad_dat_005, "ijk", (0,1,2)],
+      [data.sparsegrad_dat_006, "ijk", (0,1,2)],
       [data.sparsegrad_dat_001, "kij", (2,0,1)],
       [data.sparsegrad_dat_002, "kij", (2,0,1)],
       [data.sparsegrad_dat_003, "kij", (2,0,1)],
       [data.sparsegrad_dat_004, "kij", (2,0,1)],
       [data.sparsegrad_dat_005, "kij", (2,0,1)],
+      [data.sparsegrad_dat_006, "kij", (2,0,1)],
    ])
    def test_ungetitem_by_inds(self, graddat, eleminds, elemaxes):
 

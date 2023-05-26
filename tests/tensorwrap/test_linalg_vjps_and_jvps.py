@@ -73,7 +73,6 @@ class TestGradsDecomp:
 
    # --- Main tests --- #
 
-   #@pytest.mark.skip
    @pytest.mark.parametrize("decomp_input", [
       data.decomp_input_001,
       data.decomp_input_002,
@@ -109,7 +108,6 @@ class TestGradsDecomp:
 
    # --- Auxiliary tests --- #
 
-   #@pytest.mark.skip
    @pytest.mark.parametrize("decomp_input", [
       data.decomp_input_001,
       data.decomp_input_002,
@@ -144,7 +142,6 @@ class TestGradsDecomp:
        assert_vjp_custom(fun, x, g)  
 
 
-   #@pytest.mark.skip
    @pytest.mark.parametrize("decomp_input", [
       data.decomp_input_001,
       data.decomp_input_002,
@@ -174,7 +171,6 @@ class TestGradsDecomp:
        assert_jvp_custom(fun, x, g)  
 
  
-   #@pytest.mark.skip
    @pytest.mark.parametrize("decomp_input", [
       #data.decomp_input_001,
       data.decomp_input_002,
@@ -240,7 +236,6 @@ class TestGradsDecomp:
        assert_grad(fun, order=1, modes="vjp")(x) 
 
  
-   #@pytest.mark.skip
    @pytest.mark.parametrize("decomp_input", [
       data.decomp_input_001,
       data.decomp_input_002,
@@ -716,28 +711,6 @@ class TestGradsTransforms:
        return self._backend
 
 
-   @pytest.mark.skip
-   @pytest.mark.parametrize("shapes, inds, outshape, outinds, which", [
-      [[(4,4), (4,4)       ], ["ij", "ij"      ], (8,4),  "lr", None   ], 
-   ])  
-   def test_concat(self, shapes, inds, outshape, outinds, which):
-
-       w = data.ntensor_dat(data.randn)(
-              self.backend, inds, shapes
-           )
-       v = data.indices_dat(outinds, outshape)     
-
-       def fun(xs):
-           if isinstance(xs, (tuple, list)):
-              xs = tc.container(*xs)
-           return la.concat(xs, v.inds, which=which)
-
-       assert_grad(fun, 0, order=1, modes="jvp")(*w.tensors) 
-
-
-
-
-"""
    @pytest.mark.parametrize("shapes, inds, outshape, outinds, which", [
       [[(4,4), (4,4)       ], ["ij", "ij"      ], (8,4),  "lr", None   ], 
       [[(4,4), (4,4)       ], ["ij", "ij"      ], (8,4),  "lr", "left" ], 
@@ -749,29 +722,18 @@ class TestGradsTransforms:
       [[(4,4), (5,4), (6,4)], ["ij", "kj", "lj"], (15,4), "lr", "left" ], 
       [[(4,4), (4,5), (4,6)], ["ij", "ik", "il"], (4,15), "lr", "right"], 
    ])  
-"""
+   def test_concat(self, shapes, inds, outshape, outinds, which):
 
+       w = data.ntensor_dat(data.randn)(
+              self.backend, inds, shapes
+           )
+       v = data.indices_dat(outinds, outshape)   
 
+       def fun(*xs):
+           return la.concat(*xs, inds=v.inds, which=which)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+       for i in range(len(w.tensors)):
+           assert_grad(fun, i)(*w.tensors) 
 
 
 

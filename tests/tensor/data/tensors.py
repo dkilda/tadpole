@@ -435,6 +435,53 @@ def sparsegrad_dat_005(backend, dtype="complex128", seed=1):
 
 
 
+def sparsegrad_dat_006(backend, dtype="complex128", seed=1):
+
+    backend  = backends.get(backend) 
+    indnames = "ijk"
+    shape    = (2,3,4)
+
+    _vals = backend.randn((2,1,2), dtype=dtype, seed=seed) 
+    vals  = _vals[:,0,:]
+    xvals = ar.asarray(_vals)
+ 
+    pos  = (slice(None), 1, slice(2,4))
+    xpos = (
+            ar.asarray([[[0,0]], [[1,1]]], backend=backend), 
+            ar.asarray([[[1,1]], [[1,1]]], backend=backend),
+            ar.asarray([[[2,3]], [[2,3]]], backend=backend),
+           )
+
+    dense      = backend.zeros(shape, dtype=dtype)
+    dense[pos] = vals[:,:]
+
+    def densefun(shape, dtype):
+        return dense
+
+    x = tensor_dat(densefun)(
+           backend.name(), indnames, shape, dtype=dtype
+    )
+    w = data.arrayspace_dat(backend.name(), shape, dtype)
+
+    space = tn.TensorSpace(w.space, x.inds)
+    grad  = tn.SparseGrad(space, xpos, xvals)
+
+    valinds = (
+               x.inds[0].resized(0,2),  
+               x.inds[2].resized(2,4),
+              ) 
+
+    return SparseGradData(
+                          grad,     space,          
+                          x.tensor, x.array,  x.data,
+                          vals,     xvals,    valinds,           
+                          pos,      xpos,             
+                          x.inds,   x.shape,  dtype,  x.backend,  {}
+                         )
+
+
+
+
 # --- Tensor data ----------------------------------------------------------- #
 
 TensorData = collections.namedtuple("TensorData", [

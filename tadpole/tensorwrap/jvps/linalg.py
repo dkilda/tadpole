@@ -308,7 +308,7 @@ def jvp_inv(g, out, x):
 
 # --- Concatenate matrices -------------------------------------------------- #
 
-def jvp_concat(g, adx, out, xs, inds, which=None, **opts):
+def jvp_concat(g, adx, out, *xs, inds, which=None, **opts):
 
     def grad(idx):
 
@@ -317,9 +317,9 @@ def jvp_concat(g, adx, out, xs, inds, which=None, **opts):
 
         return tn.space(xs[idx]).zeros()
 
-    gs = tuple(grad(idx) for idx in range(len(xs)))
+    gs = (grad(idx) for idx in range(len(xs)))
       
-    return la.concat(gs, inds, which=which, **opts)
+    return la.concat(*gs, inds=inds, which=which, **opts)
 
 
 

@@ -31,13 +31,11 @@ from tadpole.index import (
 
 # --- Linalg transform factory ---------------------------------------------- #
 
-def linalg_transform(xs):
-
-    print("LINALG-TRANSF: ", xs)
+def linalg_transform(*xs):
 
     engine = EngineLinalgTransform()
+
     for x in xs:
-        #print("LINALG-TRANSF-1: ", x, x._source._source)
         engine = x.pluginto(engine)
 
     return engine.operator()
@@ -128,9 +126,9 @@ class LinalgTransform:
 # --- Linear algebra transformations ---------------------------------------- #
 
 @ad.differentiable
-def concat(xs, inds, which=None, **opts):
+def concat(*xs, inds, which=None, **opts):
 
-    op = linalg_transform(xs)
+    op = linalg_transform(*xs)
     return op.concat(inds, which=which, **opts)  
 
 

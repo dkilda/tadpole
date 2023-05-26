@@ -32,6 +32,18 @@ from tadpole.index import (
 
 # --- Helpers for index manipulation ---------------------------------------- #
 
+def upperbounded(positions, inds):
+
+    def _bounded(pos, ind):
+
+        if isinstance(pos, slice) and pos.stop is None:
+           return slice(pos.start, len(ind), pos.step)
+
+        return pos
+
+    return tuple(map(_bounded, positions, inds)) 
+
+
 def resized(ind, pos):
 
     if isinstance(pos, slice):
@@ -82,9 +94,10 @@ class ElementByIndices(Element):
 
    def pos(self, inds):
 
+       pos  = upperbounded(self._positions, inds.map(*self._inds))
        axes = util.argsort(inds.axes(*inds.map(*self._inds)))
 
-       return tuple(self._positions[axis] for axis in axes)
+       return tuple(pos[axis] for axis in axes)
 
 
    def grid(self, inds):
@@ -98,10 +111,11 @@ class ElementByIndices(Element):
 
        
    def inds(self, inds):
+       
+       pos        = upperbounded(self._positions, inds.map(*self._inds))
+       pos_by_ind = dict(zip(inds.map(*self._inds), pos))
 
-       pos_by_ind = dict(zip(inds.map(*self._inds), self._positions))
-       inds       = list(inds)
-
+       inds = list(inds)
        for i, ind in enumerate(inds):
            if ind in pos_by_ind:
               inds[i] = resized(ind, pos_by_ind[ind])
@@ -122,7 +136,7 @@ class ElementByAxes(Element):
 
    def pos(self, inds):
 
-       return self._positions
+       return upperbounded(self._positions, inds)
 
 
    def grid(self, inds):
@@ -137,14 +151,15 @@ class ElementByAxes(Element):
 
    def inds(self, inds):
 
-       inds = list(inds)  
+       inds = list(inds) 
+       pos  = self.pos(inds) 
 
        for i, ind in enumerate(inds):
 
-           if i == len(self._positions):
+           if i == len(pos):
               break
 
-           inds[i] = resized(ind, self._positions[i]) 
+           inds[i] = resized(ind, pos[i]) 
 
        return nonzero_sized(inds) 
 

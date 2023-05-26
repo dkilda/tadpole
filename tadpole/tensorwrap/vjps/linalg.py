@@ -359,7 +359,7 @@ def vjp_diag(g, out, x, inds, **opts):
 
 # --- Concatenate matrices -------------------------------------------------- #
 
-def vjp_concat(g, adx, out, xs, inds, which=None, **opts): 
+def vjp_concat(g, adx, out, *xs, inds, which=None, **opts): 
 
     axis = {
             None:    0, 
@@ -372,7 +372,7 @@ def vjp_concat(g, adx, out, xs, inds, which=None, **opts):
 
     adx_slice       = [slice(None), slice(None)]
     adx_slice[axis] = slice(start, start + size)
-    
+
     return g[tuple(adx_slice)](*tn.union_inds(xs[adx])) 
 
 
