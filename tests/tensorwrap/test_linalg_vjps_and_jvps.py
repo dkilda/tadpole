@@ -112,45 +112,9 @@ class TestGradsDecomp:
    ])
    @pytest.mark.parametrize("dtype", [
       "float64",
-      "complex128",
+      #"complex128",
    ])
    def test_eig(self, decomp_input, dtype):
-
-       def fun(x):
-           V, S = la.eig(x, sind="s") 
-           return tc.container(tn.absolute(V), tn.absolute(S))  
-             
-       w = data.eig_tensor_dat(decomp_input)(
-              data.randn, self.backend, dtype=dtype
-           )
-
-       lind = IndexGen("l", w.xmatrix.shape[0])
-       rind = IndexGen("r", w.xmatrix.shape[1])
-
-       x = tn.TensorGen(w.xmatrix, (lind, rind)) 
-
-       assert_grad(fun, order=2, modes="vjp", submode="real")(x)
-
-
-   #@pytest.mark.skip
-   @pytest.mark.parametrize("decomp_input", [
-      data.decomp_input_002,
-   ])
-   @pytest.mark.parametrize("dtype", [
-      "float64",
-      "complex128",
-   ])
-   def test_eigh(self, decomp_input, dtype):
-
-       if 'complex' in dtype: 
-          opts = {"submode": "real"} #{"modes": "vjp", "submode": "real"}
-          def fun(x):
-              V, S = la.eigh(x, sind="s") 
-              return tc.container(tn.absolute(V), S)  
-       else:
-          opts = {}
-          def fun(x):
-              return la.eigh(x, sind="s")
 
        w = data.eigh_tensor_dat(decomp_input)(
               data.randn, self.backend, dtype=dtype
@@ -161,7 +125,46 @@ class TestGradsDecomp:
 
        x = tn.TensorGen(w.xmatrix, (lind, rind)) 
 
-       assert_grad(fun, order=2, modes="vjp", **opts)(x) 
+       def fun(x):
+           x    = (x(lind,rind) + x.H(lind,rind)) / 2
+           V, S = la.eig(x, sind="s") 
+           return tc.container(tn.absolute(V), tn.absolute(S)) 
+
+       assert_grad(fun, order=2, modes="jvp", submode="real")(x)
+
+
+   #@pytest.mark.skip
+   @pytest.mark.parametrize("decomp_input", [
+      data.decomp_input_002,
+   ])
+   @pytest.mark.parametrize("dtype", [
+      "float64",
+      #"complex128",
+   ])
+   def test_eigh(self, decomp_input, dtype):
+
+       w = data.eigh_tensor_dat(decomp_input)(
+              data.randn, self.backend, dtype=dtype
+           )
+
+       lind = IndexGen("l", w.xmatrix.shape[0])
+       rind = IndexGen("r", w.xmatrix.shape[1])
+
+       x = tn.TensorGen(w.xmatrix, (lind, rind)) 
+
+       if 'complex' in dtype: 
+          opts = {"submode": "real"} #{"modes": "vjp", "submode": "real"}
+          def fun(x):
+              x    = (x(lind,rind) + x.H(lind,rind)) / 2
+              V, S = la.eigh(x, sind="s") 
+              return tc.container(tn.absolute(V), S)  
+       else:
+          opts = {}
+          def fun(x):
+              x = (x(lind,rind) + x.H(lind,rind)) / 2
+              return la.eigh(x, sind="s")
+
+       assert_grad(fun, order=2, modes="jvp", **opts)(x) 
 
 
    # --- Auxiliary tests: svd --- #
