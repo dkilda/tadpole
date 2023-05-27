@@ -112,23 +112,9 @@ def jvp_eigh(g, out, x, sind=None):
     """
 
     v, s = out
-    g    = (g("mn") + g.H("mn")) / 2
 
-    #v, s = la.eig((x("mn") + x.H("mn")) / 2)  
-
-    #grad = g("mn")
-    #tl   = la.tril(tn.space(grad).ones(), k=-1)
-    #grad = tn.real(grad) * eye(grad) + (grad("mn") + grad.H("mn")) * tl 
-
-    #grad = v.H("im") @ grad("mn") @ v("nj")  
-
-    #g = 0.5*(g("mn") + g.H("mn"))
-    #g = g * la.tril(tn.space(g).ones(), k=0) #+ tn.real(g) * eye(g)
-
-    #g = (g("mn") + g.H("mn")) / 2
-    #g = g * la.tril(tn.space(g).ones(), k=-1) + tn.real(g) * eye(g)
-
-    grad = v.H("im") @ g("mn") @ v("nj")
+    grad = (g("mn") + g.H("mn")) / 2
+    grad = v.H("im") @ grad @ v("nj")
 
     dv = v("li") @ (fmatrix(s)("ij") * grad("ij"))
     ds = eye(s,"ij") * grad("ij")
@@ -138,8 +124,6 @@ def jvp_eigh(g, out, x, sind=None):
 
     return tc.container(dv, ds)
 
-
-#jvp_eigh = jvp_eig
 
 
 

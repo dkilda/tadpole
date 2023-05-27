@@ -106,15 +106,42 @@ class TestGradsDecomp:
        assert_grad(fun, **opts)(x)     
 
 
-   #@pytest.mark.skip
    @pytest.mark.parametrize("decomp_input", [
       data.decomp_input_002,
    ])
    @pytest.mark.parametrize("dtype", [
       "float64",
-      #"complex128",
+      "complex128",
    ])
-   def test_eig(self, decomp_input, dtype):
+   def test_eig_vjp(self, decomp_input, dtype):
+
+       w = data.eig_tensor_dat(decomp_input)(
+              data.randn, self.backend, dtype=dtype
+           )
+
+       lind = IndexGen("l", w.xmatrix.shape[0])
+       rind = IndexGen("r", w.xmatrix.shape[1])
+
+       x = tn.TensorGen(w.xmatrix, (lind, rind)) 
+
+       def fun(x):
+           V, S = la.eig(x, sind="s") 
+           return tc.container(tn.absolute(V), tn.absolute(S)) 
+
+       opts = {}
+       if 'complex' in dtype: 
+          opts = {"submode": "real"}
+
+       assert_grad(fun, modes="vjp", **opts)(x)
+
+
+   @pytest.mark.parametrize("decomp_input", [
+      data.decomp_input_002,
+   ])
+   @pytest.mark.parametrize("dtype", [
+      "float64",
+   ])
+   def test_eig_jvp(self, decomp_input, dtype):
 
        w = data.eigh_tensor_dat(decomp_input)(
               data.randn, self.backend, dtype=dtype
@@ -130,18 +157,17 @@ class TestGradsDecomp:
            V, S = la.eig(x, sind="s") 
            return tc.container(tn.absolute(V), tn.absolute(S)) 
 
-       assert_grad(fun, order=2, modes="jvp", submode="real")(x)
+       assert_grad(fun, modes="jvp")(x) 
 
 
-   #@pytest.mark.skip
    @pytest.mark.parametrize("decomp_input", [
       data.decomp_input_002,
    ])
    @pytest.mark.parametrize("dtype", [
       "float64",
-      #"complex128",
+      "complex128",
    ])
-   def test_eigh(self, decomp_input, dtype):
+   def test_eigh_vjp(self, decomp_input, dtype):
 
        w = data.eigh_tensor_dat(decomp_input)(
               data.randn, self.backend, dtype=dtype
@@ -153,18 +179,40 @@ class TestGradsDecomp:
        x = tn.TensorGen(w.xmatrix, (lind, rind)) 
 
        if 'complex' in dtype: 
-          opts = {"submode": "real"} #{"modes": "vjp", "submode": "real"}
+          opts = {"submode": "real"}
           def fun(x):
-              x    = (x(lind,rind) + x.H(lind,rind)) / 2
               V, S = la.eigh(x, sind="s") 
               return tc.container(tn.absolute(V), S)  
        else:
           opts = {}
           def fun(x):
-              x = (x(lind,rind) + x.H(lind,rind)) / 2
               return la.eigh(x, sind="s")
 
-       assert_grad(fun, order=2, modes="jvp", **opts)(x) 
+       assert_grad(fun, modes="vjp", **opts)(x) 
+
+
+   @pytest.mark.parametrize("decomp_input", [
+      data.decomp_input_002,
+   ])
+   @pytest.mark.parametrize("dtype", [
+      "float64",
+   ])
+   def test_eigh_jvp(self, decomp_input, dtype):
+
+       w = data.eigh_tensor_dat(decomp_input)(
+              data.randn, self.backend, dtype=dtype
+           )
+
+       lind = IndexGen("l", w.xmatrix.shape[0])
+       rind = IndexGen("r", w.xmatrix.shape[1])
+
+       x = tn.TensorGen(w.xmatrix, (lind, rind)) 
+
+       def fun(x):
+           x = (x(lind,rind) + x.H(lind,rind)) / 2
+           return la.eigh(x, sind="s")
+
+       assert_grad(fun, modes="jvp")(x) 
 
 
    # --- Auxiliary tests: svd --- #
@@ -458,9 +506,8 @@ class TestGradsDecomp:
        v = tn.TensorGen(w.lmatrix, (lind, sind)) 
        s = tn.TensorGen(w.smatrix, (sind,     )) 
 
-       g = tn.space(x).ones() #randn()
+       g = tn.space(x).ones()
        assert_jvp_custom(fun, x, g) 
-       assert False
 
 
    @pytest.mark.parametrize("decomp_input", [
@@ -519,41 +566,6 @@ class TestGradsDecomp:
                 + (grad("lr") + grad.H("lr")) * tl("lr") 
        
            return grad(*tn.union_inds(x))
-
-  
-           """
-           grad = (v.C("lm") * ds("1m")) @ v.T("mr")
-
-           if not tn.allclose(dv, tn.space(dv).zeros()): 
-
-              f    = fmatrix(s)("ij")
-              grad = grad \
-                   + v.C("li") @ (f * (v.T("im") @ dv("mj"))) @ v.T("jr")
-
-           tl   = la.tril(tn.space(grad).ones(), k=-1)
-           grad = tn.real(grad) * eye(grad) \
-                + (grad("lr") + grad.H("lr")) * tl("lr") 
-       
-           return grad(*tn.union_inds(x))
-           """
-
-           """
-           grad = eye(s,"ij") * ds("i1")
-
-           if not tn.allclose(dv, tn.space(dv).zeros()):
-
-              vTdv = v.T("im") @ dv("mj")
-              f    = fmatrix(s)("ij")
-              grad = grad + f * vTdv("ij") 
-
-           grad = v("li").C @ grad("ij") @ v.T("jr") 
-
-           tl   = la.tril(tn.space(grad).ones(), k=-1)
-           grad = tn.real(grad) * eye(grad) \
-                + (grad("lr") + grad.H("lr")) * tl("lr") 
-
-           return grad(*tn.union_inds(x))
-           """
 
 
        assert_grad(fun, order=1, modes="vjp")(x) 
