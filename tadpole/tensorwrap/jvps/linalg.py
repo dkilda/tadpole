@@ -8,15 +8,10 @@ import tadpole.tensor    as tn
 
 import tadpole.linalg.unwrapped as la
 
-
 from tadpole.tensorwrap.vjps.linalg import (
    eye,
    fmatrix,
    tri,
-)
-
-from tadpole.container import (
-   ContainerGen,
 )
 
 from tadpole.index import (
@@ -94,15 +89,15 @@ def jvp_eig(g, out, x, sind=None):
     """
 
     v, s = out
-    f    = fmatrix(s)("ij")
+    grad = la.inv(v)("im") @ g("mn") @ v("nj")
 
-    dv = v("li") @ (f * (la.inv(v)("im") @ g("mn") @ v("nj")))
-    ds = eye(s,"ij")  * (la.inv(v)("im") @ g("mn") @ v("nj"))
+    dv = v("li") @ (fmatrix(s)("ij") * grad("ij"))
+    ds = eye(s,"ij") * grad("ij")
 
     dv = dv(*tn.union_inds(v))
     ds = la.diag(ds, next(tn.union_inds(s)))
 
-    return ContainerGen(dv, ds)
+    return tc.container(dv, ds)
 
     
 
@@ -117,15 +112,22 @@ def jvp_eigh(g, out, x, sind=None):
     """
 
     v, s = out
-    f    = fmatrix(s)("ij")
 
-    dv = v("li") @ (f * (v.H("im") @ g("mn") @ v("nj")))
-    ds = eye(s, "ij") * (v.H("im") @ g("mn") @ v("nj"))
+    #grad = g("mn")
+    #tl   = la.tril(tn.space(grad).ones(), k=-1)
+    #grad = tn.real(grad) * eye(grad) + (grad("mn") + grad.H("mn")) * tl 
+
+    #grad = v.H("im") @ grad("mn") @ v("nj")  
+
+    grad = v.H("im") @ g("mn") @ v("nj")
+
+    dv = v("li") @ (fmatrix(s)("ij") * grad("ij"))
+    ds = eye(s,"ij") * grad("ij")
 
     dv = dv(*tn.union_inds(v))
     ds = la.diag(ds, next(tn.union_inds(s)))
 
-    return ContainerGen(dv, ds)
+    return tc.container(dv, ds)
 
 
 
@@ -179,7 +181,7 @@ def jvp_qr(g, out, x, sind=None):
          )
     dq = dq(*tn.union_inds(q)) 
 
-    return ContainerGen(dq, dr)
+    return tc.container(dq, dr)
 
 
 
@@ -233,7 +235,7 @@ def jvp_lq(g, out, x, sind=None):
          )
     dq = dq(*tn.union_inds(q)) 
 
-    return ContainerGen(dl, dq)
+    return tc.container(dl, dq)
 
 
 

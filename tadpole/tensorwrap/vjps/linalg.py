@@ -122,7 +122,7 @@ def vjp_eig(g, out, x, sind=None):
     vTdv = v.T("im") @ dv("mj")
 
     grad1 = f * vTdv  
-    grad2 = f * (v.T("im") @ v.C("mn") @ (tn.real(vTdv) * eye(vTdv))("nj"))
+    grad2 = f * ((v.T("im") @ v.C("mn")) @ (tn.real(vTdv) * eye(vTdv))("nj"))
 
     grad = ds("1j") * eye(s,"ij") + grad1 - grad2
     grad = la.inv(v.T)("li") @ grad("ij") @ v.T("jr")
@@ -156,6 +156,21 @@ def vjp_eigh(g, out, x, sind=None):
     dv, ds = g
     v,  s  = out
 
+    grad = eye(s,"ij") * ds("i1")
+
+    if not tn.allclose(dv, tn.space(dv).zeros()): 
+       grad = grad + fmatrix(s)("ij") * (v.T("im") @ dv("mj"))
+
+    grad = v("li").C @ grad @ v.T("jr") 
+
+    tl   = la.tril(tn.space(grad).ones(), k=-1)
+    grad = tn.real(grad) * eye(grad) \
+         + (grad("lr") + grad.H("lr")) * tl("lr") 
+       
+    return grad(*tn.union_inds(x))
+
+
+"""
     grad = (v.C("lm") * ds("1m")) @ v.T("mr")
 
     if not tn.allclose(dv, tn.space(dv).zeros()): 
@@ -164,10 +179,11 @@ def vjp_eigh(g, out, x, sind=None):
        grad = grad + v.C("li") @ (f * (v.T("im") @ dv("mj"))) @ v.T("jr")
 
     tl   = la.tril(tn.space(grad).ones(), k=-1)
-    grad = tn.real(grad) * eye(grad) + (grad + grad.H) * tl 
+    grad = tn.real(grad) * eye(grad) \
+         + (grad("lr") + grad.H("lr")) * tl("lr") 
        
     return grad(*tn.union_inds(x))
-
+"""
 
 
 

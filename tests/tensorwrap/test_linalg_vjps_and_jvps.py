@@ -106,7 +106,65 @@ class TestGradsDecomp:
        assert_grad(fun, **opts)(x)     
 
 
-   # --- Auxiliary tests --- #
+   #@pytest.mark.skip
+   @pytest.mark.parametrize("decomp_input", [
+      data.decomp_input_002,
+   ])
+   @pytest.mark.parametrize("dtype", [
+      "float64",
+      "complex128",
+   ])
+   def test_eig(self, decomp_input, dtype):
+
+       def fun(x):
+           V, S = la.eig(x, sind="s") 
+           return tc.container(tn.absolute(V), tn.absolute(S))  
+             
+       w = data.eig_tensor_dat(decomp_input)(
+              data.randn, self.backend, dtype=dtype
+           )
+
+       lind = IndexGen("l", w.xmatrix.shape[0])
+       rind = IndexGen("r", w.xmatrix.shape[1])
+
+       x = tn.TensorGen(w.xmatrix, (lind, rind)) 
+
+       assert_grad(fun, order=2, modes="vjp", submode="real")(x)
+
+
+   #@pytest.mark.skip
+   @pytest.mark.parametrize("decomp_input", [
+      data.decomp_input_002,
+   ])
+   @pytest.mark.parametrize("dtype", [
+      "float64",
+      "complex128",
+   ])
+   def test_eigh(self, decomp_input, dtype):
+
+       if 'complex' in dtype: 
+          opts = {"submode": "real"} #{"modes": "vjp", "submode": "real"}
+          def fun(x):
+              V, S = la.eigh(x, sind="s") 
+              return tc.container(tn.absolute(V), S)  
+       else:
+          opts = {}
+          def fun(x):
+              return la.eigh(x, sind="s")
+
+       w = data.eigh_tensor_dat(decomp_input)(
+              data.randn, self.backend, dtype=dtype
+           )
+
+       lind = IndexGen("l", w.xmatrix.shape[0])
+       rind = IndexGen("r", w.xmatrix.shape[1])
+
+       x = tn.TensorGen(w.xmatrix, (lind, rind)) 
+
+       assert_grad(fun, order=2, modes="vjp", **opts)(x) 
+
+
+   # --- Auxiliary tests: svd --- #
 
    @pytest.mark.parametrize("decomp_input", [
       data.decomp_input_001,
@@ -313,6 +371,190 @@ class TestGradsDecomp:
 
 
        assert_grad(fun, order=1, modes="jvp", submode="real")(x) 
+
+
+   # --- Auxiliary tests: eig --- #
+
+   @pytest.mark.parametrize("decomp_input", [
+      data.decomp_input_002,
+   ])
+   def _test_eig_vjp_first_order(self, decomp_input):
+
+       def fun(x):
+           V, S = la.eig(x, sind="s")
+           return tc.container(tn.absolute(V), tn.absolute(S))
+
+       w = data.eig_tensor_dat(decomp_input)(
+              data.randn, self.backend, dtype="float64"
+           )
+
+       lind = IndexGen("l", w.xmatrix.shape[0])
+       rind = IndexGen("r", w.xmatrix.shape[1])
+       sind = IndexGen("s", min(w.xmatrix.shape[0], w.xmatrix.shape[1]))
+
+       x = tn.TensorGen(w.xmatrix, (lind, rind)) 
+       v = tn.TensorGen(w.lmatrix, (lind, sind)) 
+       s = tn.TensorGen(w.smatrix, (sind,     )) 
+
+       y = fun(x)
+       g = tc.container(
+              tn.space(y[0]).randn(), 
+              tn.space(y[1]).randn(), 
+           )  
+       assert_vjp_custom(fun, x, g) 
+
+
+   # --- Auxiliary tests: eigh --- #
+
+   @pytest.mark.parametrize("decomp_input", [
+      data.decomp_input_002,
+   ])
+   def _test_eigh_vjp_first_order(self, decomp_input):
+
+       def fun(x):
+           return la.eigh(x, sind="s")
+
+       w = data.eigh_tensor_dat(decomp_input)(
+              data.randn, self.backend, dtype="float64"
+           )
+
+       lind = IndexGen("l", w.xmatrix.shape[0])
+       rind = IndexGen("r", w.xmatrix.shape[1])
+       sind = IndexGen("s", min(w.xmatrix.shape[0], w.xmatrix.shape[1]))
+
+       x = tn.TensorGen(w.xmatrix, (lind, rind)) 
+       v = tn.TensorGen(w.lmatrix, (lind, sind)) 
+       s = tn.TensorGen(w.smatrix, (sind,     )) 
+
+       out = tc.ContainerGen(v, s)
+       g   = tc.ContainerGen(
+                tn.space(v).randn(), 
+                tn.space(s).randn(), 
+             )  
+
+       assert_vjp_custom(fun, x, g) 
+
+
+   @pytest.mark.parametrize("decomp_input", [
+      data.decomp_input_002,
+   ])
+   def _test_eigh_jvp_first_order(self, decomp_input):
+
+       def fun(x):
+           return la.eigh(x, sind="s")
+
+       w = data.eigh_tensor_dat(decomp_input)(
+              data.randn, self.backend, dtype="float64"
+           )
+
+       lind = IndexGen("l", w.xmatrix.shape[0])
+       rind = IndexGen("r", w.xmatrix.shape[1])
+       sind = IndexGen("s", min(w.xmatrix.shape[0], w.xmatrix.shape[1]))
+
+       x = tn.TensorGen(w.xmatrix, (lind, rind)) 
+       v = tn.TensorGen(w.lmatrix, (lind, sind)) 
+       s = tn.TensorGen(w.smatrix, (sind,     )) 
+
+       g = tn.space(x).ones() #randn()
+       assert_jvp_custom(fun, x, g) 
+       assert False
+
+
+   @pytest.mark.parametrize("decomp_input", [
+      data.decomp_input_002,
+   ])
+   def _test_eigh_vjp_second_order(self, decomp_input):
+
+       w = data.eigh_tensor_dat(decomp_input)(
+              data.randn, self.backend, dtype="float64" 
+           )
+
+       lind = IndexGen("l", w.xmatrix.shape[0])
+       rind = IndexGen("r", w.xmatrix.shape[1])
+       sind = IndexGen("s", min(w.xmatrix.shape[0], w.xmatrix.shape[1]))
+
+       x = tn.TensorGen(w.xmatrix, (lind, rind)) 
+       v = tn.TensorGen(w.lmatrix, (lind, sind)) 
+       s = tn.TensorGen(w.smatrix, (sind,     )) 
+
+
+       def eye(x, inds=None): 
+
+           if inds is None:
+              return tn.space(x).eye()
+
+           sind  = IndexLit(inds[0], x.shape[0])
+           sind1 = IndexLit(inds[1], x.shape[-1])
+
+           return tn.space(x).eye(sind, sind1)
+
+
+       def fmatrix(s): 
+
+           seye = eye(s,"ij")
+
+           return 1. / (s("1j") - s("i1") + seye) - seye 
+
+
+       def fun(x):
+
+           out  = la.eigh(x, sind="s")
+           v, s = out[0], out[1]
+
+           dv = tn.space(v).ones()
+           ds = tn.space(s).ones()
+
+           grad = eye(s,"ij") * ds("i1")
+
+           if not tn.allclose(dv, tn.space(dv).zeros()): 
+              grad = grad + fmatrix(s)("ij") * (v.T("im") @ dv("mj"))
+
+           grad = v("li").C @ grad @ v.T("jr") 
+
+           tl   = la.tril(tn.space(grad).ones(), k=-1)
+           grad = tn.real(grad) * eye(grad) \
+                + (grad("lr") + grad.H("lr")) * tl("lr") 
+       
+           return grad(*tn.union_inds(x))
+
+  
+           """
+           grad = (v.C("lm") * ds("1m")) @ v.T("mr")
+
+           if not tn.allclose(dv, tn.space(dv).zeros()): 
+
+              f    = fmatrix(s)("ij")
+              grad = grad \
+                   + v.C("li") @ (f * (v.T("im") @ dv("mj"))) @ v.T("jr")
+
+           tl   = la.tril(tn.space(grad).ones(), k=-1)
+           grad = tn.real(grad) * eye(grad) \
+                + (grad("lr") + grad.H("lr")) * tl("lr") 
+       
+           return grad(*tn.union_inds(x))
+           """
+
+           """
+           grad = eye(s,"ij") * ds("i1")
+
+           if not tn.allclose(dv, tn.space(dv).zeros()):
+
+              vTdv = v.T("im") @ dv("mj")
+              f    = fmatrix(s)("ij")
+              grad = grad + f * vTdv("ij") 
+
+           grad = v("li").C @ grad("ij") @ v.T("jr") 
+
+           tl   = la.tril(tn.space(grad).ones(), k=-1)
+           grad = tn.real(grad) * eye(grad) \
+                + (grad("lr") + grad.H("lr")) * tl("lr") 
+
+           return grad(*tn.union_inds(x))
+           """
+
+
+       assert_grad(fun, order=1, modes="vjp")(x) 
+
 
 
 
