@@ -170,21 +170,6 @@ def vjp_eigh(g, out, x, sind=None):
     return grad(*tn.union_inds(x))
 
 
-"""
-    grad = (v.C("lm") * ds("1m")) @ v.T("mr")
-
-    if not tn.allclose(dv, tn.space(dv).zeros()): 
-
-       f    = fmatrix(s)("ij")
-       grad = grad + v.C("li") @ (f * (v.T("im") @ dv("mj"))) @ v.T("jr")
-
-    tl   = la.tril(tn.space(grad).ones(), k=-1)
-    grad = tn.real(grad) * eye(grad) \
-         + (grad("lr") + grad.H("lr")) * tl("lr") 
-       
-    return grad(*tn.union_inds(x))
-"""
-
 
 
 # --- QR decomposition ------------------------------------------------------ #
