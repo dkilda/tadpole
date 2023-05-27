@@ -71,8 +71,6 @@ class TestGradsDecomp:
        return self._backend
 
 
-   # --- Main tests --- #
-
    @pytest.mark.parametrize("decomp_input", [
       data.decomp_input_001,
       data.decomp_input_002,
@@ -213,6 +211,32 @@ class TestGradsDecomp:
            return la.eigh(x, sind="s")
 
        assert_grad(fun, modes="jvp")(x) 
+
+
+
+
+###############################################################################
+###                                                                         ###
+###  Linalg decomposition grads: auxiliary tests                            ###
+###                                                                         ###
+###############################################################################
+
+
+# --- Linalg decomposition grads: auxiliary tests --------------------------- #
+
+@pytest.mark.parametrize("current_backend", available_backends, indirect=True)
+class TestGradsDecompAuxiliary:
+
+   @pytest.fixture(autouse=True)
+   def request_backend(self, current_backend):
+
+       self._backend = current_backend
+
+
+   @property
+   def backend(self):
+
+       return self._backend
 
 
    # --- Auxiliary tests: svd --- #
@@ -569,7 +593,6 @@ class TestGradsDecomp:
 
 
        assert_grad(fun, order=1, modes="vjp")(x) 
-
 
 
 
