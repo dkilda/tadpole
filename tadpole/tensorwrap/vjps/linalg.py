@@ -186,9 +186,65 @@ def vjp_qr(g, out, x, sind=None):
         return la.trisolve(r, a.H, which="upper").H
 
 
+    def hcopyltu(m):
+
+        E = 2 * la.tril(tn.space(m).ones(), k=-1) + tn.space(m).eye()
+        m = m * E
+
+        return (m("ij") + m.H("ij")) / 2
+
+
+    def kernel(q, dq, r, dr):
+
+        m = r("im") @ dr.H("mj") - dq.H("im") @ q("mj")
+
+        return trisolve(r("jr"), dq("lj") + q("li") @ hcopyltu(m)("ij"))
+
+
+    dq, dr = g
+    q,  r  = out
+
+    #import numpy as np
+
+    #print("VJP-QR-1: ", np.diag(r._data._data))
+    #print("VJP-QR-2: ", np.diag(dr._data._data))
+
+    if x.shape[0] >= x.shape[1]:
+       return kernel(q, dq, r, dr)(*tn.union_inds(x))
+
+    x1,  x2  =  x[:, : x.shape[0]],  x[:, x.shape[0] :]
+    r1,  r2  =  r[:, : x.shape[0]],  r[:, x.shape[0] :]
+    dr1, dr2 = dr[:, : x.shape[0]], dr[:, x.shape[0] :]
+
+    dx1 = kernel(q, dq("li") + x2("lr") @ dr2.H("ri"), r1, dr1)
+    dx2 = q("li") @ dr2("ir")
+
+    return la.concat(
+       dx1("ia"), dx2("ib"), inds=tuple(tn.union_inds(x)), which="right"
+    )
+
+
+
+
+
+def WORKING_vjp_qr(g, out, x, sind=None):
+
+    """
+    https://arxiv.org/abs/2009.10071
+
+    """
+
+    def trisolve(r, a):
+
+        return la.trisolve(r, a.H, which="upper").H
+
+
     def mtril(qdq, rdr):
 
-        return la.tril(qdq("ij") - qdq.H("ij") + rdr("ij") - rdr.H("ij"))
+        return la.tril(
+           qdq("ij") - qdq.H("ij") + rdr("ij") - rdr.H("ij"), 
+           k=-1
+        )
 
 
     def kernel(q, dq, r, dr):
@@ -204,10 +260,71 @@ def vjp_qr(g, out, x, sind=None):
         if tn.iscomplex(x):
            
            m          = rdr("ij") - qdq.H("ij")
-           mdiag      = eye(m,"ij") * m("ij")
-           correction = mdiag - tn.real(mdiag)
+           mdiag      = tn.space(m).eye() * m
+           correction = mdiag - tn.astype(tn.real(mdiag), dtype=x.dtype)
 
            grad = grad + trisolve(r("jr"), q("li") @ correction.H("ij"))
+
+        return grad
+         
+
+    dq, dr = g
+    q,  r  = out
+
+    if x.shape[0] >= x.shape[1]:
+       return kernel(q, dq, r, dr)(*tn.union_inds(x))
+
+    x1,  x2  =  x[:, : x.shape[0]],  x[:, x.shape[0] :]
+    r1,  r2  =  r[:, : x.shape[0]],  r[:, x.shape[0] :]
+    dr1, dr2 = dr[:, : x.shape[0]], dr[:, x.shape[0] :]
+
+    dx1 = kernel(q, dq("li") + x2("lr") @ dr2.H("ri"), r1, dr1)
+    dx2 = q("li") @ dr2("ir")
+
+    return la.concat(
+       dx1("ia"), dx2("ib"), inds=tuple(tn.union_inds(x)), which="right"
+    )
+
+
+
+
+def OLD_OLD_01_vjp_qr(g, out, x, sind=None):
+
+    """
+    https://arxiv.org/abs/2009.10071
+
+    """
+
+    def trisolve(r, a):
+
+        return la.trisolve(r, a.H, which="upper").H
+
+
+    def mtril(qdq, rdr):
+
+        return la.tril(
+           qdq("ij") - qdq.H("ij") + rdr("ij") - rdr.H("ij"), 
+           k=-1
+        )
+
+
+    def kernel(q, dq, r, dr):
+
+        qdq = q.H("im") @ dq("mj")
+        rdr = r("im")   @ dr.H("mj")
+
+        grad1 = trisolve(r("jr"), mtril(qdq, rdr)("ij"))
+        grad2 = trisolve(r("jr"), dq("lj") - q("li") @ qdq("ij"))
+
+        grad = q("li") @ (dr("ir") + grad1("ir")) + grad2("lr")
+
+        if tn.iscomplex(x):
+           
+           m          = rdr("ij") - qdq.H("ij")
+           mdiag      = tn.space(m).eye() * m
+           correction = mdiag - tn.astype(tn.real(mdiag), dtype=q.dtype)
+
+           grad = grad + q("li") @ trisolve(r("jr"), correction("ij"))
 
         return grad
          
@@ -378,7 +495,10 @@ def vjp_lq(g, out, x, sind=None):
 
     def hcopyltu(m):
 
-        return m.H + la.tril(m) * (m - m.H) 
+        E = 2 * la.tril(tn.space(m).ones(), k=-1) + tn.space(m).eye()
+        m = m * E
+
+        return (m("ij") + m.H("ij")) / 2
 
 
     def kernel(l, dl, q, dq):
@@ -402,7 +522,7 @@ def vjp_lq(g, out, x, sind=None):
     dx2 = dl2("li") @ q("ir")
 
     return la.concat(
-       (dx1("ai"), dx2("bi")), tuple(tn.union_inds(x)), which="left"
+       dx1("ai"), dx2("bi"), inds=tuple(tn.union_inds(x)), which="left"
     )
 
 

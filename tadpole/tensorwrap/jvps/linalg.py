@@ -187,7 +187,7 @@ def jvp_qr(g, out, x, sind=None):
 
 
 
-
+'''
 def OLD_jvp_qr(g, out, x, sind=None):
 
     """
@@ -239,7 +239,7 @@ def OLD_jvp_qr(g, out, x, sind=None):
     dq = dq(*tn.union_inds(q)) 
 
     return tc.container(dq, dr)
-
+'''
 
 
 
@@ -261,34 +261,40 @@ def jvp_lq(g, out, x, sind=None):
 
     def trisym(m):
 
-        E = 2 * la.tril(m) + eye(m)
+        E = 2 * la.tril(tn.space(m).ones(), k=-1) + tn.space(m).eye()
 
-        return 0.5 * (m + m.H) * E
+        return (m("ij") + m.H("ij")) * E("ij") / 2
 
 
     def kernel(l, q, dx):
 
         c  = trisolve(l("li"), dx("lr") @ q.H("rj")) 
+
         dl = l("li") @ trisym(c)("ij")
         dq = trisolve(l("lj"), dx("lr") - dl("li") @ q("ir"))
 
-        return tc.container(dl, dq)
-
+        return tc.container(
+           dl(*tn.union_inds(l)), 
+           dq(*tn.union_inds(q)),
+        )
 
     l, q = out
 
     if x.shape[0] <= x.shape[1]:
        return kernel(l, q, g)
 
-    dx1, dx2 = g[: x.shape[1], :], g[: x.shape[1], :]
-    x1,  x2  = x[: x.shape[1], :], x[: x.shape[1], :]
-    l1,  l2  = l[: x.shape[1], :], l[: x.shape[1], :]
+    dx1, dx2 = g[: x.shape[1], :], g[x.shape[1] :, :]
+    x1,  x2  = x[: x.shape[1], :], x[x.shape[1] :, :]
+    l1,  l2  = l[: x.shape[1], :], l[x.shape[1] :, :]
 
     dl1, dq = kernel(l1, q, dx1)
     dl2     = (dx2("lr") - l2("lm") @ dq("mr")) @ q.H("ri") 
 
     dl = la.concat(
-            (dl1("ai"), dl2("bi")), tuple(tn.union_inds(l)), which="left"
+            dl1("ai"), 
+            dl2("bi"), 
+            inds=tuple(tn.union_inds(l)), 
+            which="left"
          )
     dq = dq(*tn.union_inds(q)) 
 

@@ -262,8 +262,6 @@ class TestGradsDecomp:
        assert_grad(fun, order=1, modes="vjp", **opts)(x)  
 
 
-
-
    #@pytest.mark.skip
    @pytest.mark.parametrize("decomp_input", [
       data.decomp_input_000,
@@ -278,10 +276,11 @@ class TestGradsDecomp:
    def test_qr(self, decomp_input, dtype):
 
        if 'complex' in dtype: 
-          opts = {} #{"submode": "real"} #{"modes": "vjp", "submode": "real"}
+          opts = {"modes": "vjp", "submode": "real"}
           def fun(x): 
+              #return la.qr(x, sind="s")
               Q, R = la.qr(x, sind="s") 
-              return tc.container(tn.absolute(Q), tn.absolute(R + 1e-10) - 1e-10) #tn.absolute(Q), R) #tn.absolute(R + 1e-10) - 1e-10)  
+              return tc.container(tn.absolute(Q), tn.absolute(R + 1e-10) - 1e-10) 
        else:
           opts = {}
           def fun(x):
@@ -296,8 +295,42 @@ class TestGradsDecomp:
 
        x = tn.TensorGen(w.xmatrix, (lind, rind)) 
 
-       assert_grad(fun, order=2, modes="jvp", **opts)(x)  
+       assert_grad(fun, **opts)(x)  
 
+
+   #@pytest.mark.skip
+   @pytest.mark.parametrize("decomp_input", [
+      data.decomp_input_000,
+      data.decomp_input_001,
+      data.decomp_input_002,
+      data.decomp_input_003,
+   ])
+   @pytest.mark.parametrize("dtype", [
+      "float64",
+      #"complex128",
+   ])
+   def test_lq(self, decomp_input, dtype):
+
+       if 'complex' in dtype: 
+          opts = {"modes": "vjp", "submode": "real"}
+          def fun(x): 
+              L, Q = la.lq(x, sind="s") 
+              return tc.container(tn.absolute(L + 1e-10) - 1e-10, tn.absolute(Q)) 
+       else:
+          opts = {}
+          def fun(x):
+              return la.lq(x, sind="s")
+
+       w = data.lq_tensor_dat(decomp_input)(
+              data.randn, self.backend, dtype=dtype
+           )
+
+       lind = IndexGen("l", w.xmatrix.shape[0])
+       rind = IndexGen("r", w.xmatrix.shape[1])
+
+       x = tn.TensorGen(w.xmatrix, (lind, rind)) 
+
+       assert_grad(fun, **opts)(x)  
 
 
 
@@ -682,23 +715,26 @@ class TestGradsDecompAuxiliary:
        assert_grad(fun, order=1, modes="vjp")(x) 
 
 
+   # --- Auxiliary tests: qr --- #
+
    @pytest.mark.parametrize("decomp_input", [
-      data.decomp_input_000,
-      data.decomp_input_001,
+      #data.decomp_input_000,
+      #data.decomp_input_001,
       data.decomp_input_002,
-      data.decomp_input_003,
+      #data.decomp_input_003,
    ])
    @pytest.mark.parametrize("dtype", [
-      "float64",
-      #"complex128",
+      #"float64",
+      "complex128",
    ])
    def _test_qr_vjp_first_order(self, decomp_input, dtype):
 
        if 'complex' in dtype: 
-          opts = {"submode": "real"} #{"modes": "vjp", "submode": "real"}
+          opts = {} #{"submode": "real"} #{"modes": "vjp", "submode": "real"}
           def fun(x):
+              #return la.qr(x, sind="s")
               Q, R = la.qr(x, sind="s") 
-              return tc.container(tn.absolute(Q), tn.absolute(R + 1e-10) - 1e-10)  
+              return tn.absolute(Q) #tc.container(tn.absolute(Q), R) #tn.absolute(R + 1e-10) - 1e-10)  
        else:
           opts = {}
           def fun(x):
@@ -717,10 +753,15 @@ class TestGradsDecompAuxiliary:
        r = tn.TensorGen(w.rmatrix, (sind, rind)) 
 
        out = tc.ContainerGen(q, r)
+
+       """
        g   = tc.ContainerGen(
-                tn.space(q).randn(), 
-                tn.space(r).randn(), 
-             )  
+                tn.space(q).ones(), 
+                tn.space(r).zeros(), 
+             )
+       """
+         
+       g = tn.space(q).ones()  
 
        assert_vjp_custom(fun, x, g) 
 
