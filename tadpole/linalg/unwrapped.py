@@ -29,4 +29,14 @@ from tadpole.linalg.transform import (
   concat,
 )
 
+from .truncation import (
+   TruncNull,
+   TruncRank,
+   TruncAbs,
+   TruncRel,
+   TruncSum1,
+   TruncSum2,
+   TruncRelSum1,
+   TruncRelSum2,
+)
 

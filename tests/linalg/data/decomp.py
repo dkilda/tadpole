@@ -91,7 +91,7 @@ def randn_decomp_000(shape, dtype="complex128", seed=1, backend=None):
               7.41402228e-06, 9.25687086e-07
            ])
 
-    x       = backend.randn(shape, dtype="complex128", seed=seed)
+    x       = backend.randn(shape, dtype=dtype, seed=seed)
     U, _, V = backend.svd(x)
 
     return backend.dot(U, backend.dot(backend.diag(S), V))

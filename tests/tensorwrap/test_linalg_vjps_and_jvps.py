@@ -70,7 +70,7 @@ class TestGradsDecomp:
 
        return self._backend
 
-
+  
    @pytest.mark.parametrize("decomp_input", [
       data.decomp_input_000,
       data.decomp_input_001,
@@ -229,9 +229,11 @@ class TestGradsDecomp:
        if 'complex' in dtype: 
           opts = {"modes": "vjp", "submode": "real"}
           def fun(x): 
-              #return la.qr(x, sind="s")
               Q, R = la.qr(x, sind="s") 
-              return tc.container(tn.absolute(Q), tn.absolute(R + 1e-10) - 1e-10) 
+              return tc.container(
+                 tn.absolute(Q), 
+                 tn.absolute(R + 1e-10) - 1e-10
+              ) 
        else:
           opts = {}
           def fun(x):
@@ -265,7 +267,10 @@ class TestGradsDecomp:
           opts = {"modes": "vjp", "submode": "real"}
           def fun(x): 
               L, Q = la.lq(x, sind="s") 
-              return tc.container(tn.absolute(L + 1e-10) - 1e-10, tn.absolute(Q)) 
+              return tc.container(
+                 tn.absolute(L + 1e-10) - 1e-10, 
+                 tn.absolute(Q)
+              ) 
        else:
           opts = {}
           def fun(x):

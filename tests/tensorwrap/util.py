@@ -105,8 +105,6 @@ def assert_vjp(fun, x):
     vjv_out = dot(vj, dx) 
     vjv_ans = dot(jv, dy) 
 
-    print("ASSERT-VJP: ", vjv_out._data._data, vjv_ans._data._data)
-
     assert tn.space(vj) == tn.space(x)
     assert tn.allclose(vjv_out, vjv_ans)
 
@@ -130,8 +128,6 @@ def assert_jvp(fun, x):
     vjv_out = dot(dy, jv_out) 
     vjv_ans = dot(dy, jv_ans)  
 
-    print("ASSERT-JVP: ", vjv_out._data._data, vjv_ans._data._data)
-
     assert tn.space(jv_out) == tn.space(y)
     assert tn.allclose(vjv_out, vjv_ans) 
 
@@ -153,8 +149,6 @@ def assert_vjp_real(fun, x):
 
     vjv_out = tn.real(dot(vj, dx)) 
     vjv_ans = tn.real(dot(jv, dy)) 
-
-    print("ASSERT-VJP: ", vjv_out._data._data, vjv_ans._data._data)
 
     assert tn.space(vj) == tn.space(x)
     assert tn.allclose(vjv_out, vjv_ans)
@@ -251,8 +245,6 @@ def assert_vjp_custom(fun, x, g):
     vjv_out = tn.real(dot(vj, dx))  
     vjv_ans = tn.real(dot(jv, dy)) 
 
-    print("ASSERT-VJP: ", vjv_out._data._data, vjv_ans._data._data)
-
     assert tn.space(vj) == tn.space(x)
     assert tn.allclose(vjv_out, vjv_ans)
 
@@ -275,8 +267,6 @@ def assert_jvp_custom(fun, x, g):
     
     vjv_out = dot(dy, jv_out) 
     vjv_ans = dot(dy, jv_ans)  
-
-    print("ASSERT-JVP: ", vjv_out._data._data, vjv_ans._data._data)
 
     assert tn.space(jv_out) == tn.space(y)
     assert tn.allclose(vjv_out, vjv_ans) 
