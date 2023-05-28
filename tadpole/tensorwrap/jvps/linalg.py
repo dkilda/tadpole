@@ -187,62 +187,6 @@ def jvp_qr(g, out, x, sind=None):
 
 
 
-'''
-def OLD_jvp_qr(g, out, x, sind=None):
-
-    """
-    https://arxiv.org/abs/2009.10071
-
-    p.3, p.7, p.17 (Variations)
-
-    """
-
-    def trisolve(r, a):
-    
-        return la.trisolve(r.H, a.H, which="lower").H
-
-
-    def trisym(m):
-
-        E = 2 * la.tril(m) + eye(m)
-
-        return 0.5 * (m + m.H) * E.H
-
-
-    def kernel(q, r, dx):
-
-        c  = trisolve(r("jr"), q.H("il") @ dx("lr")) 
-        dr = trisym(c)("ij") @ r("jr")
-        dq = trisolve(r("ir"), dx("lr") - q("lj") @ dr("jr"))
-
-        return tc.container(dq, dr)
-
-
-    q, r = out
-
-    if x.shape[0] >= x.shape[1]:
-       return kernel(q, r, g)
-
-    dx1, dx2 = g[:, : x.shape[0]], g[:, x.shape[0] :]
-    x1,  x2  = x[:, : x.shape[0]], x[:, x.shape[0] :]
-    r1,  r2  = r[:, : x.shape[0]], r[:, x.shape[0] :]
-
-    dq, dr1 = kernel(q, r1, dx1)
-    dr2     = q.H("il") @ (dx2("lr") - dq("lm") @ r2("mr")) 
-
-    dr = la.concat(
-            dr1("ia"), 
-            dr2("ib"), 
-            inds=tuple(tn.union_inds(r)), 
-            which="right"
-         )
-    dq = dq(*tn.union_inds(q)) 
-
-    return tc.container(dq, dr)
-'''
-
-
-
 # --- LQ decomposition ------------------------------------------------------ #
 
 def jvp_lq(g, out, x, sind=None):
