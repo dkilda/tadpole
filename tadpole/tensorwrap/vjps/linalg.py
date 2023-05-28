@@ -74,11 +74,11 @@ def vjp_svd(g, out, x, sind=None, trunc=None):
     grad = grad + f * s("i1") * (vTdv("ij") - vTdv.H("ij"))
  
 
-    if tn.iscomplex(u):
+    if tn.iscomplex(x):
        grad = grad + 1j * tn.imag(eye(uTdu) * uTdu) / s("1j")
 
 
-    grad = u("li").C @ grad("ij") @ v.T("jr") 
+    grad = u.C("li") @ grad("ij") @ v.T("jr") # u("li").C @ grad("ij") @ v.T("jr")  
 
 
     if x.shape[0] < x.shape[1]: 
@@ -186,6 +186,150 @@ def vjp_qr(g, out, x, sind=None):
         return la.trisolve(r, a.H, which="upper").H
 
 
+    def mtril(qdq, rdr):
+
+        return la.tril(qdq("ij") - qdq.H("ij") + rdr("ij") - rdr.H("ij"))
+
+
+    def kernel(q, dq, r, dr):
+
+        qdq = q.H("im") @ dq("mj")
+        rdr = r("im")   @ dr.H("mj")
+
+        grad1 = trisolve(r("jr"), mtril(qdq, rdr)("ij"))
+        grad2 = trisolve(r("jr"), dq("lj") - q("li") @ qdq("ij"))
+
+        grad = q("li") @ (dr("ir") + grad1("ir")) + grad2("lr")
+
+        if tn.iscomplex(x):
+           
+           m          = rdr("ij") - qdq.H("ij")
+           mdiag      = eye(m,"ij") * m("ij")
+           correction = mdiag - tn.real(mdiag)
+
+           grad = grad + trisolve(r("jr"), q("li") @ correction.H("ij"))
+
+        return grad
+         
+
+    dq, dr = g
+    q,  r  = out
+
+    if x.shape[0] >= x.shape[1]:
+       return kernel(q, dq, r, dr)(*tn.union_inds(x))
+
+    x1,  x2  =  x[:, : x.shape[0]],  x[:, x.shape[0] :]
+    r1,  r2  =  r[:, : x.shape[0]],  r[:, x.shape[0] :]
+    dr1, dr2 = dr[:, : x.shape[0]], dr[:, x.shape[0] :]
+
+    dx1 = kernel(q, dq("li") + x2("lr") @ dr2.H("ri"), r1, dr1)
+    dx2 = q("li") @ dr2("ir")
+
+    return la.concat(
+       dx1("ia"), dx2("ib"), inds=tuple(tn.union_inds(x)), which="right"
+    )
+
+
+
+
+
+
+
+
+
+def OLD_OLD_vjp_qr(g, out, x, sind=None):
+
+    """
+    https://arxiv.org/abs/2009.10071
+
+    """
+
+    def trisolve(r, a):
+
+        return la.trisolve(r, a.H, which="upper").H
+
+
+    def mtri(qdq, rdr):
+
+        return la.tril(qdq("ij") - qdq.H("ij") + rdr("ij") - rdr.H("ij"))
+
+
+    def kernel(q, dq, r, dr):
+
+        qdq = q.H("im") @ dq("mj")
+        rdr = r("im")   @ dr.H("mj")
+
+        grad1 = trisolve(r("jr"), mtri(qdq, rdr)("ij"))
+        grad2 = trisolve(r("jr"), dq("lj") - q("li") @ qdq("ij"))
+
+        return q("li") @ (dr("ir") + grad1("ir")) + grad2("lr")
+
+
+    dq, dr = g
+    q,  r  = out
+
+    if x.shape[0] >= x.shape[1]:
+       return kernel(q, dq, r, dr)(*tn.union_inds(x))
+
+    x1,  x2  =  x[:, : x.shape[0]],  x[:, x.shape[0] :]
+    r1,  r2  =  r[:, : x.shape[0]],  r[:, x.shape[0] :]
+    dr1, dr2 = dr[:, : x.shape[0]], dr[:, x.shape[0] :]
+
+    dx1 = kernel(q, dq("li") + x2("lr") @ dr2.H("ri"), r1, dr1)
+    dx2 = q("li") @ dr2("ir")
+
+    return la.concat(
+       dx1("ia"), dx2("ib"), inds=tuple(tn.union_inds(x)), which="right"
+    )
+
+
+
+
+
+
+###############################################################################
+
+
+'''
+def vjp_qr(g, out, x, sind=None):
+
+    """
+    https://arxiv.org/abs/2009.10071
+
+    """
+
+    def trisolve(r, a):
+
+        return la.trisolve(r, a.H, which="upper").H
+
+
+    def hcopyltu(m):
+
+        return m.H("ij") + la.tril(m)("ij") * (m("ij") - m.H("ij")) 
+
+
+    def kernel(q, dq, r, dr):
+
+        m = - dq.H("im") @ q("mj") #r("im") @ dr.H("mj") #- dq.H("im") @ q("mj")
+
+        return trisolve(r("jr"), dq("lj") + q("li") @ hcopyltu(m)("ij")) # dq("lj") + q("li") @ hcopyltu(m)("ij"))
+
+
+    dq, dr = g
+    q,  r  = out
+
+    return kernel(q, dq, r, dr)(*tn.union_inds(x))
+'''
+
+
+"""
+def OLD_vjp_qr(g, out, x, sind=None):
+
+    def trisolve(r, a):
+
+        return la.trisolve(r, a.H, which="upper").H
+
+
     def hcopyltu(m):
 
         return m.H + la.tril(m) * (m - m.H) 
@@ -215,7 +359,7 @@ def vjp_qr(g, out, x, sind=None):
        (dx1("ia"), dx2("ib")), tuple(tn.union_inds(x)), which="right"
     )
 
-
+"""
 
 
 # --- LQ decomposition ------------------------------------------------------ #

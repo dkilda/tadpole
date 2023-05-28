@@ -145,6 +145,65 @@ def jvp_qr(g, out, x, sind=None):
 
     def trisym(m):
 
+        E = 2 * la.triu(tn.space(m).ones(), k=1) + tn.space(m).eye()
+
+        return (m("ij") + m.H("ij")) * E("ij") / 2
+
+
+    def kernel(q, r, dx):
+
+        c = q.H("il") @ trisolve(r("jr"), dx("lr")) 
+
+        dr = trisym(c)("ij") @ r("jr")
+        dq = trisolve(r("ir"), dx("lr") - q("lj") @ dr("jr"))
+
+        return tc.container(
+           dq(*tn.union_inds(q)), 
+           dr(*tn.union_inds(r)) 
+        )
+
+    q, r = out
+
+    if x.shape[0] >= x.shape[1]:
+       return kernel(q, r, g)
+
+    dx1, dx2 = g[:, : x.shape[0]], g[:, x.shape[0] :]
+    x1,  x2  = x[:, : x.shape[0]], x[:, x.shape[0] :]
+    r1,  r2  = r[:, : x.shape[0]], r[:, x.shape[0] :]
+
+    dq, dr1 = kernel(q, r1, dx1)
+    dr2     = q.H("il") @ (dx2("lr") - dq("lm") @ r2("mr")) 
+
+    dr = la.concat(
+            dr1("ia"), 
+            dr2("ib"), 
+            inds=tuple(tn.union_inds(r)), 
+            which="right"
+         )
+    dq = dq(*tn.union_inds(q)) 
+
+    return tc.container(dq, dr)
+
+
+
+
+
+def OLD_jvp_qr(g, out, x, sind=None):
+
+    """
+    https://arxiv.org/abs/2009.10071
+
+    p.3, p.7, p.17 (Variations)
+
+    """
+
+    def trisolve(r, a):
+    
+        return la.trisolve(r.H, a.H, which="lower").H
+
+
+    def trisym(m):
+
         E = 2 * la.tril(m) + eye(m)
 
         return 0.5 * (m + m.H) * E.H
@@ -156,7 +215,7 @@ def jvp_qr(g, out, x, sind=None):
         dr = trisym(c)("ij") @ r("jr")
         dq = trisolve(r("ir"), dx("lr") - q("lj") @ dr("jr"))
 
-        return dq, dr
+        return tc.container(dq, dr)
 
 
     q, r = out
@@ -172,7 +231,10 @@ def jvp_qr(g, out, x, sind=None):
     dr2     = q.H("il") @ (dx2("lr") - dq("lm") @ r2("mr")) 
 
     dr = la.concat(
-            (dr1("ia"), dr2("ib")), tuple(tn.union_inds(r)), which="right"
+            dr1("ia"), 
+            dr2("ib"), 
+            inds=tuple(tn.union_inds(r)), 
+            which="right"
          )
     dq = dq(*tn.union_inds(q)) 
 
@@ -210,7 +272,7 @@ def jvp_lq(g, out, x, sind=None):
         dl = l("li") @ trisym(c)("ij")
         dq = trisolve(l("lj"), dx("lr") - dl("li") @ q("ir"))
 
-        return dl, dq
+        return tc.container(dl, dq)
 
 
     l, q = out

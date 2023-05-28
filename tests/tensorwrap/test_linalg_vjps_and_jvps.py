@@ -72,6 +72,7 @@ class TestGradsDecomp:
 
 
    @pytest.mark.parametrize("decomp_input", [
+      data.decomp_input_000,
       data.decomp_input_001,
       data.decomp_input_002,
       data.decomp_input_003,
@@ -211,6 +212,92 @@ class TestGradsDecomp:
            return la.eigh(x, sind="s")
 
        assert_grad(fun, modes="jvp")(x) 
+
+
+   #@pytest.mark.skip
+   @pytest.mark.parametrize("decomp_input", [
+      #data.decomp_input_000,
+      #data.decomp_input_001,
+      data.decomp_input_002,
+      #data.decomp_input_003,
+   ])
+   @pytest.mark.parametrize("dtype", [
+      #"float64",
+      "complex128",
+   ])
+   def _test_qr_vjp(self, decomp_input, dtype):
+
+       if 'complex' in dtype: 
+          opts = {} #{"submode": "real"} #{"modes": "vjp", "submode": "real"}
+          def fun(x):
+              #return la.qr(x, sind="s") 
+              Q, R = la.qr(x, sind="s") 
+
+              """
+              try:
+                 print("FUN-Q:  ", tn.absolute(Q)._source._source._data._data) 
+                 print("FUN-R:  ", tn.absolute(R)._source._source._data._data) 
+                 print("FUN-R1: ", (tn.absolute(R + 1e-10) - 1e-10)._source._source._data._data) 
+              except AttributeError:
+                 print("FUN-Q:  ", tn.absolute(Q)._data._data) 
+                 print("FUN-R:  ", tn.absolute(R)._data._data) 
+                 print("FUN-R1: ", (tn.absolute(R + 1e-10) - 1e-10)._data._data) 
+              """
+
+              return tc.container(tn.absolute(Q), tn.absolute(R + 1e-10) - 1e-10) #tn.absolute(Q), R) #tn.absolute(R + 1e-10) - 1e-10)  
+       else:
+          opts = {}
+          def fun(x):
+              return la.qr(x, sind="s")
+
+       w = data.qr_tensor_dat(decomp_input)(
+              data.randn, self.backend, dtype=dtype
+           )
+
+       lind = IndexGen("l", w.xmatrix.shape[0])
+       rind = IndexGen("r", w.xmatrix.shape[1])
+
+       x = tn.TensorGen(w.xmatrix, (lind, rind)) 
+
+       assert_grad(fun, order=1, modes="vjp", **opts)(x)  
+
+
+
+
+   #@pytest.mark.skip
+   @pytest.mark.parametrize("decomp_input", [
+      data.decomp_input_000,
+      data.decomp_input_001,
+      data.decomp_input_002,
+      data.decomp_input_003,
+   ])
+   @pytest.mark.parametrize("dtype", [
+      "float64",
+      #"complex128",
+   ])
+   def test_qr(self, decomp_input, dtype):
+
+       if 'complex' in dtype: 
+          opts = {} #{"submode": "real"} #{"modes": "vjp", "submode": "real"}
+          def fun(x): 
+              Q, R = la.qr(x, sind="s") 
+              return tc.container(tn.absolute(Q), tn.absolute(R + 1e-10) - 1e-10) #tn.absolute(Q), R) #tn.absolute(R + 1e-10) - 1e-10)  
+       else:
+          opts = {}
+          def fun(x):
+              return la.qr(x, sind="s")
+
+       w = data.qr_tensor_dat(decomp_input)(
+              data.randn, self.backend, dtype=dtype
+           )
+
+       lind = IndexGen("l", w.xmatrix.shape[0])
+       rind = IndexGen("r", w.xmatrix.shape[1])
+
+       x = tn.TensorGen(w.xmatrix, (lind, rind)) 
+
+       assert_grad(fun, order=2, modes="jvp", **opts)(x)  
+
 
 
 
@@ -593,6 +680,49 @@ class TestGradsDecompAuxiliary:
 
 
        assert_grad(fun, order=1, modes="vjp")(x) 
+
+
+   @pytest.mark.parametrize("decomp_input", [
+      data.decomp_input_000,
+      data.decomp_input_001,
+      data.decomp_input_002,
+      data.decomp_input_003,
+   ])
+   @pytest.mark.parametrize("dtype", [
+      "float64",
+      #"complex128",
+   ])
+   def _test_qr_vjp_first_order(self, decomp_input, dtype):
+
+       if 'complex' in dtype: 
+          opts = {"submode": "real"} #{"modes": "vjp", "submode": "real"}
+          def fun(x):
+              Q, R = la.qr(x, sind="s") 
+              return tc.container(tn.absolute(Q), tn.absolute(R + 1e-10) - 1e-10)  
+       else:
+          opts = {}
+          def fun(x):
+              return la.qr(x, sind="s")
+
+       w = data.qr_tensor_dat(decomp_input)(
+              data.randn, self.backend, dtype=dtype
+           )
+
+       lind = IndexGen("l", w.xmatrix.shape[0])
+       rind = IndexGen("r", w.xmatrix.shape[1])
+       sind = IndexLit("s", min(w.xmatrix.shape[0], w.xmatrix.shape[1]))
+
+       x = tn.TensorGen(w.xmatrix, (lind, rind)) 
+       q = tn.TensorGen(w.lmatrix, (lind, sind)) 
+       r = tn.TensorGen(w.rmatrix, (sind, rind)) 
+
+       out = tc.ContainerGen(q, r)
+       g   = tc.ContainerGen(
+                tn.space(q).randn(), 
+                tn.space(r).randn(), 
+             )  
+
+       assert_vjp_custom(fun, x, g) 
 
 
 
