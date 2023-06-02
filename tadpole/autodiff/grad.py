@@ -41,6 +41,19 @@ def gradient(fun, x):
 
 
 
+# --- Gradient -------------------------------------------------------------- #
+
+@nary.nary_op
+def evaluate_with_gradient(fun, x):  
+
+    op = diffop_reverse(fun, x)
+    y  = op.value()
+
+    return y, op.grad(y.space().ones())
+
+
+
+
 # --- Derivative ------------------------------------------------------------ #
 
 @nary.nary_op

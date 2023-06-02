@@ -21,6 +21,7 @@ from .wrappers import (
 
 
 from .grad import (
+   evaluate_with_gradient,
    gradient,
    derivative,
 )

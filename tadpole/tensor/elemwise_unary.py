@@ -148,7 +148,10 @@ class TensorElemwiseUnary:
 
    def getitem(self, elem):
 
-       if not isinstance(elem, Element):
+       if isinstance(elem, int):
+          elem = (elem, )
+
+       if not isinstance(elem, Element):     
           elem = el.elem(*elem)
 
        inds = elem.inds(self._inds)
@@ -158,6 +161,9 @@ class TensorElemwiseUnary:
 
 
    def ungetitem(self, elem, space):
+
+       if isinstance(elem, int):
+          elem = (elem, )
 
        if not isinstance(elem, Element):
           elem = el.elem(*elem)
