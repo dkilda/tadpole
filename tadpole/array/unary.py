@@ -194,6 +194,13 @@ class Array(types.Array):
        return space.ArraySpace(self._backend, self.shape, self.dtype)
 
 
+   def asdata(self, backend=None):
+
+       backend = backends.get(backend)                            
+
+       return backend.asarray(self._data, dtype=self.dtype)
+
+
    # --- Data type methods --- #
 
    def astype(self, **opts):
@@ -617,6 +624,12 @@ class Array(types.Array):
 def copy(x, **opts):
 
     return x.copy(**opts)
+
+
+def asdata(x, **opts):
+
+    return x.asdata(**opts)
+
 
 
 

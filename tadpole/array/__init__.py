@@ -69,6 +69,7 @@ from .unary import (
    astype,
    dtype,
    iscomplex,
+   asdata,
 )
 
 

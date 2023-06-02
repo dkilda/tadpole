@@ -172,6 +172,11 @@ class TensorElemwiseUnary:
        return ar.iscomplex(self._data)
 
 
+   def asdata(self, **opts):
+
+       return ar.asdata(self._data, **opts)
+
+
    # --- Data type methods --- #
 
    def astype(self, dtype):
@@ -391,6 +396,14 @@ def iscomplex(x):
     op = tensor_elemwise_unary(x)
 
     return op.iscomplex()
+
+
+@ad.nondifferentiable
+def asdata(x, **opts):
+
+    op = tensor_elemwise_unary(x)
+
+    return op.asdata(**opts)
 
 
 

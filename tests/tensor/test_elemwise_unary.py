@@ -384,7 +384,32 @@ class TestTensorElemwiseUnary:
               self.backend, "ijk", (2,3,4), dtype=dtype
            )
 
-       assert tn.iscomplex(w.tensor) == iscomplex  
+       assert tn.iscomplex(w.tensor) == iscomplex 
+
+
+   @pytest.mark.parametrize("backend", ["numpy"])
+   def test_asdata(self, backend): 
+
+       w = data.tensor_dat(data.randn)(
+              self.backend, "ijk", (2,3,4), dtype="complex128"
+           )
+
+       out = tn.asdata(w.tensor, backend=backend)
+       ans = w.backend.asarray(w.data, dtype=w.data.dtype)
+
+       assert w.backend.allclose(out, ans)
+
+
+   def test_asdata_001(self): 
+
+       w = data.tensor_dat(data.randn)(
+              self.backend, "ijk", (2,3,4), dtype="complex128"
+           )
+
+       if self.backend == "numpy":
+          assert w.backend.allclose(tn.asdata(w.tensor), w.data)
+       else:
+          assert True
 
 
    # --- Standard math --- #

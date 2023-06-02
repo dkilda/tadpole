@@ -145,6 +145,7 @@ from .elemwise_unary import (
 
 
 from .elemwise_unary import (
+   asdata,
    iscomplex,
    astype,
    getitem,

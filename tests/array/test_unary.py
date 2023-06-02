@@ -185,6 +185,33 @@ class TestArray:
        assert w.array.space() == space
 
 
+   @pytest.mark.parametrize("shape",   [(2,3,4)])
+   @pytest.mark.parametrize("dtype",   ["complex128"])
+   @pytest.mark.parametrize("backend", ["numpy"])
+   def test_asdata(self, shape, dtype, backend):
+
+       w = data.array_dat(data.randn)(
+              self.backend, shape, dtype=dtype)   
+
+       out = ar.asdata(w.array, backend=backend) 
+       ans = w.backend.asarray(w.data, dtype=dtype) 
+
+       assert w.backend.allclose(out, ans)
+
+
+   @pytest.mark.parametrize("shape", [(2,3,4)])
+   @pytest.mark.parametrize("dtype", ["complex128"])
+   def test_asdata_001(self, shape, dtype):
+
+       w = data.array_dat(data.randn)(
+              self.backend, shape, dtype=dtype)
+
+       if self.backend == "numpy":
+          assert w.backend.allclose(ar.asdata(w.array), w.data)
+       else:
+          assert True
+
+
    # --- Data type methods --- #
 
    @pytest.mark.filterwarnings('ignore::RuntimeWarning')
