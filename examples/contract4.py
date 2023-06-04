@@ -15,60 +15,73 @@ from tadpole import (
 import timeit
 import cProfile
 
-D   = 2
+
+D   = 4
 chi = 10
 
 
-"""
-bulk_inds  = {} 
-edge_inds  = {}
-local_inds = {}
-
-for d in ("u", "d", "l", "r"):
-  for i in range(2):
-
-      edge[di]
-      ts[i] = td.randn((edge[di]))
-  
-
-"""
+ind = {}
+def make_index(tags, size):
+    ind[tags] = IndexGen(tags, size)
 
 
+for n in "udlr":
+    make_index(f"D{n}", D)
+    for i in "12":
+        make_index(f"x{n}{i}", chi)
 
 
-i = td.IndexGen("i",2)
-j = td.IndexGen("j",2)
-a = td.IndexGen("a",20)
-b = td.IndexGen("b",20)
-c = td.IndexGen("c",5)
-d = td.IndexGen("d",5)
-e = td.IndexGen("e",20)
-f = td.IndexGen("f",20)
-
-H = td.randn((c,d,i,j), dtype="complex128")
-K = td.randn((a,b,i),   dtype="complex128")
-B = K.C(e,f,j)
-I = td.ones((e,f,j))
-
-FL = td.randn((a,c,e), dtype="complex128")
-FR = td.randn((b,d,f), dtype="complex128")
+M = td.randn((ind["Dl"], ind["Du"], ind["Dr"], ind["Dd"]))
 
 
-def con(x, y):
-    return td.contract(x, H, y, FL, FR) / td.contract(x, x.C)
+T = {}
+for n in "udlr":
+    T[n] = td.randn((ind[f"x{n}1"], ind[f"x{n}2"], ind[f"D{n}"])) 
 
 
-def gcon(x, y):
-    return td.contract(td.gradient(con, 1)(x, y), I) 
+C = {}
+for i, nv in enumerate("du", 1):
+  for j, nh in enumerate("lr", 1):
+      C[f"{nv}{nh}"] = td.randn((ind[f"x{nv}{j}"], ind[f"x{nh}{i}"]))
 
 
-def compute(msg, expr):
+
+def _contract(x):
+
+    out = td.contract(C["ul"], T["u"], T["l"])
+    out = td.contract(out, x)
+    out = td.contract(out, C["ur"], T["r"])
+    out = td.contract(out, C["dl"], T["d"])
+    out = td.contract(out, C["dr"])
+
+    return out
+
+
+
+def contract(x):
+
+    return _contract(x) / _contract(td.space(x).ones())
+
+
+
+def grad(fun):
+
+    return lambda x: td.gradient(contract)(x) @ td.space(x).ones()
+
+
+
+def comp(msg, expr):
+
     print(msg, td.asdata(expr))
 
 
+
 def main():
-    compute("contraction:          ", con(K, B))
-    compute("contraction gradient: ", gcon(K, B))    
+
+    comp("contraction:            ", contract(M))
+    comp("contraction gradient-1: ", grad(contract)(M))   
+    comp("contraction gradient-2: ", grad(grad(contract))(M)) 
+
 
 
 cpu_time = timeit.timeit(main, number=1)
