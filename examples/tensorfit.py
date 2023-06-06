@@ -90,15 +90,18 @@ def distance(*ts):
 
 
 
+
 def gradfun(x):
 
-    tn  = unpack(x, M) 
-    out = td.evaluate_with_gradient(distance)(*(tn[i] for i in range(1, L+1)))
+    tn = unpack(x, M) 
+    ts = [tn[i] for i in range(1, L+1)]
 
-    val  = td.asdata(out[0])
-    grad = td.asdata(out[1])
+    val   = distance(*ts)
+    grads = [td.gradient(distance, i)(*ts) for i in range(L)]
+     
+    return td.asdata(val), pack(grads)
 
-    return val, grad
+
 
 
 
@@ -106,11 +109,9 @@ def main():
 
     x      = pack(M)
     result = scipy.optimize.minimize(gradfun, x, jac=True, method="L-BFGS-B")
-    out    = result.x
+    out    = unpack(result.x, M)
 
-    
-
-    print("minimum: ", out.x)
+    print("minimum: ", out)
     
 
 
