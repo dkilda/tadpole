@@ -12,7 +12,13 @@ from tadpole import (
    IndexLit,
 )
 
-import scipy.optimize
+from util import (
+   tprint,
+   TensorCollection,
+   ArgsTensorCollection,
+   ArgsTensor,
+   Optimize,
+)
 
 import timeit
 import cProfile
@@ -62,8 +68,6 @@ make_index("mh0",   1)
 make_index("mh{L}", 1)
 for l in range(L-1):
     make_index(f"mh{l+1}", D)
-
-
 
 
 mps = {}
@@ -123,39 +127,31 @@ def overlap(mps, target):
     for l in range(L):
         out = mpsH[l] @ out
 
-    return -td.sumover(out)**2
-
-
-
-def gradfun(x):
-
-
-    inp = td.TensorGen(x, (i,))
-
-    mps = 
-    
-
-    out = td.evaluate_with_gradient(overlap)(mps, target)
-    return td.asdata(out[0]), td.asdata(out[1])
+    return td.sumover(out)
 
 
 
 
-def comp(msg, expr):
+def overlapfun(*ts):
 
-    print(msg, td.asdata(expr))
+    mps = dict(zip(range(len(ts)), ts)
+
+    return -overlap(mps, target)**2
 
 
 
 
 def main():
 
-    out = scipy.optimize.minimize(gradfun, mps, jac=True, method='L-BFGS-B')
-    print("optimized overlap: ", out.x)
+    print("initial overlap: ", overlap(mps, target))
 
-    comp("contraction:            ", contract(M))
-    comp("contraction gradient-1: ", grad(contract)(M))   
-    comp("contraction gradient-2: ", grad(grad(contract))(M)) 
+    optimize = Optimize(overlapfun, ArgsTensorCollection(mps))
+    mpsout   = optimize(
+                  method='CG', 
+                  options={"maxiter": 100}
+               ).astensorcollection()
+
+    print("optimized overlap: ", overlap(mpsout, target))
 
 
 
@@ -163,7 +159,7 @@ def main():
 cpu_time = timeit.timeit(main, number=1)
 print("CPUTIME: ", cpu_time)
 
-cProfile.run('main()', sort='tottime')
+# cProfile.run('main()', sort='tottime')
 
 
 
