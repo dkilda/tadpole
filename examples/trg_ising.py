@@ -4,6 +4,8 @@
 import sys
 sys.path.insert(0, '..')
 
+import matplotlib.pyplot as plt
+
 import numpy   as np
 import tadpole as td
 
@@ -122,30 +124,43 @@ def trg(x, chi, nsteps, eps=1e-5):
 
 
 
+def tonumpy(xs):
+
+    return np.concatenate([td.asdata(x).item() for x in xs])
+
+
+
+
 def main():
 
     chi    = 16
     nsteps = 20
 
-    betas  = []
-    lnZs   = []
-    dlnZs  = []
-    dlnZ2s = []
+    betas = []
+    eds   = []
+    cvs   = []
     
-    for b in np.linspace(0.4, 0.5, 51):
+    for beta in np.linspace(0.4, 0.5, 51):
 
-        beta  = td.astensor(b, dtype="float32")
+        beta  = td.astensor(beta, dtype="float32")
         lnZ   = trg(beta, chi, nsteps)
         dlnZ  = td.gradient(trg)(beta, chi, nsteps)
         dlnZ2 = td.gradient(td.gradient(trg))(beta, chi, nsteps)
         
-        betas.append(td.asdata(beta))
-        lnZs.append(td.asdata(lnZ))
-        dlnZs.append(td.asdata(dlnZ))
-        dlnZ2s.append(td.asdata(dlnZ2))
+        betas.append(beta)
+        eds.append(-dlnZ)
+        cvs.append(dlnZ2 * beta**2)
 
+    betas = tonumpy(betas)
+    eds   = tonumpy(eds)
+    cv    = tonumpy(cvs)
+
+    plt.plot(betas, eds)
+    plt.plot(betas, cvs)
     
 
+    
+main()
 
 
 
