@@ -163,14 +163,7 @@ class TensorReduce:
        return self._apply(ar.sumover, inds, dtype=dtype, **opts)
 
 
-   # --- Linear algebra methods --- #
-
-   def norm(self, inds=None, order=None, **opts):
-
-       return self._apply(ar.norm, inds, order=order, **opts)
-
  
-
 
 ###############################################################################
 ###                                                                         ###
@@ -225,17 +218,6 @@ def sumover(x, inds=None, dtype=None, **opts):
 
     op = tensor_reduce(x)
     return op.sumover(inds, dtype=dtype, **opts)  
-
-
-
-
-# --- Linear algebra methods ------------------------------------------------ #
-
-@ad.differentiable
-def norm(x, inds=None, order=None, **opts):
-
-    op = tensor_reduce(x)
-    return op.norm(inds, order, **opts)  
 
 
 

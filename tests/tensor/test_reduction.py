@@ -231,40 +231,5 @@ class TestTensorReduce:
        assert tn.allclose(out, ans)
 
 
-   # --- Linear algebra methods --- #
-
-   @pytest.mark.parametrize("winds, wshape, inds, order", [
-      ["ijk", (2,3,4), None, None],
-      ["ijk", (2,3,4), "j",  None],
-      ["ijk", (2,3,4), "j",  0],
-      ["ijk", (2,3,4), "ij", None],
-      ["ijk", (2,3,4), "ij", "fro"],
-      ["ijk", (2,3,4), "ij", "nuc"],
-      ["ijk", (2,3,4), "ij",  1],
-      ["ijk", (2,3,4), "ij",  2],
-      ["ijk", (2,3,4), "ij", -1],
-      ["ijk", (2,3,4), "ij", -2],
-   ])
-   def test_norm(self, winds, wshape, inds, order):
-
-       w = data.tensor_dat(data.randn)(
-              self.backend, winds, wshape
-           )
-
-       if   inds is None:
-            out = tn.norm(w.tensor, order=order)
-            ans = ar.norm(w.array,  order=order)
-            ans = tn.TensorGen(ans)
-
-       else:
-            output_inds = "".join(util.complement(winds, inds)) 
-
-            out = tn.norm(w.tensor, inds,               order=order)
-            ans = ar.norm(w.array,  w.inds.axes(*inds), order=order)
-            ans = tn.TensorGen(ans, w.inds.map(*output_inds))
-
-       assert tn.allclose(out, ans)
-
-
 
 

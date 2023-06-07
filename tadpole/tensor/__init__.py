@@ -110,7 +110,6 @@ from .reduction import (
 
 from .reduction import (
    sumover,
-   norm,
 )
 
 
