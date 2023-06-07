@@ -13,7 +13,7 @@ from tadpole import (
 )
 
 from util import (
-   tprint
+   tprint,
    TensorCollection,
    ArgsTensorCollection,
    ArgsTensor,
@@ -24,7 +24,7 @@ import timeit
 import cProfile
 
 
-d = 10
+d = 3 
 D = 5
 L = 4
 
@@ -43,15 +43,19 @@ for l in range(1,L+1):
 
 
 M    = {}
-M[1] = td.randn((ind["d1"], ind["Du"], ind["Dl"]))
-M[2] = td.randn((ind["d2"], ind["Du"], ind["Dr"]))
-M[3] = td.randn((ind["d3"], ind["Dd"], ind["Dl"]))
-M[4] = td.randn((ind["d4"], ind["Dd"], ind["Dr"]))
+M[1] = td.randn((ind["d1"], ind["Du"], ind["Dl"]), dtype="float64")
+M[2] = td.randn((ind["d2"], ind["Du"], ind["Dr"]), dtype="float64")
+M[3] = td.randn((ind["d3"], ind["Dd"], ind["Dl"]), dtype="float64")
+M[4] = td.randn((ind["d4"], ind["Dd"], ind["Dr"]), dtype="float64")
 
 M = TensorCollection(M)
 
 
-target = td.randuniform((ind["d1"], ind["d2"], ind["d3"], ind["d4"]))
+target = td.randuniform(
+            (ind["d1"], ind["d2"], ind["d3"], ind["d4"]), 
+            (0,1), 
+            dtype="float64"
+         )
 target = target / td.amax(target)
 
 
@@ -61,27 +65,28 @@ def distance(*ts):
 
     result = td.contract(*ts)
 
-    return td.norm(result - target, linds=(ind["d1"], ind["d2"])) 
+    return td.linalg.norm(result - target, linds=(ind["d1"], ind["d2"])) 
 
 
 
 
 def main():
 
-    tprint("initial distance: ", distance(*M.values()))
+    tprint("initial distance: ", distance(*M))
 
     optimize = Optimize(distance, ArgsTensorCollection(M))
-    Mout     = optimize().astensorcollection()
+    Mout     = optimize(
+                  options={"maxiter": 100}
+               ).astensorcollection()
 
-    tprint("optimized distance: ", distance(*Mout.values()))
-
+    tprint("optimized distance: ", distance(*Mout))
 
 
 
 cpu_time = timeit.timeit(main, number=1)
 print("CPUTIME: ", cpu_time)
 
-# cProfile.run('main()', sort='tottime')
+#cProfile.run('main()', sort='cumtime')
 
 
 

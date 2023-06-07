@@ -24,30 +24,51 @@ import timeit
 import cProfile
 
 
-L = 4
+L = 5
 
 sx = 0.5 * np.array([[0.0,  1.0], 
-                     [1.0,  0.0]])
+                     [1.0,  0.0]], dtype='complex128')
 sy = 0.5 * np.array([[0.0, -1j], 
-                     [1j,   0.0]])
+                     [1j,   0.0]], dtype='complex128')
 sz = 0.5 * np.array([[1.0,  0.0], 
-                     [0.0, -1.0]])
+                     [0.0, -1.0]], dtype='complex128')
+eye = np.eye(2, 
+             dtype='complex128')
 
-ham = np.eye(2)
-for l in range(L-1):
-    ham  = np.kron(ham, np.eye(2))
-    ham += np.kron(sx, sx) + np.kron(sy, sy) + np.kron(sz, sz) 
 
-psi = np.eigh(ham)[1][:,0]
+def kron(x, y, ix, iy):
+
+    def site(i):
+        if i == ix: return x
+        if i == iy: return y
+        return eye
+
+    out = site(0)
+    for i in range(1,L):
+        out = np.kron(out, site(i))
+
+    return out
+
+
+ham = 0
+pos = list(range(L))
+
+for i,j in zip(pos, pos[1:] + pos[:1]):
+
+    ham += kron(sx, sx, i, j)
+    ham += kron(sy, sy, i, j)
+    ham += kron(sz, sz, i, j) 
+
+ham = np.real(ham)
+
+
+psi = np.linalg.eigh(ham)[1][:,0]
 psi = np.reshape(psi, (2,)*L)
-
-target = td.astensor(psi, tuple(ind[f"i{l}"] for l in range(L)))
-
 
 
 
 d = 2
-D = 32
+D = 16
 
 ind = {}
 def make_index(tags, size):
@@ -59,13 +80,13 @@ for l in range(L):
 
 
 make_index("m0",    1)
-make_index("m{L}",  1)
+make_index(f"m{L}",  1)
 for l in range(L-1):
     make_index(f"m{l+1}", D)
 
 
 make_index("mh0",   1)
-make_index("mh{L}", 1)
+make_index(f"mh{L}", 1)
 for l in range(L-1):
     make_index(f"mh{l+1}", D)
 
@@ -73,6 +94,10 @@ for l in range(L-1):
 mps = {}
 for l in range(L):
     mps[l] = td.randn((ind[f"m{l}"], ind[f"m{l+1}"], ind[f"i{l}"]))
+
+mps = TensorCollection(mps)
+
+target = td.astensor(psi, tuple(ind[f"i{l}"] for l in range(L)))
 
 
 
@@ -127,14 +152,14 @@ def overlap(mps, target):
     for l in range(L):
         out = mpsH[l] @ out
 
-    return td.sumover(out)
+    return td.absolute(td.sumover(out))
 
 
 
 
 def overlapfun(*ts):
 
-    mps = dict(zip(range(len(ts)), ts)
+    mps = dict(zip(range(len(ts)), ts))
 
     return -overlap(mps, target)**2
 
@@ -143,7 +168,7 @@ def overlapfun(*ts):
 
 def main():
 
-    print("initial overlap: ", overlap(mps, target))
+    tprint("initial overlap: ", overlap(mps, target))
 
     optimize = Optimize(overlapfun, ArgsTensorCollection(mps))
     mpsout   = optimize(
@@ -151,7 +176,7 @@ def main():
                   options={"maxiter": 100}
                ).astensorcollection()
 
-    print("optimized overlap: ", overlap(mpsout, target))
+    tprint("optimized overlap: ", overlap(mpsout, target))
 
 
 
@@ -159,7 +184,7 @@ def main():
 cpu_time = timeit.timeit(main, number=1)
 print("CPUTIME: ", cpu_time)
 
-# cProfile.run('main()', sort='tottime')
+#cProfile.run('main()', sort='cumtime')
 
 
 

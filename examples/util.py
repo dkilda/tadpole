@@ -59,7 +59,7 @@ class TensorCollection:
 
    def indflat(self, i):
 
-       return f"flat{i}"
+       return IndexLit(f"flat{i}", self.size(i))
 
 
    def coords(self):
@@ -142,7 +142,7 @@ class ArgsTensorCollection:
            start += self._size(i)
            ts[i]  = td.transpose_like(t, self._t(i))
 
-       return self.__class__(ts)
+       return self.__class__(TensorCollection(ts))
 
 
    def apply(self, fun):
@@ -152,9 +152,12 @@ class ArgsTensorCollection:
 
    def gradient(self, fun):
 
-       grads = {i: td.gradient(fun, i)(*self._ts) for i in self._coords}
+       grads = { 
+                i: td.gradient(fun, i)(*self._ts) 
+                   for i in range(len(self._tensors))
+               }
 
-       return self.__class__(grads)
+       return self.__class__(TensorCollection(grads))
 
 
    def evaluate_with_gradient(self, fun):
@@ -174,13 +177,13 @@ class ArgsTensor:
    @property
    def _inds(self):
 
-       return tuple(td.union_inds(self._t)
+       return tuple(td.union_inds(self._t))
 
 
    @property
    def _indflat(self):
 
-       return "flat"
+       return IndexLit("flat", self._t.size)
 
 
    def astensor(self):
@@ -245,7 +248,7 @@ class Optimize:
    def __call__(self, jac=True, method="L-BFGS-B", options=None):
 
        result = scipy.optimize.minimize(
-                   self._costfun, 
+                   self._costfun(), 
                    self._ts.pack(), 
                    jac=jac, 
                    method=method,
