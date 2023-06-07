@@ -190,14 +190,16 @@ class TestArray:
        assert out == x.array
 
 
-   @pytest.mark.parametrize("N, M", [
-      [4, None],
-      [3, 4],
+   @pytest.mark.parametrize("N, M, k", [
+      [4, None, None],
+      [3, 4,    None],
+      [5, 4,       1],
+      [5, 4,      -1],
    ])
-   def test_eye(self, N, M):
+   def test_eye(self, N, M, k):
 
-       out = ar.eye(N, **options(M=M, backend=self.backend))
-       ans = np.eye(N, M=M)
+       out = ar.eye(N, **options(M=M, backend=self.backend, k=k))
+       ans = np.eye(N, **options(M=M, k=k))
        ans = unary.asarray(ans, **options(backend=self.backend))
  
        assert out == ans

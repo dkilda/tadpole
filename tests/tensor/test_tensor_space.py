@@ -22,6 +22,7 @@ import tests.array.data   as ardata
 
 
 from tests.common import (
+   options,
    available_backends,
 )
 
@@ -188,11 +189,13 @@ class TestTensorSpace:
            assert x.unit(pos) == tensor  
 
 
-   @pytest.mark.parametrize("shape, inds, lind, rind, ldim, rdim", [
-      [(2,3),   "ij",  None, None, 2, 3],
-      [(2,3,4), "ijk", "i", "k",   2, 4],
+   @pytest.mark.parametrize("shape, inds, lind, rind, ldim, rdim, k", [
+      [(2,3),   "ij",  None, None, 2, 3, None],
+      [(2,3,4), "ijk", "i", "k",   2, 4, None],
+      [(5,3,4), "ijk", "i", "k",   5, 4,    1],
+      [(5,3,4), "ijk", "i", "k",   5, 4,   -1],
    ])
-   def test_eye(self, shape, inds, lind, rind, ldim, rdim):
+   def test_eye(self, shape, inds, lind, rind, ldim, rdim, k):
 
        w = data.tensor_dat(data.randn)(
               self.backend, inds, shape
@@ -203,14 +206,20 @@ class TestTensorSpace:
               w.inds
            ) 
 
-       out = x.eye(lind, rind)
+       out = x.eye(lind, rind, **options(k=k))
 
        if   lind and rind:
             lind, rind = w.inds.map(lind, rind)
        else:
             lind, rind = w.inds
            
-       ans = ar.eye(ldim, rdim, dtype=w.dtype, backend=w.backend)
+       ans = ar.eye(
+                    ldim, 
+                    rdim, 
+                    dtype=w.dtype, 
+                    backend=w.backend, 
+                    **options(k=k)
+                   )
        ans = tn.TensorGen(ans, (lind, rind))
 
        assert out == ans

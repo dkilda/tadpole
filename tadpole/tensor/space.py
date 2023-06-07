@@ -236,13 +236,13 @@ class TensorSpace(Space):
               )
 
 
-   def eye(self, lind=None, rind=None):
+   def eye(self, lind=None, rind=None, **opts):
 
        if not lind and not rind:
           lind, rind = self._inds
 
        lind, rind = self._inds.map(lind, rind)
-       data       = self._arrayspace.eye(len(lind), len(rind))
+       data       = self._arrayspace.eye(len(lind), len(rind), **opts)
 
        return core.astensor(data, (lind, rind))
 

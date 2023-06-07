@@ -131,8 +131,13 @@ class TorchBackend(backend.Backend):
 
        dtype = self.get_dtype(opts.pop("dtype", None))
 
-       if  M is None:
-           M = N
+       if M is None:
+          M = N
+
+       if opts.get("k") is not None:
+          k    = opts.pop("k")
+          ones = self.ones((N,M), dtype=dtype)
+          return self.diag(self.diag(ones, diagonal=k), diagonal=k)
 
        return torch.eye(n=N, m=M, dtype=dtype, **opts)
 
