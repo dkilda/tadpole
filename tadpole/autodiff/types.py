@@ -87,7 +87,7 @@ class Gate(abc.ABC):
        pass
 
    @abc.abstractmethod
-   def log(self, node, log):
+   def log(self, log):
        pass
 
    @abc.abstractmethod

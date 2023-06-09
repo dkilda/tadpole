@@ -168,8 +168,8 @@ class TestEvalOp:
 
 class TestNodeLogVanilla:
 
-   @pytest.mark.parametrize("valency",      [1,2,3])
-   @pytest.mark.parametrize("nodelog_data", [
+   @pytest.mark.parametrize("valency",    [1,2,3])
+   @pytest.mark.parametrize("nodelogdat", [
       data.nodelog_vanilla_dat_001,
       data.nodelog_vanilla_dat_002,
       data.nodelog_vanilla_dat_003,
@@ -180,8 +180,8 @@ class TestNodeLogVanilla:
        assert len(w.log) == len(w.list)
 
 
-   @pytest.mark.parametrize("valency",      [1,2,3])
-   @pytest.mark.parametrize("nodelog_data", [
+   @pytest.mark.parametrize("valency",    [1,2,3])
+   @pytest.mark.parametrize("nodelogdat", [
       data.nodelog_vanilla_dat_001,
       data.nodelog_vanilla_dat_002,
       data.nodelog_vanilla_dat_003,
@@ -189,11 +189,11 @@ class TestNodeLogVanilla:
    def test_bool(self, valency, nodelogdat):
 
        w = nodelogdat(valency)
-       assert len(w.log) == bool(w.list)
+       assert bool(w.log) == bool(w.list)
 
 
-   @pytest.mark.parametrize("valency",      [1,2,3])
-   @pytest.mark.parametrize("nodelog_data", [
+   @pytest.mark.parametrize("valency",    [1,2,3])
+   @pytest.mark.parametrize("nodelogdat", [
       data.nodelog_vanilla_dat_001,
       data.nodelog_vanilla_dat_002,
       data.nodelog_vanilla_dat_003,
@@ -207,33 +207,32 @@ class TestNodeLogVanilla:
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_push(self, valency):
 
-       w = data.nodelog_vanilla_factory_dat(valency)
-       x = w.log()
+       x   = data.reverse_node_dat(valency)
+       log = ad.NodeLogVanilla()
 
-       assert x.push(w.node)     == w.log(w.node[0])
-       assert x.push(*w.parents) == w.log(w.node[0], *w.parents[0])
+       assert log.push(x.node)     == ad.NodeLogVanilla(x.node)
+       assert log.push(*x.parents) == ad.NodeLogVanilla(x.node, *x.parents)
 
 
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_pop(self, valency):
 
-       w = data.nodelog_vanilla_factory_dat(valency)
-       x = w.log(*w.parents[0], w.node[0])
- 
-       assert x.pop(w.node[0]) == w.log(*w.parents[0])
+       w = data.nodelog_vanilla_dat_003(valency)
+       x = w.log 
 
-       for i, parent in enumerate(w.parents[0]):
-           assert x.pop(parent) == w.log(*w.parents[0][:-1-i])
+       for i in range(len(w.list)):
+           assert x.pop() == w.list[-1-i]
+           assert x       == ad.NodeLogVanilla(*w.list[:-1-i])
 
+           
        
-
 
 # --- Log of effectively childless nodes ------------------------------------ # 
 
 class TestNodeLogChildless:
 
-   @pytest.mark.parametrize("valency",      [1,2,3])
-   @pytest.mark.parametrize("nodelog_data", [
+   @pytest.mark.parametrize("valency",    [1,2,3])
+   @pytest.mark.parametrize("nodelogdat", [
       data.nodelog_childless_dat_001,
       data.nodelog_childless_dat_002,
       data.nodelog_childless_dat_003,
@@ -244,8 +243,8 @@ class TestNodeLogChildless:
        assert len(w.log) == len(w.list)
 
 
-   @pytest.mark.parametrize("valency",      [1,2,3])
-   @pytest.mark.parametrize("nodelog_data", [
+   @pytest.mark.parametrize("valency",    [1,2,3])
+   @pytest.mark.parametrize("nodelogdat", [
       data.nodelog_childless_dat_001,
       data.nodelog_childless_dat_002,
       data.nodelog_childless_dat_003,
@@ -253,11 +252,11 @@ class TestNodeLogChildless:
    def test_bool(self, valency, nodelogdat):
 
        w = nodelogdat(valency)
-       assert len(w.log) == bool(w.list)
+       assert bool(w.log) == bool(w.list)
 
 
-   @pytest.mark.parametrize("valency",      [1,2,3])
-   @pytest.mark.parametrize("nodelog_data", [
+   @pytest.mark.parametrize("valency",    [1,2,3])
+   @pytest.mark.parametrize("nodelogdat", [
       data.nodelog_childless_dat_001,
       data.nodelog_childless_dat_002,
       data.nodelog_childless_dat_003,
@@ -271,29 +270,62 @@ class TestNodeLogChildless:
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_push(self, valency):
 
-       w = data.nodelog_childless_factory_dat(valency)
-       x = w.log({
-                  x.node: 0, **{p: 2 for p in x.parents},
-                  y.node: 1, **{p: 1 for p in y.parents},
-                 })
+       x = data.reverse_node_dat(valency)
+       y = data.reverse_node_dat(valency)
 
-       assert x.push(w.node[0])     == w.log(w.node[0])
-       assert x.push(*w.parents[0]) == w.log(w.node[0])
-       assert x.push(*w.parents[0]) == w.log(w.node[0], *w.parents[0])
-       assert x.push(w.node[1])     == w.log(w.node[0], *w.parents[0], w.node[1])
-       assert x.push(*w.parents[1]) == w.log(w.node[0], *w.parents[0], w.node[1], *w.parents[1])
+       count    = {}
+       count[0] = {x.node: 0, **{p: 2 for p in x.parents},
+                   y.node: 1, **{p: 1 for p in y.parents}}
+       count[1] = {x.node: 0, **{p: 2 for p in x.parents},
+                   y.node: 1, **{p: 1 for p in y.parents}} 
+       count[2] = {x.node: 0, **{p: 1 for p in x.parents},
+                   y.node: 1, **{p: 1 for p in y.parents}}
+       count[3] = {x.node: 0, **{p: 0 for p in x.parents},
+                   y.node: 1, **{p: 1 for p in y.parents}}
+       count[4] = {x.node: 0, **{p: 0 for p in x.parents},
+                   y.node: 0, **{p: 1 for p in y.parents}}
+       count[5] = {x.node: 0, **{p: 0 for p in x.parents},
+                   y.node: 0, **{p: 0 for p in y.parents}}
+
+       nodes    = {}
+       nodes[0] = []
+       nodes[1] = [x.node]
+       nodes[2] = [x.node]
+       nodes[3] = [x.node, *x.parents]
+       nodes[4] = [x.node, *x.parents, y.node]
+       nodes[5] = [x.node, *x.parents, y.node, *y.parents]
+
+       push    = {}
+       push[1] = [x.node]
+       push[2] = [*x.parents] 
+       push[3] = [*x.parents]
+       push[4] = [y.node]
+       push[5] = [*y.parents]
+
+       log = ad.NodeLogChildless(
+                ad.NodeLogVanilla(*nodes[0]),
+                count[0]
+             )
+
+       for i in push:    
+           assert log.push(*push[i]) == ad.NodeLogChildless(   
+                                           ad.NodeLogVanilla(*nodes[i]),
+                                           count[i]
+                                        )
 
 
    @pytest.mark.parametrize("valency", [1,2,3])
    def test_pop(self, valency):
 
-       w = data.nodelog_childless_factory_dat(valency)
-       x = w.log(*w.parents[0], w.node[0])
- 
-       assert x.pop(w.node[0]) == w.log(*w.parents[0])
+       w = data.nodelog_childless_dat_003(valency)
+       x = w.log 
 
-       for i, parent in enumerate(w.parents[0]):
-           assert x.pop(parent) == w.log(*w.parents[0][:-1-i])
+       for i in range(len(w.list)):
+           assert x.pop() == w.list[-1-i]
+           assert x       == ad.NodeLogChildless(
+                                ad.NodeLogVanilla(*w.list[:-1-i]),
+                                w.count
+                             )
 
 
 
@@ -304,7 +336,7 @@ class TestToposort:
 
    def test_childcount(self):
 
-       w = data.reverse_node_network_dat() 
+       w = data.reverse_node_network_dat()
        assert ad.childcount(w.end) == w.countmap
  
        

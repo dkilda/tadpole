@@ -244,11 +244,11 @@ class TestGateNull:
        node    = fake.Node()
        parents = (fake.Node(), fake.Node())
 
-       log  = ad.NodeLogVanilla(parents)
-       log1 = ad.NodeLogVanilla(parents)
+       log  = ad.NodeLogVanilla(*parents)
+       log1 = ad.NodeLogVanilla(*parents)
       
        gate = an.GateNull()
-       gate.log(node, log) 
+       gate.log(log) 
 
        assert log == log1
 
@@ -328,9 +328,9 @@ class TestGateForward:
        node = fake.Node()
 
        log  = ad.NodeLogVanilla()  
-       log1 = ad.NodeLogVanilla(x.parents)
+       log1 = ad.NodeLogVanilla(*x.parents)
 
-       x.gate.log(node, log) 
+       x.gate.log(log) 
        assert log == log1
 
 
@@ -398,9 +398,9 @@ class TestGateReverse:
        node = fake.Node()
 
        log  = ad.NodeLogVanilla()  
-       log1 = ad.NodeLogVanilla(x.parents)
+       log1 = ad.NodeLogVanilla(*x.parents)
 
-       x.gate.log(node, log) 
+       x.gate.log(log) 
        assert log == log1
 
 
@@ -516,7 +516,7 @@ class TestNodeGen:
        x = data.node_dat(gate=w.gate)
 
        log  = ad.NodeLogVanilla()  
-       log1 = ad.NodeLogVanilla(w.parents)
+       log1 = ad.NodeLogVanilla(*w.parents)
 
        x.node.log(log)
        assert log == log1 
@@ -601,8 +601,8 @@ class TestPoint:
        node    = fake.Node()
        parents = (fake.Node(), fake.Node())
 
-       log  = ad.NodeLogVanilla(parents)  
-       log1 = ad.NodeLogVanilla(parents)
+       log  = ad.NodeLogVanilla(*parents)  
+       log1 = ad.NodeLogVanilla(*parents)
 
        x = data.point_dat()
        x.point.log(log) 

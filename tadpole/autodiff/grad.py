@@ -418,9 +418,10 @@ class NodeLogChildless(NodeLog):
 
        for node in nodes:
 
-           self._childcount[node] -= 1
+           if self._childcount[node] > 0:
+              self._childcount[node] -= 1
 
-           if self._childcount[node] <= 0:
+           if self._childcount[node] == 0:
               self._log.push(node)
 
        return self
@@ -450,6 +451,7 @@ def childcount(end):
           countmap[node] = 1
           node.log(parents)
 
+    countmap[end] -= 1
     return countmap
 
 

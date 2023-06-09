@@ -225,7 +225,7 @@ class GateNull(Gate):
        )
 
 
-   def log(self, node, log):
+   def log(self, log):
 
        return self
 
@@ -285,9 +285,9 @@ class GateForward(Gate):
        )
 
 
-   def log(self, node, log):
+   def log(self, log):
 
-       log.push(node, self._parents)
+       log.push(*self._parents)
        return self
 
 
@@ -351,9 +351,9 @@ class GateReverse(Gate):
        )
 
 
-   def log(self, node, log):
+   def log(self, log):
 
-       log.push(node, self._parents)
+       log.push(*self._parents)
        return self
 
 
@@ -443,7 +443,7 @@ class NodeGen(Node):
 
    def log(self, log): 
 
-       self._gate.log(self, log)
+       self._gate.log(log)
        return self
 
 
