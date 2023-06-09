@@ -24,41 +24,143 @@ import tadpole.autodiff.grad  as ad
 ###############################################################################
 
 
-# --- Child count ----------------------------------------------------------- #
+# --- Node log -------------------------------------------------------------- #
 
-ChildCountData = collections.namedtuple("ChildCountData", [
-                    "count",     "count1",     "count2",
-                    "parentmap", "parentmap1", "parentmap2",
-                    "countmap",  "countmap1",  "countmap2",
-                    "node",      "node1", 
-                    "parents",   "parents1",
-                 ])
+NodeLogData = collections.namedtuple("NodeLogData", [
+                 "log", "list", "node", "parents", "count"
+              ])
 
 
 
 
-def childcount_dat(valency=1, **countmaps):
+# --- Node log data --------------------------------------------------------- #
 
-    dat  = data.reverse_node_dat(valency)
-    dat1 = data.reverse_node_dat(valency)
-    
-    parentmap  = {}
-    parentmap1 = {dat.node: dat.parents}
-    parentmap2 = {dat.node: dat.parents, dat1.node: dat1.parents}   
+def nodelog_vanilla_dat_001(valency=1):
 
-    countmap  = countmaps.get("countmap",  {})
-    countmap1 = countmaps.get("countmap1", {})
-    countmap2 = countmaps.get("countmap2", {})
+    x = data.reverse_node_dat(valency)
 
-    count  = ad.ChildCount(parentmap,  countmap)
-    count1 = ad.ChildCount(parentmap1, countmap1)
-    count2 = ad.ChildCount(parentmap2, countmap2) 
+    count = {x.node: 0, **{p: 1 for p in x.parents}}
+    lst   = []
+    log   = ad.NodeLogVanilla(*lst)
 
-    return ChildCountData(count,       count1,       count2,     
-                          parentmap,   parentmap1,   parentmap2, 
-                          countmap,    countmap1,    countmap2,
-                          dat.node,    dat1.node, 
-                          dat.parents, dat1.parents)
+    return NodeLogData(log, lst, [x.node], [x.parents], count)
+
+
+
+
+def nodelog_vanilla_dat_002(valency=1):
+
+    x = data.reverse_node_dat(valency)
+
+    count = {x.node: 0, **{p: 1 for p in x.parents}}
+    lst   = [x.node]
+    log   = ad.NodeLogVanilla(*lst)
+
+    return NodeLogData(log, lst, [x.node], [x.parents], count)
+
+
+
+
+def nodelog_vanilla_dat_003(valency=1):
+
+    x = data.reverse_node_dat(valency)
+
+    count = {x.node: 0, **{p: 1 for p in x.parents}}
+    lst   = [*x.parents, x.node]
+    log   = ad.NodeLogVanilla(*lst)
+
+    return NodeLogData(log, lst, [x.node], [x.parents], count)
+
+
+
+
+def nodelog_childless_dat_001(valency=1):
+
+    x = data.reverse_node_dat(valency)
+
+    count = {x.node: 0, **{p: 1 for p in x.parents}}
+    lst   = []
+    log   = ad.NodeLogChildless(ad.NodeLogVanilla(*lst), count) 
+
+    return NodeLogData(log, lst, [x.node], [x.parents], count)
+
+
+
+
+def nodelog_childless_dat_002(valency=1):
+
+    x = data.reverse_node_dat(valency)
+
+    count = {x.node: 0, **{p: 1 for p in x.parents}}
+    lst   = [x.node]
+    log   = ad.NodeLogChildless(ad.NodeLogVanilla(*lst), count) 
+
+    return NodeLogData(log, lst, [x.node], [x.parents], count)
+
+
+
+
+def nodelog_childless_dat_003(valency=1):
+
+    x = data.reverse_node_dat(valency)
+
+    count = {x.node: 0, **{p: 1 for p in x.parents}}
+    lst   = [*x.parents, x.node]
+    log   = ad.NodeLogChildless(ad.NodeLogVanilla(*lst), count) 
+
+    return NodeLogData(log, lst, [x.node], [x.parents], count)
+
+
+
+
+# --- Node log factory data ------------------------------------------------- #
+
+def nodelog_vanilla_factory_dat(valency=1):
+
+    x = data.reverse_node_dat(valency)
+    y = data.reverse_node_dat(valency)
+
+    count = {
+             x.node: 0, **{p: 2 for p in x.parents},
+             y.node: 1, **{p: 1 for p in y.parents},
+            }
+    lst = []
+
+    def log(*args):
+        return ad.NodeLogVanilla(*args) 
+
+    return NodeLogData(
+              log, 
+              lst, 
+              [x.node,    y.node], 
+              [x.parents, y.parents], 
+              count
+           )
+
+
+
+
+def nodelog_childless_factory_dat(valency=1):
+
+    x = data.reverse_node_dat(valency)
+    y = data.reverse_node_dat(valency)
+
+    count = {
+             x.node: 0, **{p: 2 for p in x.parents},
+             y.node: 1, **{p: 1 for p in y.parents},
+            }
+    lst = []
+
+    def log(count, *args):
+        return ad.NodeLogChildless(ad.NodeLogVanilla(*args), count)
+
+    return NodeLogData(
+              log, 
+              lst, 
+              [x.node,    y.node], 
+              [x.parents, y.parents], 
+              count
+           )
 
 
 

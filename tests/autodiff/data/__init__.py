@@ -41,7 +41,14 @@ from .graph import (
 
 
 from .grad import (
-   childcount_dat,
+   nodelog_vanilla_dat_001,
+   nodelog_vanilla_dat_002,
+   nodelog_vanilla_dat_003,
+   nodelog_childless_dat_001,
+   nodelog_childless_dat_002,
+   nodelog_childless_dat_003,
+   nodelog_vanilla_factory_dat,
+   nodelog_childless_factory_dat,
    forward_node_network_dat,
    reverse_node_network_dat,
 )

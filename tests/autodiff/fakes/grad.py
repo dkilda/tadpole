@@ -37,7 +37,7 @@ class Propagation(at.Propagation):
 
    def grads(self, seed):
 
-       return self._fun["grads", Cumulative()](seed)
+       return self._fun["grads", GradCumulative()](seed)
 
 
 
@@ -49,44 +49,49 @@ class Propagation(at.Propagation):
 ###############################################################################
 
 
-# --- Traceable interface --------------------------------------------------- #
+# --- Node log interface ---------------------------------------------------- #
 
-class Traceable(at.Traceable):
-
-   def __init__(self, **data):  
-
-       self._fun = fake.FunMap(**data)
-
-
-   def record(self, node, parents):
-       
-       return self._fun["record", self](node, parents)
-
-
-
-
-# --- Countable interface --------------------------------------------------- #
-
-class Countable(at.Countable):
+class NodeLog(at.NodeLog):
 
    def __init__(self, **data):  
 
        self._fun = fake.FunMap(**data)
 
 
-   def collect(self, node):
+   @property
+   def _items(self):
 
-       return self._fun["countable", tuple()](node)
-
-
-   def increase(self, node):
-
-       return self._fun["increase", tuple()](node)
+       return self._fun["items", tuple()]()
 
 
-   def decrease(self, node):
+   def __eq__(self, other):
+
+       return self is other
+
+
+   def __len__(self):
+
+       return len(self._items)
+
+
+   def __iter__(self):
+
+       return iter(self._items)
+
+
+   def __bool__(self):
+
+       return bool(self._items)
+
+
+   def push(self, *nodes):
        
-       return self._fun["decrease", tuple()](node)
+       return self._fun["push", self](*nodes)
+
+
+   def pop(self):
+       
+       return self._fun["pop", fake.Node()]()
 
 
 
@@ -98,9 +103,9 @@ class Countable(at.Countable):
 ###############################################################################
 
 
-# --- Cumulative interface -------------------------------------------------- #
+# --- Cumulative gradient interface ----------------------------------------- #
 
-class Cumulative(at.Cumulative):
+class GradCumulative(at.GradCumulative):
 
    def __init__(self, **data):  
 

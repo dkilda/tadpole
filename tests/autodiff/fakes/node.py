@@ -102,9 +102,9 @@ class Gate(at.Gate):
        return self._fun["flow", Flow()]()
 
 
-   def trace(self, node, traceable):
+   def log(self, node, log):
 
-       return self._fun["trace", traceable](node, traceable)
+       return self._fun["log", log](node, log)
 
 
    def grads(self, node, grads):
@@ -145,9 +145,9 @@ class Node(at.Node):
        return self._fun["flow", Flow()]()
 
 
-   def trace(self, traceable):
+   def log(self, log):
 
-       return self._fun["trace", traceable](traceable)
+       return self._fun["log", log](log)
 
 
    def grads(self, grads):

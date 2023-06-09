@@ -36,10 +36,9 @@ from .graph import (
 
 
 from .grad import (
+   NodeLog,
+   GradCumulative,
    Propagation,
-   Traceable,
-   Countable,
-   Cumulative,
 )
 
 

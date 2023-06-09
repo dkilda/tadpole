@@ -225,9 +225,9 @@ class GateNull(Gate):
        )
 
 
-   def trace(self, node, traceable):
+   def log(self, node, log):
 
-       return traceable
+       return self
 
 
    def grads(self, node, grads):
@@ -285,9 +285,10 @@ class GateForward(Gate):
        )
 
 
-   def trace(self, node, traceable):
+   def log(self, node, log):
 
-       return traceable.record(node, self._parents)
+       log.push(node, self._parents)
+       return self
 
 
    def grads(self, node, grads): 
@@ -350,9 +351,10 @@ class GateReverse(Gate):
        )
 
 
-   def trace(self, node, traceable):
+   def log(self, node, log):
 
-       return traceable.record(node, self._parents)
+       log.push(node, self._parents)
+       return self
 
 
    def grads(self, node, grads):
@@ -439,9 +441,10 @@ class NodeGen(Node):
        return self._gate.flow()
 
 
-   def trace(self, traceable): 
+   def log(self, log): 
 
-       return self._gate.trace(self, traceable)
+       self._gate.log(self, log)
+       return self
 
 
    def grads(self, grads):

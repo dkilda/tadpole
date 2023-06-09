@@ -87,7 +87,7 @@ class Gate(abc.ABC):
        pass
 
    @abc.abstractmethod
-   def trace(self, node, traceable):
+   def log(self, node, log):
        pass
 
    @abc.abstractmethod
@@ -114,7 +114,7 @@ class Node(abc.ABC):
        pass
 
    @abc.abstractmethod
-   def trace(self, traceable):
+   def log(self, log):
        pass
 
    @abc.abstractmethod
@@ -282,39 +282,40 @@ class Propagation(abc.ABC):
 
 
 
-# --- Traceable type -------------------------------------------------------- #
+# --- Node log type --------------------------------------------------------- #
 
-class Traceable(abc.ABC):
+class NodeLog(abc.ABC):
 
    @abc.abstractmethod
-   def record(self, node, parents):
+   def __eq__(self, other):
+       pass
+
+   @abc.abstractmethod
+   def __len__(self):
+       pass
+
+   @abc.abstractmethod
+   def __iter__(self):
+       pass
+
+   @abc.abstractmethod
+   def __bool__(self):
+       pass
+
+   @abc.abstractmethod
+   def push(self, *nodes):
+       pass
+
+   @abc.abstractmethod
+   def pop(self):
        pass
 
 
 
 
-# --- Countable type -------------------------------------------------------- #
+# --- Cumulative gradient type ---------------------------------------------- #
 
-class Countable(abc.ABC):
-
-   @abc.abstractmethod
-   def collect(self, node):
-       pass
-
-   @abc.abstractmethod
-   def increase(self, node):
-       pass
-
-   @abc.abstractmethod
-   def decrease(self, node):
-       pass
-
-
-
-
-# --- Cumulative type ------------------------------------------------------- #
-
-class Cumulative(abc.ABC):
+class GradCumulative(abc.ABC):
 
    @abc.abstractmethod
    def add(self, nodes, parents):

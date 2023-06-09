@@ -13,10 +13,9 @@ import tadpole.autodiff.graph as ag
 
 from tadpole.autodiff.types import (
    Node,
+   NodeLog,
+   GradCumulative,
    Propagation,
-   Traceable,
-   Countable,
-   Cumulative,
 )
 
 
@@ -309,17 +308,13 @@ class EvalOp:
 ###############################################################################
 
 
-# --- Child count ----------------------------------------------------------- #
+# --- Vanilla node log ------------------------------------------------------ #
 
-class ChildCount(Traceable, Countable):
+class NodeLogVanilla(NodeLog):
 
-   def __init__(self, parents=None, count=None):
+   def __init__(self, *args):
 
-       if parents is None: parents = {}
-       if count   is None: count   = {}
-
-       self._parents = parents
-       self._count   = count
+       self._log = list(args)
 
 
    def __repr__(self):
@@ -327,9 +322,7 @@ class ChildCount(Traceable, Countable):
        rep = util.ReprChain()
 
        rep.typ(self)
-       rep.ref("nodes",   list(self._parents.keys()))
-       rep.ref("parents", list(self._parents.values()))
-       rep.val("count",   list(self._count.values()))
+       rep.ref("log", self._log)
 
        return str(rep)
 
@@ -340,135 +333,140 @@ class ChildCount(Traceable, Countable):
        log.typ(self, other)
 
        if bool(log):
-          log.val(self._parents, other._parents)
-          log.val(self._count,   other._count)
+          log.val(self._log, other._log)
 
        return bool(log)
 
 
-   def record(self, node, parents):
+   def __len__(self):
 
-       self._parents[node] = parents
-       return self
-
-
-   def collect(self, node): 
-
-       node.trace(self) 
-       return self._parents[node]
-
-
-   def increase(self, node):
-
-       try:
-           self._count[node] +=1
-           return tuple()
-
-       except KeyError:
-
-           self._count[node] = 1
-           return self._parents[node]
-
-
-   def decrease(self, node):
-
-       def fun(x):
-
-           if self._count[x] == 0:
-              return tuple()
-
-           self._count[x] -= 1 
-
-           if self._count[x] == 0:
-              return (x,)
-
-           return tuple()
-
-       return sum(map(fun, self._parents[node]), tuple())
-
-
-
-
-# --- Traversal ------------------------------------------------------------- #
-
-class Traversal:
-
-   def __init__(self, end):
-
-       self._end = end
-
-
-   def __repr__(self):
-
-       rep = util.ReprChain()
-
-       rep.typ(self)
-       rep.ref("end", self._end)
-
-       return str(rep)
-
-
-   def sweep(self, step): 
-
-       pool = [self._end]
-
-       while pool:
-
-          node = pool.pop()
-          yield node
-          pool.extend(step(node))
-
-
-   def apply(self, step):
-
-       collections.deque(self.sweep(step), maxlen=0)
-       return self   
-
-
-
-
-# --- Topological sort ------------------------------------------------------ #
-
-class TopoSort:
-
-   def __init__(self, traversal, count):
-
-       self._traversal = traversal
-       self._count     = count
-
-
-   def __repr__(self):
-
-       rep = util.ReprChain()
-
-       rep.typ(self)
-       rep.ref("traversal", self._traversal)
-       rep.ref("count",     self._count)
-
-       return str(rep)
-
-
-   def traverse(self):
-
-       self._traversal.apply(self._count.collect)
-       self._traversal.apply(self._count.increase)
-
-       return self._traversal.sweep(self._count.decrease)
+       return len(self._log)
 
 
    def __iter__(self):
 
-       return self.traverse()
+       return iter(self._log)
+
+
+   def __bool__(self):
+
+       return len(self._log) > 0
+
+
+   def push(self, *nodes):
        
+       self._log.extend(nodes)
+       return self
 
-        
 
-# --- Create a topologically sorted iterator over the computation graph ----- #
+   def pop(self):
+       
+       return self._log.pop()
+
+
+
+
+# --- Log of effectively childless nodes ------------------------------------ # 
+
+class NodeLogChildless(NodeLog):
+
+   def __init__(self, log, childcount):
+ 
+       self._log        = log
+       self._childcount = childcount.copy()
+
+
+   def __repr__(self):
+
+       rep = util.ReprChain()
+
+       rep.typ(self)
+       rep.ref("log",        self._log)
+       rep.ref("childcount", self._childcount)
+
+       return str(rep)
+
+
+   def __eq__(self, other):
+
+       log = util.LogicalChain()
+       log.typ(self, other)
+
+       if bool(log):
+          log.val(self._log,        other._log)
+          log.val(self._childcount, other._childcount)
+
+       return bool(log)
+
+
+   def __len__(self):
+
+       return len(self._log)
+
+
+   def __iter__(self):
+
+       return iter(self._log)
+
+
+   def __bool__(self):
+
+       return bool(self._log)
+
+
+   def push(self, *nodes):
+
+       for node in nodes:
+
+           self._childcount[node] -= 1
+
+           if self._childcount[node] <= 0:
+              self._log.push(node)
+
+       return self
+
+
+   def pop(self):
+       
+       return self._log.pop()
+
+
+
+
+# --- Create a dictionary of child counts of the computation graph ---------- #
+
+def childcount(end):
+
+    countmap = {}
+    parents  = NodeLogVanilla(end)
+
+    while parents:
+
+       node = parents.pop()
+    
+       try:
+          countmap[node] += 1
+       except KeyError:
+          countmap[node] = 1
+          node.log(parents)
+
+    return countmap
+
+
+
+
+# --- Iterate over the topological sort of the computation graph ------------ #
 
 def toposort(end):
 
-    return TopoSort(Traversal(end), ChildCount())
+    childless = NodeLogChildless(NodeLogVanilla(end), childcount(end))
 
+    while childless:
+
+       node = childless.pop()
+       yield node
+       node.log(childless)
+       
 
 
 
@@ -490,7 +488,7 @@ def addgrads(x, y):
 
 # --- Gradient summation ---------------------------------------------------- #
 
-class GradSum(Cumulative):
+class GradSum(GradCumulative):
 
    def __init__(self, seed, grads=None):
 
@@ -556,7 +554,7 @@ class GradSum(Cumulative):
 
 # --- Gradient accumulation ------------------------------------------------- #
 
-class GradAccum(Cumulative):
+class GradAccum(GradCumulative):
 
    def __init__(self, grads=None):
 

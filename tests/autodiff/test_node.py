@@ -233,21 +233,24 @@ class TestGateNull:
 
    def test_flow(self):
 
-       f    = data.null_flow_dat()
+       w = data.null_flow_dat()
+
        gate = an.GateNull()
-       assert gate.flow() == f.flow
+       assert gate.flow() == w.flow
 
 
-   def test_trace(self):
+   def test_log(self):
 
        node    = fake.Node()
        parents = (fake.Node(), fake.Node())
 
-       count  = ad.ChildCount({node: parents})
-       count1 = ad.ChildCount({node: parents})
+       log  = ad.NodeLogVanilla(parents)
+       log1 = ad.NodeLogVanilla(parents)
       
        gate = an.GateNull()
-       assert gate.trace(node, count) == count1 
+       gate.log(node, log) 
+
+       assert log == log1
 
 
    @pytest.mark.parametrize("valency", [2])
@@ -319,15 +322,16 @@ class TestGateForward:
 
 
    @pytest.mark.parametrize("valency", [1,2,3])
-   def test_trace(self, valency):
+   def test_log(self, valency):
 
        x    = data.forward_gate_dat(valency)
        node = fake.Node()
 
-       count  = ad.ChildCount()  
-       count1 = ad.ChildCount({node: x.parents})
+       log  = ad.NodeLogVanilla()  
+       log1 = ad.NodeLogVanilla(x.parents)
 
-       assert x.gate.trace(node, count) == count1
+       x.gate.log(node, log) 
+       assert log == log1
 
 
    @pytest.mark.parametrize("valency", [1,2,3])
@@ -388,15 +392,16 @@ class TestGateReverse:
 
 
    @pytest.mark.parametrize("valency", [1,2,3])
-   def test_trace(self, valency):
+   def test_log(self, valency):
 
        x    = data.reverse_gate_dat(valency)
        node = fake.Node()
 
-       count  = ad.ChildCount()  
-       count1 = ad.ChildCount({node: x.parents})
+       log  = ad.NodeLogVanilla()  
+       log1 = ad.NodeLogVanilla(x.parents)
 
-       assert x.gate.trace(node, count) == count1
+       x.gate.log(node, log) 
+       assert log == log1
 
 
    @pytest.mark.parametrize("valency", [1,2,3])
@@ -501,7 +506,7 @@ class TestNodeGen:
 
    @pytest.mark.parametrize("which",   ["REVERSE", "FORWARD"])
    @pytest.mark.parametrize("valency", [1,2,3])
-   def test_trace(self, which, valency):
+   def test_log(self, which, valency):
 
        w = {
             "REVERSE": data.reverse_gate_dat, 
@@ -510,10 +515,11 @@ class TestNodeGen:
 
        x = data.node_dat(gate=w.gate)
 
-       count  = ad.ChildCount()  
-       count1 = ad.ChildCount({x.node: w.parents})
+       log  = ad.NodeLogVanilla()  
+       log1 = ad.NodeLogVanilla(w.parents)
 
-       assert x.node.trace(count) == count1 
+       x.node.log(log)
+       assert log == log1 
 
 
    @pytest.mark.parametrize("valency", [1,2,3])
@@ -590,16 +596,18 @@ class TestPoint:
        assert x.point.flow() == f.flow  
 
 
-   def test_trace(self):
+   def test_log(self):
 
        node    = fake.Node()
        parents = (fake.Node(), fake.Node())
 
-       count  = ad.ChildCount({node: parents})  
-       count1 = ad.ChildCount({node: parents})
+       log  = ad.NodeLogVanilla(parents)  
+       log1 = ad.NodeLogVanilla(parents)
 
        x = data.point_dat()
-       assert x.point.trace(count) == count1 
+       x.point.log(log) 
+
+       assert log == log1 
 
 
    @pytest.mark.parametrize("valency", [2])

@@ -164,148 +164,154 @@ class TestEvalOp:
 ###############################################################################
 
 
-# --- Child count ----------------------------------------------------------- #
+# --- Vanilla node log ------------------------------------------------------ #
 
-class TestChildCount:
+class TestNodeLogVanilla:
 
-   @pytest.mark.parametrize("valency", [1,2,3])
-   def test_record(self, valency):
+   @pytest.mark.parametrize("valency",      [1,2,3])
+   @pytest.mark.parametrize("nodelog_data", [
+      data.nodelog_vanilla_dat_001,
+      data.nodelog_vanilla_dat_002,
+      data.nodelog_vanilla_dat_003,
+   ])
+   def test_len(self, valency, nodelogdat):
 
-       w = data.childcount_dat(valency)
-
-       assert w.count.record(w.node,  w.parents)  == w.count1
-       assert w.count.record(w.node1, w.parents1) == w.count2
-
-
-   @pytest.mark.parametrize("valency", [1,2,3])
-   def test_collect(self, valency):
-
-       w = data.childcount_dat(valency)
-
-       assert w.count.collect(w.node) == w.parents       
-       assert w.parentmap             == w.parentmap1
-
-       assert w.count.collect(w.node1) == w.parents1
-       assert w.parentmap              == w.parentmap2
+       w = nodelogdat(valency)
+       assert len(w.log) == len(w.list)
 
 
-   @pytest.mark.parametrize("valency", [1,2,3])
-   def test_increase(self, valency):
+   @pytest.mark.parametrize("valency",      [1,2,3])
+   @pytest.mark.parametrize("nodelog_data", [
+      data.nodelog_vanilla_dat_001,
+      data.nodelog_vanilla_dat_002,
+      data.nodelog_vanilla_dat_003,
+   ])
+   def test_bool(self, valency, nodelogdat):
 
-       w = data.childcount_dat(valency)
+       w = nodelogdat(valency)
+       assert len(w.log) == bool(w.list)
 
-       countmap = {}
-       count    = ad.ChildCount(w.parentmap2, countmap)
 
-       assert count.increase(w.node) == w.parents
-       assert countmap               == {w.node: 1} 
+   @pytest.mark.parametrize("valency",      [1,2,3])
+   @pytest.mark.parametrize("nodelog_data", [
+      data.nodelog_vanilla_dat_001,
+      data.nodelog_vanilla_dat_002,
+      data.nodelog_vanilla_dat_003,
+   ])
+   def test_iter(self, valency, nodelogdat):
 
-       assert count.increase(w.node1) == w.parents1         
-       assert countmap                == {w.node: 1, w.node1: 1} 
-
-       assert count.increase(w.node) == tuple() 
-       assert countmap               == {w.node: 2, w.node1: 1} 
+       w = nodelogdat(valency)
+       assert list(iter(w.log)) == w.list
 
 
    @pytest.mark.parametrize("valency", [1,2,3])
-   def test_decrease(self, valency):
+   def test_push(self, valency):
 
-       w = data.childcount_dat(valency)
+       w = data.nodelog_vanilla_factory_dat(valency)
+       x = w.log()
 
-       countmap  = {
-                    **{p: 2 for p in w.parents},
-                    **{p: 1 for p in w.parents1},
-                   }
-       countmap1 = {
-                    **{p: 1 for p in w.parents},
-                    **{p: 1 for p in w.parents1},
-                   }
-       countmap2 = {
-                    **{p: 1 for p in w.parents},
-                    **{p: 0 for p in w.parents1},
-                   }
-       countmap3 = {
-                    **{p: 0 for p in w.parents},
-                    **{p: 0 for p in w.parents1},
-                   }
-
-       count = ad.ChildCount(w.parentmap2, countmap)
-
-       assert count.decrease(w.node) == tuple()
-       assert countmap == countmap1
-
-       assert count.decrease(w.node1) == tuple(w.parents1)
-       assert countmap == countmap2 
-
-       assert count.decrease(w.node1) == tuple()
-       assert countmap == countmap2 
-
-       assert count.decrease(w.node) == tuple(w.parents)
-       assert countmap == countmap3 
+       assert x.push(w.node)     == w.log(w.node[0])
+       assert x.push(*w.parents) == w.log(w.node[0], *w.parents[0])
 
 
+   @pytest.mark.parametrize("valency", [1,2,3])
+   def test_pop(self, valency):
 
+       w = data.nodelog_vanilla_factory_dat(valency)
+       x = w.log(*w.parents[0], w.node[0])
+ 
+       assert x.pop(w.node[0]) == w.log(*w.parents[0])
 
-# --- Traversal ------------------------------------------------------------- #
+       for i, parent in enumerate(w.parents[0]):
+           assert x.pop(parent) == w.log(*w.parents[0][:-1-i])
 
-class TestTraversal:
-
-   def test_sweep(self):
-
-       dat       = data.reverse_node_network_dat()
-       traversal = ad.Traversal(dat.end)
-
-       nodes = list(dat.nodes)
-
-       def step(x):
-           try:
-              return (nodes[nodes.index(x) + 1], )    
-           except IndexError:
-              return tuple()
-
-       for i, node in enumerate(traversal.sweep(step)):
-           assert node == nodes[i]
        
 
-   def test_apply(self):
 
-       dat       = data.reverse_node_network_dat()
-       traversal = ad.Traversal(dat.end)
+# --- Log of effectively childless nodes ------------------------------------ # 
 
-       parentmap = {}
-       count     = ad.ChildCount(parentmap)
+class TestNodeLogChildless:
 
-       traversal.apply(count.collect)
-       assert parentmap == dat.parentmap
+   @pytest.mark.parametrize("valency",      [1,2,3])
+   @pytest.mark.parametrize("nodelog_data", [
+      data.nodelog_childless_dat_001,
+      data.nodelog_childless_dat_002,
+      data.nodelog_childless_dat_003,
+   ])
+   def test_len(self, valency, nodelogdat):
+
+       w = nodelogdat(valency)
+       assert len(w.log) == len(w.list)
+
+
+   @pytest.mark.parametrize("valency",      [1,2,3])
+   @pytest.mark.parametrize("nodelog_data", [
+      data.nodelog_childless_dat_001,
+      data.nodelog_childless_dat_002,
+      data.nodelog_childless_dat_003,
+   ])
+   def test_bool(self, valency, nodelogdat):
+
+       w = nodelogdat(valency)
+       assert len(w.log) == bool(w.list)
+
+
+   @pytest.mark.parametrize("valency",      [1,2,3])
+   @pytest.mark.parametrize("nodelog_data", [
+      data.nodelog_childless_dat_001,
+      data.nodelog_childless_dat_002,
+      data.nodelog_childless_dat_003,
+   ])
+   def test_iter(self, valency, nodelogdat):
+
+       w = nodelogdat(valency)
+       assert list(iter(w.log)) == w.list
+
+
+   @pytest.mark.parametrize("valency", [1,2,3])
+   def test_push(self, valency):
+
+       w = data.nodelog_childless_factory_dat(valency)
+       x = w.log({
+                  x.node: 0, **{p: 2 for p in x.parents},
+                  y.node: 1, **{p: 1 for p in y.parents},
+                 })
+
+       assert x.push(w.node[0])     == w.log(w.node[0])
+       assert x.push(*w.parents[0]) == w.log(w.node[0])
+       assert x.push(*w.parents[0]) == w.log(w.node[0], *w.parents[0])
+       assert x.push(w.node[1])     == w.log(w.node[0], *w.parents[0], w.node[1])
+       assert x.push(*w.parents[1]) == w.log(w.node[0], *w.parents[0], w.node[1], *w.parents[1])
+
+
+   @pytest.mark.parametrize("valency", [1,2,3])
+   def test_pop(self, valency):
+
+       w = data.nodelog_childless_factory_dat(valency)
+       x = w.log(*w.parents[0], w.node[0])
+ 
+       assert x.pop(w.node[0]) == w.log(*w.parents[0])
+
+       for i, parent in enumerate(w.parents[0]):
+           assert x.pop(parent) == w.log(*w.parents[0][:-1-i])
 
 
 
 
-# --- Topological sort ------------------------------------------------------ #
+# --- Toposort -------------------------------------------------------------- #
 
-class TestTopoSort:
+class TestToposort:
 
-   def test_traverse(self):
+   def test_childcount(self):
 
-       dat = data.reverse_node_network_dat() 
-
-       parentmap = {}
-       countmap  = {}
-       count     = ad.ChildCount(parentmap, countmap) 
-       traversal = ad.Traversal(dat.end) 
-
-       toposort = ad.TopoSort(traversal, count)
+       w = data.reverse_node_network_dat() 
+       assert ad.childcount(w.end) == w.countmap
+ 
        
-       for i, node in enumerate(toposort.traverse()):
-           assert node == dat.nodes[i]
-           
-
    def test_toposort(self):
 
-       dat = data.reverse_node_network_dat()
-
-       for i, node in enumerate(ad.toposort(dat.end)):
-           assert node == dat.nodes[i]
+       w = data.reverse_node_network_dat() 
+       assert tuple(ad.toposort(w.end)) == tuple(w.nodes)
 
 
 
