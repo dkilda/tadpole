@@ -43,9 +43,12 @@ def eye(x, inds=None):
 
 def fmatrix(s): 
 
-    seye = eye(s,"ij")
+    seye  = eye(s,"ij")
+    sdiff = s("1j") - s("i1") + seye
 
-    return 1. / (s("1j") - s("i1") + seye) - seye 
+    return sdiff / (sdiff**2 + 1e-12) - seye
+
+    #return 1. / (s("1j") - s("i1") + seye) - seye # + 1e-12 #1. / (s("1j") - s("i1") + seye) - seye # + 1e-12
 
 
 
@@ -78,7 +81,7 @@ def vjp_svd(g, out, x, sind=None, trunc=None):
        grad = grad + 1j * tn.imag(eye(uTdu) * uTdu) / s("1j")
 
 
-    grad = u.C("li") @ grad("ij") @ v.T("jr") # u("li").C @ grad("ij") @ v.T("jr")  
+    grad = u.C("li") @ grad("ij") @ v.T("jr") 
 
 
     if x.shape[0] < x.shape[1]: 

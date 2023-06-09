@@ -97,8 +97,6 @@ def renormalize(x, chi, eps):
 
 def trg(beta, chi, nsteps, eps=1e-5):
 
-    print("trg-0")
-
     x   = ztensor(beta)
     lnZ = 0.0
 
@@ -107,15 +105,9 @@ def trg(beta, chi, nsteps, eps=1e-5):
         maxval = td.amax(x)
         lnZ    = lnZ + 2**(nsteps - step) * td.log(maxval)
 
-        print("maxval: ", td.asdata(maxval))
-
         x = renormalize(x / maxval, chi, eps)
-
-    print("trg-1")
  
     lnZ = lnZ + td.log(td.trace(td.trace(x, ("u","d")), ("l","r")))
-
-    print("trg-2")
 
     return lnZ / (2**nsteps)  
 
@@ -132,13 +124,13 @@ def tonumpy(xs):
 def main():
 
     chi    = 16
-    nsteps = 2 #20
+    nsteps = 20
 
     betas = []
     eds   = []
     cvs   = []
     
-    for beta in np.linspace(0.4, 0.5, 2): #51):
+    for beta in [0.5]: #np.linspace(0.4, 0.5, 51): #[0.4]: #np.linspace(0.4, 0.5, 51):
 
         print("HERE ", beta)
 
@@ -151,7 +143,7 @@ def main():
 
         print("HERE-2")
 
-        dlnZ2 = td.gradient(td.gradient(trg))(beta, chi, nsteps)
+        #dlnZ2 = td.gradient(td.gradient(trg))(beta, chi, nsteps)
 
         print("HERE-3")
         
@@ -167,15 +159,17 @@ def main():
 
     plt.plot(betas, eds)
     #plt.plot(betas, cvs)
+
+    print("RES: ", eds)
     
     plt.savefig("energy_density.png")
     
 
 
 
-cProfile.run('main()', sort='tottime')
+#cProfile.run('main()', sort='tottime')
 
-#main()
+main()
 
 
 
