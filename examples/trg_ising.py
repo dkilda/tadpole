@@ -62,8 +62,8 @@ def ztensor(beta):
 
 def renormalize(x, chi, eps):
 
-    uA, sA, vA, _ = td.linalg.svd(x, linds=("u","l"), sind="sa")
-    uB, sB, vB, _ = td.linalg.svd(x, linds=("l","d"), sind="sb")
+    uA, sA, vA, _ = td.linalg.svd(x, linds=("u","l"), sind="s")
+    uB, sB, vB, _ = td.linalg.svd(x, linds=("l","d"), sind="s")
 
     D   = x.shape[0]
     chi = min(
@@ -73,6 +73,9 @@ def renormalize(x, chi, eps):
                   td.sumover(td.greater(sB, eps)).item()
                  )
              )
+
+    sA = sA[:chi]("s")
+    sB = sB[:chi]("s")
 
     uA = td.transpose(uA, "u", "l", "s")[:,:,:chi]("uls")
     vA = td.transpose(vA, "d", "r", "s")[:,:,:chi]("drs")
@@ -95,7 +98,7 @@ def renormalize(x, chi, eps):
                    
 
 
-def trg(beta, chi, nsteps, eps=1e-5):
+def trg(beta, chi, nsteps, eps=1e-15):
 
     x   = ztensor(beta)
     lnZ = 0.0
@@ -114,61 +117,40 @@ def trg(beta, chi, nsteps, eps=1e-5):
 
 
 
-def tonumpy(xs):
-
-    return np.asarray([td.asdata(x).item() for x in xs])
-
-
-
-
 def main():
 
     chi    = 16
     nsteps = 20
 
     betas = []
+    lnzs  = []
     eds   = []
     cvs   = []
     
-    for beta in [0.5]: #np.linspace(0.4, 0.5, 51): #[0.4]: #np.linspace(0.4, 0.5, 51):
-
-        print("HERE ", beta)
+    for beta in np.linspace(0.4, 0.5, 51): 
 
         beta  = td.astensor(beta, dtype="float64")
         lnZ   = trg(beta, chi, nsteps)
-     
-        print("HERE-1")
-
         dlnZ  = td.gradient(trg)(beta, chi, nsteps)
+        dlnZ2 = td.gradient(td.gradient(trg))(beta, chi, nsteps)
 
-        print("HERE-2")
+        betas.append(td.asdata(beta).item())
+        lnzs.append(td.asdata(lnZ).item())
+        eds.append(td.asdata(-dlnZ).item())
+        cvs.append(td.asdata(dlnZ2 * beta**2).item())
 
-        #dlnZ2 = td.gradient(td.gradient(trg))(beta, chi, nsteps)
+        print(betas[-1], lnzs[-1], eds[-1], cvs[-1])
 
-        print("HERE-3")
-        
-        betas.append(beta)
-        eds.append(-dlnZ)
-        #cvs.append(dlnZ2 * beta**2)
+    plt.plot(betas, eds, marker='o', markersize=10)
+    plt.savefig("trg_ising_energy_density.png")
+    plt.clf()
 
-    print("HERE - END ")
-
-    betas = tonumpy(betas)
-    eds   = tonumpy(eds)
-    #cv    = tonumpy(cvs)
-
-    plt.plot(betas, eds)
-    #plt.plot(betas, cvs)
-
-    print("RES: ", eds)
-    
-    plt.savefig("energy_density.png")
-    
+    plt.plot(betas, cvs, marker='o', markersize=10)
+    plt.savefig("trg_ising_specific_heat.png")    
 
 
 
 #cProfile.run('main()', sort='tottime')
-
 main()
 
 

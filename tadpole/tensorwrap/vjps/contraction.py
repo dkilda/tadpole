@@ -32,8 +32,6 @@ def vjp_contract(g, adx, out, *xs, **opts):
 
     inds    = Indices(*tn.complement_inds(this, *others, g))
     product = Indices(*tn.union_inds(this)) ^ inds
-
-    print("\nVJP_CONTRACT: ", g.shape, [other_.shape for other_ in others]) 
     
     result = tn.contract(g, *others, product=product) 
 

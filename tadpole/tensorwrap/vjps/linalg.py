@@ -48,8 +48,6 @@ def fmatrix(s):
 
     return sdiff / (sdiff**2 + 1e-12) - seye
 
-    #return 1. / (s("1j") - s("i1") + seye) - seye # + 1e-12 #1. / (s("1j") - s("i1") + seye) - seye # + 1e-12
-
 
 
 
