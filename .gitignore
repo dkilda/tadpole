@@ -3,6 +3,8 @@
 *pytest_cache
 *GITIGNORE_OLD*
 *.png
-*trg_ising_plots
-*tanh_plots
 *logfile.txt
+*examples/trg_ising_plots
+*examples/tanh_plots
+*examples/profiling
+
