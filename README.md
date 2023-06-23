@@ -1,6 +1,5 @@
 <p align="left">
-
-# tadpole
+# Tadpole
 
 Tadpole provides a differentiable programming framework for tensor calculations. It handles tensor expressions using an indexing scheme based on the Einstein summation convention. The indexing can also be used to encode connectivity between tensors, which in turn is an essential ingredient for automating large-scale tensor contractions and building extended networks of tensors. 
 
