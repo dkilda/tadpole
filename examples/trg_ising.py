@@ -22,8 +22,17 @@ from util import (
    Optimize,
 )
 
-import timeit
-import cProfile
+
+"""
+In this example we construct a 2D tensor network representing 
+the partition function of the classical Ising model in 2D. 
+
+We apply automatic differentiation through tensor renormalization 
+group (TRG) iteration to compute the energy density and specific 
+heat as the first- and second-order gradients wrt the inverse 
+temperature beta, similarly to https://arxiv.org/pdf/1903.09650.pdf
+
+"""
 
 
 
@@ -150,7 +159,6 @@ def main():
 
 
 
-#cProfile.run('main()', sort='tottime')
 main()
 
 

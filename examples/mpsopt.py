@@ -20,8 +20,17 @@ from util import (
    Optimize,
 )
 
-import timeit
-import cProfile
+
+"""
+
+MPS optimization example, which demonstrates how one can optimize tensor
+networks using autodiff to compute gradients of any loss function. 
+
+Here we start with a random MPS and use the conjugate gradient method to 
+maximize its overlap with the exact ground state of the quantum Heisenberg 
+model (represented by a single dense tensor).
+
+"""
 
 
 L = 5
@@ -180,11 +189,7 @@ def main():
 
 
 
-
-cpu_time = timeit.timeit(main, number=1)
-print("CPUTIME: ", cpu_time)
-
-#cProfile.run('main()', sort='cumtime')
+main()
 
 
 

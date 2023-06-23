@@ -12,9 +12,17 @@ from tadpole import (
    IndexLit,
 )
 
-import timeit
-import cProfile
 
+"""
+Tensor contraction, example-4: 
+a contraction pattern that occurs when evaluating the energy and its gradient 
+with iPEPS tensor networks, using 1-site unit cell and Corner Transfer Matrix 
+(CTM) environment. 
+
+The example demonstrates the calculation of both the first- and 
+the second-order gradients.
+
+"""
 
 D   = 4
 chi = 10
@@ -84,11 +92,7 @@ def main():
 
 
 
-cpu_time = timeit.timeit(main, number=1)
-print("CPUTIME: ", cpu_time)
-
-cProfile.run('main()', sort='tottime')
-
+main()
 
 
 

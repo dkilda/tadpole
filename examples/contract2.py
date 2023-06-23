@@ -12,11 +12,15 @@ from tadpole import (
    IndexLit,
 )
 
-import timeit
-import cProfile
+
+"""
+Tensor contraction, example-2: 
+a function involving tensor contraction and its gradients.
+
+"""
 
 
-def grad(fun, i):
+def grad(fun, i=0):
     return td.gradient(fun, i)
 
 
@@ -31,12 +35,13 @@ def fun(x, y, **opts):
         return td.contract(z.H, z) 
 
     def con(u, v):
-        return dot(grad(dot, 0)(u, v), v) / dot(u, v)
+        du = grad(dot)(u, v)
+        return dot(du, v) / dot(u, v)
 
     gx = grad(con, 0)(x, y) + grad(con, 1)(y, x)
     gy = grad(con, 1)(x, y) - grad(con, 0)(y, x)
 
-    return dot(gx, gy) / dot(x, y)**2
+    return dot(gx, gy) / dot(x, y) **2
 
 
 I = td.IndexGen("I",3)
@@ -56,21 +61,19 @@ o = td.IndexGen("o",10)
 x = td.randn((I,J,L,M,i,j,l,m))
 y = td.randn((N,O,J,L,n,o,j,l))
 
+x = x / td.amax(x)
+y = y / td.amax(y)
+
 
 def main():
 
-    print("\n\nEvaluate ")
+    print("Evaluate contraction")
     print("C[u,v] = (d(u @ v)/du @ v) / (u @ v), ") 
     print("F[x,y] = d(C[x,y] + C[y,x])/dx @ d(C[x,y] - C[y,x])/dy / (x @ y)^2: ")
     compute(" ", fun(x, y, product=(I,N,O,M,i,n,o,m)))  
 
 
-
-cpu_time = timeit.timeit(main, number=1)
-print("CPUTIME: ", cpu_time)
-
-#cProfile.run('main()', sort='tottime')
-
+main()
 
 
 

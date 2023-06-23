@@ -12,8 +12,17 @@ from tadpole import (
    IndexLit,
 )
 
-import timeit
-import cProfile
+
+"""
+
+Differentiation of a tensor network update involving contraction 
+with a 2-site MPO followed by SVD. The loss function is defined as 
+an overlap containing the updated tensors.
+
+The example demonstrates the calculation of both the first- and 
+the second-order gradients wrt different sites.
+
+"""
 
 
 d  = 2
@@ -43,6 +52,7 @@ for i in (1,2):
               dtype="complex128"
            )
     M[i] = M[i] / td.amax(M[i])
+
 
 H = {}
 for i in (1,2):
@@ -110,11 +120,7 @@ def main():
 
 
 
-cpu_time = timeit.timeit(main, number=1)
-print("CPUTIME: ", cpu_time)
-
-#cProfile.run('main()', sort='tottime')
-
+main()
 
 
 

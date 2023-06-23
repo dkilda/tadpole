@@ -20,8 +20,20 @@ from util import (
    Optimize,
 )
 
-import timeit
-import cProfile
+
+"""
+
+Tensor fitting: we demonstrate the fitting of a 4-tensor ring network
+(a decomposition where each tensor has local dimension d) to a single
+target tensor (a dense representation with (d, d, d, d) dimensions) 
+by optimizing the distance between them. 
+
+This example utilizes L-BFGS-B optimizer, where gradients are computed 
+using the tadpole autodiff.
+
+"""
+
+
 
 
 d = 3 
@@ -83,10 +95,6 @@ def main():
 
 
 
-cpu_time = timeit.timeit(main, number=1)
-print("CPUTIME: ", cpu_time)
-
-#cProfile.run('main()', sort='cumtime')
-
+main()
 
 

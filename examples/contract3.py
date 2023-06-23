@@ -12,8 +12,13 @@ from tadpole import (
    IndexLit,
 )
 
-import timeit
-import cProfile
+
+"""
+Tensor contraction, example-3: 
+a contraction pattern that occurs when evaluating the energy and its gradient 
+with MPS-MPO tensor networks.
+
+"""
 
 
 i = td.IndexGen("i",2)
@@ -51,11 +56,7 @@ def main():
     compute("contraction gradient: ", gcon(K, B))    
 
 
-cpu_time = timeit.timeit(main, number=1)
-print("CPUTIME: ", cpu_time)
-
-cProfile.run('main()', sort='tottime')
-
+main()
 
 
 

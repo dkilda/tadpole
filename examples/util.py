@@ -15,6 +15,12 @@ from tadpole import (
 import scipy.optimize
 
 
+"""
+Utility module containing classes and functions 
+for tensor network optimization.
+"""
+
+
 
 
 def tprint(msg, expr):
