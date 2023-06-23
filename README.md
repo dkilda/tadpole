@@ -8,6 +8,6 @@ Tadpole comes with an automatic differentiation engine, which supports backpropa
 
 The original motivation for Tadpole stems from tensor network algorithms in computational quantum physics. But owing to its versatile approach, it can be used as a general purpose library for any problem that involves tensor expressions, mathematical functions containing gradients, and algorithms using gradient-based optimization. 
 
-To get started with the package and become familiar with various examples of usage, see the [examples directory](https://github.com/dkilda/tadpole/tree/develop/examples).
+To get started with the package and become familiar with various examples of usage, see the [examples directory](https://github.com/dkilda/tadpole/tree/main/examples).
 
 </p>
